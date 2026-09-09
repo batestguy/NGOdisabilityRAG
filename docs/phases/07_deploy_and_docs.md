@@ -28,6 +28,20 @@ can set up, run, and extend the project from the README alone.
 - [ ] README sufficient for a fresh clone → run (test by reading it as a stranger).
 - [ ] Every spec checklist box ticked or deferred-with-reason. No silent gaps.
 
+## Status (2026-09-09 — deploy prep DONE, push/smoke owner-side)
+- requirements.txt slimmed (faiss/onnx/ocr dropped, retired google-generativeai →
+  google-genai) + clean-venv proven (install, imports 1.63.0/3.0.5/1.9.0, offline
+  legal 6 excerpts + help 3 records, boot HTTP 200). Spaces needs Python >=3.10.
+- README rewritten + ASCII architecture + data-verification section; spec audit in
+  journal (deploys/docs boxes ticked except Spaces link, video, LinkedIn).
+  NAB/NNAD re-verified HIGH 2026-09-09 (contact pages byte-confirm CSV).
+- Git: init + .gitignore + key audit clean + local commit (69 files, tree clean).
+- Owner-side (need account creds / mic / voice): GitHub push → Space create (Streamlit
+  SDK) → GOOGLE_API_KEY in Secrets → smoke (3 legal + 2 help, helplines, cites) →
+  paste live link in README → 2-3 min demo video → NVDA/keyboard/mic gates.
+- Exit criteria: [~] README (link pending live URL) · [ ] live link+smoke ·
+  [ ] video · [x] spec audit (deferrals written) · [x] key audit.
+
 ## Record results in
 `README.md` (public face), `LEARNING_JOURNAL.md` (research face), this playbook's footer
 (deploy date + link).
