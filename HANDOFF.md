@@ -1,14 +1,21 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-09 EOD)
+# HANDOFF — start here (60 seconds, updated 2026-09-09 late session)
 
 **Env:** `C:\conda-envs\drlca-rag\python.exe` (py 3.11). Rebuild: `requirements-rag.txt`.
 Never install into `ds-general` / `base` / system Python. Full machine notes: `ENVIRONMENTS.md`.
-Local app (if server still up): http://localhost:8501 (`python -m streamlit run app.py`).
-Git: https://github.com/batestguy/NGOdisabilityRAG (`main`, pushed 2026-09-09, tree clean).
+Local app: http://localhost:8501 (server restarted 2026-09-09 with current code; reboot if down:
+`python -m streamlit run app.py` from `D:\NGORAG`).
+Git: https://github.com/batestguy/NGOdisabilityRAG (`main`, pushed, tree clean —
+latest `17de7ef` readability fix).
 
-**State:** Phases 01–05 DONE (all suites green: bench, 03 16/16+7/7, 04, 05 80/80).
+**State:** Phases 01–05 DONE (all suites green: bench, 03 16/16+7/7, 04, 05 **94/94**).
 Phase 06 custom eval DONE (recall 0.800, audited faithfulness 0.875; fix A applied).
 Phase 07 deploy prep DONE (slim requirements clean-venv proven, README, 10/10 NGO
-re-verified HIGH, key audit clean). Details: `STATUS.md`. Spec: `RAGNGO.txt`.
+re-verified HIGH, key audit clean, repo pushed).
+**Latest (this session):** Brave readability report FIXED + verified + pushed —
+opaque sidebar (z-index 2 over main context), 0.88 main sheet, opaque excerpt cards,
+top-of-run theme watcher (height=1), srcdoc race fix. Light/dark/HC all screenshot-
+verified. Font deliberately unchanged (system sans; contrast was the defect).
+Details: `STATUS.md`. Spec: `RAGNGO.txt`.
 Helplines always on top: DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp `08000-3000-10`.
 
 ## Tomorrow, in this order
@@ -47,7 +54,13 @@ Helplines always on top: DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp `08000-3
   (complete) until a COMPLETE post-fix transcript exists. Never fake LLM rows —
   429-pending stays pending. LLM runs → versioned files; dry runs → `--out`.
 - Test commands (all via project python): `bench_phase01` (PASS) · `test_phase03`
-  (16/16+7/7) · `test_phase04` (PASS) · `test_phase05` (80) · `eval_phase06.py`.
+  (16/16+7/7) · `test_phase04` (PASS) · `test_phase05` (94) · `eval_phase06.py`.
+- CSS rules of the road (learned 2026-09-09): watermark div lives INSIDE
+  stMainBlockContainer (z-1), so sidebar needs z-index 2; Streamlit's own section
+  rules beat un-`!important` ones; height=0 iframes never mount (use 1); srcdoc
+  scripts race `<body>` (DOMContentLoaded-ready wrapper); restarted server after
+  edits (auto-reload once served mixed CSS); HC mode trips the luminance gate
+  (bodyDark=true — harmless, palettes compose to AAA).
 
-**Pending owner inputs:** GitHub + HF accounts (push/deploy), demo video, human gates.
+**Pending owner inputs:** HF Space + video + human gates + LinkedIn (GitHub push DONE).
 **Pending quota:** everything in steps 1–2. Nothing else is blocked.
