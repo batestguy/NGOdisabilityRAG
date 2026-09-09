@@ -317,6 +317,16 @@ Replace SAMPLE with real Act text → re-run notebook → wire citation prompt +
   harmless: dark rules + HC !important compose to the same AAA palette.
 - Server restarted on :8501 with current code; user's Brave tab needs a reload.
 
+## 2026-09-09 — HC buttons white-on-white FIXED (Brave screenshot report)
+- Report: circled mode buttons showed emoji-only on white (labels invisible) in
+  high-contrast mode. Cause: HC overlay forced all text white but button
+  BACKGROUNDS stayed themed -- light-theme white buttons went white-on-white
+  (same gap for translucent alert surfaces). Fix in the HC overlay block:
+  buttons → black bg + white text (border was already white); alert surfaces →
+  black bg + white border. Verified live in HC+light (user's combo): black
+  buttons/borders/labels, black clarify alert, computed bg/text pairs all
+  #000/#fff. Suite 94→96. Server restarted; Brave tab needs reload.
+
 ## 2026-09-09 — Watermark more visible (user request; readability preserved)
 - Bumped `.drlca-watermark` opacity 0.14 → 0.24 (~70% stronger photo presence).
   Safe because text no longer sits on raw photo: opaque sidebar + 0.88 main sheet

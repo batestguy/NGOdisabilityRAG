@@ -224,6 +224,12 @@ check("theme-watch-on-every-run", "components.html(theme_watch_html()" in src
 check("hc-pins-scrims", "body:has(.drlca-hc-on) .block-container" in css
       and "body:has(.drlca-hc-on) section[data-testid='stSidebar']" in css
       and "body:has(.drlca-hc-on) .drlca-answer" in css)
+# HC buttons/alerts (Brave report 2026-09-09: light-theme white buttons went
+# white-on-white under forced-white text; translucent alerts likewise):
+check("hc-button-opaque", "body:has(.drlca-hc-on) button" in css
+      and "background-color: #000 !important; color: #fff !important" in css)
+check("hc-alert-opaque", "body:has(.drlca-hc-on) [data-testid='stAlert']"
+      in css and "border-color: #fff !important" in css)
 # Font unchanged by design:
 check("font-still-system-sans", 'font = "sans-serif"' in toml
       and "fontFaces" not in toml)
