@@ -287,6 +287,36 @@ Replace SAMPLE with real Act text → re-run notebook → wire citation prompt +
   confirmation) + RAGAS-judge day. Eval script stays pointed at the complete v2
   transcript until a complete post-fix transcript exists (no partial re-pointing).
 
+## 2026-09-09 — White-text/sidebar readability FIXED (Brave report, scrims + stacking)
+- Report: white text unreadable + side panel text unreadable (Brave). Reproduced in
+  Chromium dark+light. Two defects, one root area:
+  (1) Bright photo patches behind translucent surfaces: white dark-theme body text
+  (esp. long excerpt paragraphs) and all sidebar labels sat on faces/sky.
+  (2) REAL BUG underneath: sidebar photo bleed-through despite an opaque computed
+  bg. Root-caused via DOM walk: the watermark div lives INSIDE stMainBlockContainer
+  (position:relative, z-index:1), so its z-0 is local to the MAIN stacking context
+  -- which paints above the sidebar by DOM order. My z-1 sidebar rule never had a
+  chance; Streamlit's own section rules also beat my position rule in the cascade.
+- Fix (app.py CSS only, tokens mirrored from config.toml): sidebar z-index 2
+  !important (above the main context) + opaque sidebar bg per theme (#f6f8fa /
+  #010409) + main sheet .block-container (0.88 alpha white/dark) + fully opaque
+  excerpt cards (.drlca-answer #ffffff/#0d1117). HC overlay pins all three black
+  (else light sheet + forced-white text). Photo survives at the margins; spec
+  prioritizes accessibility over aesthetics. Font UNCHANGED by design (system
+  sans-serif, no downloads; contrast -- not typeface -- was the defect).
+- Incidents while verifying: (a) height=0 iframe never mounts -- watcher moved to
+  height=1 top-of-run iframe so body.drlca-dark exists on the initial screen too;
+  (b) srcdoc race: script ran before <body> parsed (console TypeError, dark
+  overrides silently dead) -- wrapped in DOMContentLoaded-ready + try/catch;
+  (c) first verification round ran against a STALE server (mixed-version CSS) --
+  restarted :8501, re-verified everything after.
+- Verified live: dark sidebar element-shot solid black, labels crisp; dark cards
+  opaque (#0d1117) with white text; light sidebar #f6f8fa + white cards; HC mode
+  coherent (black sheets/cards, white bold text, no white-on-white). Suite 80→94.
+  Note: in HC mode the black app bg trips the luminance gate (bodyDark=true) --
+  harmless: dark rules + HC !important compose to the same AAA palette.
+- Server restarted on :8501 with current code; user's Brave tab needs a reload.
+
 ## 2026-09-09 — Phase 07 deploy prep (no quota needed)
 - requirements.txt slimmed to runtime (streamlit/pandas/sklearn/google-genai/
   mic-recorder/SpeechRecognition; faiss/onnx/rapidocr/pymupdf REMOVED — grep

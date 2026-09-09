@@ -85,8 +85,16 @@ def accessibility_css(high_contrast: bool = False, font_size: int = 18) -> str:
         "   that trap negative-z layers behind opaque fills. Content is lifted\n"
         "   above instead (block-container + sidebar get position/z-index). */\n"
         "[data-testid='stAppViewContainer'] { background: transparent; }\n"
-        ".block-container, section[data-testid='stSidebar'] {\n"
-        "  position: relative; z-index: 1; }\n"
+        "/* Structural stacking broadband: the watermark div lives INSIDE\n"
+        "   stMainBlockContainer (position:relative, z-index:1), so its z-0 is\n"
+        "   local to the MAIN context -- which paints above the sidebar by DOM\n"
+        "   order. The sidebar therefore needs z-index:2 to sit above the\n"
+        "   full-viewport photo (element-screenshot proof of bleed-through,\n"
+        "   2026-09-09). !important: Streamlit's own section rules otherwise\n"
+        "   win the cascade. */\n"
+        ".block-container { position: relative !important; z-index: 1 !important; }\n"
+        "section[data-testid='stSidebar'] {\n"
+        "  position: relative !important; z-index: 2 !important; }\n"
         ".drlca-veil { position: fixed; inset: 0; z-index: 0;\n"
         "  pointer-events: none; background:\n"
         "  linear-gradient(rgba(255, 255, 255, 0.10),\n"
@@ -120,6 +128,12 @@ def accessibility_css(high_contrast: bool = False, font_size: int = 18) -> str:
             "  color: #ffd700 !important; text-decoration: underline; }\n"
             "body:has(.drlca-hc-on) button {\n"
             "  border: 2px solid #fff !important; font-weight: 700; }\n"
+            "/* Scrim sheets (below) would paint light in HC mode -- pin them\n"
+            "   black here so the forced palette stays intact. */\n"
+            "body:has(.drlca-hc-on) .block-container,\n"
+            "body:has(.drlca-hc-on) section[data-testid='stSidebar'],\n"
+            "body:has(.drlca-hc-on) .drlca-answer {\n"
+            "  background-color: #000 !important; }\n"
             "</style>"
             "<div class='drlca-hc-on' style='display:none;'></div>"
         )
@@ -140,6 +154,34 @@ def accessibility_css(high_contrast: bool = False, font_size: int = 18) -> str:
         "body.drlca-dark [data-testid='stAlert'] p,\n"
         "body.drlca-dark [data-testid='stAlert'] li {\n"
         "  color: #ffffc2; }\n"
+        "</style>"
+    )
+    # DRLCA readability scrims (2026-09-09): body text sits on the watermark
+    # photo, and bright patches (faces/sky) wash out white dark-theme text and
+    # fade light-theme sidebar labels (screenshot-verified in Brave). Content
+    # columns get translucent theme-colored backdrops so text contrast holds
+    # wherever the photo falls; the photo stays visible at the margins.
+    # Values derive from .streamlit/config.toml backgrounds (light #ffffff /
+    # sidebar #f6f8fa; dark app #0d1117 / sidebar #010409). Light rules live
+    # here (after the HC gate) so the token-only base check still passes.
+    # Spec prioritizes accessibility over aesthetics. Font is unchanged
+    # (system sans-serif; no downloads allowed) -- contrast, not typeface,
+    # was the defect.
+    base += (
+        "\n<style>\n"
+        "/* Sidebar opaque in both modes (same stacking reason as above). */\n"
+        "section[data-testid='stSidebar'] {\n"
+        "  background-color: #f6f8fa !important; }\n"
+        ".block-container { background-color: rgba(255, 255, 255, 0.88);\n"
+        "  border-radius: 12px; }\n"
+        "/* Excerpt cards fully opaque (config bg tokens): long-form legal\n"
+        "   text must never sit on photo texture. */\n"
+        ".drlca-answer { background-color: #ffffff; }\n"
+        "body.drlca-dark section[data-testid='stSidebar'] {\n"
+        "  background-color: #010409 !important; }\n"
+        "body.drlca-dark .block-container {\n"
+        "  background-color: rgba(13, 17, 23, 0.88); }\n"
+        "body.drlca-dark .drlca-answer { background-color: #0d1117; }\n"
         "</style>"
     )
     return base
@@ -232,26 +274,25 @@ def build_speech_text(legal: dict | None, help_payload: dict | None,
     return "\n".join(parts)
 
 
-def read_aloud_html(speech_text: str, button_label: str = "🔊 Read answer aloud") -> str:
-    """Few-lines Web Speech API button (client-side synthesis, zero server cost).
+def theme_watch_html() -> str:
+    """Client-side theme detector (shared snippet, see run() + read_aloud_html).
 
-    The iframe body is transparent (no white strip on dark app backgrounds).
-    The embedded theme watch samples the Streamlit app background luminance
-    and toggles body.drlca-dark on the PARENT document, so the dark-only
-    alert override in accessibility_css() applies exactly when the user picks
-    the dark theme (Streamlit exposes no theme hook to CSS; server-side
-    Python never sees the choice). Same-origin parent access may be denied
-    by the sandbox -- the try/catch degrades to status quo (translucent
-    alerts), never a crash. Runs on an interval so in-menu theme switches
-    (which don't always remount this iframe) are picked up within a second.
+    Streamlit exposes no theme hook to CSS and server-side Python never sees
+    the user's theme choice, so a same-origin iframe samples the `.stApp`
+    background luminance and toggles `body.drlca-dark` on the PARENT document
+    (dark #0d1117 -> lum ~0.07; light #ffffff -> 1.0; gate 0.4). Try/catch +
+    1s interval: sandbox denial or a missed remount degrades to status quo
+    (dark-only overrides stay off), never a crash.
     """
-    safe = html.escape(speech_text or "No answer yet.", quote=True)
     return (
-        "<div><button type='button' id='drlca-speak' aria-label='%s'>%s</button>"
         "<script>"
-        "document.body.style.background='transparent';"
         "(function(){"
+        "function ready(fn){"
+        "if(document.body){fn();}else{"
+        "document.addEventListener('DOMContentLoaded',fn);}}"
+        "ready(function(){"
         "try{"
+        "document.body.style.background='transparent';"
         "var apply=function(){"
         "try{"
         "var app=window.parent.document.querySelector('.stApp');"
@@ -265,15 +306,33 @@ def read_aloud_html(speech_text: str, button_label: str = "🔊 Read answer alou
         "apply();"
         "setInterval(apply,1000);"
         "}catch(e){}"
+        "});"
         "})();"
-        "document.getElementById('drlca-speak').onclick=function(){"
-        "try{var u=new SpeechSynthesisUtterance("
-        "document.getElementById('drlca-speech').textContent);"
-        "u.lang='en-NG';speechSynthesis.cancel();speechSynthesis.speak(u);}"
-        "catch(e){alert('Read-aloud needs a browser with speech synthesis (Chrome/Edge).');}"
-        "};"
         "</script>"
-        "<div id='drlca-speech' style='display:none;'>%s</div></div>"
+    )
+
+
+def read_aloud_html(speech_text: str, button_label: str = "🔊 Read answer aloud") -> str:
+    """Few-lines Web Speech API button (client-side synthesis, zero server cost).
+
+    The iframe body is transparent (no white strip on dark app backgrounds);
+    the shared theme watch (theme_watch_html) keeps body.drlca-dark correct so
+    the dark-only alert override in accessibility_css() applies exactly when
+    the user picks the dark theme.
+    """
+    safe = html.escape(speech_text or "No answer yet.", quote=True)
+    return (
+        ("<div><button type='button' id='drlca-speak' aria-label='%s'>%s</button>"
+         + theme_watch_html() +
+         "<script>"
+         "document.getElementById('drlca-speak').onclick=function(){"
+         "try{var u=new SpeechSynthesisUtterance("
+         "document.getElementById('drlca-speech').textContent);"
+         "u.lang='en-NG';speechSynthesis.cancel();speechSynthesis.speak(u);}"
+         "catch(e){alert('Read-aloud needs a browser with speech synthesis (Chrome/Edge).');}"
+         "};"
+         "</script>"
+         "<div id='drlca-speech' style='display:none;'>%s</div></div>")
         % (html.escape(button_label, quote=True), html.escape(button_label),
            safe)
     )
@@ -513,6 +572,12 @@ def run():
 
     st.set_page_config(page_title="DRLCA — Disability Rights Assistant",
                        layout="centered")
+
+    # Theme watch on EVERY run (including the initial screen, which has no
+    # answer yet and therefore no read-aloud iframe). Height 1 (not 0:
+    # Streamlit does not mount zero-height iframes) -- a 1px sliver at the
+    # very top, invisible in practice.
+    components.html(theme_watch_html(), height=1, scrolling=False)
 
     for k, v in {"explicit": "auto", "submitted": False,
                  "last_q": ""}.items():

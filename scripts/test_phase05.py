@@ -186,4 +186,49 @@ check("css-base-still-token-only", not hex_re.search(fn_src[:gate]),
 check("veil-unchanged", "rgba(255, 255, 255, 0.10)" in css_full
       and "rgba(0, 0, 0, 0.18)" in css_full)
 
+# 13. Readability scrims (white-text/sidebar fix 2026-09-09) -------------------
+# Bright photo patches washed out dark-theme body text and faded light sidebar
+# labels (Brave screenshots). Fix: translucent theme-colored backdrops on the
+# content columns; photo stays at the margins. Font deliberately UNCHANGED
+# (system sans-serif, no downloads) -- contrast was the defect, not typeface.
+# Structural stacking (!important): Streamlit's own section rules otherwise win
+# the cascade and the photo paints OVER content backgrounds (element-screenshot
+# proof: opaque computed bg yet photo visible). A zero-height top-of-run iframe
+# carries the theme watch so body.drlca-dark exists on the initial screen too.
+check("scrim-sidebar-light", "section[data-testid='stSidebar']" in css_full
+      and "#f6f8fa" in css_full)
+check("scrim-main-light", ".block-container" in css_full
+      and "rgba(255, 255, 255, 0.88)" in css_full)
+check("answer-card-opaque", ".drlca-answer" in css_full
+      and ".drlca-answer { background-color: #ffffff; }" in css_full
+      and "body.drlca-dark .drlca-answer { background-color: #0d1117; }"
+      in css_full)
+check("scrim-sidebar-dark", "body.drlca-dark section[data-testid='stSidebar']"
+      in css_full and "#010409" in css_full)
+check("scrim-main-dark", "body.drlca-dark .block-container" in css_full
+      and "rgba(13, 17, 23, 0.88)" in css_full)
+check("scrim-token-lineage", "#f6f8fa" in toml and "#010409" in toml
+      and "#ffffff" in toml and "#0d1117" in toml)
+check("stacking-important", "position: relative !important" in css_plain
+      and "z-index: 1 !important" in css_plain)
+check("sidebar-above-main-context",
+      "section[data-testid='stSidebar']" in css_full
+      and "z-index: 2 !important" in css_full)
+check("sidebar-bg-important", "#f6f8fa !important" in css_full
+      and "#010409 !important" in css_full)
+check("theme-watch-helper", "def theme_watch_html" in src
+      and "theme_watch_html()" in src)
+check("theme-watch-on-every-run", "components.html(theme_watch_html()" in src
+      and "height=1" in src)
+# HC overlay must pin the scrims black (else a light sheet + forced-white text):
+check("hc-pins-scrims", "body:has(.drlca-hc-on) .block-container" in css
+      and "body:has(.drlca-hc-on) section[data-testid='stSidebar']" in css
+      and "body:has(.drlca-hc-on) .drlca-answer" in css)
+# Font unchanged by design:
+check("font-still-system-sans", 'font = "sans-serif"' in toml
+      and "fontFaces" not in toml)
+# Base CSS before the HC gate still token-only (scrims live after the gate):
+check("css-base-still-token-only-2", not hex_re.search(fn_src[:gate]),
+      str(hex_re.findall(fn_src[:gate])[:5]))
+
 print("\nALL %d ASSERTS PASSED" % len(passed))
