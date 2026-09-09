@@ -1,0 +1,707 @@
+[
+ {
+  "id": "Q1",
+  "recall": 1.0,
+  "precision": 0.5,
+  "exp_found": [
+   "act2018:1",
+   "factsheet2020:1",
+   "factsheet2020:2"
+  ],
+  "exp_missed": [],
+  "refused": false,
+  "claims": [
+   {
+    "tag": "Factsheet general",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": " with Disabilities (Prohibition) Act outlaws discrimination on the basis of one's physical, mental or sensory impairment"
+   },
+   {
+    "tag": "Factsheet general",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "p a National Commission for Persons with Disabilities to oversee the inclusivity of persons with disabilities in society"
+   },
+   {
+    "tag": "Factsheet Section 2",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". The Act outlaws discrimination in its totality and under any manner or circumstance"
+   },
+   {
+    "tag": "Act cl. 1",
+    "numbers_ok": true,
+    "overlap": 0.833,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". Specifically, a person with disability shall not be discriminated against on the ground of his disability"
+   },
+   {
+    "tag": "Factsheet Section 1",
+    "numbers_ok": true,
+    "overlap": 0.857,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". This prohibits the discrimination of a person on the ground of his/her disability, as stated in section 1(1)"
+   },
+   {
+    "tag": "Act cl. 1",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". A person who contravenes subsection (1) commits an offence"
+   },
+   {
+    "tag": "Act cl. 1",
+    "numbers_ok": true,
+    "overlap": 0.833,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". If the person is a body corporate, they are liable on conviction to a fine of N1,000,000"
+   },
+   {
+    "tag": "Act cl. 1",
+    "numbers_ok": true,
+    "overlap": 0.667,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". If the person is an individual, they are liable to a fine of N100,000 or six months imprisonment"
+   },
+   {
+    "tag": "Factsheet Section 1",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". A body corporate who discriminates on this ground is subject to a fine of N1,000,000"
+   },
+   {
+    "tag": "Factsheet Section 1",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". An individual is liable to pay a N100,000 fine, face a six months imprisonment term or both"
+   },
+   {
+    "tag": "Factsheet Section 1",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". A civil action may also be brought by the person discriminated against"
+   },
+   {
+    "tag": "Factsheet Section 2",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ""
+   },
+   {
+    "tag": "Act general",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "with Disabilities, vesting it with responsibilities for their education, health care, social, economic, and civil rights"
+   }
+  ],
+  "faithfulness_auto": 1.0,
+  "faithfulness_audited": 1.0,
+  "coverage": 0.5,
+  "reverse_rel": 0.333,
+  "cov_missed": [
+   "does",
+   "say"
+  ]
+ },
+ {
+  "id": "Q2",
+  "recall": 1.0,
+  "precision": 0.667,
+  "exp_found": [
+   "act2018:3",
+   "act2018:4",
+   "act2018:5",
+   "act2018:6",
+   "act2018:7",
+   "factsheet2020:6",
+   "factsheet2020:7"
+  ],
+  "exp_missed": [],
+  "refused": false,
+  "claims": [
+   {
+    "tag": "Act cl. 3,4,5",
+    "numbers_ok": true,
+    "overlap": 0.846,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "e. A person with disability has the right to access the physical environment and buildings on an equal basis with others"
+   },
+   {
+    "tag": "Act cl. 3,4,5",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "ts (where necessary), ramps and any other facility that makes them accessible to and usable by persons with disabilities"
+   },
+   {
+    "tag": "Act cl. 6,7",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "sabilities shall be modified to be accessible to and usable by persons with disabilities, including those on wheelchairs"
+   },
+   {
+    "tag": "Factsheet Section 6,7",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "res whether immovable or not must be modified and accessible to persons with disabilities including those on wheelchairs"
+   },
+   {
+    "tag": "Act cl. 6,7",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "ructure, its plan shall be scrutinised by the relevant authority to ensure that the plan conforms with the building code"
+   },
+   {
+    "tag": "Act cl. 6,7",
+    "numbers_ok": true,
+    "overlap": 0.875,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "g plans shall not approve the plan of a public building if the plan does not make provision for accessibility facilities"
+   },
+   {
+    "tag": "Factsheet Section 7",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "onforms with a building code that has accessibility features for persons with disabilities including those on wheelchair"
+   },
+   {
+    "tag": "Factsheet Section 7",
+    "numbers_ok": true,
+    "overlap": 0.923,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "encies or individuals responsible for the approval of building plans from approving plans without accessibility features"
+   }
+  ],
+  "faithfulness_auto": 1.0,
+  "faithfulness_audited": 1.0,
+  "coverage": 1.0,
+  "reverse_rel": 1.0,
+  "cov_missed": []
+ },
+ {
+  "id": "Q3",
+  "recall": 1.0,
+  "precision": 0.167,
+  "exp_found": [
+   "act2018:29",
+   "act2018:30"
+  ],
+  "exp_missed": [],
+  "refused": false,
+  "claims": [
+   {
+    "tag": "Act cl. 29,30",
+    "numbers_ok": true,
+    "overlap": 0.7,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "ic organisations shall, as much as possible, have persons with disabilities constituting at least 5% of their employment"
+   },
+   {
+    "tag": "Act cl. 29,30",
+    "numbers_ok": true,
+    "overlap": 0.75,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". Contravention of this provision is liable to N50,000 damages payable to the affected person with disability"
+   }
+  ],
+  "faithfulness_auto": 1.0,
+  "faithfulness_audited": 1.0,
+  "coverage": 0.6,
+  "reverse_rel": 0.333,
+  "cov_missed": [
+   "exist",
+   "protect"
+  ]
+ },
+ {
+  "id": "Q4",
+  "recall": 1.0,
+  "precision": 0.333,
+  "exp_found": [
+   "act2018:31",
+   "factsheet2020:30",
+   "factsheet2020:31"
+  ],
+  "exp_missed": [],
+  "refused": false,
+  "claims": [
+   {
+    "tag": "Act cl. 31",
+    "numbers_ok": true,
+    "overlap": 0.833,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "Yes, there is a National Commission for Persons with Disabilities established"
+   },
+   {
+    "tag": "Act general",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ""
+   },
+   {
+    "tag": "Factsheet Section 30,31",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ""
+   },
+   {
+    "tag": "Act cl. 31",
+    "numbers_ok": true,
+    "overlap": 0.667,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". This Commission is placed under the Presidency"
+   },
+   {
+    "tag": "Act general",
+    "numbers_ok": true,
+    "overlap": 0.857,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "it with responsibilities for the education, health care, social, economic, and civil rights of persons with disabilities"
+   }
+  ],
+  "faithfulness_auto": 1.0,
+  "faithfulness_audited": 1.0,
+  "coverage": 1.0,
+  "reverse_rel": 0.333,
+  "cov_missed": []
+ },
+ {
+  "id": "Q5",
+  "recall": 0.0,
+  "precision": 0.0,
+  "exp_found": [],
+  "exp_missed": [
+   "act2018:1",
+   "act2018:10",
+   "act2018:13",
+   "act2018:2",
+   "act2018:29",
+   "act2018:30",
+   "act2018:8",
+   "act2018:9"
+  ],
+  "refused": true,
+  "faithfulness_auto": 1.0,
+  "faithfulness_audited": 1.0,
+  "coverage": null,
+  "claims": []
+ },
+ {
+  "id": "Q6",
+  "recall": 1.0,
+  "precision": 0.5,
+  "exp_found": [
+   "act2018:11",
+   "factsheet2020:10",
+   "factsheet2020:11"
+  ],
+  "exp_missed": [],
+  "refused": false,
+  "claims": [
+   {
+    "tag": "Factsheet general",
+    "numbers_ok": true,
+    "overlap": 0.812,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": " with Disabilities (Prohibition) Act outlaws discrimination on the basis of one\u2019s physical, mental or sensory impairment"
+   },
+   {
+    "tag": "Factsheet Section 10",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "er accessibility aids that enhance the accessibility of their vehicles, parks and bus stops to persons with disabilities"
+   },
+   {
+    "tag": "Factsheet Section 10,11",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "sions for lifts, ramps and other accessibility aids at public vehicles, parks and bus stops to persons with disabilities"
+   },
+   {
+    "tag": "Factsheet Section 10,11",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "andated to have functional audible and visual display of their destination within five years of commencement of this Act"
+   },
+   {
+    "tag": "Factsheet Section 10,11",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". Similar provisions are made in section 11 for all transport service providers"
+   },
+   {
+    "tag": "Act cl. 11",
+    "numbers_ok": true,
+    "overlap": 0.762,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "ce the accessibility of their vehicles, parks and bus stops to persons with disabilities, including those on wheelchairs"
+   },
+   {
+    "tag": "Act cl. 11",
+    "numbers_ok": true,
+    "overlap": 0.818,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "hall have functional audible and visual display of their destination within five years from the commencement of this Act"
+   },
+   {
+    "tag": "Act cl. 11",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "ther accessibility equipment in or for vehicles, and at parks or bus stops, shall be maintained in operational condition"
+   },
+   {
+    "tag": "Factsheet Section 10,11",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". Section 11 also mandates the regular and frequent maintenance of accessibility aids and equipment in vehicles"
+   },
+   {
+    "tag": "Factsheet Section 10,11",
+    "numbers_ok": true,
+    "overlap": 0.833,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". Additionally, section 11(4) places a duty of care on a drive"
+   }
+  ],
+  "faithfulness_auto": 1.0,
+  "faithfulness_audited": 1.0,
+  "coverage": 0.833,
+  "reverse_rel": 1.0,
+  "cov_missed": [
+   "does"
+  ]
+ },
+ {
+  "id": "Q7",
+  "recall": 1.0,
+  "precision": 0.667,
+  "exp_found": [
+   "act2018:16",
+   "act2018:17",
+   "act2018:20",
+   "factsheet2020:17",
+   "factsheet2020:19",
+   "factsheet2020:20"
+  ],
+  "exp_missed": [],
+  "refused": false,
+  "claims": [
+   {
+    "tag": "Act cl. 16,17",
+    "numbers_ok": true,
+    "overlap": 0.778,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "s, as persons with disabilities, have an unfettered right to education without discrimination or segregation in any form"
+   },
+   {
+    "tag": "Act cl. 16,17",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". A person with disability is entitled to free education"
+   },
+   {
+    "tag": "Factsheet Section 17",
+    "numbers_ok": true,
+    "overlap": 0.667,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ", specifically up to secondary level"
+   },
+   {
+    "tag": "Factsheet Section 17",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". This right to education is free from discrimination"
+   },
+   {
+    "tag": "Factsheet Section 19,17,20",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". Section 17 provides for the right to free education"
+   },
+   {
+    "tag": "Factsheet Section 17",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". The National Commission for Persons with Disabilities is mandated to provide educational assistive devices"
+   },
+   {
+    "tag": "Act cl. 20",
+    "numbers_ok": true,
+    "overlap": 0.565,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ", mode and means of communication for the individual, and in environments which maximise academic and social development"
+   },
+   {
+    "tag": "Factsheet Section 19,17,20",
+    "numbers_ok": true,
+    "overlap": 0.9,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": " Section 20 of the Act provides for the appropriate mode of education for persons with disabilities, especially children"
+   },
+   {
+    "tag": "Act general",
+    "numbers_ok": true,
+    "overlap": 0.25,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". Education is to be inclusive, as provided by Section 18"
+   },
+   {
+    "tag": "Factsheet Section 19,17,20",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ", which compliments the right to free education"
+   },
+   {
+    "tag": "Act general",
+    "numbers_ok": true,
+    "overlap": 0.667,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". Section 19 provides for subsidised education for special education personnel"
+   },
+   {
+    "tag": "Factsheet Section 19,17,20",
+    "numbers_ok": true,
+    "overlap": 0.667,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ", which helps to provide such education"
+   }
+  ],
+  "faithfulness_auto": 1.0,
+  "faithfulness_audited": 1.0,
+  "coverage": 1.0,
+  "reverse_rel": 0.667,
+  "cov_missed": []
+ },
+ {
+  "id": "Q8",
+  "recall": 0.5,
+  "precision": 0.167,
+  "exp_found": [
+   "factsheet2020:6",
+   "factsheet2020:7"
+  ],
+  "exp_missed": [
+   "act2018:6",
+   "act2018:7"
+  ],
+  "refused": false,
+  "claims": [
+   {
+    "tag": "Factsheet Section 6,7",
+    "numbers_ok": true,
+    "overlap": 0.923,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "ublic buildings or structures to be modified and accessible to persons with disabilities, including those on wheelchairs"
+   }
+  ],
+  "faithfulness_auto": 1.0,
+  "faithfulness_audited": 1.0,
+  "coverage": 0.25,
+  "reverse_rel": 1.0,
+  "cov_missed": [
+   "compliance",
+   "long",
+   "transitional"
+  ]
+ },
+ {
+  "id": "Q9",
+  "recall": 0.5,
+  "precision": 0.167,
+  "exp_found": [
+   "constitution1999:17"
+  ],
+  "exp_missed": [
+   "constitution1999:34"
+  ],
+  "refused": false,
+  "claims": [
+   {
+    "tag": "Constitution s. 17",
+    "numbers_ok": true,
+    "overlap": 0.857,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": "The Constitution states that the State social order is founded on ideals of Equality"
+   },
+   {
+    "tag": "Constitution s. 17",
+    "numbers_ok": true,
+    "overlap": 0.875,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". It also states that every citizen shall have equality of rights, obligations and opportunities before the law"
+   },
+   {
+    "tag": "Constitution s. 17",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": false,
+    "supported_audited": true,
+    "claim_tail": ". The sanctity of the human person shall be recognised and human dignity shall"
+   },
+   {
+    "tag": "Constitution s. 33",
+    "numbers_ok": true,
+    "overlap": 1.0,
+    "supported_auto": true,
+    "manual_flag": true,
+    "supported_audited": false,
+    "claim_tail": ". There is a Right to dignity of human persons"
+   }
+  ],
+  "faithfulness_auto": 1.0,
+  "faithfulness_audited": 0.75,
+  "coverage": 0.6,
+  "reverse_rel": 0.667,
+  "cov_missed": [
+   "does",
+   "guarantee"
+  ]
+ },
+ {
+  "id": "Q10",
+  "recall": 1.0,
+  "precision": 0.167,
+  "exp_found": [
+   "constitution1999:46"
+  ],
+  "exp_missed": [],
+  "refused": true,
+  "faithfulness_auto": 0.0,
+  "faithfulness_audited": 0.0,
+  "coverage": null,
+  "claims": []
+ }
+]

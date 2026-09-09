@@ -1,0 +1,84 @@
+====================================================================================================
+Q1 | refused: False | llm: True | cites: ['Factsheet general', 'Factsheet Section 2', 'Factsheet Section 1', 'Factsheet Section 1', 'Factsheet Section 1', 'Factsheet Section 1', 'Factsheet Section 2']
+TOP: [(0.359, 'factsheet2020', 'general'), (0.206, 'factsheet2020', 'Section 2'), (0.197, 'constitution1999', 's. 13'), (0.18, 'act2018', 'general'), (0.137, 'factsheet2020', 'Section 1'), (0.121, 'act2018', 'cl. 56')]
+CITE_CHECK: [{'tag': 'Factsheet general', 'number_ok': True}, {'tag': 'Factsheet Section 2', 'number_ok': True}, {'tag': 'Factsheet Section 1', 'number_ok': True}, {'tag': 'Factsheet Section 1', 'number_ok': True}, {'tag': 'Factsheet Section 1', 'number_ok': True}, {'tag': 'Factsheet Section 1', 'number_ok': True}, {'tag': 'Factsheet Section 2', 'number_ok': True}]
+ANSWER: The Discrimination against Persons with Disabilities (Prohibition) Act outlaws discrimination on the basis of oneÆs physical, mental or sensory impairment [Factsheet general]. The Act outlaws discrimination in its totality and under any manner or circumstance [Factsheet Section 2]. Specifically, it prohibits the discrimination of a person on the ground of his/her disability in section 1(1) [Factsheet Section 1].
+
+A body corporate that discriminates on this ground is subject to a fine of N1,000,000 [Factsheet Section 1]. An individual is liable to pay a N100,000 fine, face a six months imprisonment term, or both, as stated in section 1(2) [Factsheet Section 1]. A civil action may also be brought by the person discriminated against [Factsheet Section 1], [Factsheet Section 2].
+
+====================================================================================================
+Q2 | refused: False | llm: True | cites: ['Act cl. 3', 'Factsheet Section 3', 'Act cl. 4', 'Factsheet Section 6', 'Act cl. 6']
+TOP: [(0.178, 'factsheet2020', 'Section 6'), (0.14, 'act2018', 'cl. 3'), (0.139, 'factsheet2020', 'Section 3'), (0.131, 'act2018', 'cl. 6'), (0.12, 'constitution1999', 's. 4'), (0.116, 'constitution1999', 's. 44')]
+CITE_CHECK: [{'tag': 'Act cl. 3', 'number_ok': True}, {'tag': 'Factsheet Section 3', 'number_ok': True}, {'tag': 'Act cl. 4', 'number_ok': True}, {'tag': 'Factsheet Section 6', 'number_ok': True}, {'tag': 'Act cl. 6', 'number_ok': True}]
+ANSWER: Yes, public buildings are required to be accessible. A person with disability has the right to access the physical environment and buildings on an equal basis with others [Act cl. 3], [Factsheet Section 3]. Public buildings shall be constructed with necessary accessibility aids such as lifts (where necessary), ramps, and other facilities to make them accessible and usable by persons with disabilities [Act cl. 4]. All public buildings or structures must be modified to be accessible to persons with disabilities, including those on wheelchairs, within a five-year transitory period [Factsheet Section 6], [Act cl. 6].
+
+====================================================================================================
+Q3 | refused: False | llm: True | cites: ['Act cl. 29', 'Factsheet general', 'Act cl. 29']
+TOP: [(0.428, 'factsheet2020', 'general'), (0.232, 'act2018', 'cl. 29'), (0.203, 'factsheet2020', 'Section 22'), (0.191, 'act2018', 'general'), (0.176, 'factsheet2020', 'Section 39'), (0.173, 'act2018', 'cl. 31')]
+CITE_CHECK: [{'tag': 'Act cl. 29', 'number_ok': True}, {'tag': 'Factsheet general', 'number_ok': True}, {'tag': 'Act cl. 29', 'number_ok': True}]
+ANSWER: All employers of labour in public organisations shall, as much as possible, have persons with disabilities constituting at least 5% of their employment [Act cl. 29]. This is also mentioned as 5% of persons with disabilities in their employment [Factsheet general]. If this provision is violated, the organisation is liable to N50,000 damages payable to the affected person with disability [Act cl. 29].
+
+====================================================================================================
+Q4 | refused: False | llm: True | cites: ['Act cl. 31', 'Act general', 'Factsheet Section 31', 'Act cl. 31', 'Act general']
+TOP: [(0.59, 'act2018', 'cl. 31'), (0.323, 'act2018', 'general'), (0.313, 'factsheet2020', 'Section 30'), (0.31, 'factsheet2020', 'Section 22'), (0.291, 'factsheet2020', 'Section 39'), (0.188, 'act2018', 'cl. 1')]
+CITE_CHECK: [{'tag': 'Act cl. 31', 'number_ok': True}, {'tag': 'Act general', 'number_ok': True}, {'tag': 'Factsheet Section 31', 'number_ok': True}, {'tag': 'Act cl. 31', 'number_ok': True}, {'tag': 'Act general', 'number_ok': True}]
+ANSWER: Yes, there is a National Commission for Persons with Disabilities [Act cl. 31]. This Commission is established by the Act [Act general], [Factsheet Section 31], and is to be placed under the Presidency [Act cl. 31]. The Act provides for the establishment of the National Commission for Persons with Disabilities [Act general].
+
+====================================================================================================
+Q5 | refused: True | llm: True | cites: []
+TOP: [(0.211, 'constitution1999', 's. 36'), (0.155, 'factsheet2020', 'general'), (0.154, 'constitution1999', 's. 36'), (0.154, 'constitution1999', 's. 318'), (0.117, 'factsheet2020', 'Section 2'), (0.109, 'factsheet2020', 'general')]
+CITE_CHECK: None
+ANSWER: I can't answer this from the Disability Act 2018, the 1999 Constitution, or the factsheet I have. For help with your question, please contact the DRAC Toll-Free helpline 08000-3000-100 or DRAC WhatsApp 08000-3000-10.
+
+====================================================================================================
+Q6 | refused: False | llm: True | cites: ['Factsheet general', 'Factsheet Section 10', 'Factsheet section 10', 'Act cl. 2', 'Act cl. 2', 'Factsheet section 10', 'Act cl. 2', 'Factsheet section 10']
+TOP: [(0.172, 'constitution1999', 's. 13'), (0.169, 'factsheet2020', 'section 10'), (0.149, 'act2018', 'cl. 2'), (0.129, 'factsheet2020', 'Section 10'), (0.126, 'factsheet2020', 'general'), (0.124, 'constitution1999', 's. 2')]
+CITE_CHECK: [{'tag': 'Factsheet general', 'number_ok': True}, {'tag': 'Factsheet Section 10', 'number_ok': True}, {'tag': 'Factsheet section 10', 'number_ok': True}, {'tag': 'Act cl. 2', 'number_ok': True}, {'tag': 'Act cl. 2', 'number_ok': True}, {'tag': 'Factsheet section 10', 'number_ok': True}, {'tag': 'Act cl. 2', 'number_ok': True}, {'tag': 'Factsheet section 10', 'number_ok': True}]
+ANSWER: Yes, the Act covers access to vehicles and transport.
+
+The Discrimination against Persons with Disabilities (Prohibition) Act outlaws discrimination on the basis of oneÆs physical, mental or sensory impairment [Factsheet general]. The Act mandates government providers to make provisions for lifts, ramps and other accessibility aids that enhance the accessibility of their vehicles, parks and bus stops to persons with disabilities -section 10 [Factsheet Section 10]. Every public vehicle is mandated to have functional audible and visual display of their destination within five years of commencement of this Act - section 10(2) [Factsheet section 10], [Act cl. 2].
+
+Transport service providers shall make provisions for lifts, ramps and other accessibility aids to enhance the accessibility of their vehicles, parks and bus stops to persons with disabilities including those on wheelchairs, as stated in section 11(1) [Act cl. 2], [Factsheet section 10]. Lifts, ramps and all other accessibility equipment in or for vehicles, and at parks or bus stops, shall be maintained in operational condition, as per section 11(2) [Act cl. 2]. Section 11 also mandates the regular and frequent maintenance of accessibility aids and equipment in vehicles [Factsheet section 10].
+
+====================================================================================================
+Q7 | refused: False | llm: True | cites: ['Factsheet Section 17', 'Factsheet Section 17', 'Factsheet Section 17', 'Factsheet Section 19', 'Act cl. 20', 'Act cl. 20', 'Act cl. 20', 'Factsheet Section 19']
+TOP: [(0.44, 'act2018', 'cl. 16'), (0.37, 'factsheet2020', 'Section 19'), (0.288, 'act2018', 'cl. 16'), (0.234, 'factsheet2020', 'Section 17'), (0.202, 'act2018', 'cl. 20'), (0.202, 'constitution1999', 's. 27')]
+CITE_CHECK: [{'tag': 'Factsheet Section 17', 'number_ok': True}, {'tag': 'Factsheet Section 17', 'number_ok': True}, {'tag': 'Factsheet Section 17', 'number_ok': True}, {'tag': 'Factsheet Section 19', 'number_ok': True}, {'tag': 'Act cl. 20', 'number_ok': True}, {'tag': 'Act cl. 20', 'number_ok': True}, {'tag': 'Act cl. 20', 'number_ok': True}, {'tag': 'Factsheet Section 19', 'number_ok': True}]
+ANSWER: Children with disabilities have several educational rights:
+
+A person with disability has an unfettered right to education without discrimination or segregation in any form [Act cl. 16 cl. 17 (1)]. This entitles a person with disability to a right to education free from discrimination [Factsheet Section 17]. A person with disability is entitled to free education up to secondary level [Factsheet Section 17]. The National Commission for Persons with Disabilities is mandated to provide educational assistive devices [Factsheet Section 17]. The provision in Section 17 is further complemented by Section 18, which provides for inclusiveness of education [Factsheet Section 19].
+
+Government shall ensure that the education of persons with disabilities, particularly children who are blind, deaf, or with multiple disabilities, is delivered in the most appropriate language, mode, and means of communication for the individual [Act cl. 20]. This education should be in environments which maximise academic and social development [Act cl. 20]. This provides for the education of persons with disabilities, especially children [Factsheet Section 19 Section 20].
+
+Additionally, special education personnel are entitled to highly subsidised education [Act cl. 20]. This provision (Section 19) for subsidised education for special education personnel complements the right to free education (Section 17) and inclusiveness (Section 18) [Factsheet Section 19].
+
+====================================================================================================
+Q8 | refused: False | llm: False | cites: []
+TOP: [(0.18, 'constitution1999', 's. 308'), (0.143, 'factsheet2020', 'Section 6'), (0.14, 'constitution1999', 's. 11'), (0.112, 'constitution1999', 's. 2'), (0.099, 'factsheet2020', 'Section 2'), (0.086, 'act2018', 'general')]
+CITE_CHECK: None
+ANSWER: PENDING
+
+====================================================================================================
+Q9 | refused: False | llm: True | cites: ['Constitution s. 17', 'Constitution s. 17', 'Constitution s. 17', 'Constitution s. 33']
+TOP: [(0.222, 'constitution1999', 's. 17'), (0.125, 'constitution1999', 's. 10'), (0.12, 'factsheet2020', 'Section 2'), (0.118, 'constitution1999', 's. 33'), (0.116, 'factsheet2020', 'Section 3'), (0.067, 'act2018', 'cl. 3')]
+CITE_CHECK: [{'tag': 'Constitution s. 17', 'number_ok': True}, {'tag': 'Constitution s. 17', 'number_ok': True}, {'tag': 'Constitution s. 17', 'number_ok': True}, {'tag': 'Constitution s. 33', 'number_ok': True}]
+ANSWER: Yes, the Constitution guarantees dignity and equality. The State social order is founded on ideals of Freedom, Equality and Justice [Constitution s. 17]. Every citizen shall have equality of rights, obligations and opportunities before the law [Constitution s. 17]. The sanctity of the human person shall be recognised and human dignity shall [Constitution s. 17]. There is also a Right to dignity of human persons [Constitution s. 33].
+
+====================================================================================================
+Q10 | refused: False | llm: False | cites: []
+TOP: [(0.308, 'constitution1999', 's. 39'), (0.218, 'constitution1999', 's. 46'), (0.162, 'factsheet2020', 'Section 3'), (0.152, 'factsheet2020', 'Section 39'), (0.14, 'factsheet2020', 'Section 17'), (0.118, 'constitution1999', 's. 217')]
+CITE_CHECK: None
+ANSWER: PENDING
+
+====================================================================================================
+R1-same-vocab | refused: False | llm: False | cites: []
+TOP: [(0.26, 'factsheet2020', 'general'), (0.254, 'constitution1999', 's. 36'), (0.241, 'constitution1999', 's. 33'), (0.196, 'factsheet2020', 'Section 2'), (0.184, 'factsheet2020', 'general'), (0.146, 'act2018', 'cl. 56')]
+CITE_CHECK: None
+ANSWER: PENDING
+
+====================================================================================================
+R2-generic | refused: False | llm: False | cites: []
+TOP: [(0.125, 'constitution1999', 's. 6'), (0.121, 'constitution1999', 's. 6'), (0.0, 'act2018', 'cl. 2'), (0.0, 'act2018', 'cl. 1'), (0.0, 'act2018', 'general'), (0.0, 'constitution1999', 's. 4')]
+CITE_CHECK: None
+ANSWER: PENDING
+

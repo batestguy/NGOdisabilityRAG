@@ -1,0 +1,6 @@
+# Free-tier only. Install in Colab via: %pip install -q -r requirements.txt
+pandas==2.2.*
+scikit-learn>=1.3
+streamlit>=1.32
+faiss-cpu>=1.7      # optional: retrieval spike runs TF-IDF without it
+google-generativeai # optional: Gemini free-tier embeddings/LLM; needs GOOGLE_API_KEY

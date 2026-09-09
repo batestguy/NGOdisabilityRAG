@@ -1,0 +1,566 @@
+[
+ {
+  "question": "What does the Act say about discrimination?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.359
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 2",
+    "score": 0.2065
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 13",
+    "score": 0.1969
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.1798
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 1",
+    "score": 0.1368
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 56,57",
+    "score": 0.1214
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q1"
+ },
+ {
+  "question": "Are public buildings required to be accessible?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 6,7",
+    "score": 0.1777
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 3,4,5",
+    "score": 0.1396
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 3",
+    "score": 0.1394
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 6,7",
+    "score": 0.1305
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 4",
+    "score": 0.1205
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 44",
+    "score": 0.1156
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q2"
+ },
+ {
+  "question": "What employment protections exist for persons with disabilities?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.4284
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 29,30",
+    "score": 0.2316
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 22",
+    "score": 0.2032
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.1909
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 39",
+    "score": 0.1757
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 31",
+    "score": 0.173
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q3"
+ },
+ {
+  "question": "Is there a commission for persons with disabilities?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 31",
+    "score": 0.5897
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.3225
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 30,31",
+    "score": 0.3134
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 22",
+    "score": 0.3101
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 39",
+    "score": 0.2909
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 21,22",
+    "score": 0.1877
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q4"
+ },
+ {
+  "question": "What are the penalties for violating the Act?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 36",
+    "score": 0.2107
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.1546
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 36",
+    "score": 0.1537
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 318",
+    "score": 0.1536
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 2",
+    "score": 0.1166
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.1092
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q5"
+ },
+ {
+  "question": "Does the Act cover access to vehicles and transport?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 13",
+    "score": 0.1722
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 10,11",
+    "score": 0.1694
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 11",
+    "score": 0.1487
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 10",
+    "score": 0.1292
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.1263
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 2",
+    "score": 0.1236
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q6"
+ },
+ {
+  "question": "What rights do children with disabilities have to education?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.4403
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 19,17,20",
+    "score": 0.3704
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 16,17",
+    "score": 0.2878
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 17",
+    "score": 0.2341
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 20",
+    "score": 0.2022
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 27",
+    "score": 0.2018
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q7"
+ },
+ {
+  "question": "How long is the transitional compliance period?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 308",
+    "score": 0.18
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 6,7",
+    "score": 0.1429
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 11",
+    "score": 0.1396
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 2",
+    "score": 0.1121
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 2",
+    "score": 0.0986
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.0856
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q8"
+ },
+ {
+  "question": "Does the Constitution guarantee dignity and equality?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 17",
+    "score": 0.2223
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 10",
+    "score": 0.1249
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 2",
+    "score": 0.1201
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 33",
+    "score": 0.1183
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 3",
+    "score": 0.1156
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 2",
+    "score": 0.0674
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q9"
+ },
+ {
+  "question": "Where can I get legal aid for a disability rights violation?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 39",
+    "score": 0.3083
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 46",
+    "score": 0.2178
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 3",
+    "score": 0.1623
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 39",
+    "score": 0.1522
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 17",
+    "score": 0.1398
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 217",
+    "score": 0.1179
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q10"
+ },
+ {
+  "question": "What does the Act say about maritime shipping insurance?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.2603
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 36",
+    "score": 0.254
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 33",
+    "score": 0.2415
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 2",
+    "score": 0.1963
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.1838
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 56,57",
+    "score": 0.1459
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "R1-same-vocab"
+ },
+ {
+  "question": "How do I bake sourdough bread?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 6",
+    "score": 0.1248
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 6",
+    "score": 0.1211
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 2",
+    "score": 0.0
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 1",
+    "score": 0.0
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.0
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 4",
+    "score": 0.0
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "R2-generic"
+ }
+]

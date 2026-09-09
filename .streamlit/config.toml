@@ -1,0 +1,79 @@
+# DRLCA theme — the ONLY place brand colors live (Streamlit 1.63).
+# Custom CSS in app.py must NOT set colors; it handles spacing/typography/
+# watermark only. Base is light; both [theme.light] and [theme.dark] are
+# defined so the in-app settings menu can switch modes and every element
+# (buttons, sidebar, inputs) stays readable in each mode.
+# Brand: Nigerian green. Body text pairs are WCAG AA on their backgrounds.
+# Fonts: system stacks only (no downloads — Spaces cold-start stays lean).
+
+[server]
+# Required for the watermark: serves ./static/* at /app/static/*.
+enableStaticServing = true
+
+[theme]
+base = "light"
+font = "sans-serif"
+baseFontSize = 16
+baseRadius = "medium"
+buttonRadius = "medium"
+showWidgetBorder = true
+showSidebarBorder = true
+
+# Base section mirrors the light variant so single-mode clients agree.
+primaryColor = "#1a7f37"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f6f8fa"
+textColor = "#1F2328"
+linkColor = "#1a7f37"
+codeTextColor = "#1F2328"
+codeBackgroundColor = "#f6f8fa"
+borderColor = "#d0d7de"
+greenColor = "#1a7f37"
+
+[theme.sidebar]
+backgroundColor = "#f6f8fa"
+secondaryBackgroundColor = "#eaeef2"
+codeBackgroundColor = "#eaeef2"
+textColor = "#1F2328"
+borderColor = "#d0d7de"
+primaryColor = "#1a7f37"
+
+[theme.light]
+primaryColor = "#1a7f37"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f6f8fa"
+textColor = "#1F2328"
+linkColor = "#1a7f37"
+codeTextColor = "#1F2328"
+codeBackgroundColor = "#f6f8fa"
+borderColor = "#d0d7de"
+greenColor = "#1a7f37"
+chartCategoricalColors = ["#1a7f37", "#0969da", "#8250df", "#cf222e", "#bf8700", "#57606a"]
+
+[theme.light.sidebar]
+backgroundColor = "#f6f8fa"
+secondaryBackgroundColor = "#eaeef2"
+codeBackgroundColor = "#eaeef2"
+textColor = "#1F2328"
+borderColor = "#d0d7de"
+primaryColor = "#1a7f37"
+
+[theme.dark]
+primaryColor = "#3fb950"
+backgroundColor = "#0d1117"
+secondaryBackgroundColor = "#161b22"
+textColor = "#e6edf3"
+linkColor = "#3fb950"
+codeTextColor = "#e6edf3"
+codeBackgroundColor = "#161b22"
+borderColor = "#30363d"
+greenColor = "#3fb950"
+chartCategoricalColors = ["#3fb950", "#58a6ff", "#a371f7", "#f85149", "#d29922", "#8b949e"]
+
+[theme.dark.sidebar]
+backgroundColor = "#010409"
+secondaryBackgroundColor = "#161b22"
+codeBackgroundColor = "#0d1117"
+textColor = "#e6edf3"
+borderColor = "#30363d"
+primaryColor = "#3fb950"

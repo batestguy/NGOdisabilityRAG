@@ -1,0 +1,308 @@
+Project Request: Disability Rights Legal & Connection Assistant
+📌 Project Overview
+Project Name: Disability Rights Legal & Connection Assistant (DRLCA)
+
+Request Type: Flexible RAG-based conversational AI system for Nigerian disability rights advocacy
+
+Goal: Build a tool that helps Nigerians with disabilities understand their legal rights and connect with verified support organizations—using only free cloud platforms and open-source tools.
+
+🎯 Core Objectives
+Primary Goal
+Create an accessible, intelligent assistant that empowers persons with disabilities (PWDs) in Nigeria by:
+
+Translating complex legal language from the Disability Act 2018 into plain, understandable answers.
+
+Connecting users to relevant NGOs and helplines based on their specific disability type and location.
+
+Adapting to user needs through accessibility-first design (voice, screen readers, plain language).
+
+Secondary Goal
+Build a flexible, research-friendly system that allows for continuous learning and adaptation as new frameworks and techniques emerge.
+
+📋 Core Features
+Feature 1: Legal Q&A RAG
+Users ask questions about their rights in plain English, Pidgin, or Nigerian languages.
+
+System retrieves relevant sections from the Disability Act and Constitution.
+
+Every answer must include direct citations (e.g., "Section 17(2) of the Disability Act states...").
+
+Plain language toggle for users with cognitive disabilities or low literacy.
+
+Feature 2: NGO & Helpline Connector
+Users state their disability type and location.
+
+System returns a curated list of relevant organizations with contact details.
+
+National helplines always displayed at the top.
+
+Results should be filterable and sortable.
+
+Feature 3: Intent Router
+System automatically detects whether user needs legal information or NGO connections.
+
+Routes queries to the appropriate subsystem.
+
+Feature 4: Accessibility-First Interface
+Voice input/output support.
+
+Screen reader compatibility.
+
+High contrast and font scaling options.
+
+Keyboard navigable.
+
+Simple, clean UI appropriate for users with varying digital literacy.
+
+🛠️ Technical Requirements (All Free Tier)
+Platform Constraints
+Requirement	Acceptable Solutions
+Development Environment	Google Colab, Kaggle Notebooks
+Deployment	Hugging Face Spaces, Streamlit Cloud
+Cost	$0.00 - Everything must use free tiers
+Version Control	GitHub (public repository)
+Framework Flexibility
+This project should be built with research and adaptability in mind. The framework choices are open—prioritize:
+
+Active community support and regular updates.
+
+Clear documentation and learning resources.
+
+Ease of experimentation with new techniques.
+
+Compatibility with free cloud platforms.
+
+Recommended (but not mandatory) stack:
+
+Orchestration: LangChain, LlamaIndex, or custom pipeline
+
+Vector Database: FAISS, ChromaDB, or Qdrant (free tier)
+
+Embeddings: sentence-transformers, BGE, or OpenAI (free tier)
+
+LLM: Groq, Gemini API, Mistral, or Cohere (free tier)
+
+UI: Gradio or Streamlit
+
+Evaluation: RAGAS, DeepEval, or custom metrics
+
+📄 Data Sources
+Required Documents
+Document	Source	Priority
+Disability Act 2018	lawnigeria.com	HIGH
+1999 Constitution (FRN)	TAF Africa publications	HIGH
+Disability Act Easy-to-Read Version	JONAPWD LinkedIn	MEDIUM
+Required NGO Database
+Create a CSV with the following fields (minimum 10 organizations):
+
+text
+name, disability_focus, location, phone, email, website, description
+Required Helplines (Always Display)
+Service	Number
+DRAC Toll-Free	08000-3000-100
+DRAC WhatsApp	08000-3000-10
+🔬 Research & Learning Requirements
+Technical Exploration Areas
+While building, research and document learnings on:
+
+Chunking Strategies
+
+Experiment with different chunk sizes and overlap.
+
+Test semantic chunking vs. recursive character splitting.
+
+Document what works best for legal documents.
+
+Retrieval Techniques
+
+Compare semantic vs. hybrid (semantic + keyword) search.
+
+Experiment with query rewriting (HyDE).
+
+Test two-stage retrieval (dense + sparse).
+
+Evaluation Methods
+
+Implement RAGAS metrics (faithfulness, answer relevancy, context relevancy).
+
+Try DeepEval or other evaluation frameworks.
+
+Document trade-offs.
+
+Multi-Language Support
+
+Test translation models (Helsinki-NLP OPUS).
+
+Experiment with multilingual embeddings.
+
+Document challenges and solutions.
+
+Accessibility Features
+
+Research WCAG guidelines.
+
+Test with actual screen readers (NVDA, VoiceOver).
+
+Document accessibility improvements.
+
+Learning Journal
+Maintain a learning journal (in the GitHub repo) covering:
+
+What worked and what didn't.
+
+Which frameworks were easiest to implement.
+
+Performance benchmarks of different approaches.
+
+Key lessons learned.
+
+🚀 Implementation Phases (Flexible Timeline)
+Phase 1: Foundation (Week 1-2)
+□ Set up free cloud environment (Colab/Kaggle).
+□ Download and clean legal documents.
+□ Create NGO CSV database.
+□ Build basic document loader and chunking.
+□ Create vector store and test retrieval.
+Phase 2: Core RAG (Week 2-3)
+□ Connect LLM with retrieval.
+□ Build citation-forcing prompt.
+□ Test with sample legal questions.
+□ Evaluate initial results.
+Phase 3: NGO Connector (Week 3-4)
+□ Build NGO lookup function.
+□ Implement fuzzy matching for disabilities/locations.
+□ Integrate into main workflow.
+□ Test with sample queries.
+Phase 4: Intent Routing (Week 4)
+□ Build keyword-based intent classifier.
+□ Implement LLM-based intent routing (optional).
+□ Connect both subsystems.
+Phase 5: UI & Accessibility (Week 4-5)
+□ Build simple interface with Gradio/Streamlit.
+□ Add voice input/output.
+□ Implement accessibility features.
+□ Test with screen readers.
+Phase 6: Evaluation & Polish (Week 5-6)
+□ Run RAGAS evaluation.
+□ Optimize retrieval.
+□ Write documentation.
+□ Deploy to Hugging Face Spaces.
+Phase 7: Research & Documentation (Ongoing)
+□ Document learnings from each phase.
+□ Compare different approaches tried.
+□ Note potential improvements for future.
+✅ Success Criteria
+Minimum Viable Product
+Criterion	Requirement
+Functional RAG	Answers 10 legal questions with citations
+NGO Connector	Matches 5 different disabilities to relevant orgs
+Intent Routing	Correctly routes 8/10 queries
+Deployment	Live on Hugging Face Spaces
+Documentation	Complete README with setup instructions
+Stretch Goals
+Multi-language support (Pidgin, Yoruba, Hausa, Igbo).
+
+Offline-capable version.
+
+User feedback collection.
+
+Integration with WhatsApp.
+
+Evaluation Metrics
+Metric	Tool	Target
+Faithfulness	RAGAS	> 0.85
+Answer Relevancy	RAGAS	> 0.80
+Context Relevancy	RAGAS	> 0.75
+Citation Accuracy	Manual	100%
+📂 Deliverables
+Code
+□ Complete working code in public GitHub repository.
+□ Google Colab/Kaggle notebook that runs end-to-end.
+□ Clean, commented code.
+Data
+□ Processed legal documents (PDF → TXT).
+□ NGO CSV database (verified contacts).
+□ Sample evaluation questions.
+Documentation
+□ README.md (setup, usage, demo link).
+□ Learning journal (what worked, what didn't).
+□ Architecture diagram.
+□ Demo video (2-3 minutes).
+Deployment
+□ Live application on Hugging Face Spaces.
+□ Accessible link for testing.
+🎓 Evaluation Criteria
+Area	Weight	What We're Looking For
+Functionality	30%	Does it work? Can users get accurate answers and connections?
+Research Depth	25%	Have you explored different approaches? Documented trade-offs?
+Code Quality	15%	Is the code clean, modular, and well-commented?
+Documentation	15%	Is it clear how to set up, run, and extend the project?
+Accessibility	10%	Does the interface work for users with disabilities?
+Innovation	5%	Any novel approaches or clever solutions?
+🔗 Resources
+Type	Links
+Legal Docs	Disability Act 2018, TAF Africa
+NGOs	CCD, JONAPWD
+Frameworks	LangChain, LlamaIndex
+LLMs	Groq, Google Gemini
+Evaluation	RAGAS, DeepEval
+Deployment	Hugging Face Spaces, Streamlit Cloud
+📝 Flexibility Guidelines
+What Can Change
+Frameworks and libraries - choose what works best.
+
+Chunking strategy - experiment and document.
+
+Retrieval method - try different approaches.
+
+UI design - prioritize accessibility over aesthetics.
+
+What Must Stay Fixed
+Core purpose - disability rights legal + NGO connection.
+
+Free tier only - no paid services.
+
+Citation requirement - every legal answer must cite sources.
+
+NGO database - must include verified Nigerian organizations.
+
+Accessibility - must work with screen readers and have voice input.
+
+Research Areas to Document
+Why you chose specific frameworks.
+
+Trade-offs between different approaches.
+
+Performance benchmarks.
+
+Lessons learned and future improvements.
+
+✍️ Final Notes
+This project should be:
+
+Impactful - It should genuinely help people with disabilities in Nigeria.
+
+Technical - It should demonstrate strong data science and engineering skills.
+
+Research-driven - It should show you can learn, experiment, and adapt.
+
+Accessible - It should work for the people it aims to serve.
+
+Well-documented - Anyone should be able to understand and extend it.
+
+Ready to build? Let's create something that makes a difference! 🚀
+
+📋 Quick Reference Checklist
+□ All code runs on free platforms (Colab/Kaggle)
+□ Legal documents loaded and chunked
+□ NGO database (10+ orgs) created
+□ RAG pipeline with citations built
+□ NGO connector function working
+□ Intent router distinguishing legal vs. help queries
+□ UI with accessibility features (voice, screen reader)
+□ RAGAS evaluation completed
+□ Deployed to Hugging Face Spaces
+□ Demo video recorded
+□ GitHub README complete
+□ Learning journal documenting research & trade-offs
+□ LinkedIn post sharing project

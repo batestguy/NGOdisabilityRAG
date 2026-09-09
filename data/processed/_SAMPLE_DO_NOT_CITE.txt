@@ -1,0 +1,15 @@
+SAMPLE PLACEHOLDER — DO NOT CITE. Replace with real Sections from the
+Disability Act 2018 (see data/raw/SOURCES.md). Present only so chunking and
+retrieval can be tested end-to-end before legal documents are downloaded.
+
+Section 1 SAMPLE. This placeholder stands in for the structure of the Act's
+prohibition of discrimination. The real text must be copied from the published
+Act on lawnigeria.com before any user-facing answer is generated.
+
+Section 2 SAMPLE. Topics the real document covers include access to public
+premises, employment quotas, and accessibility of vehicles. Verify each
+section number and wording against the published Act.
+
+Section 3 SAMPLE. The real Act provides for a National Commission for Persons
+with Disabilities and transitional compliance periods. Confirm all details
+from the official source before evaluation.
