@@ -3,7 +3,7 @@
 **Env:** `C:\conda-envs\drlca-rag\python.exe` (py 3.11). Rebuild: `requirements-rag.txt`.
 Never install into `ds-general` / `base` / system Python. Full machine notes: `ENVIRONMENTS.md`.
 Local app (if server still up): http://localhost:8501 (`python -m streamlit run app.py`).
-Git: repo initialized, 3 local commits, tree clean — NOT yet pushed (needs owner creds).
+Git: https://github.com/batestguy/NGOdisabilityRAG (`main`, pushed 2026-09-09, tree clean).
 
 **State:** Phases 01–05 DONE (all suites green: bench, 03 16/16+7/7, 04, 05 80/80).
 Phase 06 custom eval DONE (recall 0.800, audited faithfulness 0.875; fix A applied).
@@ -28,9 +28,8 @@ Helplines always on top: DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp `08000-3
     the judge decides answer-relevancy. `ragas` is NOT installed (env protection);
     install only in `drlca-rag`, or use the Gemini-judge-by-hand pattern. Then:
     two-run check, manual-100% re-confirm → close Phase 06.
-3. **Owner-side (needs your accounts/voice, no quota):** GitHub push
-    (`git remote add origin <url>` + push) → HF Space (Streamlit SDK, Python ≥3.10)
-    → `GOOGLE_API_KEY` in Space Secrets → smoke (3 legal + 2 help, helplines,
+3. **Owner-side (needs your accounts/voice, no quota):** HF Space (Streamlit
+  SDK) → `GOOGLE_API_KEY` in Space Secrets → smoke (3 legal + 2 help, helplines,
     cites) → paste link in README → 2–3 min demo video → NVDA / keyboard-only /
     live-mic gates → LinkedIn post.
 
