@@ -265,6 +265,28 @@ Replace SAMPLE with real Act text → re-run notebook → wire citation prompt +
   relevancy: custom mixed (judge pending) · [ ] manual-100% re-confirm (needs LLM
   rerun post-fix-A) · [ ] two consecutive runs (quota). Phase 06 IN PROGRESS.
 
+## 2026-09-09 — Post-fix-A LLM run: 8/12 answered, quota died mid-run (20/day CONFIRMED)
+- File: `scripts/test_phase02_results_cite-strict-v2-fixA_2026-09-09.json`. The API
+  429 names the limit verbatim: GenerateRequestsPerDayPerProjectPerModel-FreeTier,
+  quotaValue 20, gemini-2.5-flash. Q1-Q7 answered, Q8+Q9 hit 429 (PENDING, honest),
+  Q10 answered, R1/R2 429-pending. Budget lesson: full 12-call passes must start
+  the day (probe + pass = 13); judge runs (~30) need a dedicated quota day.
+- Verdicts (8 answered, all cite_checks True, 0 invented numbers): Q1 PASS (N100k +
+  s.1(2), tighter than v2) · Q2 PASS · Q3 PASS · Q4 PASS + padding note (core
+  cl.31/Presidency stable; run adds cited-but-unasked certificate S22/cl.21,22 +
+  powers S39 — verbosity variance, no hallucination) · Q5 correct refusal (3rd run
+  running: retrieval miss confirmed again, Phase 06 dense/hybrid material) ·
+  Q6 PASS (cl.11 stable 3 runs) · Q7 PASS (merged-tag ban holds 3 runs) ·
+  Q10 PASS — VARIANCE RESOLVED: quotes verbatim from the s.46 chunk ("indigent
+  citizen…legal practitioner", "legal aid is real"); s.39 tag grounded in that
+  chunk's s.46 TOC-overflow line. Refuse,refuse→answer across 3 identical contexts
+  = LLM-layer flakiness proven and now settled correct.
+- Two-run check (v2 vs fix-A, 7 overlapping answered): verdicts stable; only
+  variance is Q4 padding + Q10 flip-to-correct.
+- Still pending (next reset): Q8/Q9/R1/R2 retry (4 calls — Q9 is the fix-A answer
+  confirmation) + RAGAS-judge day. Eval script stays pointed at the complete v2
+  transcript until a complete post-fix transcript exists (no partial re-pointing).
+
 ## 2026-09-09 — Phase 07 deploy prep (no quota needed)
 - requirements.txt slimmed to runtime (streamlit/pandas/sklearn/google-genai/
   mic-recorder/SpeechRecognition; faiss/onnx/rapidocr/pymupdf REMOVED — grep

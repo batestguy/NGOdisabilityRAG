@@ -1,0 +1,795 @@
+[
+ {
+  "question": "What does the Act say about discrimination?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.354
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 2",
+    "score": 0.2636
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 13",
+    "score": 0.1973
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 1",
+    "score": 0.186
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.1798
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 1",
+    "score": 0.1288
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": true,
+  "llm_error": null,
+  "citations": [
+   "Factsheet general",
+   "Factsheet Section 2",
+   "Factsheet Section 1",
+   "Act cl. 1",
+   "Act cl. 1",
+   "Factsheet Section 1",
+   "Act cl. 1",
+   "Factsheet Section 1",
+   "Act cl. 1",
+   "Factsheet Section 2",
+   "Factsheet Section 1"
+  ],
+  "cite_check": [
+   {
+    "tag": "Factsheet general",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 2",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 1",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 1",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 1",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 1",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 1",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 1",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 1",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 2",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 1",
+    "number_ok": true
+   }
+  ],
+  "answer_excerpt": "The Discrimination against Persons with Disabilities (Prohibition) Act outlaws discrimination on the basis of one\u2019s physical, mental or sensory impairment [Factsheet general]. The Act outlaws discrimination in its totality and under any manner or circumstance [Factsheet Section 2]. It prohibits the discrimination of a person on the ground of his/her disability- section 1(1) [Factsheet Section 1]. A person with disability shall not be discriminated against on the ground of his disability [Act cl. 1]. A person who contravenes subsection (1) commits an offence and is liable on conviction [Act cl....",
+  "answer_full": "The Discrimination against Persons with Disabilities (Prohibition) Act outlaws discrimination on the basis of one\u2019s physical, mental or sensory impairment [Factsheet general]. The Act outlaws discrimination in its totality and under any manner or circumstance [Factsheet Section 2]. It prohibits the discrimination of a person on the ground of his/her disability- section 1(1) [Factsheet Section 1]. A person with disability shall not be discriminated against on the ground of his disability [Act cl. 1].\n\nA person who contravenes subsection (1) commits an offence and is liable on conviction [Act cl. 1]. If the person is a body corporate, they are subject to a fine of N1,000,000 [Factsheet Section 1], [Act cl. 1]. If the person is an individual, they are liable to pay a N100,000 fine, face a six months imprisonment term or both- section 1(2) [Factsheet Section 1], or a fine of N100,000 or sixmonths impr [Act cl. 1]. A civil action may also be brought by the person discriminated against [Factsheet Section 2], [Factsheet Section 1].",
+  "id": "Q1"
+ },
+ {
+  "question": "Are public buildings required to be accessible?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 6,7",
+    "score": 0.2807
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 4",
+    "score": 0.2339
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 3,4,5",
+    "score": 0.2324
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 6,7",
+    "score": 0.2096
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 4",
+    "score": 0.1973
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 7",
+    "score": 0.1537
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": true,
+  "llm_error": null,
+  "citations": [
+   "Act cl. 3",
+   "Act cl. 4",
+   "Act cl. 6,7",
+   "Factsheet Section 6,7",
+   "Act cl. 6,7",
+   "Factsheet Section 7",
+   "Act cl. 6,7"
+  ],
+  "cite_check": [
+   {
+    "tag": "Act cl. 3",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 4",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 6,7",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 6,7",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 6,7",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 7",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 6,7",
+    "number_ok": true
+   }
+  ],
+  "answer_excerpt": "Yes, public buildings are required to be accessible. A person with disability has the right to access the physical environment and buildings on an equal basis with others [Act cl. 3]. A public building shall be constructed with necessary accessibility aids to make them accessible to and usable by persons with disabilities [Act cl. 4]. There is a five-year transitory period from the commencement of the Act, within which all public buildings and structures, whether immovable, movable or automobile, that were inaccessible to persons with disabilities shall be modified to be accessible and usable ...",
+  "answer_full": "Yes, public buildings are required to be accessible. A person with disability has the right to access the physical environment and buildings on an equal basis with others [Act cl. 3]. A public building shall be constructed with necessary accessibility aids to make them accessible to and usable by persons with disabilities [Act cl. 4]. There is a five-year transitory period from the commencement of the Act, within which all public buildings and structures, whether immovable, movable or automobile, that were inaccessible to persons with disabilities shall be modified to be accessible and usable by them, including those on wheelchairs [Act cl. 6,7] [Factsheet Section 6,7]. Before erecting any public structure, its plan shall be scrutinised by the relevant authority to ensure it conforms with the building code [Act cl. 6,7] and includes accessibility features for persons with disabilities [Factsheet Section 7]. A government or government agency, body or individual responsible for the approval of building plans shall not approve the plan of a public building if it does not make provision for accessibility facilities [Act cl. 6,7].",
+  "id": "Q2"
+ },
+ {
+  "question": "What employment protections exist for persons with disabilities?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.2967
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 29,30",
+    "score": 0.1714
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 23,24,25",
+    "score": 0.1507
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 22",
+    "score": 0.1408
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.1406
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 31",
+    "score": 0.1274
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": true,
+  "llm_error": null,
+  "citations": [
+   "Act cl. 29,30"
+  ],
+  "cite_check": [
+   {
+    "tag": "Act cl. 29,30",
+    "number_ok": true
+   }
+  ],
+  "answer_excerpt": "All employers of labour in public organisations shall, as much as possible, have persons with disabilities constituting at least 5% of their employment [Act cl. 29,30].",
+  "answer_full": "All employers of labour in public organisations shall, as much as possible, have persons with disabilities constituting at least 5% of their employment [Act cl. 29,30].",
+  "id": "Q3"
+ },
+ {
+  "question": "Is there a commission for persons with disabilities?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 31",
+    "score": 0.5897
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.3225
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 30,31",
+    "score": 0.3174
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 22",
+    "score": 0.3107
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 39",
+    "score": 0.291
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 21,22",
+    "score": 0.1879
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": true,
+  "llm_error": null,
+  "citations": [
+   "Act cl. 31",
+   "Act general",
+   "Factsheet Section 30,31",
+   "Act cl. 31",
+   "Act general",
+   "Factsheet Section 22",
+   "Act cl. 21,22",
+   "Factsheet Section 39"
+  ],
+  "cite_check": [
+   {
+    "tag": "Act cl. 31",
+    "number_ok": true
+   },
+   {
+    "tag": "Act general",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 30,31",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 31",
+    "number_ok": true
+   },
+   {
+    "tag": "Act general",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 22",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 21,22",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 39",
+    "number_ok": true
+   }
+  ],
+  "answer_excerpt": "Yes, there is a National Commission for Persons with Disabilities [Act cl. 31]. It is established by the Act [Act general], [Factsheet Section 30,31] and is placed under the Presidency [Act cl. 31]. The Commission is responsible for the education, health care, social, economic, and civil rights of persons with disabilities [Act general]. A Permanent Certificate of Disability is obtained from the National Commission for Persons with Disabilities [Factsheet Section 22], [Act cl. 21,22]. The Commission has the power to do any lawful thing to facilitate its functions [Factsheet Section 39].",
+  "answer_full": "Yes, there is a National Commission for Persons with Disabilities [Act cl. 31]. It is established by the Act [Act general], [Factsheet Section 30,31] and is placed under the Presidency [Act cl. 31]. The Commission is responsible for the education, health care, social, economic, and civil rights of persons with disabilities [Act general]. A Permanent Certificate of Disability is obtained from the National Commission for Persons with Disabilities [Factsheet Section 22], [Act cl. 21,22]. The Commission has the power to do any lawful thing to facilitate its functions [Factsheet Section 39].",
+  "id": "Q4"
+ },
+ {
+  "question": "What are the penalties for violating the Act?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 36",
+    "score": 0.1412
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.1213
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 143",
+    "score": 0.1164
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 188",
+    "score": 0.1112
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 2",
+    "score": 0.0904
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 39",
+    "score": 0.0873
+   }
+  ],
+  "refused": true,
+  "refusal_layer": "llm-no-answer",
+  "llm_used": true,
+  "llm_error": null,
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": "I can't answer this from the Disability Act 2018, the 1999 Constitution, or the factsheet I have. For help with your question, please contact the DRAC Toll-Free helpline 08000-3000-100 or DRAC WhatsApp 08000-3000-10.",
+  "answer_full": "I can't answer this from the Disability Act 2018, the 1999 Constitution, or the factsheet I have. For help with your question, please contact the DRAC Toll-Free helpline 08000-3000-100 or DRAC WhatsApp 08000-3000-10.",
+  "id": "Q5"
+ },
+ {
+  "question": "Does the Act cover access to vehicles and transport?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 10,11",
+    "score": 0.1759
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 13",
+    "score": 0.1672
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 11",
+    "score": 0.1488
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 10",
+    "score": 0.1268
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.1241
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 2",
+    "score": 0.1113
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": true,
+  "llm_error": null,
+  "citations": [
+   "Factsheet Section 10",
+   "Factsheet Section 10,11",
+   "Act cl. 11",
+   "Act cl. 11",
+   "Factsheet Section 10,11"
+  ],
+  "cite_check": [
+   {
+    "tag": "Factsheet Section 10",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 10,11",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 11",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 11",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 10,11",
+    "number_ok": true
+   }
+  ],
+  "answer_excerpt": "Yes, the Act covers access to vehicles and transport. The Discrimination against Persons with Disabilities (Prohibition) Act mandates government providers to make provisions for lifts, ramps, and other accessibility aids that enhance the accessibility of their vehicles, parks, and bus stops to persons with disabilities [Factsheet Section 10]. Every public vehicle is mandated to have functional audible and visual display of their destination within five years of the Act's commencement [Factsheet Section 10,11]. Transport service providers are required to make provisions for lifts, ramps, and ot...",
+  "answer_full": "Yes, the Act covers access to vehicles and transport.\n\nThe Discrimination against Persons with Disabilities (Prohibition) Act mandates government providers to make provisions for lifts, ramps, and other accessibility aids that enhance the accessibility of their vehicles, parks, and bus stops to persons with disabilities [Factsheet Section 10]. Every public vehicle is mandated to have functional audible and visual display of their destination within five years of the Act's commencement [Factsheet Section 10,11]. Transport service providers are required to make provisions for lifts, ramps, and other accessibility facilities to enhance the accessibility of their vehicles, parks, and bus stops to persons with disabilities, including those on wheelchairs [Act cl. 11]. Lifts, ramps, and all other accessibility equipment in or for vehicles, and at parks or bus stops, shall be maintained in operational condition [Act cl. 11]. Section 11(4) also places a duty of care on a driver [Factsheet Section 10,11].",
+  "id": "Q6"
+ },
+ {
+  "question": "What rights do children with disabilities have to education?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.4399
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 19,17,20",
+    "score": 0.3713
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 16,17",
+    "score": 0.2879
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 17",
+    "score": 0.2332
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 20",
+    "score": 0.2023
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 27",
+    "score": 0.192
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": true,
+  "llm_error": null,
+  "citations": [
+   "Act cl. 16,17",
+   "Factsheet Section 17",
+   "Factsheet Section 17",
+   "Factsheet Section 17",
+   "Act cl. 20",
+   "Factsheet Section 19,17,20",
+   "Factsheet Section 19,17,20"
+  ],
+  "cite_check": [
+   {
+    "tag": "Act cl. 16,17",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 17",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 17",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 17",
+    "number_ok": true
+   },
+   {
+    "tag": "Act cl. 20",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 19,17,20",
+    "number_ok": true
+   },
+   {
+    "tag": "Factsheet Section 19,17,20",
+    "number_ok": true
+   }
+  ],
+  "answer_excerpt": "Children with disabilities have several educational rights. A person with a disability has an unfettered right to education without discrimination or segregation in any form [Act cl. 16,17]. This also entitles a person with disability to a right to education free from discrimination [Factsheet Section 17]. A person with disability is entitled to free education up to secondary level [Factsheet Section 17]. The National Commission for Persons with Disabilities is mandated to provide educational assistive devices [Factsheet Section 17]. The government shall ensure that the education of persons wi...",
+  "answer_full": "Children with disabilities have several educational rights. A person with a disability has an unfettered right to education without discrimination or segregation in any form [Act cl. 16,17]. This also entitles a person with disability to a right to education free from discrimination [Factsheet Section 17]. A person with disability is entitled to free education up to secondary level [Factsheet Section 17]. The National Commission for Persons with Disabilities is mandated to provide educational assistive devices [Factsheet Section 17].\n\nThe government shall ensure that the education of persons with disabilities, particularly children, who are blind, deaf or with multiple disabilities, is delivered in the most appropriate language, mode and means of communication for the individual, and in environments which maximise academic and social development [Act cl. 20]. This also provides for the appropriate mode of education for persons with disabilities, especially children [Factsheet Section 19,17,20]. Subsidised education is provided for special education personnel [Factsheet Section 19,17,20].",
+  "id": "Q7"
+ },
+ {
+  "question": "How long is the transitional compliance period?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 308",
+    "score": 0.1801
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 6,7",
+    "score": 0.1422
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 11",
+    "score": 0.1403
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 2",
+    "score": 0.1129
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 2",
+    "score": 0.0981
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.0856
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": "ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\\nPlease retry in 18.337823586s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '18s'}]}}",
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q8"
+ },
+ {
+  "question": "Does the Constitution guarantee dignity and equality?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 17",
+    "score": 0.2225
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 10",
+    "score": 0.1259
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 2",
+    "score": 0.1194
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "general",
+    "score": 0.1183
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 3",
+    "score": 0.1163
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 2",
+    "score": 0.0676
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": "ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\\nPlease retry in 11.131376504s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '11s'}]}}",
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "Q9"
+ },
+ {
+  "question": "Where can I get legal aid for a disability rights violation?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 39",
+    "score": 0.3083
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 46",
+    "score": 0.219
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 3",
+    "score": 0.1632
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 39",
+    "score": 0.1522
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 17",
+    "score": 0.1393
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 217",
+    "score": 0.1178
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": true,
+  "llm_error": null,
+  "citations": [
+   "Constitution s. 39",
+   "Constitution s. 46",
+   "Constitution s. 46",
+   "Constitution s. 46"
+  ],
+  "cite_check": [
+   {
+    "tag": "Constitution s. 39",
+    "number_ok": true
+   },
+   {
+    "tag": "Constitution s. 46",
+    "number_ok": true
+   },
+   {
+    "tag": "Constitution s. 46",
+    "number_ok": true
+   },
+   {
+    "tag": "Constitution s. 46",
+    "number_ok": true
+   }
+  ],
+  "answer_excerpt": "The High Court has special jurisdiction regarding legal aid [Constitution s. 39]. It can enable \"any indigent citizen of Nigeria where his right under this Chapter has been infringed\" [Constitution s. 46] to engage the services of a legal practitioner to prosecute his claim [Constitution s. 46]. This is also \"for ensuring that allegations of infringement of such rights are substantial and the requirement or need for financial or legal aid is real\" [Constitution s. 46].",
+  "answer_full": "The High Court has special jurisdiction regarding legal aid [Constitution s. 39]. It can enable \"any indigent citizen of Nigeria where his right under this Chapter has been infringed\" [Constitution s. 46] to engage the services of a legal practitioner to prosecute his claim [Constitution s. 46]. This is also \"for ensuring that allegations of infringement of such rights are substantial and the requirement or need for financial or legal aid is real\" [Constitution s. 46].",
+  "id": "Q10"
+ },
+ {
+  "question": "What does the Act say about maritime shipping insurance?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.2622
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 36",
+    "score": 0.2541
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 33",
+    "score": 0.2416
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "Section 2",
+    "score": 0.1952
+   },
+   {
+    "doc_id": "factsheet2020",
+    "ref": "general",
+    "score": 0.185
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "cl. 56,57",
+    "score": 0.1462
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": "ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\\nPlease retry in 54.345699938s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '54s'}]}}",
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "R1-same-vocab"
+ },
+ {
+  "question": "How do I bake sourdough bread?",
+  "model": "gemini-2.5-flash",
+  "prompt": "cite-strict-v2",
+  "min_score": 0.1,
+  "scores": [
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 6",
+    "score": 0.125
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 6",
+    "score": 0.1211
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.0
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.0
+   },
+   {
+    "doc_id": "act2018",
+    "ref": "general",
+    "score": 0.0
+   },
+   {
+    "doc_id": "constitution1999",
+    "ref": "s. 4",
+    "score": 0.0
+   }
+  ],
+  "refused": false,
+  "refusal_layer": null,
+  "llm_used": false,
+  "llm_error": "ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\\nPlease retry in 47.21975145s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.5-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '47s'}]}}",
+  "citations": [],
+  "cite_check": null,
+  "answer_excerpt": null,
+  "answer_full": null,
+  "id": "R2-generic"
+ }
+]

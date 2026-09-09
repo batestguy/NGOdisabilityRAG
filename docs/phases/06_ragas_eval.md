@@ -42,6 +42,10 @@ manual check from Phase 02.
   Misses by layer in journal; ragas NOT installed (env protection, playbook-sanctioned).
 - Exit criteria: [x] recall>0.75 · [x] faithfulness>0.85 (audited) ·
   [~] answer relevancy (judge pending) · [ ] manual-100% re-confirm · [ ] two runs.
+- 2026-09-09 fix-A run (`test_phase02_results_cite-strict-v2-fixA_...json`, 8/12 —
+  429 names the limit: 20/day/model): Q10 VARIANCE RESOLVED (verbatim s.46 quotes,
+  PASS); Q1-Q7 stable; Q5 correct-refusal x3; Q8/Q9/R1/R2 honest-pending (Q9 = fix-A
+  confirmation, next reset). Eval stays pointed at the complete v2 transcript.
 
 ## Record results in
 `LEARNING_JOURNAL.md` → full score tables, framework notes (RAGAS vs custom trade-offs —
