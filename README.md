@@ -40,13 +40,15 @@ smoke test; local run below works today)*
   then smoke test: 3 legal + 2 help queries, helplines visible, citations present.
 - Cold starts are slow on free tier (sleep/wake) — that is normal, not breakage.
 
-## Status
+## Status (2026-09-09 EOD)
 
-Phases 01–05 done (all suites green), Phase 02 re-run done (8/10 cited, misses
-logged by layer), Phase 06 custom eval done (recall 0.800, audited faithfulness
-0.875; RAGAS-judge queued for quota reset), Phase 07 in progress. Details:
-`STATUS.md`, per-phase playbooks in `docs/phases/`, research notes in
-`LEARNING_JOURNAL.md`. Spec: `RAGNGO.txt`. Env notes: `ENVIRONMENTS.md`.
+Phases 01–05 done (all suites green), Phase 02 re-run done (Q10 variance resolved
+to PASS; Q5 correct-refusal ×3, logged by layer), Phase 06 custom eval done
+(recall 0.800, audited faithfulness 0.875; RAGAS-judge queued for quota reset),
+Phase 07 deploy prep done (slim requirements clean-venv proven, contacts 10/10
+re-verified, git committed locally — not yet pushed). Details: `STATUS.md`,
+per-phase playbooks in `docs/phases/`, research notes in `LEARNING_JOURNAL.md`.
+Spec: `RAGNGO.txt`. Env notes: `ENVIRONMENTS.md`. Session entry: `HANDOFF.md`.
 
 ## Architecture
 
