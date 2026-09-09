@@ -317,6 +317,14 @@ Replace SAMPLE with real Act text → re-run notebook → wire citation prompt +
   harmless: dark rules + HC !important compose to the same AAA palette.
 - Server restarted on :8501 with current code; user's Brave tab needs a reload.
 
+## 2026-09-09 — Watermark more visible (user request; readability preserved)
+- Bumped `.drlca-watermark` opacity 0.14 → 0.24 (~70% stronger photo presence).
+  Safe because text no longer sits on raw photo: opaque sidebar + 0.88 main sheet
+  + opaque excerpt cards (previous session). Screenshot-verified both modes: light
+  shows players/court/wheelchairs clearly with crisp dark text; dark shows the
+  photo with crisp white text; sidebar solid + labels sharp in both. Suite still
+  94/94 (opacity assert updated). Server restarted; Brave tab needs reload.
+
 ## 2026-09-09 — Phase 07 deploy prep (no quota needed)
 - requirements.txt slimmed to runtime (streamlit/pandas/sklearn/google-genai/
   mic-recorder/SpeechRecognition; faiss/onnx/rapidocr/pymupdf REMOVED — grep

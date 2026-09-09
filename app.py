@@ -80,7 +80,7 @@ def accessibility_css(high_contrast: bool = False, font_size: int = 18) -> str:
         ".drlca-watermark { position: fixed; inset: 0; z-index: 0;\n"
         "  pointer-events: none; background-image: url(\"%s\");\n"
         "  background-size: cover; background-position: center;\n"
-        "  background-repeat: no-repeat; opacity: 0.14; }\n"
+        "  background-repeat: no-repeat; opacity: 0.24; }\n"
         "/* z-index 0 (not -1): Streamlit ancestors create stacking contexts\n"
         "   that trap negative-z layers behind opaque fills. Content is lifted\n"
         "   above instead (block-container + sidebar get position/z-index). */\n"

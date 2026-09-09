@@ -147,7 +147,7 @@ check("css-watermark-url", app.WATERMARK_IMAGE_URL in css_plain
       and "app/static/watermark.jpg" in css_plain)
 check("css-watermark-file", (ROOT / "static" / "watermark.jpg").is_file())
 check("css-watermark-div", "drlca-watermark" in css_plain
-      and "opacity: 0.14" in css_plain)
+      and "opacity: 0.24" in css_plain)
 check("css-veil", "drlca-veil" in css_plain and "linear-gradient" in css_plain)
 check("css-no-img-tag", "<img" not in css_plain)
 check("css-max-width", "46rem" in css_plain)
