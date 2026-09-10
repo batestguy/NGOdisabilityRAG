@@ -671,13 +671,9 @@ def run():
     st.divider()
     render_helpline_banner()
 
-    if explicit in ("legal", "help"):
-        mode, routing = explicit, {"primary": explicit, "secondary": None,
-                                   "overridden": True}
-    else:
-        from router import route_question
-        routing = route_question(question)
-        mode = routing["primary"]
+    # Single routing seam (explicit buttons, auto router, greeting-first).
+    resolved = resolve_mode(question, explicit)
+    mode, routing = resolved["mode"], resolved["routing"]
     st.session_state["last_q"] = question
 
     legal_payload, help_payload, clarify_text = None, None, ""
