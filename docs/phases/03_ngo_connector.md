@@ -31,7 +31,7 @@ always on top. Spec target: 5 different disabilities matched to relevant orgs.
 
 ## Status (2026-09-08 — DONE, reviewer ship-with-notes)
 - All 10 rows verified 2026-09-08 (sources in LEARNING_JOURNAL.md); Leprosy Mission + Sightsavers pruned
-  (unverifiable phone); NAB/NNAD medium-confidence, RECHECK-stamped.
+  (unverifiable phone); NAB/NNAD re-verified HIGH 2026-09-09 (contact pages byte-confirm CSV).
 - 6 disabilities × Lagos/Abuja/Kano/rural correct top-1 (incl. misspellings); helplines first everywhere;
   unknown → helplines + JONAPWD, never empty. Matrix 16/16 + statics 7/7, exit 0.
 - Exit criteria: [x] rows verified/pruned + dated · [x] 5+ disabilities × locations top-1 · [x] banner everywhere.

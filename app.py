@@ -1,6 +1,6 @@
 """Phase 05 accessible Streamlit UI for DRLCA (Disability Rights Legal & Connection Assistant).
 
-Spaces-compatible: no local binaries, secrets only via env (GOOGLE_API_KEY read
+Free-tier-deployable (Render/Streamlit Cloud): no local binaries, secrets only via env (GOOGLE_API_KEY read
 by src/rag.py at call time), lean imports. Default user path is FULLY OFFLINE
 (retrieval excerpts + citations + NGO records); Gemini generation sits behind an
 explicit opt-in expander that defaults OFF (free-tier quota is reserved).

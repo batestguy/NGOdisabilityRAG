@@ -4,7 +4,7 @@
 # defined so the in-app settings menu can switch modes and every element
 # (buttons, sidebar, inputs) stays readable in each mode.
 # Brand: Nigerian green. Body text pairs are WCAG AA on their backgrounds.
-# Fonts: system stacks only (no downloads — Spaces cold-start stays lean).
+# Fonts: system stacks only (no downloads — free-tier cold-start stays lean).
 
 [server]
 # Required for the watermark: serves ./static/* at /app/static/*.

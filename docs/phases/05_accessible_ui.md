@@ -37,22 +37,21 @@ NVDA test notes if performed.
 
 ## Status (2026-09-08 — DONE, reviewer ship-with-notes + fixes applied; dark-alert residual FIXED 2026-09-09)
 - app.py built + live-verified (legal/help flows, routing trap, citations, helplines; 360px banner OK).
-  scripts/test_phase05.py 80/80 (was 44→69→80); boot HTTP 200; no src/ regressions.
+   scripts/test_phase05.py 96/96 (was 44→69→80→94); boot HTTP 200; no src/ regressions.
 - 2026-09-09 residual fix: dark-theme stAlert text (#ffffc2 on rgba-yellow 0.2 over photo)
   washed out → client-side theme watch (luminance gate) + dark-only opaque override
   (#45491f, 9.1:1 AAA, tokens mirrored from config [theme.dark]); light verified
   byte-identical (translucent amber + dark text, bodyDark=false). Details: journal.
-- app.py built + live-verified (legal/help flows, routing trap, citations, helplines; 360px banner OK).
-  scripts/test_phase05.py 44/44; boot HTTP 200; no src/ regressions.
 - Exit criteria: [x] keyboard path exists (tab order in markup; physical run = human check) ·
   [x] helplines without scroll at 360px (screenshot) · [~] voice works (code + fallback verified;
   live mic/read-aloud = human check) · [x] citations shown in UI.
-- Human checklist before deploy: NVDA, keyboard-only run, live mic/denial states, Spaces cold-start.
+- Human checklist before deploy: NVDA, keyboard-only run, live mic/denial states, Render cold-start.
 
 ## Traps
 - Never auto-route silently in the UI: show "I treated this as a legal question [switch to help]"
   so a misroute costs one click, not a dead end.
 - Streamlit reruns the script on every interaction — cache the retriever/LLM client with
   `st.cache_resource` or every keystroke pays a reload.
-- This app must stay deployable on Hugging Face Spaces free tier: no local binaries
-  (Tesseract), no GPU deps, secrets via Spaces Secrets, never hardcoded.
+- This app must stay deployable on Render free tier (+ optional Streamlit Cloud):
+  no local binaries (Tesseract), no GPU deps, HF Spaces DROPPED (Streamlit SDK →
+  Docker/PRO-only 2025-04), secrets via Render env vars, never hardcoded.

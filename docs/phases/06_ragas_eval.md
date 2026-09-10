@@ -28,7 +28,7 @@ manual check from Phase 02.
 - [ ] Every miss has a diagnosed layer + fix (or a written reason it can't be fixed free-tier).
 
 ## Status (2026-09-09 — custom eval DONE, judge DEFERRED to quota reset; fixA2 COMPLETE 2026-09-10)
-- 2026-09-10: COMPLETE post-fix transcript exists (`test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json`, 12/12). Verdict table: manual cite-accuracy 11/12 claims clean EXCEPT Q10 3rd claim misattributes s.46 High-Court text to s.39 (TOC-trap class, mechanical blind — same as Q9 s.33 was); Q9 s.33 removed but s.34-body omission remains (recall 0.5). Offline eval on fixA2 (tmp, no overwrite): recall 0.800 PASS, faith_audited 1.000 mechanical (overstates — Q10 s.39 blind), reverse_rel 0.630 FAIL gated>0.80 (drivers Q3/Q8/Q10 short answers; proxy punishes concise-correct — recorded FAIL with reason,   RAGAS judge is arbiter, separate quota day). Pointer swapped to fixA2 transcript; flagged rerun `eval_phase06_results_fixA2-flagged_2026-09-10.json` (recall 0.800, faith 0.967 with Q10 s.39 flagged, reverse 0.630 FAIL). Remaining: journal + commit + judge run.
+- 2026-09-10: COMPLETE post-fix transcript exists (`test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json`, 12/12). Verdict table: manual cite-accuracy 11/12 claims clean EXCEPT Q10 3rd claim misattributes s.46 High-Court text to s.39 (TOC-trap class, mechanical blind — same as Q9 s.33 was); Q9 s.33 removed but s.34-body omission remains (recall 0.5). Offline eval on fixA2 (tmp, no overwrite): recall 0.800 PASS, faith_audited 1.000 mechanical (overstates — Q10 s.39 blind), reverse_rel 0.630 FAIL gated>0.80 (drivers Q3/Q8/Q10 short answers; proxy punishes concise-correct — recorded FAIL with reason,   RAGAS judge is arbiter, separate quota day). Pointer swapped to fixA2 transcript; flagged rerun `eval_phase06_results_fixA2-flagged_2026-09-10.json` (recall 0.800, faith 0.967 with Q10 s.39 flagged, reverse 0.630 FAIL). Remaining: RAGAS-judge run.
 - Script: `scripts/eval_phase06.py` (zero-LLM proxies; design + trade-offs in
   docstring) + corpus-verified EXPECTED truth (s.33 / Act-cl.10 exclusions).
   Baseline `eval_phase06_results_2026-09-09.json`: recall 0.800 PASS,
@@ -45,8 +45,9 @@ manual check from Phase 02.
   [~] answer relevancy (judge pending) · [ ] manual-100% re-confirm · [ ] two runs.
 - 2026-09-09 fix-A run (`test_phase02_results_cite-strict-v2-fixA_...json`, 8/12 —
   429 names the limit: 20/day/model): Q10 VARIANCE RESOLVED (verbatim s.46 quotes,
-  PASS); Q1-Q7 stable; Q5 correct-refusal x3; Q8/Q9/R1/R2 honest-pending (Q9 = fix-A
-  confirmation, next reset). Eval stays pointed at the complete v2 transcript.
+  PASS); Q1-Q7 stable; Q5 correct-refusal x3; Q8/Q9/R1/R2 honest-pending (superseded
+  by fixA2 12/12 above). Pointer swapped to fixA2-flagged
+  (`eval_phase06_results_fixA2-flagged_2026-09-10.json`).
 
 ## Record results in
 `LEARNING_JOURNAL.md` → full score tables, framework notes (RAGAS vs custom trade-offs —

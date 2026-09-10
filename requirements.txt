@@ -1,10 +1,10 @@
-# DRLCA runtime deps (Hugging Face Spaces / Streamlit Cloud free tier).
+# DRLCA runtime deps (Render / Streamlit Cloud free tier; HF Spaces dropped 2026-09-10).
 # Lean ON PURPOSE: retrieval is TF-IDF (sklearn+pandas); the corpus ships
 # prebuilt as TXT/CSV and is never re-OCRed at boot. OCR/ONNX/FAISS are
 # build-time only (see requirements-rag.txt) and must NEVER be added here --
 # they bloat the image and break free-tier cold starts.
 # Tested 2026-09-09 in a clean venv (Python 3.11): import app + offline
-# legal/help smoke + `streamlit run` boot HTTP 200. Spaces needs Python >=3.10
+# legal/help smoke + `streamlit run` boot HTTP 200. Render PYTHON_VERSION=3.11.0
 # (pandas 3 floor).
 streamlit==1.63.0
 pandas==3.0.5

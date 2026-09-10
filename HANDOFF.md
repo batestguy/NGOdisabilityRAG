@@ -6,11 +6,10 @@ Local app: http://localhost:8501 (`python -m streamlit run app.py` from `D:\NGOR
 **Live:** https://ngodisabilityrag.onrender.com (Render free, service
 `srv-dah26opt0dsc73e9a350`, python 3.11, Oregon; auto-deploys on push to `main`).
 Render CLI v2.27.0 installed (winget `Render.CLI`); auth in `~/.render/cli.yaml`.
-Git: https://github.com/batestguy/NGOdisabilityRAG (`main`, pushed, tree clean —
-latest `b2b8dbc` deploy-live docs).
+Git: https://github.com/batestguy/NGOdisabilityRAG (`main`, pushed, tree clean).
 
 **State:** Phases 01–05 DONE (re-verified 2026-09-10: bench 10/10, 03 16/16+7/7,
-04 10/10, 05 **96/96**, boot import OK).
+04 10/10, 05 **96/96**, boot import OK; NGO 10/10 HIGH incl. NAB/NNAD byte-verified).
 Phase 02 fixA2 COMPLETE 12/12 (`test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json`):
 Q9 s.33 hallucination REMOVED (s.17 x3+general) but s.34-body omission remains
 (recall 0.5); Q10 PARTIAL (2×s.46 correct + s.39 misattr of High-Court text —

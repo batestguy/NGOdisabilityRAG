@@ -58,7 +58,7 @@ Simple, clean UI appropriate for users with varying digital literacy.
 Platform Constraints
 Requirement	Acceptable Solutions
 Development Environment	Google Colab, Kaggle Notebooks
-Deployment	Hugging Face Spaces, Streamlit Cloud
+Deployment	Render free tier (live), Streamlit Cloud (optional 2nd link); HF Spaces dropped 2025-04 (Streamlit SDK → Docker/PRO-only)
 Cost	$0.00 - Everything must use free tiers
 Version Control	GitHub (public repository)
 Framework Flexibility
@@ -186,7 +186,7 @@ Phase 6: Evaluation & Polish (Week 5-6)
 □ Run RAGAS evaluation.
 □ Optimize retrieval.
 □ Write documentation.
-□ Deploy to Hugging Face Spaces.
+□ Deploy to Render free tier (live 2026-09-10).
 Phase 7: Research & Documentation (Ongoing)
 □ Document learnings from each phase.
 □ Compare different approaches tried.
@@ -197,7 +197,7 @@ Criterion	Requirement
 Functional RAG	Answers 10 legal questions with citations
 NGO Connector	Matches 5 different disabilities to relevant orgs
 Intent Routing	Correctly routes 8/10 queries
-Deployment	Live on Hugging Face Spaces
+Deployment	Live on Render (free tier)
 Documentation	Complete README with setup instructions
 Stretch Goals
 Multi-language support (Pidgin, Yoruba, Hausa, Igbo).
@@ -229,7 +229,7 @@ Documentation
 □ Architecture diagram.
 □ Demo GIF (comprehensive captioned walkthrough).
 Deployment
-□ Live application on Hugging Face Spaces.
+□ Live application on Render (https://ngodisabilityrag.onrender.com).
 □ Accessible link for testing.
 🎓 Evaluation Criteria
 Area	Weight	What We're Looking For
@@ -246,7 +246,7 @@ NGOs	CCD, JONAPWD
 Frameworks	LangChain, LlamaIndex
 LLMs	Groq, Google Gemini
 Evaluation	RAGAS, DeepEval
-Deployment	Hugging Face Spaces, Streamlit Cloud
+Deployment	Render free tier (live), Streamlit Cloud (optional 2nd link); HF Spaces dropped 2025-04 (Streamlit SDK → Docker/PRO-only)
 📝 Flexibility Guidelines
 What Can Change
 Frameworks and libraries - choose what works best.
@@ -301,7 +301,7 @@ Ready to build? Let's create something that makes a difference! 🚀
 □ Intent router distinguishing legal vs. help queries
 □ UI with accessibility features (voice, screen reader)
 □ RAGAS evaluation completed
-□ Deployed to Hugging Face Spaces
+□ Deployed to Render
 □ Demo GIF recorded
 □ GitHub README complete
 □ Learning journal documenting research & trade-offs

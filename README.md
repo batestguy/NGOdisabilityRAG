@@ -30,23 +30,25 @@ Live demo: **https://ngodisabilityrag.onrender.com** (Render free tier, live-ver
    (Chrome/Edge), high-contrast + text-size sidebar controls. The AI expander is
    OFF by default (uses your Gemini quota when opened).
 
-## Deploy (Hugging Face Spaces, free tier)
+## Deploy (Render free tier — live; Streamlit Cloud optional 2nd link; HF Spaces dropped)
 
 - `requirements.txt` is the slim runtime (verified 2026-09-09 in a clean venv:
-  install + offline legal/help smoke + boot HTTP 200). OCR/ONNX/FAISS are
-  build-time only and must never be added — the corpus ships prebuilt.
-- Push this repo to a Space (Streamlit SDK, Python ≥3.10), add `GOOGLE_API_KEY`
-  under Space Settings → Secrets (never commit keys — `git log` audited),
-  then smoke test: 3 legal + 2 help queries, helplines visible, citations present.
-- Cold starts are slow on free tier (sleep/wake) — that is normal, not breakage.
+  install + offline legal/help smoke + boot HTTP 200; re-verified live 2026-09-10).
+  OCR/ONNX/FAISS are build-time only and must never be added — the corpus ships prebuilt.
+- Live at https://ngodisabilityrag.onrender.com (Render `web_service`, Python 3.11.0,
+  auto-deploys on push to `main`). `GOOGLE_API_KEY` via Render env vars
+  (never commit keys — `git log` audited).
+- HF Spaces path dropped: Streamlit SDK deprecated 2025-04 (now Docker template =
+  PRO-only); Static can't run Python.
+- Cold starts: Render free sleeps after 15 min idle (~1 min wake) — normal, not breakage.
 
-## Status (2026-09-09 EOD)
+## Status (2026-09-10 LIVE)
 
-Phases 01–05 done (all suites green), Phase 02 re-run done (Q10 variance resolved
-to PASS; Q5 correct-refusal ×3, logged by layer), Phase 06 custom eval done
-(recall 0.800, audited faithfulness 0.875; RAGAS-judge queued for quota reset),
-Phase 07 deploy prep done (slim requirements clean-venv proven, contacts 10/10
-re-verified, git committed locally — not yet pushed). Details: `STATUS.md`,
+Phases 01–05 done (all suites green, 05 at 96/96), Phase 02 fixA2 complete
+(Q9 s.33 removed with s.34 omission noted; Q10 PARTIAL s.39 flagged), Phase 06
+custom eval (recall 0.800, audited faithfulness 0.967; reverse_rel 0.630 FAIL
+recorded, RAGAS-judge queued for quota reset), Phase 07 LIVE on Render
+(browser-verified 2026-09-10; contacts 10/10 re-verified; git pushed clean). Details: `STATUS.md`,
 per-phase playbooks in `docs/phases/`, research notes in `LEARNING_JOURNAL.md`.
 Spec: `RAGNGO.txt`. Env notes: `ENVIRONMENTS.md`. Session entry: `HANDOFF.md`.
 
