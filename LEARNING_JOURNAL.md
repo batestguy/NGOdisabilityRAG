@@ -362,3 +362,10 @@ Replace SAMPLE with real Act text → re-run notebook → wire citation prompt +
   raw PDFs tracked for reproducibility), full `git log` + content key audit clean
   (no secret values; key lives in env only). Committed locally; push + Space
   creation + smoke + video are owner-side (need account creds / mic / voice).
+
+## 2026-09-10 — fixA2 COMPLETE 12/12 (agentic: explore→general→reviewer→ship)
+- Probe QUOTA_OK, full 12-pass → 10/12 (Q3+R2 transient 503 high-demand, not 429), targeted retry → both first-attempt OK. File `scripts/test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json`, ~13/20 quota, no judge same day.
+- Verdicts: Q9 fix-A CONFIRMED (s.17 x3+general, zero s.33) · Q3 cl.29,30 5% · Q8 five-years [Factsheet 6,7] · Q10 PASS s.46 x2+s.39 note · R1/R2 verbatim DRAC (08000-3000-100 / 08000-3000-10) · Q5 correct-refusal x4 (top s.36 0.14, penalty clauses absent).
+- Reviewer: SHIP (12 genuine rows, pointer still at v2 until verdict table). Notes: Q3 thin 2-cite, Q8 single-sentence, Q10 extra s.39 outside EXPECTED, Q8 top-hit s.308 but answer correctly Factsheet — strict-prompt win. Provenance: full-pass+patch, not 12-fresh (HANDOFF asked whole-pass; document in verdict table).
+- Re-review SEND-BACK (honest dispositions): Q10 3rd claim `[s.39]` misattributes s.46 High-Court jurisdiction text — s.39 corpus is freedom-of-expression + trailing "46 Special jurisdiction" TOC line, so mechanical overlap passes but semantics fail (same class as Q9 s.33 trap). Verdict Q10 PARTIAL. Q9 s.33 removed but s.34-body still unretrieved (recall 0.5, dignity sentence cites general). reverse_rel 0.630 FAIL gated>0.80 recorded as FAIL (drivers Q3/Q8/Q10 concise answers; proxy punishes short-correct) — RAGAS judge arbiter on separate quota day, not dismissed.
+- Next: verdict table → swap eval pointer → two-run check + manual-100% → RAGAS-judge day (~30 calls, separate day). Owner-side unchanged: HF Space + video + human gates.

@@ -35,7 +35,8 @@ citations (e.g. "Section 17 of the Act provides for free education..."). Spec ta
 ## Record results in
 `LEARNING_JOURNAL.md` → prompt versions tried, threshold calibration, per-question table.
 
-## Status (2026-09-09 — FULL v2 RE-RUN DONE, exit call below)
+## Status (2026-09-09 — FULL v2 RE-RUN DONE, exit call below; fixA2 COMPLETE 2026-09-10)
+- fixA2 2026-09-10 (`test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json`, 12/12, reviewer SEND-BACK addressed here): Q9 hallucination REMOVED (s.17 x3+general, zero s.33) but s.34-body omission remains (recall 0.5) · Q3 recovered (cl.29,30 5%) · Q8 five-years · Q10 PARTIAL (2/3 claims s.46 correct; 3rd misattributes s.46 High-Court content to s.39 — same TOC-trap class as Q9 s.33, mechanical checks blind) · R1/R2 verbatim refusal · Q5 correct-refusal x4. Path: full 12-pass 10/12 (Q3+R2 transient 503) + targeted retry first-attempt OK (~13/20 quota, no judge same day).
 - Run: `scripts/test_phase02_results_cite-strict-v2_2026-09-09.json` (12/12 LLM calls,
   0 errors, model gemini-2.5-flash re-confirmed via live list-models + QUOTA_OK probe).
 - Verdicts: Q1 PASS (N100k chunk-quote proven) · Q2/Q3/Q4 PASS · Q6 PASS (cl.11 fix) ·
@@ -45,7 +46,7 @@ citations (e.g. "Section 17 of the Act provides for free education..."). Spec ta
   legal-aid text at 0.219; LLM-variance, 2nd occurrence) · R1/R2 exact-refusal PASS.
 - Mechanical: all cite_check True, 0 merged tags, 0 invented numbers, no key in transcript.
 - Exit criteria: [~] 8/10 cited (Q5 correct-layer, Q10 logged false refusal) ·
-  [x] 0 hallucinations (1 misattribution) · [x] refusal demo (gate + LLM layers).
+  [ ] 0 hallucinations (1 misattribution: Q9 s.33 TOC-trap; fixA2 removes it but adds Q10 s.39 same-class — see fixA2 line) · [x] refusal demo (gate + LLM layers).
 - History: pre-fix v1 run (8/10, Q6/Q7 FAILs → ref-extraction + prompt fixes);
   fixes verified mechanically (stemmer convergence, cl.11 label, tag regex).
   Phase 01 bench still PASS post-stem (mean 0.293, Q9 0.178).

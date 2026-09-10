@@ -73,7 +73,7 @@ from rag import CITE_TAG_RE, build_corpus  # noqa: E402
 from retrieve import PerDocRetriever, stem  # noqa: E402
 
 TRANSCRIPT = (ROOT / "scripts"
-              / "test_phase02_results_cite-strict-v2_2026-09-09.json")
+              / "test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json")
 
 # Ground truth from CORPUS inspection (runtime-verified below, never from answers):
 #  Q1 fines live in Act cl.1 (+N100k tail cl.2) and factsheet Section 1/1(2)/2.
@@ -98,7 +98,8 @@ EXPECTED = {
 
 # Audited overrides from Phase 02 manual verdicts (qid, tag-sub, claim-word):
 # mechanical checks cannot see TOC-line misattribution -- documented, not hidden.
-MANUAL_FLAGS = [("Q9", "Constitution s. 33", "dignity")]
+MANUAL_FLAGS = [("Q9", "Constitution s. 33", "dignity"),
+                ("Q10", "Constitution s. 39", "high court")]
 
 OVERLAP_FLOOR = 0.12
 STOP = {stem(w) for w in ENGLISH_STOP_WORDS}
