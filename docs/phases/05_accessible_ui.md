@@ -37,7 +37,7 @@ NVDA test notes if performed.
 
 ## Status (2026-09-08 — DONE, reviewer ship-with-notes + fixes applied; dark-alert residual FIXED 2026-09-09)
 - app.py built + live-verified (legal/help flows, routing trap, citations, helplines; 360px banner OK).
-   scripts/test_phase05.py 96/96 (was 44→69→80→94); boot HTTP 200; no src/ regressions.
+   scripts/test_phase05.py 104/104 (was 44→69→80→94→96; +greeting asserts 2026-09-10); boot HTTP 200; no src/ regressions.
 - 2026-09-09 residual fix: dark-theme stAlert text (#ffffc2 on rgba-yellow 0.2 over photo)
   washed out → client-side theme watch (luminance gate) + dark-only opaque override
   (#45491f, 9.1:1 AAA, tokens mirrored from config [theme.dark]); light verified

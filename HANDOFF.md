@@ -9,7 +9,7 @@ Render CLI v2.27.0 installed (winget `Render.CLI`); auth in `~/.render/cli.yaml`
 Git: https://github.com/batestguy/NGOdisabilityRAG (`main`, pushed, tree clean).
 
 **State:** Phases 01–05 DONE (re-verified 2026-09-10: bench 10/10, 03 16/16+7/7,
-04 10/10, 05 **96/96**, boot import OK; NGO 10/10 HIGH incl. NAB/NNAD byte-verified).
+04 10/10, 05 **104/104**, boot import OK; NGO 10/10 HIGH incl. NAB/NNAD byte-verified).
 Phase 02 fixA2 COMPLETE 12/12 (`test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json`):
 Q9 s.33 hallucination REMOVED (s.17 x3+general) but s.34-body omission remains
 (recall 0.5); Q10 PARTIAL (2×s.46 correct + s.39 misattr of High-Court text —
@@ -21,19 +21,20 @@ reverse_rel 0.630 FAIL gated (short-answer artifact — recorded FAIL, judge arb
 Phase 07 LIVE on Render (browser-verified banner + help query; README link in).
 Helplines always on top: DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp `08000-3000-10`.
 
-## Next, in this order
+## Next, in this order (full plan: `docs/phases/08_retrieval_upgrades.md`)
 
-1. **RAGAS-judge day (needs quota reset).** 2026-09-10 spent ~13/20
-   (`gemini-2.5-flash`): probe + 10 + Q3/R2 retry. Run judge (~30 calls) fresh
-   day: it decides answer-relevancy (reverse_rel 0.630), Q10 s.39, Q9 s.34.
-   `ragas` NOT installed (env protection); install only in `drlca-rag`, or
-   Gemini-judge-by-hand. Then: two-run check, manual-100% re-confirm → close 06.
-2. **3-legal live smoke** (excerpts/cites render offline — safe; AI expander =
-   quota). Then comprehensive demo GIF + NVDA / keyboard-only / live-mic gates +
-   LinkedIn (owner).
-3. **Optional variety:** 2nd link on Streamlit Community Cloud (share.streamlit.io
-   → repo → `app.py` → Secrets `GOOGLE_API_KEY`). HF Spaces is DROPPED
-   (Streamlit SDK deprecated 2025-04 → Docker/PRO only; Static can't run Python).
+1. **Synonym map (FIRST, zero quota).** `src/retrieve.py` legal expansion (~30
+   entries) → 10Q bench (Q5 nonzero, Q1–Q4 stable) → suites green.
+2. **Cite-constrain fix-B (zero quota).** Cites from chunk `ref` only + extended
+   TOC-fragment rule → re-score fixA2 (Q10 flips flagged without hand flag).
+3. **RAGAS-judge day (fresh quota, ~30 calls).** Arbitrates reverse_rel 0.630,
+   Q3/Q8 thinness, s.39/s.34 → two-run check + manual-100% → close 06.
+   (2026-09-10 spent ~13/20 — do NOT start the judge until reset.)
+4. **Rerank (local ONNX CPU, zero quota) → dense hybrid (Colab afternoon).**
+   Each ablated on frozen 10Q; cache + rule-prefixes anytime.
+5. **Owner-side:** comprehensive demo GIF → NVDA/keyboard/mic gates → LinkedIn
+   (+ optional Streamlit 2nd link). 3-legal live smoke: excerpts offline-safe,
+   AI expander = quota day.
 
 ## Standing facts (don't re-derive)
 
@@ -49,7 +50,7 @@ Helplines always on top: DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp `08000-3
 - Eval script points at fixA2 transcript now. Never fake LLM rows.
   LLM runs → versioned files; dry runs → `--out=<temp path>` (space form ignored!).
 - Test commands (all via project python): `bench_phase01` (PASS) · `test_phase03`
-  (16/16+7/7) · `test_phase04` (PASS) · `test_phase05` (96) · `eval_phase06.py --out=...`.
+  (16/16+7/7) · `test_phase04` (PASS) · `test_phase05` (104) · `eval_phase06.py --out=...`.
 - Quota: 20/day/model (`gemini-2.5-flash`); 503-transients retry with backoff, same day OK.
 - CSS rules of the road (learned 2026-09-09): watermark div lives INSIDE
   stMainBlockContainer (z-1), so sidebar needs z-index 2; Streamlit's own section

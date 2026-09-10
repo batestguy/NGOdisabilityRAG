@@ -44,11 +44,13 @@ Live demo: **https://ngodisabilityrag.onrender.com** (Render free tier, live-ver
 
 ## Status (2026-09-10 LIVE)
 
-Phases 01–05 done (all suites green, 05 at 96/96), Phase 02 fixA2 complete
+Phases 01–05 done (all suites green, 05 at 104/104), Phase 02 fixA2 complete
 (Q9 s.33 removed with s.34 omission noted; Q10 PARTIAL s.39 flagged), Phase 06
 custom eval (recall 0.800, audited faithfulness 0.967; reverse_rel 0.630 FAIL
 recorded, RAGAS-judge queued for quota reset), Phase 07 LIVE on Render
-(browser-verified 2026-09-10; contacts 10/10 re-verified; git pushed clean). Details: `STATUS.md`,
+(browser-verified 2026-09-10; contacts 10/10 re-verified; git pushed clean).
+Next upgrades (free-tier plan): `docs/phases/08_retrieval_upgrades.md`
+(synonyms → cite-constrain → judge → rerank → hybrid). Details: `STATUS.md`,
 per-phase playbooks in `docs/phases/`, research notes in `LEARNING_JOURNAL.md`.
 Spec: `RAGNGO.txt`. Env notes: `ENVIRONMENTS.md`. Session entry: `HANDOFF.md`.
 
