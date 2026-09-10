@@ -18,8 +18,10 @@ can set up, run, and extend the project from the README alone.
    Audience: a stranger, not us.
 4. **Architecture diagram**: retriever → router → LLM/lookup → UI boxes with file names
    (`src/*.py`, `data/*`). ASCII in-repo is fine; image optional.
-5. **Demo video** (2–3 min per spec) + learning-journal final pass: what worked/didn't,
-   benchmarks table, framework trade-offs — the research deliverable.
+5. **Demo GIF** (comprehensive captioned walkthrough per spec — owner amended 2026-09-10,
+   video dropped) covering: legal query + cites, help query + helplines-first, accessibility
+   controls. Save under `static/demo.gif`, embed in README + learning-journal final pass:
+   what worked/didn't, benchmarks table, framework trade-offs — the research deliverable.
 6. **Spec checklist audit**: walk `RAGNGO.txt` Quick Reference Checklist top to bottom,
    tick or explicitly defer each box in the journal.
 

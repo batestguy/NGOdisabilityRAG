@@ -30,7 +30,8 @@ Helplines always on top: DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp `08000-3
    `ragas` NOT installed (env protection); install only in `drlca-rag`, or
    Gemini-judge-by-hand. Then: two-run check, manual-100% re-confirm → close 06.
 2. **3-legal live smoke** (excerpts/cites render offline — safe; AI expander =
-   quota). Then video + NVDA / keyboard-only / live-mic gates + LinkedIn (owner).
+   quota). Then comprehensive demo GIF + NVDA / keyboard-only / live-mic gates +
+   LinkedIn (owner).
 3. **Optional variety:** 2nd link on Streamlit Community Cloud (share.streamlit.io
    → repo → `app.py` → Secrets `GOOGLE_API_KEY`). HF Spaces is DROPPED
    (Streamlit SDK deprecated 2025-04 → Docker/PRO only; Static can't run Python).
@@ -63,5 +64,5 @@ Helplines always on top: DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp `08000-3
   (+ `GOOGLE_API_KEY` from env, never printed). Free sleeps 15 min idle (~1 min
   wake); ephemeral FS fine (corpus prebuilt). Token expired once → user `render login`.
 
-**Pending owner inputs:** video + human gates + LinkedIn (+ optional Streamlit link).
+**Pending owner inputs:** demo GIF + human gates + LinkedIn (+ optional Streamlit link).
 **Pending quota:** RAGAS judge + AI-expander live smoke. Nothing else is blocked.

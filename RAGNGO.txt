@@ -227,7 +227,7 @@ Documentation
 □ README.md (setup, usage, demo link).
 □ Learning journal (what worked, what didn't).
 □ Architecture diagram.
-□ Demo video (2-3 minutes).
+□ Demo GIF (comprehensive captioned walkthrough).
 Deployment
 □ Live application on Hugging Face Spaces.
 □ Accessible link for testing.
@@ -302,7 +302,7 @@ Ready to build? Let's create something that makes a difference! 🚀
 □ UI with accessibility features (voice, screen reader)
 □ RAGAS evaluation completed
 □ Deployed to Hugging Face Spaces
-□ Demo video recorded
+□ Demo GIF recorded
 □ GitHub README complete
 □ Learning journal documenting research & trade-offs
 □ LinkedIn post sharing project
