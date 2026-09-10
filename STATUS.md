@@ -10,5 +10,6 @@
 - **Corpus:** Act full 40K + factsheet 21K + Constitution 529K chars. `_SAMPLE_DO_NOT_CITE.txt` never citable.
 - **Corpus:** Act full 40K + factsheet 21K + Constitution 529K chars. `_SAMPLE_DO_NOT_CITE.txt` never citable.
 - **Weak spot:** Constitution queries fixed by const size 400 (Q9 0.133→0.167 PASS, mean 0.221→0.275). Watch: constitution now 95% of joint index — per-doc routing is a Phase 02 follow-up.
-Git: pushed `fff7d05` 2026-09-10 (fixA2 + flagged eval + verdict docs). Deploy audit + offline suites re-verified 2026-09-10: bench PASS, 03 16/16+7/7, 04 10/10, 05 96/96, boot import OK.
+- **Phase 07 deploy LIVE 2026-09-10 (Render):** service `srv-dah26opt0dsc73e9a350` (free, python 3.11, Oregon) at **https://ngodisabilityrag.onrender.com** — HTTP 200, browser-verified banner + help query (NAB, helplines first). HF Spaces dropped (Streamlit SDK deprecated → Docker/PRO only). Streamlit Cloud still optional 2nd link.
+- Git: pushed through `fe618ab` 2026-09-10. Deploy audit + offline suites re-verified 2026-09-10: bench PASS, 03 16/16+7/7, 04 10/10, 05 96/96, boot import OK.
 - **Pending:** none blocking — NGO 10/10 verified (NAB/NNAD re-verified HIGH 2026-09-09).

@@ -8,8 +8,8 @@ navigable, high contrast + font scaling.
 National helplines (always displayed first): DRAC Toll-Free **08000-3000-100**,
 DRAC WhatsApp **08000-3000-10**.
 
-Live demo: *(pending — Hugging Face Spaces link lands here after Phase 07
-smoke test; local run below works today)*
+Live demo: **https://ngodisabilityrag.onrender.com** (Render free tier, live-verified
+2026-09-10: helplines banner, help query end-to-end; first load slow after idle — normal)
 
 ## Setup (local)
 

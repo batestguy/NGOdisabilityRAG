@@ -28,7 +28,9 @@ can set up, run, and extend the project from the README alone.
 - [ ] README sufficient for a fresh clone → run (test by reading it as a stranger).
 - [ ] Every spec checklist box ticked or deferred-with-reason. No silent gaps.
 
-## Status (2026-09-09 — deploy prep DONE, push/smoke owner-side)
+## Status (2026-09-09 — deploy prep DONE, push/smoke owner-side; LIVE 2026-09-10 Render)
+- LIVE 2026-09-10: Render service `srv-dah26opt0dsc73e9a350` (free plan, python, Oregon) at https://ngodisabilityrag.onrender.com — created via Render CLI (`services create`, free), HTTP 200 + browser-verified (helplines banner both numbers, help query "blind Lagos" → NAB + fuzzy-confirm + contacts, routing note, read-aloud). HF Spaces path DROPPED (Streamlit SDK deprecated 2025-04 → Docker template = PRO only; Static can't run app.py) — spec's free alternative (Render/Streamlit Cloud) used instead.
+- Exit criteria: [x] live link+smoke (Render; 1 help query live + full offline suites green; 3-legal live smoke queued — excerpts offline, AI expander needs quota day) · [~] README (link in, status section refresh pending) · [ ] video · [x] spec audit (deferrals written) · [x] key audit.
 - requirements.txt slimmed (faiss/onnx/ocr dropped, retired google-generativeai →
   google-genai) + clean-venv proven (install, imports 1.63.0/3.0.5/1.9.0, offline
   legal 6 excerpts + help 3 records, boot HTTP 200). Spaces needs Python >=3.10.
