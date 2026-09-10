@@ -382,3 +382,8 @@ Replace SAMPLE with real Act text → re-run notebook → wire citation prompt +
 ## 2026-09-10 — Full stale-sweep amended (explore audit → edits → ship-with-fixes review → pytest proof)
 - 30+ stale lines fixed across spec + docs + code comments: HF Spaces → Render everywhere (spec, README deploy, STATUS, HANDOFF, 03/05/06/07 playbooks, AGENTS.md non-negotiables, requirements.txt, app.py + config.toml comments); video → GIF; 05 80/94 → 96/96 (pytest proof this session: 96 asserts, 03 16/16+7/7, 04 ALL PASS); eval pointer + exit boxes current; STATUS corpus-dupe removed; 05 playbook dup paragraph removed.
 - Reviewer notes honored: cold-wake explicitly "not yet observed"; HANDOFF carries NAB/NNAD HIGH tag; 06 remaining = judge run only. Left as dated history (frozen): old journal entries mentioning Spaces/video. No secrets in diff; no spec relaxation (purpose/free-tier/citations/NGO/a11y intact).
+
+## 2026-09-10 — Hello-bug fixed (greeting path, live-verified)
+- Report: "hello" → refusal wall (reproduced live on Render via Legal button). Cause: no greeting handling anywhere; forced buttons bypass the router's clarify fallback straight into refusal.
+- Fix (offline, zero quota): `is_greeting()` in `src/router.py` (bare greeting words only; content like "hello, what are my rights?" routes normally) → `resolve_mode()` returns `greeting` (wins over explicit buttons) → `run()` renders greeting panel + read-aloud, no retrieval/LLM. Lesson: first fix attempt tested `resolve_mode` but `run()` had inlined routing — live browser test caught it; routing now flows through the single seam.
+- Proof: 04 ALL PASS (+12 greeting probes), 05 104/104, 03 green; pushed `dd5aeb1`, Render live, browser-verified greeting panel with helplines above, zero console errors.

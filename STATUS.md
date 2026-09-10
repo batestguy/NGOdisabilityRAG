@@ -10,5 +10,6 @@
 - **Corpus:** Act full 40K + factsheet 21K + Constitution 529K chars. `_SAMPLE_DO_NOT_CITE.txt` never citable.
 - **Weak spot:** Constitution queries fixed by const size 400 (Q9 0.133→0.167 PASS, mean 0.221→0.275). Watch: constitution now 95% of joint index — per-doc routing is a Phase 02 follow-up.
 - **Phase 07 deploy LIVE 2026-09-10 (Render):** service `srv-dah26opt0dsc73e9a350` (free, python 3.11, Oregon) at **https://ngodisabilityrag.onrender.com** — HTTP 200, browser-verified banner + help query (NAB, helplines first; 15-min sleep/wake cycle not yet observed). HF Spaces dropped (Streamlit SDK deprecated → Docker/PRO only). Streamlit Cloud still optional 2nd link.
-- Git: `main` pushed clean 2026-09-10. Deploy audit + offline suites re-verified 2026-09-10: bench PASS, 03 16/16+7/7, 04 10/10, 05 96/96, boot import OK.
+- Git: `main` pushed clean 2026-09-10. Deploy audit + offline suites re-verified 2026-09-10: bench PASS, 03 16/16+7/7, 04 10/10, 05 104/104, boot import OK.
+- **Hello-bug fix 2026-09-10:** bare greetings hit the refusal wall (live-reproduced) → `is_greeting()` in router + greeting panel in app (wins even over forced buttons, zero retrieval/LLM calls); 04 greeting probes + 05 asserts green; live-verified on Render.
 - **Pending:** none blocking — NGO 10/10 verified (NAB/NNAD re-verified HIGH 2026-09-09).
