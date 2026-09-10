@@ -54,11 +54,23 @@ ref = app.offline_legal_hits("quantum teleportation zebra unleaded gasoline", re
 check("legal-refusal", ref["refused"] and "08000-3000-100" in ref["answer"])
 
 # 3. Clarify rendering ------------------------------------------------------
-r = app.resolve_mode("hello", explicit="auto")
+r = app.resolve_mode("where", explicit="auto")
 check("clarify-singleton", r["mode"] == "clarify", str(r))
 check("clarify-has-question", bool(r["routing"].get("clarify_question")))
-check("explicit-overrides-router", app.resolve_mode("hello", explicit="legal")["mode"] == "legal")
+check("explicit-overrides-router", app.resolve_mode("where", explicit="legal")["mode"] == "legal")
 check("clarify-render-fn", "render_clarify" in src and "clarify-legal" in src and "clarify-help" in src)
+
+# 3b. Greeting path (2026-09-10 hello fix: greet, never the refusal wall) ----
+g = app.resolve_mode("hello", explicit="auto")
+check("greeting-auto", g["mode"] == "greeting", str(g))
+check("greeting-beats-explicit",
+      app.resolve_mode("hello", explicit="legal")["mode"] == "greeting"
+      and app.resolve_mode("hi", explicit="help")["mode"] == "greeting")
+check("greeting-content-not-question",
+      app.resolve_mode("hello, what are my rights?", explicit="auto")["mode"] == "legal")
+check("greeting-render-fn", "def render_greeting" in src and "GREETING_TEXT" in src)
+check("greeting-text-guidance", "citations" in app.GREETING_TEXT and "helplines" in app.GREETING_TEXT)
+check("greeting-speech", "greeting" in src and "Greeting. " in src)
 
 # 4. Plain-flag threading (offline) -----------------------------------------
 p0 = app.answer_legal("What are my education rights?", retriever=retr, plain=False, use_llm=False)

@@ -198,8 +198,15 @@ def resolve_mode(question: str, explicit: str = "auto", route_fn=None) -> dict:
     """Explicit buttons override the router; 'auto' delegates to route_question.
 
     explicit: 'auto' | 'legal' | 'help'. Returns {mode, routing} where mode is
-    the effective route ('legal' | 'help' | 'clarify').
+    the effective route ('legal' | 'help' | 'clarify' | 'greeting'). Pure
+    greetings ("hello") greet back instead of hitting a subsystem (2026-09-10)
+    and win even over forced legal/help buttons, which carry no content.
     """
+    from router import is_greeting
+    if is_greeting(question or ""):
+        return {"mode": "greeting", "routing": {"primary": "greeting",
+                                                "secondary": None,
+                                                "greeted": True}}
     if explicit in ("legal", "help"):
         return {"mode": explicit, "routing": {"primary": explicit,
                                               "secondary": None,
@@ -258,9 +265,11 @@ def help_display(question: str, df=None, k: int = 3) -> dict:
 
 
 def build_speech_text(legal: dict | None, help_payload: dict | None,
-                      clarify: str = "") -> str:
+                      clarify: str = "", greeting: str = "") -> str:
     """Plain-text answer snapshot for the client-side read-aloud button."""
     parts = [HELPLINE_BANNER_TEXT]
+    if greeting:
+        parts.append("Greeting. " + greeting)
     if clarify:
         parts.append("Clarification needed. " + clarify)
     if legal is not None:
@@ -424,6 +433,18 @@ def render_routing_trap(mode: str):
         st.session_state["explicit"] = other
         st.session_state["submitted"] = True
         st.rerun()
+
+
+GREETING_TEXT = (
+    "Hello! I'm DRLCA — I answer questions about Nigerian disability rights "
+    "(Disability Act 2018 + 1999 Constitution, always with citations) and help "
+    "find verified organisations and helplines near you. Type your question "
+    "above, then press one of the three buttons.")
+
+
+def render_greeting():
+    st = _st()
+    st.success("👋 " + GREETING_TEXT)
 
 
 def render_clarify(clarify_text: str):
@@ -660,6 +681,12 @@ def run():
     st.session_state["last_q"] = question
 
     legal_payload, help_payload, clarify_text = None, None, ""
+    if mode == "greeting":
+        # Pure greeting: friendly panel + guidance, no retrieval/LLM calls.
+        render_greeting()
+        speech = build_speech_text(None, None, greeting=GREETING_TEXT)
+        components.html(read_aloud_html(speech), height=60)
+        return
     if mode == "clarify":
         clarify_text = routing.get("clarify_question", "")
         render_clarify(clarify_text)

@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 import router  # noqa: E402
 from ngo import DRAC_TOLLFREE, DRAC_WHATSAPP  # noqa: E402
-from router import extract_help_slots, get_ngo_df, get_retriever, route, route_question  # noqa: E402
+from router import extract_help_slots, get_ngo_df, get_retriever, is_greeting, route, route_question  # noqa: E402
 
 # query, expected primary ("legal"/"help"), kind ("pure"/"mixed")
 QUERIES = [
@@ -41,6 +41,12 @@ QUERIES = [
 
 VAGUE_QUERY = "tell me something"  # tie/both-zero probe, reported separately
 TIE_QUERY = "rights help"  # 1-1 positive tie -> clarify, reported separately
+# Pure greetings (2026-09-10 hello-bug fix): bare greeting words only.
+GREETING_TRUE = ["hello", "hi", "Hello!", "hey", "good morning",
+                 "hey, good morning!"]
+GREETING_FALSE = ["hello, what are my rights?", "hi, I need help in Lagos",
+                  "hello there", "good", "tell me something",
+                  "Where can I find help for my deaf child in Abuja?"]
 LATENCY_BUDGET_MS = 50.0
 
 
@@ -135,6 +141,18 @@ def main() -> int:
             r["scores"]["legal"], r["scores"]["help"]))
         if not ok:
             failures.append("%s probe did not clarify: %s" % (label, r))
+
+    # --- greeting unit checks (2026-09-10 hello fix; separate from exit count)
+    for q in GREETING_TRUE:
+        ok = is_greeting(q) is True
+        print("[%s] greeting probe %r -> True" % ("PASS" if ok else "FAIL", q))
+        if not ok:
+            failures.append("greeting missed: %r" % q)
+    for q in GREETING_FALSE:
+        ok = is_greeting(q) is False
+        print("[%s] non-greeting probe %r -> False" % ("PASS" if ok else "FAIL", q))
+        if not ok:
+            failures.append("greeting false-positive: %r" % q)
 
     if failures:
         print("\nFAILURES:")

@@ -77,6 +77,29 @@ CLARIFY_QUESTION = (
     "an organisation or helpline near you?"
 )
 
+# Pure greetings ("hello", "hey, good morning!") are not questions at all --
+# answering them with the refusal wall is a UX bug (2026-09-10). A greeting is
+# ONLY greeting words; any content ("hello, what are my rights?") routes
+# normally on its cues, and unknown words ("hello there") still clarify.
+_GREETING_WORDS = frozenset({
+    "hi", "hey", "hello", "greetings", "howdy", "yo",
+    "morning", "afternoon", "evening", "good",
+})
+_GREETING_PAIRS = frozenset({"morning", "afternoon", "evening"})
+
+
+def is_greeting(question: str) -> bool:
+    """True iff the whole input is a bare greeting (zero legal/help cues)."""
+    toks = re.findall(r"[a-zA-Z]+", (question or "").lower())
+    if not toks or any(t not in _GREETING_WORDS for t in toks):
+        return False
+    if toks == ["good"]:
+        return False  # bare "good" is content-free, not a greeting
+    if "good" in toks and not any(p in toks for p in _GREETING_PAIRS):
+        return False  # "good" must pair with morning/afternoon/evening
+    s = score(" ".join(toks))
+    return s["legal"] == 0 and s["help"] == 0
+
 _MULTI_WEIGHT = 2
 _SINGLE_WEIGHT = 1
 
