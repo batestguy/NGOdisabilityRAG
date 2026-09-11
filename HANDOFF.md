@@ -1,10 +1,15 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-11)
 
 > **Latest (2026-09-11): Phase 06 CLOSED, Phase 08 steps 1/2/3/6a SHIPPED and live.**
-> `main` @ `fcd2129`. recall **0.800 → 0.925**, faith_audited **0.867 earned**
+> `main` @ `f4d18fe`. recall **0.800 → 0.925**, faith_audited **0.867 earned**
 > (`MANUAL_FLAGS == []`), reverse_rel 0.630 arbitrated as a metric artifact.
 > Live-verified on Render. Details in the 2026-09-11 journal entry; the pre-existing
 > text below is kept as dated history and is superseded where it conflicts.
+>
+> **Planned next: `docs/phases/09_evidence_and_generation.md` (written 2026-09-11, NOT
+> started).** Read that playbook first — a planning pass found three code facts that
+> **reorder the Phase 08 backlog**, summarised under "Next, in this order" below. Phase 08
+> steps 4/5 are superseded there, not merely deferred.
 
 **Env:** `C:\conda-envs\drlca-rag\python.exe` (py 3.11). Rebuild: `requirements-rag.txt`.
 Never install into `ds-general` / `base` / system Python. Full machine notes: `ENVIRONMENTS.md`.
@@ -27,24 +32,35 @@ reverse_rel 0.630 FAIL gated (short-answer artifact — recorded FAIL, judge arb
 Phase 07 LIVE on Render (browser-verified banner + help query; README link in).
 Helplines always on top: DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp `08000-3000-10`.
 
-## Next, in this order (full plan: `docs/phases/08_retrieval_upgrades.md`)
+## Next, in this order (full plan: `docs/phases/09_evidence_and_generation.md`)
 
-Steps 1 (synonym map), 2 (cite-constrain fix-B), 3 (judge) and 6a (answer cache) are
-**DONE 2026-09-11 and live**. What remains:
+Phase 08 steps 1 (synonym map), 2 (cite-constrain fix-B), 3 (judge) and 6a (answer cache)
+are **DONE 2026-09-11 and live**. A planning pass on 2026-09-11 then found three code facts
+that **change what should come next** — read `docs/phases/09_evidence_and_generation.md`
+before picking anything up. In short:
 
-1. **Phase 08 step 4 — rerank (local ONNX CPU, zero quota).** Top-20 → top-5,
-   flag-gated so the TF-IDF path stays intact for ablation. ONNX export friction is
-   the known risk — time-box it.
-2. **Phase 08 step 5 — dense hybrid (Colab/Kaggle afternoon).** Embed 2,214 chunks
-   once, ship vectors prebuilt, RRF-fuse with TF-IDF. Runtime stays offline. Do NOT
-   replace TF-IDF; hybrid preserves citations + the per-doc design.
-3. **Phase 09 — Q3 answer thinness.** The judge confirmed this is a REAL
-   prompt/generation defect (Q3 recall is 1.000 — the material was in context and the
-   answer ignored it). Fix at the prompt layer. Also carries the named `reverse_rel`
-   fix: count only hits from docs `EXPECTED` names. Deliberately NOT applied on
-   2026-09-11 — changing a metric in the session it failed is yardstick-tuning.
-4. **Quota when available:** two-run flakiness check (12 generator calls on
-   `gemini-2.5-flash`) + AI-expander live smoke. The answer cache makes repeats cheap.
+- **Phase 08 steps 4/5 as written cannot reach a real user.** Both need a model at *query*
+  time (step 4 a cross-encoder; step 5 to embed the incoming query — prebuilt chunk vectors
+  do not solve that half), and `requirements.txt` forbids ONNX/FAISS. Flag-gated = flag OFF
+  in production. **Superseded by Phase 09 step 3**, which delivers both wins with zero
+  query-time deps.
+- **Retrieval is no longer the bottleneck; generation is.** recall 0.925 vs a 0.75 gate,
+  while the judge confirmed Q3 thinness is a REAL prompt defect (Q3 recall 1.000).
+- **The synonym map is fitted to the set that scores it** (n=10, entries kept/deleted by
+  their effect on Q5/Q7/Q8/Q9). 0.925 cannot distinguish generalization from memorization.
+
+Order (owner-confirmed 2026-09-11, all four, under a **runtime-shippable-only** constraint):
+
+1. **Ops hardening (zero quota, small).** `--no-cache` on `test_phase02.py`; opt-in
+   daily-cap-only model failover. Unblocks the flakiness check and doubles quota.
+2. **Widen the evidence base (zero quota).** `data/eval/questions.json` + ~30 held-out
+   questions with corpus-verified ground truth, incl. the first real measurement of
+   false-refusal and false-answer rates. Frozen 10Q stays frozen and separate.
+3. **Shippable retrieval (zero quota).** BM25 re-rank *inside* the existing cosine gate
+   (step 4's win, no ONNX) + an offline-computed `synonyms_auto.json` (step 5's win, no
+   query-time model).
+4. **Generation fix (quota-paced).** Q3 answer-shape floor + the named `reverse_rel` fix in
+   its own commit + a fresh 12-call generation pass.
 5. **Owner-side:** frames → GIF encode + README embed (`docs/demo/` + storyboard are
    ready) → NVDA/keyboard/mic gates → LinkedIn (+ optional Streamlit 2nd link).
 
@@ -99,10 +115,34 @@ Steps 1 (synonym map), 2 (cite-constrain fix-B), 3 (judge) and 6a (answer cache)
   pacing, `_is_per_minute()`, bounded backoff, checkpoint after EVERY call).
   503-transients retry with backoff, same day OK. Models draw from **separate pools**:
   the judge run spent `gemini-2.5-flash-lite` and touched `gemini-2.5-flash` zero times.
+  **Unused lever:** that makes the real daily budget **40, not 20**. A daily-cap-only failover
+  to flash-lite doubles effective quota for free (Phase 09 step 1). Rules: opt-in by flag,
+  record the model *actually used* not the one requested, and never fail over on a per-minute
+  429 — that one is retried.
 - Answer cache live (`src/rag.py`, gitignored at `scripts/.answer_cache.json`): keyed by
   sha256(model + NUL + **whole rendered prompt**), so context and prompt version are in the
   key. Fails OPEN. Every hit sets `cached=True` and `test_phase02.py` persists it — a replay
   can never be written up as a fresh call.
+  **Corollary found 2026-09-11: the cache currently DEFEATS the pending two-run flakiness
+  check.** `test_phase02.py:49` calls `ask(q, retriever=ret, use_llm=use_llm)` and never
+  passes `use_cache`, which defaults `True` — so run two would be 12 cache hits measuring
+  nothing. `ask()` already accepts `use_cache` (`src/rag.py:438`); only the harness needs a
+  `--no-cache` flag. Do that BEFORE spending quota on the flakiness check.
+  *(A prompt-version bump does NOT need the flag — the key covers the whole rendered prompt,
+  so a new `PROMPT_VERSION` misses the cache automatically.)*
+- **Phase 08 steps 4/5 are SUPERSEDED, not just deferred (2026-09-11).** Both need a model at
+  *query* time — step 4 a cross-encoder, step 5 to embed the incoming query (prebuilt chunk
+  vectors do not solve that half) — and `requirements.txt` bans ONNX/FAISS. "Flag-gated"
+  therefore means OFF in production: local eval numbers move, users see nothing. Replacements
+  in `docs/phases/09_evidence_and_generation.md` step 3: BM25 re-rank *inside* the cosine gate
+  (zero new packages) and an offline-computed `synonyms_auto.json`. **Never re-rank by
+  replacing the cosine scorer** — BM25 scores are unbounded and would silently invalidate the
+  `MIN_SCORE` calibration at `src/retrieve.py:26-44` and change refusal behaviour.
+- **recall 0.925 is measured on the same 10 questions the synonym map was tuned on.** Entries
+  were kept or deleted by their effect on Q5/Q7/Q8/Q9, so the number cannot distinguish
+  generalization from memorization. Treat it as an upper bound until the Phase 09 held-out set
+  exists. The frozen 10Q must stay frozen AND separate — never merge held-out questions into
+  it, or every historical artifact from Phase 01 onward loses comparability.
 - CSS rules of the road (learned 2026-09-09): watermark div lives INSIDE
   stMainBlockContainer (z-1), so sidebar needs z-index 2; Streamlit's own section
   rules beat un-`!important` ones; height=0 iframes never mount (use 1); srcdoc
@@ -118,6 +158,12 @@ Steps 1 (synonym map), 2 (cite-constrain fix-B), 3 (judge) and 6a (answer cache)
 **Pending owner inputs:** frames→GIF encode + README embed (`docs/demo/` 5 frames +
 `docs/demo_storyboard.md` are ready) + NVDA/keyboard/mic gates + LinkedIn (+ optional
 Streamlit link).
-**Pending quota:** two-run flakiness check (12 generator calls) + AI-expander live smoke.
-**Pending code:** Phase 08 steps 4 (ONNX rerank) + 5 (dense hybrid); Phase 09 Q3 thinness +
-the named reverse_rel fix. Nothing else is blocked.
+**Pending quota:** two-run flakiness check (24 calls with failover, or 2 days) — **blocked
+until `--no-cache` lands**, see the cache corollary above; + AI-expander live smoke.
+**Pending code:** all of `docs/phases/09_evidence_and_generation.md`, in its stated order —
+(1) ops hardening, (2) held-out eval set, (3) BM25 re-rank + offline thesaurus, (4) Q3
+answer-shape floor + named reverse_rel fix. Phase 08 steps 4/5 are superseded by (3).
+Nothing is blocked except the flakiness check.
+**Housekeeping:** a 0-byte stray file `D:NGORAG_review_judge.diff` (U+F03A in the name, from a
+bad shell redirect) sits untracked in the repo root; deletion was permission-blocked twice, so
+it needs removing by hand. It is in no commit.

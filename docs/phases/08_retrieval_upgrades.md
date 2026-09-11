@@ -48,6 +48,22 @@ judge: **zero**.
 - **Then:** two-run check + manual-100% re-confirm → fix-B scope locked
   (prompt floor? cite-constrain enough?) → close Phase 06.
 
+> ### ⚠️ Steps 4 and 5 are SUPERSEDED (2026-09-11) — do not build them as written
+>
+> A planning pass found both are **unbuildable for production as specified**. Step 4 needs a
+> cross-encoder at *query* time and step 5 needs to embed the *incoming query* at query time —
+> shipping prebuilt chunk vectors solves only the corpus half. `requirements.txt` bans
+> OCR/ONNX/FAISS, so "flag-gated" means the flag is permanently **OFF on Render**: local eval
+> numbers would move and no real user would see anything.
+>
+> Replacements delivering the same two wins with **zero query-time dependencies** are in
+> `docs/phases/09_evidence_and_generation.md` step 3 — a BM25 re-rank *inside* the existing
+> cosine gate, and an offline-computed `synonyms_auto.json`. Also note the ordering fact:
+> recall is now 0.925 against a 0.75 gate while the judge confirmed the real remaining defect
+> is at the **prompt** layer, so retrieval is no longer the bottleneck these steps assumed.
+>
+> The two sections below are kept verbatim as the original reasoning.
+
 ### 4. Local cross-encoder rerank (zero quota, ~1 weekend)
 - **What:** rerank top-20 → top-5 with a small local model (MiniLM-class via
   ONNX CPU — same path as the RapidOCR win). Flag-gated; TF-IDF path intact
@@ -100,6 +116,13 @@ Per-question recall: Q5 **0.000 → 0.250** (the targeted blind spot) · Q8 and 
 and `dignity`/`degrading` mismatches) · Q1–Q4, Q6, Q7 unchanged at 1.000, i.e. **no
 dilution**.
 
+> **Caveat added 2026-09-11: 0.925 is an upper bound, not a generalization estimate.** The
+> synonym map was tuned on these same 10 questions — an `education` key was deleted because it
+> cost Q7, others were kept because they lifted Q5/Q8/Q9 — so the set that scores the map is
+> the set the map was fitted to. With n=10 a single question is worth 10pp. Phase 09 step 2
+> builds the held-out set that can tell memorization from generalization; until then this
+> number should not be quoted without this sentence.
+
 **Read the faithfulness drop correctly.** 0.967 → 0.867 is the *improvement*. The old
 number depended on a hand-written `MANUAL_FLAGS` list; `MANUAL_FLAGS == []` now and Q10's
 s.39 misattribution is caught by code (auto 1.000 → 0.667), with the judge independently
@@ -139,7 +162,12 @@ returns `[Act cl. 2]`/`[Act cl. 1]` with scores matching local to 3 dp.
 - [x] Q5-class queries retrieve — synonym map proved it on 10Q (0.000 → 0.250) and live.
 - [x] Zero TOC-trap misattributions mechanically — fix-B, `MANUAL_FLAGS == []`.
 - [ ] Rerank + hybrid each ablated with numbers — **steps 4 and 5 deliberately out of
-      scope this pass.** Not attempted, so not claimed.
+      scope this pass.** Not attempted, so not claimed. **Superseded 2026-09-11** (see the
+      callout above): the criterion carries forward to
+      `docs/phases/09_evidence_and_generation.md` step 3, where the equivalent work must be
+      ablated on the frozen 10Q **and** on a held-out set — because the 0.925 in the table
+      above was measured on the same 10 questions the synonym map was tuned against, and is
+      therefore an upper bound, not a generalization estimate.
 - [x] RAGAS-judge verdict recorded; Phase 06 closed (an honest FAIL with a diagnosis).
 - [x] Answer cache live; quota spend documented in the 2026-09-11 ledger.
 
