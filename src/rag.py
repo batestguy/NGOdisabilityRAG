@@ -109,12 +109,15 @@ def const_ref(chunk: str) -> str:
     untouched (text identical); only the cite tag changes, so answer-level
     confirmation awaits the next LLM run."""
     m = CONST_REF_RE.search(chunk[:160])
-    body = chunk[m.end():] if m else chunk
-    if _is_toc_fragment(body):
-        return "general"
     if not m:
         return "general"
-    first = m.group(1).split(",")[0]
+    body = chunk[m.end():]
+    first = int(m.group(1).split(",")[0])
+    # The section number is passed down so the TOC test can ask the question
+    # that actually separates a listing from body text: does this chunk's
+    # visible heading belong to some OTHER section? See _is_toc_fragment.
+    if _is_toc_fragment(body, first):
+        return "general"
     return "s. %s" % first
 
 
@@ -126,11 +129,52 @@ def const_ref(chunk: str) -> str:
 TOC_HEAD_RE = re.compile(r"(?<!\d)(\d{1,3})(?!\d)\s*\.?\s*[A-Z]")
 
 
-def _is_toc_fragment(body: str) -> bool:
-    """True for section-title listings with no body text."""
+def _is_toc_fragment(body: str, sec: int | None = None) -> bool:
+    """True for section-title listings with no body text.
+
+    Two rules, because the arrangement-of-sections listing gets cut by the
+    splitter and the tail end of it does not look like the head end.
+
+    1. >=2 headings in under 40 words -- the original fix A rule, which
+       catches a listing caught mid-stride ("33. Right to life. 34 Right to
+       dignity...").
+
+    2. ORPHAN LIST ENTRY (Phase 08 fix B, 2026-09-11). When the split leaves
+       only ONE heading, rule 1 misses it. This is what produced the Q10
+       misattribution: the chunk
+
+           §39: "ion from fundamental human rights. 46 Special jurisdiction
+                 of High Court and Legal aid."
+
+       is the tail of the Chapter IV arrangement listing, but it carried only
+       the single head "46", so it kept ref "s. 39" -- and the LLM, reading
+       "Special jurisdiction of High Court and Legal aid" under a header that
+       said [Constitution s. 39], duly wrote "The High Court has special
+       jurisdiction and provides legal aid [Constitution s. 39]". Both
+       mechanical checks passed: the digits "39" were in the pooled text and
+       the phrase "high court" was in the cited chunk. Only a human caught it,
+       which is why it needed a hand-written MANUAL_FLAGS entry.
+
+       The giveaway is that the heading belongs to a DIFFERENT section: a
+       genuine body chunk of section N does not consist of a title listing for
+       section M. So a short body whose every visible heading is foreign to
+       its own section number is a listing, not text worth citing by number.
+
+    Measured blast radius before adoption (hazard check, because
+    eval_phase06.verify_ground_truth asserts every EXPECTED number still
+    occurs in some ref, and demoting refs to "general" REMOVES numbers):
+    12 of 2,104 Constitution chunks change, no section number disappears from
+    the corpus, and s.17/s.34/s.46 keep 17/6/6 chunks respectively. Eleven of
+    the twelve are Chapter VIII schedule/form boilerplate ("......." dotted
+    rules); the twelfth is the Q10 trap chunk.
+    """
     heads = {int(n) for n in TOC_HEAD_RE.findall(body) if 1 <= int(n) <= 320}
     words = re.findall(r"[A-Za-z]+", body)
-    return len(heads) >= 2 and len(words) < 40
+    if len(heads) >= 2 and len(words) < 40:
+        return True
+    if heads and len(words) < 40 and sec is not None and sec not in heads:
+        return True
+    return False
 
 
 def fact_ref(chunk: str) -> str:
@@ -228,11 +272,30 @@ def extract_citations(answer: str) -> list[str]:
 
 
 def verify_citations(answer: str, hits) -> list[dict]:
-    """Mechanical pre-check per cited tag: does the cited NUMBER occur in
-    the text of a hit from the matching doc? Returns [{tag, number_ok}].
-    'general' tags (no number) always pass mechanically -- they still need
-    the manual verdict (does the cited chunk actually support the claim?).
-    This catches invented numbers, not subtle misattribution."""
+    """Mechanical pre-check per cited tag: was a chunk with that REF actually
+    retrieved? Returns [{tag, number_ok}].
+
+    Phase 08 fix B (2026-09-11) changed what "number_ok" means. It used to ask
+    whether the cited digits appeared anywhere in the matching doc's POOLED
+    TEXT, which is far too weak to be worth much: section numbers are dense in
+    legal prose (cross-references, subsection markers, the injected chunk
+    headers themselves), so almost any plausible number "occurs in the pool"
+    and passes. That is precisely how Q10's "[Constitution s. 39]" survived
+    while attributing s.46's High-Court legal-aid provision to s.39 -- the
+    digits 39 were in the pool because a chunk header said so.
+
+    It now asks the question a citation actually makes: is there a retrieved
+    chunk from that doc whose OWN ref carries the cited number? A tag may only
+    name a chunk that was really in front of the model, under the label it was
+    really given. Invented numbers and borrowed-from-the-neighbour numbers
+    both fail; the check is no longer satisfiable by coincidence.
+
+    'general' tags (no number) still pass mechanically -- there is nothing to
+    match -- and still need the human verdict on whether the cited chunk
+    supports the claim. Multi-number tags ("cl. 9,10") require EVERY number to
+    be present in some retrieved ref, which is the same rule the prompt
+    enforces when it tells the model to copy multi-number tags whole.
+    """
     doc_of = {"Act": "act2018", "Constitution": "constitution1999",
               "Factsheet": "factsheet2020"}
     out = []
@@ -244,9 +307,12 @@ def verify_citations(answer: str, hits) -> list[dict]:
         if not nums:  # 'general' -- nothing mechanical to check
             out.append({"tag": tag, "number_ok": True})
             continue
-        pool = " ".join(h.text for h in hits if h.doc_id == doc_of[doc_id])
+        retrieved_refs: set[str] = set()
+        for h in hits:
+            if h.doc_id == doc_of[doc_id]:
+                retrieved_refs |= set(re.findall(r"\d+", h.ref))
         out.append({"tag": tag,
-                    "number_ok": all(n in pool for n in nums)})
+                    "number_ok": all(n in retrieved_refs for n in nums)})
     return out
 
 
