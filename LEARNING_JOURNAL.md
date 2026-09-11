@@ -392,3 +392,154 @@ Replace SAMPLE with real Act text → re-run notebook → wire citation prompt +
 - Report: "hello" → refusal wall (reproduced live on Render via Legal button). Cause: no greeting handling anywhere; forced buttons bypass the router's clarify fallback straight into refusal.
 - Fix (offline, zero quota): `is_greeting()` in `src/router.py` (bare greeting words only; content like "hello, what are my rights?" routes normally) → `resolve_mode()` returns `greeting` (wins over explicit buttons) → `run()` renders greeting panel + read-aloud, no retrieval/LLM. Lesson: first fix attempt tested `resolve_mode` but `run()` had inlined routing — live browser test caught it; routing now flows through the single seam.
 - Proof: 04 ALL PASS (+12 greeting probes), 05 104/104, 03 green; pushed `dd5aeb1`, Render live, browser-verified greeting panel with helplines above, zero console errors.
+
+## 2026-09-11 — Phase 08 steps 1/2/3/6a SHIPPED + Phase 06 CLOSED (M0–M6, live-verified)
+
+Scope fixed up front: Phase 08 steps **1, 2, 3, 6a only**. ONNX rerank (step 4) and the
+Colab dense hybrid (step 5) stay deliberately open. Branch + PR per step, each ablated on
+the frozen 10Q set with `eval_phase06.py` unchanged.
+
+### Per-step ablation (frozen 10Q, recall = context recall)
+
+| Q | recall M0 | recall now | note |
+|---|---|---|---|
+| Q1–Q4, Q6, Q7 | 1.000 | 1.000 | stable — no dilution from expansion |
+| **Q5** | **0.000** | **0.250** | the blind spot; still misses cl.8,9,10,13,29,30 |
+| **Q8** | 0.500 | **1.000** | unplanned win — `transitional`/`transitory` mismatch |
+| **Q9** | 0.500 | **1.000** | unplanned win — `dignity`/`degrading` mismatch |
+| **mean** | **0.800** | **0.925** | gate > 0.75 |
+
+| metric | M0 | now | verdict |
+|---|---|---|---|
+| context recall | 0.800 | **0.925** | PASS |
+| faithfulness_audited | 0.967 *(hand-suppressed)* | **0.867** | PASS, now **earned** |
+| reverse_rel | 0.630 | 0.630 | FAIL — arbitrated **metric artifact** |
+| coverage (ungated) | 0.723 | 0.709 | known paraphrase artifact |
+| precision (ungated) | 0.333 | 0.383 | by design, never gated |
+
+### The number that looks like a regression and is not: Q5 faithfulness 1.000 → 0.000
+
+`eval_phase06.py:176-182` scores a refusal **1.0 only if no expected ref was retrieved**
+("declining with empty hands is faithful; declining while holding the answer is not").
+Q5's answer is **frozen** from the pre-M1 transcript, where refusing was correct. M1 now
+retrieves `act2018:1,2`, so that same frozen refusal is no longer justified and correctly
+scores 0.0.
+
+This is the plan's **hazard 3** (the eval recomputes retrieval *live* against a *frozen*
+transcript) landing exactly where predicted. Consequence worth stating plainly:
+**faith_audited 0.867 understates the current system.** A fresh generation pass would
+very likely answer Q5 instead of refusing — but that costs 12 generator calls and is the
+same open two-run flakiness check. Not claimed, not fudged; the mean is reported with the
+stale row in it.
+
+### Negative results (kept, because they cost real time)
+
+- **8-term penalty expansion was WORSE than 5.** Adding `liable/damages/payable` reordered
+  the Act index to cl.28 ("liable on conviction") and buried cl.1/cl.2. Reverted to the
+  planned 5 terms.
+- **An `education` synonym key cost Q7 recall 1.000 → 0.500.** It promoted cl.18 ("free
+  education to secondary **school**") over the expected cl.16,17,20. Q7 had no vocabulary
+  mismatch, so the entry was pure dilution. Deleted; only `school → education`
+  (user→corpus direction) survives. **Expansion is not symmetric** — the transferable lesson.
+- Standing fact updated: HANDOFF previously read "Q5 = correct refusal ×4 … **NO synonym
+  hack**". The map is not the hack that line warned about — entries are corpus-verified
+  legal vocabulary and the full matrix was re-run on every change — but the tension is
+  recorded rather than quietly overwritten.
+
+### Two review rounds caught two real defects in the synonym map
+
+1. **BLOCKING — expansion manufactured corpus overlap.** `"my job interview went badly"`
+   went 0.0000/0 hits → 0.2460/6 hits via the `job` entry, reachable in one click because
+   the Legal button forces `explicit="legal"`. A refusal became an answer. Fixed with an
+   **entry gate**: expand only if the user's *own* words already clear the floor.
+2. **BLOCKING — the entry gate alone then created FALSE REFUSALS.** Bare `"blind"` scored
+   0.1367 base → 0.0821 expanded, under the floor. Appending terms absent from the best
+   chunk dilutes the query-vector norm without adding numerator mass. Fixed with an **exit
+   gate**. My earlier docstring claim — "the set of refused queries is IDENTICAL to the
+   pre-expansion set" — was **false and overstated**, and is now narrowed to what the gates
+   actually guarantee: *expansion never turns a refusal into an answer, and never turns an
+   answer into a refusal; it only re-ranks within the answered set.* It does **not** claim
+   expansion always raises the top score (Q6 drops 0.1759 → 0.1696 and stays correct).
+
+Also fixed in review: dead synonym keys (`stem()`'s length guards meant `"jobs"`, `"cars"`,
+`"buses"` never matched) → `_surface_forms()` on the **key-matching side only**,
+deliberately NOT in `stem()`, which is shared with the index; and a `"cares" → "car"`
+over-trigger injecting `vehicle transport parking road` into "nobody cares what happens
+next" → sibilant rule.
+
+### Fix-B: the hazard that would have hard-crashed the eval
+
+`verify_ground_truth` asserts every EXPECTED number occurs in some chunk's `ref`. Widening
+`_is_toc_fragment` rewrites refs to `"general"`, removing numbers — so an over-eager fix-B
+kills the eval on an assert before printing anything. Measured the blast radius **first**
+with a throwaway probe: 12 of 2,104 chunks relabelled, no section number lost, s.17/34/46
+keep 17/6/6 chunks. Only then edited `rag.py`; probe deleted. Result: Q10
+`faithfulness_auto` 1.000 → 0.667 **with `MANUAL_FLAGS == []`** — the TOC-trap class is now
+caught by code, not by hand.
+
+### Judge run — and the free-tier limit this repo had documented wrong
+
+`gemini-2.5-flash-lite` judged output generated by `gemini-2.5-flash`. Generator ≠ judge is
+a methodological choice, not a quota dodge; it does **not** buy independence (a Gemini model
+judging a Gemini model is still not independent) and that limit is recorded.
+
+**The 429 is `GenerateRequestsPerMinutePerProjectPerModel-FreeTier`, limit 10 per MINUTE** —
+not only the 20/day this repo had documented. The first run treated a per-minute 429 as
+terminal and burned 9 tasks against a limit that clears in ~37s (the error carries its own
+`retryDelay`). Harness now paces at 7s and retries per-minute limits while still leaving a
+**daily**-cap failure pending and unfaked. Checkpointing after every call meant the 429 cost
+**zero completed work**.
+
+Verdict rests on two legs on purpose: a **deterministic zero-LLM ceiling analysis** (mean
+ceiling **0.852** against a 0.80 gate; Q3/Q8 hard-capped at 0.333, because `PerDocRetriever`
+returns top-k from *every* doc by design) **plus** the judge (9/9 relevant). Proxy-vs-judge
+agreement is **2/9**. All 9 judge scores were exactly 1.0 — textbook assent bias — so the
+arithmetic, which needs no model at all, carries the verdict. The judge also conflated
+Factsheet `Section 39` with Constitution `s. 39` and misunderstood the `general` tag
+convention: **useful second opinion, not oracle.**
+
+### Quota ledger — 2026-09-11
+
+| model | role | calls | note |
+|---|---|---|---|
+| `gemini-2.5-flash-lite` | judge | 30 attempts → 21 verdicts | 9 lost to the misread 429 |
+| `gemini-2.5-flash` | generator | **0** | separate pool; never touched |
+
+### Answer cache (step 6a)
+
+Keyed by `sha256(model + NUL + fully-rendered prompt)` — deliberately the *whole* prompt, so
+retrieved context and prompt version sit inside the key and two materially different states
+cannot collide. Atomic temp-file + `replace()`, fails **open** (a corrupt or unwritable cache
+degrades to a live call, never an outage). Review caught that `test_phase02.py` dropped the
+`cached` flag when building its record — so a warm-cache re-run would have written a replay
+into a versioned transcript indistinguishable from a fresh call. Fixed; the invariant is now
+enforced in the durable record, not just in `ask()`'s return value.
+
+### Shipped and verified live
+
+Merged to `main` (`fcd2129`) → Render auto-deploy. **`requirements.txt` verified
+byte-identical to its pre-M1 state** (blob `dc312fa`, checked not assumed) — no runtime
+dependency added, nothing to bloat a free-tier cold start.
+
+Live smoke on https://ngodisabilityrag.onrender.com, zero quota (AI expander left OFF):
+helplines banner ✔ · **Q5 proves the new retrieval is actually deployed** — "penalties" now
+returns `[Act cl. 2]` / `[Act cl. 1]` with excerpts reading *offence / fine / imprisonment /
+conviction*, scores matching local to 3 dp (0.415 / 0.415 / 0.311 / 0.167 / 0.146) ✔ · help
+query → helplines-first, NAB, approximate-match confirmation ✔ · greeting path: `"hi"` with
+the **Legal button forced** still greets, no legal panel, no refusal ✔.
+
+Demo: five frames at 1925×881 captured from the **live** deployment +
+`docs/demo_storyboard.md`. Frames 02/03 were **re-shot** — the first pass caught the page
+scrolled to the top, so neither actually showed the citation tags or the NGO list its
+filename claimed. Every frame read back and content-verified before commit. The storyboard
+records that frames were shot at `db3a1fc` (pre-Phase-08 retrieval), so they demonstrate the
+**UX contract**, not the retrieval gain.
+
+### Still open, deliberately
+
+Two-run flakiness check (12 generator calls) · Q3 thinness = a real **prompt/generation**
+defect the judge confirmed, not a metric artifact · the named `reverse_rel` fix (count only
+hits from docs EXPECTED names) — **not** applied, because changing a metric in the same
+session it failed is the yardstick-tuning this playbook forbids · Phase 08 steps 4 (ONNX
+rerank) and 5 (dense hybrid) · owner gates: GIF encode, NVDA, physical keyboard, live
+mic/read-aloud, LinkedIn.
