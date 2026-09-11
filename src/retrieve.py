@@ -105,6 +105,189 @@ def stem_preprocess(text: str) -> str:
     return " ".join(stem(t) for t in toks)
 
 
+# ---------------------------------------------------------------------------
+# Query-side legal synonym expansion (Phase 08 step 1, added 2026-09-11).
+#
+# The problem it solves is vocabulary mismatch, not ranking. Phase 06 Q5
+# ("What are the penalties for violating the Act?") scored recall 0.000: the
+# Act never uses the word "penalty" for its penalty clauses. It says "a fine
+# of N100,000 or six months imprisonment" (cl.2), "N5,000 damages payable
+# ... each day of default" (cl.9,10), "liable to N50,000 damages" (cl.29,30).
+# TF-IDF scores word overlap, so a query built from the wrong register scores
+# zero against the right clauses and the generic preamble wins instead.
+#
+# WHERE THIS RUNS MATTERS. Expansion is applied ONCE PER QUERY in
+# PerDocRetriever.query(), NOT in stem_preprocess(). stem_preprocess is the
+# TfidfVectorizer preprocessor, so it runs over INDEXED CHUNKS too: expanding
+# there would inject synonyms into the corpus side, inflate document frequency
+# for every expansion term, and silently invalidate the MIN_SCORE calibration
+# recorded at the top of this file. Query-side only keeps the index -- and
+# therefore that calibration -- byte-identical.
+#
+# CURATION RULE: every expansion term below was verified to occur in the
+# stemmed corpus before being added (probe 2026-09-11). Terms that sound right
+# but are absent were REJECTED, not kept as dead weight: "terminate",
+# "reserve", "unfair", "entitlement", "healthcare", "moratorium", "sight",
+# "curriculum". This is legal vocabulary the documents actually use, not a
+# thesaurus and not a score hack. MIN_SCORE (0.10) is untouched: expansion
+# raises coverage, it does not move the refusal floor's meaning.
+#
+# Keys are matched after stemming, so "penalty"/"penalties" both fire from the
+# single key "penalty". Multi-word keys are matched as raw substrings.
+# ---------------------------------------------------------------------------
+SYNONYMS: dict[str, tuple[str, ...]] = {
+    # -- penalties: the Q5 blind spot. The Act's register is offence/fine/
+    #    imprisonment/damages, never "penalty". "prison" is Constitution-only
+    #    vocabulary but genuine, so it rides along harmlessly for Act queries
+    #    (an out-of-vocabulary term is simply dropped by transform()).
+    #    MEASURED 2026-09-11: adding "liable"/"damages"/"payable" on top of
+    #    these five made Q5 WORSE, not better -- they are the register of the
+    #    employment clause cl.28 ("liable on conviction") and of cl.29,30
+    #    ("damages payable"), so the Act index reordered to cl.28 + general and
+    #    pushed cl.1/cl.2 (the actual N100,000 fine / six months imprisonment
+    #    clauses) down. Five terms: act top-3 = cl.2, cl.1, cl.16,17. Eight
+    #    terms: act top-3 = cl.28, general, cl.13. Wider is not better; the
+    #    expansion must stay on the penalty register, not all of legal English.
+    "penalty": ("offence", "fine", "imprisonment", "prison", "conviction"),
+    "punishment": ("offence", "fine", "imprisonment", "conviction"),
+    "sanction": ("offence", "fine", "penalty", "prosecution"),
+    "fine": ("damages", "payable", "liable", "offence"),
+    "fined": ("fine", "damages", "payable", "liable"),
+    "jail": ("imprisonment", "prison", "conviction"),
+    # -- employment. "sacked" is NOT a separate key: it stems to "sack" and
+    #    would silently shadow it in _SYN_WORD (the collision assert below
+    #    catches exactly this). _surface_forms() already routes "sacked" here.
+    "sack": ("dismiss", "employment", "employ", "labour"),
+    "fired": ("dismiss", "employment", "employ"),
+    "job": ("employment", "employ", "work", "labour"),
+    "quota": ("employment", "employ", "percent", "labour"),
+    # -- premises and physical access
+    "house": ("building", "premises", "structure"),
+    "toilet": ("facility", "accessibility", "premises"),
+    "lift": ("elevator", "accessibility", "building"),
+    "ramp": ("accessibility", "access", "building", "facility"),
+    "wheelchair": ("mobility", "physical", "access", "ramp"),
+    "accessible": ("accessibility", "access", "facility", "premises"),
+    # -- transport
+    "bus": ("vehicle", "transport", "road"),
+    "car": ("vehicle", "transport", "parking", "road"),
+    "transport": ("vehicle", "transportation", "road"),
+    # -- education. ONE DIRECTION ONLY: the user says "school", the Act says
+    #    "education". The reverse key ("education" -> school, student,
+    #    learning) was written, measured, and DELETED: Q7 already retrieved
+    #    perfectly on its own words, and expanding it cost recall 1.000 ->
+    #    0.500 by promoting cl.18 ("free education to secondary SCHOOL") over
+    #    the expected cl.16,17 and cl.20. There was no vocabulary mismatch to
+    #    fix, so the entry was pure dilution -- a thesaurus entry, which the
+    #    curation rule above forbids. Expand toward the corpus, never away.
+    "school": ("education", "institution"),
+    # -- impairments (the words a user brings vs the words the Act uses)
+    "blind": ("visual", "impairment", "braille"),
+    "deaf": ("hearing", "speech", "impairment", "interpreter"),
+    "sign language": ("deaf", "hearing", "interpreter", "speech"),
+    # -- health
+    "hospital": ("health", "medical", "treatment"),
+    "doctor": ("health", "medical", "treatment"),
+    # -- money and remedy
+    "money": ("fine", "damages", "payable", "naira", "compensation"),
+    "compensation": ("damages", "payable", "liable"),
+    "lawyer": ("counsel", "representation", "court", "aid"),
+    "court": ("tribunal", "judicial", "justice", "proceedings"),
+    # -- dignity: Q9 expects Constitution s.34, whose body text is
+    #    "torture ... inhuman or degrading treatment", not the word "dignity".
+    "dignity": ("degrading", "inhuman", "torture", "respect"),
+    "abuse": ("degrading", "inhuman", "torture"),
+    "begging": ("alms", "destitute"),
+    # -- transition period: Q8 expects Act cl.6,7. The Act and factsheet say
+    #    "transitory"; only the Constitution says "transitional".
+    "transitional": ("transitory", "period", "years", "comply"),
+    "compliance": ("comply", "conform", "transitory"),
+}
+
+# Single-word keys are matched against a normalised token set (see
+# _surface_forms); phrase keys keep their raw form and match as substrings.
+_SYN_WORD = {k: v for k, v in SYNONYMS.items() if " " not in k}
+_SYN_PHRASE = {k: v for k, v in SYNONYMS.items() if " " in k}
+
+# stem() is shared with the INDEX, so it must not be retuned to make keys fire
+# -- changing it would rebuild every TF-IDF vocabulary and invalidate the
+# MIN_SCORE calibration. Instead the collision check below keeps the map
+# honest: two keys that reduce to the same stem would silently shadow each
+# other in a dict comprehension, and a future edit giving them different
+# synonym lists would lose one with no warning.
+_stems: dict[str, str] = {}
+for _k in _SYN_WORD:
+    _s = stem(_k)
+    assert _s not in _stems, (
+        "synonym keys %r and %r collide on stem %r -- one would shadow the "
+        "other; merge them" % (_stems[_s], _k, _s))
+    _stems[_s] = _k
+del _stems, _k, _s
+
+
+def _surface_forms(q: str) -> set[str]:
+    """Every form of a query token a SYNONYMS key could legitimately match.
+
+    stem() is a deliberately tiny rule set with length guards (len > 4 / > 5),
+    which means short nouns do NOT reduce to their singular: "jobs" stems to
+    "jobs", "cars" to "cars", "buses" to "buse", "houses" to "hous". Matching
+    keys on stems alone therefore left several curated entries DEAD against the
+    plural a user would actually type ("Are there job quotas?" fires, "What
+    about accessible buses?" does not). Found in review 2026-09-11.
+
+    The fix is on the key-matching side only -- naive singularisation here is
+    safe because a false match costs at most a few extra query terms, whereas
+    the same rule inside stem() would rewrite the corpus index.
+    """
+    import re as _re
+    raw = set(_re.findall(r"[a-z]+", q.lower()))
+    forms = set(raw) | set(stem_preprocess(q).split())
+    for w in raw:
+        forms.add(stem(w))
+        # "-es" is only a plural marker after a sibilant (bus->buses,
+        # box->boxes, church->churches). Without that guard the rule is a
+        # false-positive generator: it stripped "cares" -> "car" and injected
+        # vehicle/transport/parking/road into "nobody cares what happens
+        # next" (found in review 2026-09-11).
+        if w.endswith("es") and len(w) > 3 and w[:-2].endswith(
+                ("s", "x", "z", "ch", "sh")):
+            forms.add(w[:-2])                 # buses -> bus
+        if w.endswith("s") and len(w) > 2:    # jobs -> job, houses -> house
+            forms.add(w[:-1])
+    return forms
+
+
+def expand_query(q: str) -> str:
+    """Append curated legal synonyms for terms the query actually contains.
+
+    Returns the ORIGINAL query plus appended terms, never a replacement: the
+    user's own wording keeps its weight and expansion only adds mass on the
+    corpus's register. Order is deterministic (dict insertion order) and
+    duplicates are dropped, so the same question always expands identically --
+    the ablation stays reproducible.
+
+    NOTE: PerDocRetriever.query() applies this to whatever it is given, and the
+    Phase 06 eval's reverse-retrieval step passes a whole generated ANSWER, not
+    a short question. Long inputs can fire many keys at once. Measured
+    2026-09-11: reverse_rel is bit-identical per question before and after, so
+    the map as it stands is stable there -- but it is tuned against short
+    questions only, so re-check the reverse_rel column when adding entries.
+    """
+    import re as _re
+    forms = _surface_forms(q)
+    low = " ".join(_re.findall(r"[a-z]+", q.lower()))
+    extra: list[str] = []
+    for key, syns in _SYN_PHRASE.items():
+        if key in low:
+            extra.extend(syns)
+    for key, syns in _SYN_WORD.items():
+        if key in forms or stem(key) in forms:
+            extra.extend(syns)
+    if not extra:
+        return q
+    return q + " " + " ".join(dict.fromkeys(extra))
+
+
 class TfidfRetriever:
     """Single-corpus TF-IDF retriever. Kept backward compatible:
     chunks are bare strings, query() returns [(idx, score, text)]."""
@@ -145,14 +328,85 @@ class PerDocRetriever:
             for doc_id, chunks in docs.items()
         }
 
-    def query(self, q: str, k: int | None = None) -> list[Hit]:
-        """Top-k hits from EACH doc, merged and sorted by score desc."""
-        k = self.k_default if k is None else k
+    def _merged(self, q: str, k: int) -> list[Hit]:
+        """Top-k from each doc, merged and sorted. No expansion, no gating."""
         hits: list[Hit] = []
         for doc_id, chunks in self.docs.items():
             for i, s, _ in self.sub[doc_id].query(q, k=k):
                 hits.append(Hit(chunks[i].doc_id, chunks[i].ref, chunks[i].text, s))
         hits.sort(key=lambda h: h.score, reverse=True)
+        return hits
+
+    def query(
+        self, q: str, k: int | None = None, min_score: float | None = None
+    ) -> list[Hit]:
+        """Top-k hits from EACH doc, merged and sorted by score desc.
+
+        min_score is the floor the EXPANSION GATE below consults; it does not
+        filter the returned hits (retrieve() does that). It is threaded
+        through so a caller using a non-default floor gates expansion on the
+        same number it will later filter on, rather than on the module
+        constant. No caller passes a non-default today -- this closes the
+        latent inconsistency rather than leaving it to be discovered later.
+
+        Synonym expansion happens HERE -- once, before the per-doc
+        sub-retrievers run -- so all three docs are searched with the same
+        expanded query and the indexes stay untouched. See expand_query().
+
+        EXPANSION MAY NOT CHANGE A REFUSAL DECISION, IN EITHER DIRECTION.
+        That is the whole guard, and it needs both halves -- the first version
+        of it shipped only the first half and was caught in review.
+
+        Entry side (expansion must not MANUFACTURE overlap). Measured before
+        any gate existed: "my job interview went badly" scored 0.0000 with
+        zero hits above MIN_SCORE, but the "job" entry lifted it to 0.2460
+        with six hits. app.py's "Ask a Legal Question" button forces the legal
+        route, so a user could have been shown dignity and equality clauses as
+        if they answered that sentence. That defeats the single job MIN_SCORE
+        is documented to do (calibration block at the top of this file):
+        refuse zero-overlap queries.
+
+        Exit side (expansion must not CREATE a false refusal). Appending terms
+        that are absent from the best-matching document dilutes the query
+        vector's norm without adding numerator mass, so a cosine can DROP.
+        Measured: the bare query "blind" -- itself one of the curated keys --
+        scored 0.1367 on Act cl.20, and expanding it to "blind visual
+        impairment braille" pushed it to 0.0821, under the floor. A real,
+        on-topic question about blindness would have been refused. CLAUDE.md
+        is explicit that false refusals deny help to PWDs and that the gate
+        errs low on purpose, so this direction matters at least as much as
+        the first.
+
+        So: score the ORIGINAL query. If it cannot clear the floor, return it
+        unexpanded and let the caller refuse on the user's own words. If it
+        can, expand -- but if the expanded query cannot clear the floor, fall
+        back to the original hits. The honest statement of the property is
+        therefore narrower than "expansion only helps":
+
+          expansion never turns a refusal into an answer, and never turns an
+          answer into a refusal. It only re-ranks within the answered set.
+
+        It is NOT claimed that every expanded top score is higher than its
+        base (Q6 drops 0.1759 -> 0.1696 and stays correct). Re-ranking that
+        lowers the top hit while improving coverage deeper in the top-6 is
+        legitimate -- recall is measured over the merged six, not the first.
+
+        MIN_SCORE itself is untouched at 0.10. It is used here as a
+        precondition, not renegotiated. Cost is one extra TF-IDF transform per
+        expanded query against a 2,104-chunk local index -- negligible, and
+        the path stays fully offline.
+        """
+        k = self.k_default if k is None else k
+        floor = MIN_SCORE if min_score is None else min_score
+        base = self._merged(q, k)
+        if not base or base[0].score < floor:
+            return base                      # entry gate
+        expanded = expand_query(q)
+        if expanded == q:
+            return base
+        hits = self._merged(expanded, k)
+        if not hits or hits[0].score < floor:
+            return base                      # exit gate
         return hits
 
     def retrieve(
@@ -164,7 +418,8 @@ class PerDocRetriever:
         clears the threshold -- the caller must emit the fixed refusal
         message instead of answering. refused=False always carries >=1 hit.
         """
-        hits = [h for h in self.query(q, k=k) if h.score >= min_score]
+        hits = [h for h in self.query(q, k=k, min_score=min_score)
+                if h.score >= min_score]
         if not hits:
             return [], True
         return hits, False
