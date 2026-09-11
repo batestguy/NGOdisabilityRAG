@@ -109,12 +109,15 @@ def const_ref(chunk: str) -> str:
     untouched (text identical); only the cite tag changes, so answer-level
     confirmation awaits the next LLM run."""
     m = CONST_REF_RE.search(chunk[:160])
-    body = chunk[m.end():] if m else chunk
-    if _is_toc_fragment(body):
-        return "general"
     if not m:
         return "general"
-    first = m.group(1).split(",")[0]
+    body = chunk[m.end():]
+    first = int(m.group(1).split(",")[0])
+    # The section number is passed down so the TOC test can ask the question
+    # that actually separates a listing from body text: does this chunk's
+    # visible heading belong to some OTHER section? See _is_toc_fragment.
+    if _is_toc_fragment(body, first):
+        return "general"
     return "s. %s" % first
 
 
@@ -126,11 +129,52 @@ def const_ref(chunk: str) -> str:
 TOC_HEAD_RE = re.compile(r"(?<!\d)(\d{1,3})(?!\d)\s*\.?\s*[A-Z]")
 
 
-def _is_toc_fragment(body: str) -> bool:
-    """True for section-title listings with no body text."""
+def _is_toc_fragment(body: str, sec: int | None = None) -> bool:
+    """True for section-title listings with no body text.
+
+    Two rules, because the arrangement-of-sections listing gets cut by the
+    splitter and the tail end of it does not look like the head end.
+
+    1. >=2 headings in under 40 words -- the original fix A rule, which
+       catches a listing caught mid-stride ("33. Right to life. 34 Right to
+       dignity...").
+
+    2. ORPHAN LIST ENTRY (Phase 08 fix B, 2026-09-11). When the split leaves
+       only ONE heading, rule 1 misses it. This is what produced the Q10
+       misattribution: the chunk
+
+           §39: "ion from fundamental human rights. 46 Special jurisdiction
+                 of High Court and Legal aid."
+
+       is the tail of the Chapter IV arrangement listing, but it carried only
+       the single head "46", so it kept ref "s. 39" -- and the LLM, reading
+       "Special jurisdiction of High Court and Legal aid" under a header that
+       said [Constitution s. 39], duly wrote "The High Court has special
+       jurisdiction and provides legal aid [Constitution s. 39]". Both
+       mechanical checks passed: the digits "39" were in the pooled text and
+       the phrase "high court" was in the cited chunk. Only a human caught it,
+       which is why it needed a hand-written MANUAL_FLAGS entry.
+
+       The giveaway is that the heading belongs to a DIFFERENT section: a
+       genuine body chunk of section N does not consist of a title listing for
+       section M. So a short body whose every visible heading is foreign to
+       its own section number is a listing, not text worth citing by number.
+
+    Measured blast radius before adoption (hazard check, because
+    eval_phase06.verify_ground_truth asserts every EXPECTED number still
+    occurs in some ref, and demoting refs to "general" REMOVES numbers):
+    12 of 2,104 Constitution chunks change, no section number disappears from
+    the corpus, and s.17/s.34/s.46 keep 17/6/6 chunks respectively. Eleven of
+    the twelve are Chapter VIII schedule/form boilerplate ("......." dotted
+    rules); the twelfth is the Q10 trap chunk.
+    """
     heads = {int(n) for n in TOC_HEAD_RE.findall(body) if 1 <= int(n) <= 320}
     words = re.findall(r"[A-Za-z]+", body)
-    return len(heads) >= 2 and len(words) < 40
+    if len(heads) >= 2 and len(words) < 40:
+        return True
+    if heads and len(words) < 40 and sec is not None and sec not in heads:
+        return True
+    return False
 
 
 def fact_ref(chunk: str) -> str:
@@ -228,11 +272,30 @@ def extract_citations(answer: str) -> list[str]:
 
 
 def verify_citations(answer: str, hits) -> list[dict]:
-    """Mechanical pre-check per cited tag: does the cited NUMBER occur in
-    the text of a hit from the matching doc? Returns [{tag, number_ok}].
-    'general' tags (no number) always pass mechanically -- they still need
-    the manual verdict (does the cited chunk actually support the claim?).
-    This catches invented numbers, not subtle misattribution."""
+    """Mechanical pre-check per cited tag: was a chunk with that REF actually
+    retrieved? Returns [{tag, number_ok}].
+
+    Phase 08 fix B (2026-09-11) changed what "number_ok" means. It used to ask
+    whether the cited digits appeared anywhere in the matching doc's POOLED
+    TEXT, which is far too weak to be worth much: section numbers are dense in
+    legal prose (cross-references, subsection markers, the injected chunk
+    headers themselves), so almost any plausible number "occurs in the pool"
+    and passes. That is precisely how Q10's "[Constitution s. 39]" survived
+    while attributing s.46's High-Court legal-aid provision to s.39 -- the
+    digits 39 were in the pool because a chunk header said so.
+
+    It now asks the question a citation actually makes: is there a retrieved
+    chunk from that doc whose OWN ref carries the cited number? A tag may only
+    name a chunk that was really in front of the model, under the label it was
+    really given. Invented numbers and borrowed-from-the-neighbour numbers
+    both fail; the check is no longer satisfiable by coincidence.
+
+    'general' tags (no number) still pass mechanically -- there is nothing to
+    match -- and still need the human verdict on whether the cited chunk
+    supports the claim. Multi-number tags ("cl. 9,10") require EVERY number to
+    be present in some retrieved ref, which is the same rule the prompt
+    enforces when it tells the model to copy multi-number tags whole.
+    """
     doc_of = {"Act": "act2018", "Constitution": "constitution1999",
               "Factsheet": "factsheet2020"}
     out = []
@@ -244,22 +307,123 @@ def verify_citations(answer: str, hits) -> list[dict]:
         if not nums:  # 'general' -- nothing mechanical to check
             out.append({"tag": tag, "number_ok": True})
             continue
-        pool = " ".join(h.text for h in hits if h.doc_id == doc_of[doc_id])
+        retrieved_refs: set[str] = set()
+        for h in hits:
+            if h.doc_id == doc_of[doc_id]:
+                retrieved_refs |= set(re.findall(r"\d+", h.ref))
         out.append({"tag": tag,
-                    "number_ok": all(n in pool for n in nums)})
+                    "number_ok": all(n in retrieved_refs for n in nums)})
     return out
 
 
-def generate(prompt: str, model: str = MODEL_NAME) -> str:
-    """Single Gemini generation via the new `google.genai` SDK (not the
-    retired `google.generativeai` package, not the retired 2.0-flash)."""
+# ---------------------------------------------------------------------------
+# Answer cache (Phase 08 step 6a, 2026-09-11). A quota saver, NOT evidence.
+#
+# The free tier is 20 calls/day/model (and 10/MINUTE -- measured 2026-09-11),
+# so re-running an eval used to cost a full day's budget to get answers that
+# were already known. Cached replies make repeat runs free.
+#
+# KEYED ON THE WHOLE PROMPT, NOT ON THE QUESTION. This is a deliberate
+# departure from the Phase 08 plan, which proposed keying on
+# (question, PROMPT_VERSION, model). That key is unsafe, and this project has
+# already been bitten by exactly the failure it would cause: the prompt embeds
+# the RETRIEVED EXCERPTS, and M1's synonym map changed what Q5 retrieves (from
+# no Act clauses at all to cl.1 and cl.2). A question-keyed cache would have
+# happily replayed the pre-M1 refusal against post-M1 context -- manufacturing
+# the same stale-transcript problem the M1 eval flagged, except silently and
+# inside the app. Hashing the prompt covers the question, the excerpts, the
+# prompt version (it is literally in SYSTEM_PROMPT) and the plain-language
+# suffix, all at once. Context changes -> key changes -> no stale replay.
+#
+# TRANSPARENCY IS THE POINT. Every hit sets cached=True on the way back out to
+# ask(), so no transcript can present replayed text as a fresh call. The
+# versioned test_phase02/judge transcripts remain the durable record; this file
+# is scratch and is gitignored.
+#
+# It must never be able to break an answer. Every cache read and write is
+# wrapped: a corrupt, unreadable or unwritable cache degrades to "no cache",
+# never to an error reaching the user.
+# ---------------------------------------------------------------------------
+CACHE_PATH = ROOT / "scripts" / ".answer_cache.json"
+
+
+def _cache_key(prompt: str, model: str) -> str:
+    import hashlib
+    h = hashlib.sha256()
+    h.update(model.encode("utf-8"))
+    h.update(b"\x00")
+    h.update(prompt.encode("utf-8"))
+    return h.hexdigest()
+
+
+def _cache_read(key: str):
+    try:
+        if not CACHE_PATH.exists():
+            return None
+        import json as _json
+        entry = _json.loads(CACHE_PATH.read_text(encoding="utf-8")).get(key)
+        return entry["answer"] if entry else None
+    except Exception:  # corrupt/unreadable cache is a miss, never an error
+        return None
+
+
+def _cache_write(key: str, prompt: str, model: str, answer: str) -> None:
+    try:
+        import json as _json
+        data = {}
+        if CACHE_PATH.exists():
+            try:
+                data = _json.loads(CACHE_PATH.read_text(encoding="utf-8"))
+            except Exception:
+                data = {}  # corrupt file: start over rather than fail the call
+        # question//prompt_version are stored for human readability when
+        # debugging the cache; they are NOT part of the key.
+        q = prompt.rsplit("Question: ", 1)[-1].split("\n", 1)[0]
+        data[key] = {"answer": answer, "model": model, "question": q,
+                     "prompt_version": PROMPT_VERSION,
+                     "prompt_sha256": key,
+                     "at": __import__("datetime").datetime.now().isoformat(
+                         timespec="seconds")}
+        CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        tmp = CACHE_PATH.with_suffix(".tmp")
+        tmp.write_text(_json.dumps(data, indent=1), encoding="utf-8")
+        tmp.replace(CACHE_PATH)  # atomic-ish: never leaves a half-written file
+    except Exception:
+        pass  # a cache we cannot write is still a working assistant
+
+
+def generate_with_meta(
+    prompt: str, model: str = MODEL_NAME, use_cache: bool = True
+) -> tuple[str, bool]:
+    """Single Gemini generation. Returns (answer, cached).
+
+    `cached` is what keeps the cache honest: it rides back through ask() into
+    the result dict, so a replayed answer can never be written into a
+    transcript as though it had been freshly generated.
+    """
+    if use_cache:
+        hit = _cache_read(_cache_key(prompt, model))
+        if hit is not None:
+            return hit, True
     key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
     if not key:
         raise RuntimeError("GOOGLE_API_KEY/GEMINI_API_KEY not set")
     from google import genai
     client = genai.Client(api_key=key)
     resp = client.models.generate_content(model=model, contents=prompt)
-    return (resp.text or "").strip()
+    answer = (resp.text or "").strip()
+    if use_cache and answer:  # never cache an empty reply
+        _cache_write(_cache_key(prompt, model), prompt, model, answer)
+    return answer, False
+
+
+def generate(prompt: str, model: str = MODEL_NAME, use_cache: bool = True) -> str:
+    """Single Gemini generation via the new `google.genai` SDK (not the
+    retired `google.generativeai` package, not the retired 2.0-flash).
+
+    Back-compatible wrapper over generate_with_meta() for callers that do not
+    care whether the answer was replayed."""
+    return generate_with_meta(prompt, model=model, use_cache=use_cache)[0]
 
 
 def ask(
@@ -271,6 +435,7 @@ def ask(
     min_score: float = MIN_SCORE,
     model: str = MODEL_NAME,
     use_llm: bool = True,
+    use_cache: bool = True,
 ) -> dict:
     """Ask one question. Returns {answer, citations, refused, scores, route}.
 
@@ -282,6 +447,12 @@ def ask(
     refused=True (answer = REFUSAL_MESSAGE, no LLM call) when nothing clears
     min_score. With use_llm=False (or no key) the retrieval half still runs
     and answer=None marks the LLM row pending -- never faked.
+
+    Every LLM-backed result carries `cached` (True when the answer was
+    replayed from the prompt-keyed answer cache rather than generated). It is
+    reported at the top level AND in `route`, so any transcript written from
+    this dict records whether the call was real. See the cache block above
+    generate_with_meta().
     """
     if retriever is None:
         retriever = PerDocRetriever(build_corpus())
@@ -321,7 +492,9 @@ def ask(
             "llm_used": False,
         }
     try:
-        answer = generate(build_prompt(question, hits, plain=plain), model=model)
+        answer, cached = generate_with_meta(
+            build_prompt(question, hits, plain=plain),
+            model=model, use_cache=use_cache)
     except Exception as e:  # quota/network: report pending, never fake
         return {
             "question": question,
@@ -331,8 +504,10 @@ def ask(
             "scores": scores,
             "route": route,
             "llm_used": False,
+            "cached": False,
             "llm_error": "%s: %s" % (type(e).__name__, e),
         }
+    route["cached"] = cached
     if NO_ANSWER_SENTENCE in answer:
         # Second refusal layer: retrieval passed the floor on shared words,
         # but the strict prompt found nothing supporting an answer.
@@ -344,6 +519,7 @@ def ask(
             "scores": scores,
             "route": route,
             "llm_used": True,
+            "cached": cached,
             "refusal_layer": "llm-no-answer",
         }
     return {
@@ -354,5 +530,6 @@ def ask(
         "scores": scores,
         "route": route,
         "llm_used": True,
+        "cached": cached,
         "cite_check": verify_citations(answer, hits),
     }

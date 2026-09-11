@@ -21,3 +21,14 @@ secrets*.json
 *.log
 .DS_Store
 Thumbs.db
+
+# Resumable judge checkpoint. Written after EVERY call so a 429 mid-run loses
+# nothing, but it is scratch -- the durable record is the versioned artifact
+# scripts/judge_phase06_results_<model>_<date>.json.
+scripts/.judge_phase06_checkpoint.json
+
+# Answer cache: a free-tier QUOTA SAVER, never evidence. Versioned
+# test_phase02/judge transcripts are the durable record, and every cache hit is
+# marked cached=True so a replay can never be written up as a fresh call.
+scripts/.answer_cache.json
+scripts/.answer_cache.tmp

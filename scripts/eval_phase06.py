@@ -96,10 +96,28 @@ EXPECTED = {
     "Q10": {"constitution1999": {46}},
 }
 
-# Audited overrides from Phase 02 manual verdicts (qid, tag-sub, claim-word):
-# mechanical checks cannot see TOC-line misattribution -- documented, not hidden.
-MANUAL_FLAGS = [("Q9", "Constitution s. 33", "dignity"),
-                ("Q10", "Constitution s. 39", "high court")]
+# Audited overrides from Phase 02 manual verdicts (qid, tag-sub, claim-word).
+#
+# EMPTY as of Phase 08 fix B (2026-09-11), and that is the point of fix B.
+# Both entries existed because mechanical checks could not see TOC-line
+# misattribution, so a human had to hand-write the verdict -- which meant
+# faithfulness_audited 0.967 was only as trustworthy as this list, and a new
+# misattribution of the same shape would have scored as faithful.
+#
+#   ("Q9",  "Constitution s. 33", "dignity")    -- already dead before fix B:
+#       Phase 06 fix A demoted the "33. Right to life. 34 Right to dignity..."
+#       TOC line to ref "general", so the fixA2 transcript stopped emitting
+#       [Constitution s. 33]. Measured at baseline: Q9 faithA was already
+#       1.000, i.e. this entry was suppressing nothing.
+#   ("Q10", "Constitution s. 39", "high court") -- the live one. Now caught
+#       MECHANICALLY: widening _is_toc_fragment demotes the orphan listing
+#       chunk "46 Special jurisdiction of High Court and Legal aid" from
+#       "s. 39" to "general", so no retrieved chunk carries ref 39, the
+#       claim's cited-ref context is empty, and overlap falls to 0.0.
+#
+# Keep this list empty. If a future run needs an entry, that is a signal the
+# mechanical layer has a hole -- fix the layer, do not grow the list.
+MANUAL_FLAGS: list[tuple[str, str, str]] = []
 
 OVERLAP_FLOOR = 0.12
 STOP = {stem(w) for w in ENGLISH_STOP_WORDS}
