@@ -81,12 +81,67 @@ judge: **zero**.
 - **Minimum answer shape** in prompt (2+ claims, 2+ distinct cites) ONLY if the
   judge confirms Q3/Q8 thinness is real, not proxy artifact.
 
+## RESULTS — steps 1, 2, 3, 6a SHIPPED 2026-09-11 (`main` @ `fcd2129`, live)
+
+Scope was fixed before starting: **steps 1, 2, 3 and 6a only.** Steps 4 and 5 stay open
+by choice, not by failure. One branch + PR per step, each ablated on the frozen 10Q set
+with `eval_phase06.py`'s metric code unchanged.
+
+| metric | M0 baseline | shipped | gate |
+|---|---|---|---|
+| context recall | 0.800 | **0.925** | > 0.75 **PASS** |
+| faithfulness_audited | 0.967 *(hand-suppressed)* | **0.867** | > 0.85 **PASS, earned** |
+| reverse_rel | 0.630 | 0.630 | > 0.80 **FAIL — artifact, arbitrated** |
+| coverage (ungated) | 0.723 | 0.709 | paraphrase artifact |
+| precision (ungated) | 0.333 | 0.383 | by design, never gated |
+
+Per-question recall: Q5 **0.000 → 0.250** (the targeted blind spot) · Q8 and Q9 both
+**0.500 → 1.000** (unplanned wins — corpus probing found real `transitional`/`transitory`
+and `dignity`/`degrading` mismatches) · Q1–Q4, Q6, Q7 unchanged at 1.000, i.e. **no
+dilution**.
+
+**Read the faithfulness drop correctly.** 0.967 → 0.867 is the *improvement*. The old
+number depended on a hand-written `MANUAL_FLAGS` list; `MANUAL_FLAGS == []` now and Q10's
+s.39 misattribution is caught by code (auto 1.000 → 0.667), with the judge independently
+agreeing. Separately, Q5's faithfulness reads 0.000 because the eval recomputes retrieval
+**live** against a **frozen** transcript: the pre-M1 answer refuses, but `act2018:1,2` now
+retrieve, so that refusal is no longer justified. **0.867 therefore understates the
+current system** — confirming it needs a fresh 12-call generation pass.
+
+### Step notes
+
+- **Step 1 (synonym map).** Query-side only, in `PerDocRetriever.query()` — never in
+  `stem_preprocess`, which is the vectorizer preprocessor and would pollute the indexed
+  chunks. **Two-side gated**: an entry gate (expand only if the user's own words already
+  clear `MIN_SCORE`) stops expansion manufacturing corpus overlap and turning a refusal
+  into an answer; an exit gate stops the expanded query diluting below the floor and
+  creating a false refusal. Both were found by review, both were real and reproducible.
+  Negative results kept: an 8-term penalty expansion scored *worse* than 5, and an
+  `education` key cost Q7 1.000 → 0.500 — **expansion is not symmetric**.
+- **Step 2 (fix-B).** `MANUAL_FLAGS == []`. The playbook's "validate" line understated a
+  hazard: widening `_is_toc_fragment` demotes refs to `general`, which strips numbers, and
+  `verify_ground_truth` asserts EXPECTED numbers exist in some `ref` — so an over-eager
+  rule crashes the eval before it prints. Blast radius was measured in isolation first
+  (12/2,104 chunks; s.17/34/46 kept 17/6/6; no section number lost).
+- **Step 3 (judge).** See `docs/phases/06_ragas_eval.md` for the full verdict. Phase 06 is
+  CLOSED. Free-tier limit corrected in the record: **10 requests/MINUTE** as well as
+  20/day — the first run misread a per-minute 429 as terminal and burned 9 tasks.
+- **Step 6a (answer cache).** Keyed on the whole rendered prompt + model, fails open, every
+  hit marked `cached` and now persisted by `test_phase02.py` so a replay can never be
+  written up as a fresh call.
+
+**Deploy safety:** `requirements.txt` verified **byte-identical** to its pre-M1 state
+(blob `dc312fa`). `MIN_SCORE`, `app.py`, `data/` and `.streamlit/config.toml` untouched.
+Live smoke (zero quota) confirmed the new retrieval is actually deployed: Q5 "penalties"
+returns `[Act cl. 2]`/`[Act cl. 1]` with scores matching local to 3 dp.
+
 ## Exit criteria
-- [ ] Q5-class queries retrieve (synonym map or hybrid proves it on 10Q).
-- [ ] Zero TOC-trap misattributions mechanically (fix-B, no hand flags needed).
-- [ ] Rerank + hybrid each ablated with numbers in the journal.
-- [ ] RAGAS-judge verdict recorded; Phase 06 closed.
-- [ ] Answer cache live; quota spend per regression run documented.
+- [x] Q5-class queries retrieve — synonym map proved it on 10Q (0.000 → 0.250) and live.
+- [x] Zero TOC-trap misattributions mechanically — fix-B, `MANUAL_FLAGS == []`.
+- [ ] Rerank + hybrid each ablated with numbers — **steps 4 and 5 deliberately out of
+      scope this pass.** Not attempted, so not claimed.
+- [x] RAGAS-judge verdict recorded; Phase 06 closed (an honest FAIL with a diagnosis).
+- [x] Answer cache live; quota spend documented in the 2026-09-11 ledger.
 
 ## Record results in
 `LEARNING_JOURNAL.md` → per-step ablation tables (sparse vs dense vs hybrid,
