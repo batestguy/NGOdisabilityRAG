@@ -105,6 +105,133 @@ def stem_preprocess(text: str) -> str:
     return " ".join(stem(t) for t in toks)
 
 
+# ---------------------------------------------------------------------------
+# Query-side legal synonym expansion (Phase 08 step 1, added 2026-09-11).
+#
+# The problem it solves is vocabulary mismatch, not ranking. Phase 06 Q5
+# ("What are the penalties for violating the Act?") scored recall 0.000: the
+# Act never uses the word "penalty" for its penalty clauses. It says "a fine
+# of N100,000 or six months imprisonment" (cl.2), "N5,000 damages payable
+# ... each day of default" (cl.9,10), "liable to N50,000 damages" (cl.29,30).
+# TF-IDF scores word overlap, so a query built from the wrong register scores
+# zero against the right clauses and the generic preamble wins instead.
+#
+# WHERE THIS RUNS MATTERS. Expansion is applied ONCE PER QUERY in
+# PerDocRetriever.query(), NOT in stem_preprocess(). stem_preprocess is the
+# TfidfVectorizer preprocessor, so it runs over INDEXED CHUNKS too: expanding
+# there would inject synonyms into the corpus side, inflate document frequency
+# for every expansion term, and silently invalidate the MIN_SCORE calibration
+# recorded at the top of this file. Query-side only keeps the index -- and
+# therefore that calibration -- byte-identical.
+#
+# CURATION RULE: every expansion term below was verified to occur in the
+# stemmed corpus before being added (probe 2026-09-11). Terms that sound right
+# but are absent were REJECTED, not kept as dead weight: "terminate",
+# "reserve", "unfair", "entitlement", "healthcare", "moratorium", "sight",
+# "curriculum". This is legal vocabulary the documents actually use, not a
+# thesaurus and not a score hack. MIN_SCORE (0.10) is untouched: expansion
+# raises coverage, it does not move the refusal floor's meaning.
+#
+# Keys are matched after stemming, so "penalty"/"penalties" both fire from the
+# single key "penalty". Multi-word keys are matched as raw substrings.
+# ---------------------------------------------------------------------------
+SYNONYMS: dict[str, tuple[str, ...]] = {
+    # -- penalties: the Q5 blind spot. The Act's register is offence/fine/
+    #    imprisonment/damages, never "penalty". "prison" is Constitution-only
+    #    vocabulary but genuine, so it rides along harmlessly for Act queries
+    #    (an out-of-vocabulary term is simply dropped by transform()).
+    #    MEASURED 2026-09-11: adding "liable"/"damages"/"payable" on top of
+    #    these five made Q5 WORSE, not better -- they are the register of the
+    #    employment clause cl.28 ("liable on conviction") and of cl.29,30
+    #    ("damages payable"), so the Act index reordered to cl.28 + general and
+    #    pushed cl.1/cl.2 (the actual N100,000 fine / six months imprisonment
+    #    clauses) down. Five terms: act top-3 = cl.2, cl.1, cl.16,17. Eight
+    #    terms: act top-3 = cl.28, general, cl.13. Wider is not better; the
+    #    expansion must stay on the penalty register, not all of legal English.
+    "penalty": ("offence", "fine", "imprisonment", "prison", "conviction"),
+    "punishment": ("offence", "fine", "imprisonment", "conviction"),
+    "sanction": ("offence", "fine", "penalty", "prosecution"),
+    "fined": ("fine", "damages", "payable", "liable"),
+    "jail": ("imprisonment", "prison", "conviction"),
+    # -- employment
+    "sack": ("dismiss", "employment", "employ", "labour"),
+    "sacked": ("dismiss", "employment", "employ", "labour"),
+    "fired": ("dismiss", "employment", "employ"),
+    "job": ("employment", "employ", "work", "labour"),
+    "quota": ("employment", "employ", "percent", "labour"),
+    # -- premises and physical access
+    "house": ("building", "premises", "structure"),
+    "toilet": ("facility", "accessibility", "premises"),
+    "lift": ("elevator", "accessibility", "building"),
+    "ramp": ("accessibility", "access", "building", "facility"),
+    "wheelchair": ("mobility", "physical", "access", "ramp"),
+    "accessible": ("accessibility", "access", "facility", "premises"),
+    # -- transport
+    "bus": ("vehicle", "transport", "road"),
+    "car": ("vehicle", "transport", "parking", "road"),
+    "transport": ("vehicle", "transportation", "road"),
+    # -- education. ONE DIRECTION ONLY: the user says "school", the Act says
+    #    "education". The reverse key ("education" -> school, student,
+    #    learning) was written, measured, and DELETED: Q7 already retrieved
+    #    perfectly on its own words, and expanding it cost recall 1.000 ->
+    #    0.500 by promoting cl.18 ("free education to secondary SCHOOL") over
+    #    the expected cl.16,17 and cl.20. There was no vocabulary mismatch to
+    #    fix, so the entry was pure dilution -- a thesaurus entry, which the
+    #    curation rule above forbids. Expand toward the corpus, never away.
+    "school": ("education", "institution"),
+    # -- impairments (the words a user brings vs the words the Act uses)
+    "blind": ("visual", "impairment", "braille"),
+    "deaf": ("hearing", "speech", "impairment", "interpreter"),
+    "sign language": ("deaf", "hearing", "interpreter", "speech"),
+    # -- health
+    "hospital": ("health", "medical", "treatment"),
+    "doctor": ("health", "medical", "treatment"),
+    # -- money and remedy
+    "money": ("fine", "damages", "payable", "naira", "compensation"),
+    "compensation": ("damages", "payable", "liable"),
+    "lawyer": ("counsel", "representation", "court", "aid"),
+    "court": ("tribunal", "judicial", "justice", "proceedings"),
+    # -- dignity: Q9 expects Constitution s.34, whose body text is
+    #    "torture ... inhuman or degrading treatment", not the word "dignity".
+    "dignity": ("degrading", "inhuman", "torture", "respect"),
+    "abuse": ("degrading", "inhuman", "torture"),
+    "begging": ("alms", "destitute"),
+    # -- transition period: Q8 expects Act cl.6,7. The Act and factsheet say
+    #    "transitory"; only the Constitution says "transitional".
+    "transitional": ("transitory", "period", "years", "comply"),
+    "compliance": ("comply", "conform", "transitory"),
+}
+
+# Single-word keys are compared on stems (so "penalties" -> "penalty" fires);
+# phrase keys keep their raw form and are matched as substrings.
+_SYN_WORD = {stem(k): v for k, v in SYNONYMS.items() if " " not in k}
+_SYN_PHRASE = {k: v for k, v in SYNONYMS.items() if " " in k}
+
+
+def expand_query(q: str) -> str:
+    """Append curated legal synonyms for terms the query actually contains.
+
+    Returns the ORIGINAL query plus appended terms, never a replacement: the
+    user's own wording keeps its weight and expansion only adds mass on the
+    corpus's register. Order is deterministic (dict insertion order) and
+    duplicates are dropped, so the same question always expands identically --
+    the ablation stays reproducible.
+    """
+    import re as _re
+    toks = set(stem_preprocess(q).split())
+    low = " ".join(_re.findall(r"[a-z]+", q.lower()))
+    extra: list[str] = []
+    for key, syns in _SYN_PHRASE.items():
+        if key in low:
+            extra.extend(syns)
+    for key_stem, syns in _SYN_WORD.items():
+        if key_stem in toks:
+            extra.extend(syns)
+    if not extra:
+        return q
+    return q + " " + " ".join(dict.fromkeys(extra))
+
+
 class TfidfRetriever:
     """Single-corpus TF-IDF retriever. Kept backward compatible:
     chunks are bare strings, query() returns [(idx, score, text)]."""
@@ -146,8 +273,14 @@ class PerDocRetriever:
         }
 
     def query(self, q: str, k: int | None = None) -> list[Hit]:
-        """Top-k hits from EACH doc, merged and sorted by score desc."""
+        """Top-k hits from EACH doc, merged and sorted by score desc.
+
+        Synonym expansion happens HERE -- once, before the per-doc
+        sub-retrievers run -- so all three docs are searched with the same
+        expanded query and the indexes stay untouched. See expand_query().
+        """
         k = self.k_default if k is None else k
+        q = expand_query(q)
         hits: list[Hit] = []
         for doc_id, chunks in self.docs.items():
             for i, s, _ in self.sub[doc_id].query(q, k=k):
