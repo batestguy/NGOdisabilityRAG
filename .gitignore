@@ -21,3 +21,8 @@ secrets*.json
 *.log
 .DS_Store
 Thumbs.db
+
+# Resumable judge checkpoint. Written after EVERY call so a 429 mid-run loses
+# nothing, but it is scratch -- the durable record is the versioned artifact
+# scripts/judge_phase06_results_<model>_<date>.json.
+scripts/.judge_phase06_checkpoint.json

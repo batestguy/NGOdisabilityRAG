@@ -1,0 +1,312 @@
+[
+ {
+  "id": "Q1-faithfulness",
+  "qid": "Q1",
+  "kind": "faithfulness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "all_supported": true,
+   "n_claims": 11,
+   "n_unsupported": 0,
+   "unsupported": [],
+   "reason": "All factual claims in the answer are directly supported by the provided context."
+  },
+  "raw": "```json\n{\n  \"all_supported\": true,\n  \"n_claims\": 11,\n  \"n_unsupported\": 0,\n  \"unsupported\": [],\n  \"reason\": \"All factual claims in the answer are directly supported by the provided context.\"\n}\n```",
+  "attempts": 1,
+  "at": "2026-09-11T02:57:24"
+ },
+ {
+  "id": "Q1-relevancy",
+  "qid": "Q1",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses what the Act says about discrimination, including its prohibition, definition of discrimination, and penalties."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses what the Act says about discrimination, including its prohibition, definition of discrimination, and penalties.\"}\n```",
+  "at": "2026-09-11T02:55:08"
+ },
+ {
+  "id": "Q10-cite",
+  "qid": "Q10",
+  "kind": "citation",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "verdict": "unsupported",
+   "correct_ref": "n/a",
+   "reason": "The provided text does not mention the High Court's jurisdiction or legal aid provisions related to disability rights."
+  },
+  "raw": "{\"verdict\": \"unsupported\", \"correct_ref\": \"n/a\", \"reason\": \"The provided text does not mention the High Court's jurisdiction or legal aid provisions related to disability rights.\"}",
+  "attempts": 1,
+  "at": "2026-09-11T02:57:17"
+ },
+ {
+  "id": "Q10-faithfulness",
+  "qid": "Q10",
+  "kind": "faithfulness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "all_supported": false,
+   "n_claims": 4,
+   "n_unsupported": 1,
+   "unsupported": [
+    "The High Court has special jurisdiction and provides legal aid for these matters [Constitution s. 39]."
+   ],
+   "reason": "The context for Constitution s. 39 mentions the National Commission for Persons with Disabilities and its powers, not the High Court's jurisdiction for legal aid regarding Chapter IV infringements. Constitution s. 46 discusses the High Court's special jurisdiction and legal aid provisions."
+  },
+  "raw": "```json\n{\"all_supported\": false, \"n_claims\": 4, \"n_unsupported\": 1, \"unsupported\": [\"The High Court has special jurisdiction and provides legal aid for these matters [Constitution s. 39].\"], \"reason\": \"The context for Constitution s. 39 mentions the National Commission for Persons with Disabilities and its powers, not the High Court's jurisdiction for legal aid regarding Chapter IV infringements. Constitution s. 46 discusses the High Court's special jurisdiction and legal aid provisions.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-11T02:58:13"
+ },
+ {
+  "id": "Q10-relevancy",
+  "qid": "Q10",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses where legal aid can be obtained for rights violations by referencing the Constitution and the High Court's jurisdiction."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses where legal aid can be obtained for rights violations by referencing the Constitution and the High Court's jurisdiction.\"}\n```",
+  "at": "2026-09-11T02:55:20"
+ },
+ {
+  "id": "Q2-faithfulness",
+  "qid": "Q2",
+  "kind": "faithfulness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "all_supported": true,
+   "n_claims": 5,
+   "n_unsupported": 0,
+   "unsupported": [],
+   "reason": "All factual claims in the answer are directly supported by the provided context excerpts."
+  },
+  "raw": "```json\n{\"all_supported\": true, \"n_claims\": 5, \"n_unsupported\": 0, \"unsupported\": [], \"reason\": \"All factual claims in the answer are directly supported by the provided context excerpts.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-11T02:57:31"
+ },
+ {
+  "id": "Q2-relevancy",
+  "qid": "Q2",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses the question by stating that public buildings are required to be accessible and provides further details on how this accessibility is mandated."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses the question by stating that public buildings are required to be accessible and provides further details on how this accessibility is mandated.\"}\n```",
+  "at": "2026-09-11T02:55:09"
+ },
+ {
+  "id": "Q3-faithfulness",
+  "qid": "Q3",
+  "kind": "faithfulness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "all_supported": true,
+   "n_claims": 2,
+   "n_unsupported": 0,
+   "unsupported": [],
+   "reason": "All factual claims in the answer are directly supported by the provided context."
+  },
+  "raw": "```json\n{\"all_supported\": true, \"n_claims\": 2, \"n_unsupported\": 0, \"unsupported\": [], \"reason\": \"All factual claims in the answer are directly supported by the provided context.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-11T02:57:37"
+ },
+ {
+  "id": "Q3-relevancy",
+  "qid": "Q3",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses the question by outlining the employment protections available to persons with disabilities."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses the question by outlining the employment protections available to persons with disabilities.\"}\n```",
+  "at": "2026-09-11T02:55:10"
+ },
+ {
+  "id": "Q3-thinness",
+  "qid": "Q3",
+  "kind": "thinness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "verdict": "incomplete",
+   "missed": "The context mentions that employers of labour in public organizations should employ persons with disabilities constituting at least 5% of their employment and that a contravention of this is liable to damages. It also mentions the establishment of a National Commission for Persons with Disabilities responsible for their economic rights.",
+   "reason": "The answer only states the 5% employment quota for public organizations and ignores other relevant employment protection information present in the context, such as penalties for non-compliance and the role of the National Commission in economic rights."
+  },
+  "raw": "```json\n{\n  \"verdict\": \"incomplete\",\n  \"missed\": \"The context mentions that employers of labour in public organizations should employ persons with disabilities constituting at least 5% of their employment and that a contravention of this is liable to damages. It also mentions the establishment of a National Commission for Persons with Disabilities responsible for their economic rights.\",\n  \"reason\": \"The answer only states the 5% employment quota for public organizations and ignores other relevant employment protection information present in the context, such as penalties for non-compliance and the role of the National Commission in economic rights.\"\n}\n```",
+  "at": "2026-09-11T02:55:23"
+ },
+ {
+  "id": "Q4-faithfulness",
+  "qid": "Q4",
+  "kind": "faithfulness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "all_supported": true,
+   "n_claims": 3,
+   "n_unsupported": 0,
+   "unsupported": [],
+   "reason": "All factual claims in the answer are directly supported by the provided context."
+  },
+  "raw": "```json\n{\"all_supported\": true, \"n_claims\": 3, \"n_unsupported\": 0, \"unsupported\": [], \"reason\": \"All factual claims in the answer are directly supported by the provided context.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-11T02:57:45"
+ },
+ {
+  "id": "Q4-relevancy",
+  "qid": "Q4",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly confirms the existence of a commission for persons with disabilities and cites the relevant legal provisions that establish it."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly confirms the existence of a commission for persons with disabilities and cites the relevant legal provisions that establish it.\"}\n```",
+  "at": "2026-09-11T02:55:12"
+ },
+ {
+  "id": "Q6-faithfulness",
+  "qid": "Q6",
+  "kind": "faithfulness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "all_supported": true,
+   "n_claims": 6,
+   "n_unsupported": 0,
+   "unsupported": [],
+   "reason": "All factual claims in the answer are directly supported by the provided context excerpts."
+  },
+  "raw": "```json\n{\"all_supported\": true, \"n_claims\": 6, \"n_unsupported\": 0, \"unsupported\": [], \"reason\": \"All factual claims in the answer are directly supported by the provided context excerpts.\"}\n```",
+  "at": "2026-09-11T02:55:31"
+ },
+ {
+  "id": "Q6-relevancy",
+  "qid": "Q6",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly confirms that the Act covers access to vehicles and transport and then provides specific details from the Act to support this confirmation."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly confirms that the Act covers access to vehicles and transport and then provides specific details from the Act to support this confirmation.\"}\n```",
+  "at": "2026-09-11T02:55:14"
+ },
+ {
+  "id": "Q7-faithfulness",
+  "qid": "Q7",
+  "kind": "faithfulness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "all_supported": true,
+   "n_claims": 6,
+   "n_unsupported": 0,
+   "unsupported": [],
+   "reason": "All factual claims in the answer are directly supported by the provided context excerpts."
+  },
+  "raw": "```json\n{\"all_supported\": true, \"n_claims\": 6, \"n_unsupported\": 0, \"unsupported\": [], \"reason\": \"All factual claims in the answer are directly supported by the provided context excerpts.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-11T02:57:51"
+ },
+ {
+  "id": "Q7-relevancy",
+  "qid": "Q7",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses the question by outlining the educational rights of children with disabilities in Nigeria."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses the question by outlining the educational rights of children with disabilities in Nigeria.\"}\n```",
+  "at": "2026-09-11T02:55:16"
+ },
+ {
+  "id": "Q8-faithfulness",
+  "qid": "Q8",
+  "kind": "faithfulness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "all_supported": true,
+   "n_claims": 1,
+   "n_unsupported": 0,
+   "unsupported": [],
+   "reason": "Every factual claim in the answer is supported by the context."
+  },
+  "raw": "```json\n{\"all_supported\": true, \"n_claims\": 1, \"n_unsupported\": 0, \"unsupported\": [], \"reason\": \"Every factual claim in the answer is supported by the context.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-11T02:57:58"
+ },
+ {
+  "id": "Q8-relevancy",
+  "qid": "Q8",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses the question about the duration of the transitional compliance period."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses the question about the duration of the transitional compliance period.\"}\n```",
+  "at": "2026-09-11T02:55:17"
+ },
+ {
+  "id": "Q8-thinness",
+  "qid": "Q8",
+  "kind": "thinness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "verdict": "adequate",
+   "missed": "nothing",
+   "reason": "The answer correctly identifies the five-year transitional period and cites the relevant sections of the provided context."
+  },
+  "raw": "```json\n{\n  \"verdict\": \"adequate\",\n  \"missed\": \"nothing\",\n  \"reason\": \"The answer correctly identifies the five-year transitional period and cites the relevant sections of the provided context.\"\n}\n```",
+  "at": "2026-09-11T02:55:24"
+ },
+ {
+  "id": "Q9-cite",
+  "qid": "Q9",
+  "kind": "citation",
+  "skipped": "tag 'Constitution s. 34' absent from frozen answer"
+ },
+ {
+  "id": "Q9-faithfulness",
+  "qid": "Q9",
+  "kind": "faithfulness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "all_supported": false,
+   "n_claims": 5,
+   "n_unsupported": 1,
+   "unsupported": [
+    "There is a Right to dignity of human persons [Constitution general]"
+   ],
+   "reason": "The claim 'There is a Right to dignity of human persons [Constitution general]' is unsupported because the provided excerpts do not contain a general citation for 'Constitution general'."
+  },
+  "raw": "```json\n{\n  \"all_supported\": false,\n  \"n_claims\": 5,\n  \"n_unsupported\": 1,\n  \"unsupported\": [\n    \"There is a Right to dignity of human persons [Constitution general]\"\n  ],\n  \"reason\": \"The claim 'There is a Right to dignity of human persons [Constitution general]' is unsupported because the provided excerpts do not contain a general citation for 'Constitution general'.\"\n}\n```",
+  "attempts": 1,
+  "at": "2026-09-11T02:58:06"
+ },
+ {
+  "id": "Q9-relevancy",
+  "qid": "Q9",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly confirms the constitutional guarantee of dignity and equality and then provides supporting sections of the Constitution that elaborate on these rights."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly confirms the constitutional guarantee of dignity and equality and then provides supporting sections of the Constitution that elaborate on these rights.\"}\n```",
+  "at": "2026-09-11T02:55:18"
+ }
+]
