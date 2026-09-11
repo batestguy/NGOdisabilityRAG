@@ -543,3 +543,84 @@ hits from docs EXPECTED names) — **not** applied, because changing a metric in
 session it failed is the yardstick-tuning this playbook forbids · Phase 08 steps 4 (ONNX
 rerank) and 5 (dense hybrid) · owner gates: GIF encode, NVDA, physical keyboard, live
 mic/read-aloud, LinkedIn.
+
+---
+
+## 2026-09-11 (later) — Phase 09 planning: reading the harness before building steps 4/5
+
+No code changed in this session. It was a planning pass on the two deferred Phase 08 steps,
+and it ended by **not** building them. Recording why, because the reasoning is the output.
+
+### Finding 1 — the deferred steps were unbuildable as specified
+
+Steps 4 (ONNX cross-encoder rerank) and 5 (Colab dense hybrid) were both written as
+"flag-gated so the TF-IDF path stays intact for ablation." Reading `requirements.txt` against
+them shows the flag would be permanently OFF in production: the runtime is six packages and its
+own header bans OCR/ONNX/FAISS, while step 4 needs a cross-encoder at *query* time and step 5
+needs to embed the *incoming query* at query time. The playbook's mitigation for step 5 —
+"embed ONCE on free Colab, ship vectors as a prebuilt file" — solves the corpus half and
+silently leaves the query half unsolved. Net effect had we built them: better local eval
+numbers, zero change for any real user.
+
+**Generalised lesson:** "ship the artifact, not the model" only works when *every* input is
+known ahead of time. The query never is. Any technique whose benefit requires encoding the
+query needs a runtime dependency, full stop — the only escape is to move the technique's output
+into a lookup the query can index into, which is exactly what the Phase 09 replacements do.
+
+### Finding 2 — we were about to optimise the half that already works
+
+recall **0.925** against a 0.75 gate, while the judge had already confirmed Q3's thinness is a
+REAL prompt/generation defect (Q3 recall is **1.000** — the material was in context and the
+answer dropped it). The Phase 08 step order was authored when recall was 0.800 and was never
+re-derived after M1 moved it. **A playbook's ordering is evidence-dated. Re-check it against
+current numbers before executing the next item, not just its checkboxes.**
+
+### Finding 3 — the headline number is measured on its own training set
+
+The synonym map was tuned *on the frozen 10Q*: an `education` key was deleted because it cost
+Q7 recall, other entries were kept because they lifted Q5/Q8/Q9. Those same 10 questions then
+produced "recall 0.925." That is textbook test-set contamination, and with n=10 a single
+question is worth 10pp, so the number cannot separate generalization from memorization. It is
+an **upper bound**, and it should have been labelled one at the time.
+
+This is the most valuable finding of the session and the cheapest to act on: retrieval metrics
+(recall / precision / reverse_rel) are computed from live retrieval and cost **zero LLM
+quota**, so a held-out set is free apart from the labour of authoring ground truth by corpus
+inspection.
+
+### Two smaller code facts
+
+- **The answer cache defeats the pending flakiness check.** `test_phase02.py:49` calls
+  `ask(q, retriever=ret, use_llm=use_llm)` and never passes `use_cache`, which defaults `True`.
+  Run two would be 12 cache hits. The M4 `cached` flag would at least have made that failure
+  *visible* rather than silent — which is the whole argument for that flag — but the check
+  itself needs a `--no-cache` harness flag first. A quota saver and a repeatability harness
+  want opposite defaults; that tension has to be resolved explicitly, not by whichever default
+  happened to be written first.
+- **The real daily budget is 40, not 20.** The judge run proved the models draw from separate
+  pools (spent flash-lite, touched flash zero times). We recorded that fact but never drew the
+  consequence: a daily-cap-only failover doubles effective quota for free.
+
+### Design decisions taken (so they are not relitigated)
+
+Owner confirmed all four Phase 09 workstreams under a **runtime-shippable-only** constraint.
+That constraint is what turns steps 4/5 from "deferred" into "superseded":
+
+- **Step 4's win without ONNX:** keep cosine + `MIN_SCORE` as the admission gate and re-rank
+  *inside* it with BM25 implemented inline (~30 lines, zero new packages). Critically, BM25
+  must NOT replace the scorer — its scores are unbounded and not comparable to cosine, so
+  swapping it would silently invalidate the calibration at `src/retrieve.py:26-44` and change
+  refusal behaviour. Re-ranking within an already-admitted set cannot create or destroy a
+  refusal, which is the property that makes it safe here.
+- **Step 5's win without a query-time model:** compute the thesaurus offline on Colab and ship
+  `synonyms_auto.json`. The dense leg's real value is vocabulary bridging, and that can be
+  precomputed into a term lookup; generic "semantic search" cannot.
+- **The frozen 10Q stays frozen AND separate** from the held-out set. Merging would raise n but
+  destroy comparability with every artifact since Phase 01.
+- Held-out numbers get published whatever they say. If held-out recall lands well below 0.925,
+  that is the finding this phase was built to detect — not a bug to tune away.
+
+### Still open, unchanged
+
+Everything in `docs/phases/09_evidence_and_generation.md`, in its stated order. Owner gates:
+GIF encode, NVDA, physical keyboard, live mic/read-aloud, LinkedIn.
