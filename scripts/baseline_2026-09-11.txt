@@ -1,0 +1,624 @@
+=== DRLCA frozen baseline 2026-09-11 (pre-Phase-08, commit d90ffbc) ===
+
+
+########## scripts\bench_phase01.py ##########
+Questions loaded: 10 (Q9='Does the Constitution guarantee dignity and equality?')
+repair_joins: 5 fixed + 4 deliberately-left OK
+
+== REPAIR REVIEW (distinct tokens changed across corpus) ==
+  ACCESSIBILITYOFPHYSICALSTRUCTURE              -> ACCESSIBILITY OF PHYSICAL STRUCTURE
+  ANDAWARENESSPROGRAMMES                        -> AND AWARENESS PROGRAMMES
+  ANDPUBLICLIFE                                 -> AND PUBLIC LIFE
+  Agovernment                                   -> A government
+  Amemberof                                     -> A member of
+  Anofficerwho                                  -> An officer who
+  Aperson                                       -> A person
+  Apersonwho                                    -> A person who
+  Apersonwith                                   -> A person with
+  Apublic                                       -> A public
+  ArrangementofSections                         -> Arrangement of Sections
+  CERTIFICATEOFPERMANENTDISABILITY              -> CERTIFICATE OF PERMANENT DISABILITY
+  CERTIFICATEOFTEMPORARYDISABILITY              -> CERTIFICATE OF TEMPORARY DISABILITY
+  CONSIDERATIONINQUEUES                         -> CONSIDERATION IN QUEUES
+  Commissionand                                 -> Commission and
+  Commissionby                                  -> Commission by
+  Commissionfor                                 -> Commission for
+  CommissionforPersonswithDisabilities          -> Commission for Persons with Disabilities
+  Commissionmay                                 -> Commission may
+  Commissionon                                  -> Commission on
+  Commissionshall                               -> Commission shall
+  Complaintof                                   -> Complaint of
+  DISCRIMINATIONAGAINSTPERSONSWITHDISABILITIES  -> DISCRIMINATION AGAINST PERSONS WITH DISABILITIES
+  DISCRIMINATIONAGAINSTPERSONSWITHDISABILITIESP -> DISCRIMINATION AGAINST PERSONS WITH DISABILITIES PROHIBITION
+  DisabilitiesIssues                            -> Disabilities Issues
+  ESTABLISHMENTOFTHENATIONALCOMMISSIONFORPERSON -> ESTABLISHMENT OF THE NATIONAL COMMISSION FOR PERSONS
+  EstablishmentofNational                       -> Establishment of National
+  ExecutiveSecretary                            -> Executive Secretary
+  FirstSchedule                                 -> First Schedule
+  Fundsofthe                                    -> Funds of the
+  FundsoftheCommission                          -> Funds of the Commission
+  Governmentmay                                 -> Government may
+  HEALTHANDFIRSTCONSIDERATION                   -> HEALTH AND FIRST CONSIDERATION
+  Healthcare                                    -> Health care
+  HumanRights                                   -> Human Rights
+  INQUEUES                                      -> IN QUEUES
+  Opportunityforemployment                      -> Opportunity for employment
+  PARTII                                        -> PART II
+  PARTIII                                       -> PART III
+  PARTIV                                        -> PART IV
+  PARTIX                                        -> PART IX
+  PARTVI                                        -> PART VI
+  PARTVII                                       -> PART VII
+  PARTVIII                                      -> PART VIII
+  PROHIBITIONOFDISCRIMINATION                   -> PROHIBITION OF DISCRIMINATION
+  Powersof                                      -> Powers of
+  Powersofthe                                   -> Powers of the
+  ProceedingsoftheCouncil                       -> Proceedings of the Council
+  Prohibitionof                                 -> Prohibition of
+  Provisionof                                   -> Provision of
+  PublicService                                 -> Public Service
+  RAILWAYSANDAIRPORTFACILITIES                  -> RAILWAYS AND AIRPORT FACILITIES
+  RIGHTSTOEDUCATION                             -> RIGHTS TO EDUCATION
+  Righttofree                                   -> Right to free
+  Schedulemade                                  -> Schedule made
+  Serviceof                                     -> Service of
+  TemporaryCertificateofDisabilitywhich         -> Temporary Certificate of Disability which
+  Tenureofoffice                                -> Tenure of office
+  TheCommissionshall                            -> The Commission shall
+  Theperson                                     -> The person
+  ThisActprovidesfor                            -> This Act provides for
+  Thisis                                        -> This is
+  TransitoryPeriod                              -> Transitory Period
+  WITHDISABILITIES                              -> WITH DISABILITIES
+  aState                                        -> a State
+  accessibilityfacilities                       -> accessibility facilities
+  actforthatpurpose                             -> act for that purpose
+  againsthim                                    -> against him
+  aidincludes                                   -> aid includes
+  aidsin                                        -> aids in
+  andcost                                       -> and cost
+  andfacilities                                 -> and facilities
+  andfrom                                       -> and from
+  andincludes                                   -> and includes
+  andmaybe                                      -> and may be
+  andnecessary                                  -> and necessary
+  andreasonable                                 -> and reasonable
+  andvisual                                     -> and visual
+  andwelfare                                    -> and welfare
+  andworkenvironment                            -> and work environment
+  anoffence                                     -> an offence
+  anyland                                       -> any land
+  anyperson                                     -> any person
+  anypersonnot                                  -> any person not
+  appointedby                                   -> appointed by
+  approvalof                                    -> approval of
+  areblind                                      -> are blind
+  areentitled                                   -> are entitled
+  arenot                                        -> are not
+  asmaybe                                       -> as may be
+  authorityBuilding                             -> authority Building
+  authorityin                                   -> authority in
+  authorityof                                   -> authority of
+  basiswith                                     -> basis with
+  basiswithothers                               -> basis with others
+  begiven                                       -> be given
+  beinclusive                                   -> be inclusive
+  bemade                                        -> be made
+  benefitPension                                -> benefit Pension
+  beresponsible                                 -> be responsible
+  buildingplan                                  -> building plan
+  buildingplans                                 -> building plans
+  businesswithrespect                           -> business with respect
+  bypersons                                     -> by persons
+  bypersonswith                                 -> by persons with
+  certificateof                                 -> certificate of
+  commencementof                                -> commencement of
+  commitsanoffence                              -> commits an offence
+  conformswith                                  -> conforms with
+  damagesprovidedforin                          -> damages provided for in
+  daysfrom                                      -> days from
+  disabilitiesincluding                         -> disabilities including
+  disabilitiesshall                             -> disabilities shall
+  disabilityhas                                 -> disability has
+  disabilityinbegging                           -> disability in begging
+  discriminationRight                           -> discrimination Right
+  doesnotmake                                   -> does not make
+  eachfrom                                      -> each from
+  educationfor                                  -> education for
+  educationon                                   -> education on
+  effectProceedings                             -> effect Proceedings
+  effecton                                      -> effect on
+  employeeoftheCommission                       -> employee of the Commission
+  employeesof                                   -> employees of
+  environmentof                                 -> environment of
+  equalbasiswithothers                          -> equal basis with others
+  eventofthe                                    -> event of the
+  existenceof                                   -> existence of
+  fineof                                        -> fine of
+  firstconsideration                            -> first consideration
+  forPersonswithDisabilities                    -> for Persons with Disabilities
+  forpersons                                    -> for persons
+  forpublicuse                                  -> for public use
+  forthat                                       -> for that
+  forvehicles                                   -> for vehicles
+  fouryears                                     -> four years
+  givenin                                       -> given in
+  healthcare                                    -> health care
+  impairmentwhich                               -> impairment which
+  inthePublicService                            -> in the Public Service
+  intowhich                                     -> into which
+  isnotentitled                                 -> is not entitled
+  isofno                                        -> is of no
+  itsfunctions                                  -> its functions
+  liableon                                      -> liable on
+  liftsAccessibility                            -> lifts Accessibility
+  linewith                                      -> line with
+  makeprovisionfor                              -> make provision for
+  maymake                                       -> may make
+  meansPresident                                -> means President
+  meansof                                       -> means of
+  memberof                                      -> member of
+  ofDisability                                  -> of Disability
+  ofInclusiveness                               -> of Inclusiveness
+  ofNigeria                                     -> of Nigeria
+  ofanypension                                  -> of any pension
+  ofappointment                                 -> of appointment
+  ofcertificateof                               -> of certificate of
+  ofeducation                                   -> of education
+  officein                                      -> office in
+  officeof                                      -> office of
+  officeror                                     -> officer or
+  officerwho                                    -> officer who
+  ofhousing                                     -> of housing
+  ofinaccessibility                             -> of inaccessibility
+  ofitsfunctions                                -> of its functions
+  ofitsproperty                                 -> of its property
+  ofmembers                                     -> of members
+  ofoffice                                      -> of office
+  ofpersons                                     -> of persons
+  ofpersonswith                                 -> of persons with
+  ofpublic                                      -> of public
+  ofriskand                                     -> of risk and
+  ofvehicles                                    -> of vehicles
+  onanRight                                     -> on an Right
+  onconviction                                  -> on conviction
+  onornot                                       -> on or not
+  opinionof                                     -> opinion of
+  orLifts                                       -> or Lifts
+  orPermanent                                   -> or Permanent
+  orbarrier                                     -> or barrier
+  orbuilt                                       -> or built
+  orgovernment                                  -> or government
+  orhearing                                     -> or hearing
+  orinwhich                                     -> or in which
+  ormake                                        -> or make
+  ormakes                                       -> or makes
+  ormakesfacilitiesGoodsservices                -> or makes facilities Goods services
+  orpersonin                                    -> or person in
+  outsideNigeria                                -> outside Nigeria
+  particularmay                                 -> particular may
+  payablebytheCommission                        -> payable by the Commission
+  payableto                                     -> payable to
+  personfor                                     -> person for
+  personswith                                   -> persons with
+  personwith                                    -> person with
+  powersAct                                     -> powers Act
+  prejudicetohisright                           -> prejudice to his right
+  proceedingsof                                 -> proceedings of
+  providesgoodsor                               -> provides goods or
+  provisionfor                                  -> provision for
+  publichospital                                -> public hospital
+  publicvehicleshall                            -> public vehicle shall
+  relevantsectionof                             -> relevant section of
+  responsibleforthe                             -> responsible for the
+  scrutinisedby                                 -> scrutinised by
+  seekredress                                   -> seek redress
+  signlanguage                                  -> sign language
+  staffof                                       -> staff of
+  stateof                                       -> state of
+  stateofinaccessibilityorbarrier               -> state of inaccessibility or barrier
+  suchperson                                    -> such person
+  takecare                                      -> take care
+  takeimmediate                                 -> take immediate
+  termof                                        -> term of
+  thathe                                        -> that he
+  thatis                                        -> that is
+  thatmember                                    -> that member
+  thatoffice                                    -> that office
+  thatpersonswith                               -> that persons with
+  theAct                                        -> the Act
+  theCommission                                 -> the Commission
+  theCouncil                                    -> the Council
+  theExecutive                                  -> the Executive
+  theExecutiveSecretaryor                       -> the Executive Secretary or
+  theFederal                                    -> the Federal
+  theFederalRepublic                            -> the Federal Republic
+  theFederation                                 -> the Federation
+  theFederationnotlater                         -> the Federation not later
+  theFund                                       -> the Fund
+  theGovernmentof                               -> the Government of
+  theInterpretation                             -> the Interpretation
+  theNational                                   -> the National
+  thePensionReform                              -> the Pension Reform
+  thePresident                                  -> the President
+  thePresidenton                                -> the President on
+  theSecretarytotheGovernmentofthe              -> the Secretary to the Government of the
+  theSenate                                     -> the Senate
+  theSpecial                                    -> the Special
+  theStateof                                    -> the State of
+  thebasisof                                    -> the basis of
+  thebuilding                                   -> the building
+  thecommencementof                             -> the commencement of
+  thefullintegration                            -> the full integration
+  thefunctions                                  -> the functions
+  thefunctionsof                                -> the functions of
+  theirfull                                     -> their full
+  themedia                                      -> the media
+  theperson                                     -> the person
+  thephysical                                   -> the physical
+  theplan                                       -> the plan
+  theprovision                                  -> the provision
+  theprovisionofthereasonable                   -> the provision of the reasonable
+  thepublic                                     -> the public
+  thepurpose                                    -> the purpose
+  therelevant                                   -> the relevant
+  theright                                      -> the right
+  theservice                                    -> the service
+  thethe                                        -> the the
+  theuseof                                      -> the use of
+  theuseofmembersof                             -> the use of members of
+  thisAct                                       -> this Act
+  thisdayof                                     -> this day of
+  thisorder                                     -> this order
+  thisparagraph                                 -> this paragraph
+  thissection                                   -> this section
+  thissectioncommits                            -> this section commits
+  thosefacilities                               -> those facilities
+  toensure                                      -> to ensure
+  tofree                                        -> to free
+  tofreemedical                                 -> to free medical
+  tohimby                                       -> to him by
+  tohisright                                    -> to his right
+  toholdofficefor                               -> to hold office for
+  tomakeinformation                             -> to make information
+  topersons                                     -> to persons
+  topersonswith                                 -> to persons with
+  topublic                                      -> to public
+  topublicpremises                              -> to public premises
+  tosection                                     -> to section
+  tovote                                        -> to vote
+  towork                                        -> to work
+  trainingisprovided                            -> training is provided
+  transitoryperiod                              -> transitory period
+  transitoryprovision                           -> transitory provision
+  twoyears                                      -> two years
+  whichin                                       -> which in
+  whoneed                                       -> who need
+  withinfiveyearsfrom                           -> within five years from
+  withpersons                                   -> with persons
+  distinct tokens changed: 290
+  residual camel tokens (16): ['CapitalTerritoryr', 'aWaivers', 'afineofN', 'directAlowances', 'eStaffofthe', 'eUnlawful', 'fineofN', 'publiclifePartiipationin', 'thJuneof', 'theExecutiveSecretaryat', 'thePresidency', 'theRegulations', 'thisActexcept', 'thisActwithoutspecificproof', 'thisConstitution', 'toafineofN']
+
+== DEDUPE (Act, 27 pages) ==
+  pages 5->6: difflib=0.819 line_contain=0.44
+  dropped p.5 (kept cleaner p.6), salvaged 1 unique lines
+  sidecar entries: 27
+
+== CLAUSE COVERAGE (Act, after cleanup) ==
+  before: 58/58, after: 58/58, missing: none
+
+== CHUNK STATS ==
+  pipeline/doc          n    avg       max  over800
+  before/TOTAL       1295    499       500         
+  after/TOTAL        2214    369       800         
+  after/act2018        62    632       800        0
+  after/constitution1999   2104    358       400        0
+  after/factsheet2020     48    483       500        0
+  (constitution size cap: 400)
+
+== PRIORITY SECTIONS (Constitution) ==
+  S14  single-chunks= 15 body_chars=  5083 OK
+  S17  single-chunks= 17 body_chars=  6071 OK
+  S33  single-chunks=  5 body_chars=  1243 OK
+  S34  single-chunks=  6 body_chars=  2172 OK
+  S35  single-chunks= 15 body_chars=  5569 OK
+  S36  single-chunks= 21 body_chars=  7837 OK
+  S37  single-chunks=  2 body_chars=   319 OK
+  S38  single-chunks=  5 body_chars=  1542 OK
+  S39  single-chunks=  8 body_chars=  2535 OK
+  S40  single-chunks=  3 body_chars=   899 OK
+  S41  single-chunks=  5 body_chars=  1439 OK
+  S42  single-chunks=  6 body_chars=  1949 OK
+  S43  single-chunks=  2 body_chars=   405 OK
+  S44  single-chunks= 11 body_chars=  3994 OK
+  S45  single-chunks=  6 body_chars=  1952 OK
+  S46  single-chunks=  6 body_chars=  2131 OK
+
+== TOP-1 BEFORE -> AFTER ==
+  question                                                    before   after before(doc/ref)        after(doc/ref)        
+  What does the Act say about discrimination?                  0.139   0.203 factsheet2020/factsheet:general constitution1999/constitution:S13
+  Are public buildings required to be accessible?              0.217   0.327 factsheet2020/factsheet:Section 6 act2018/act:clause 6  
+  What employment protections exist for persons with disabil   0.438   0.387 factsheet2020/factsheet:general factsheet2020/factsheet:general
+  Is there a commission for persons with disabilities?         0.425   0.673 factsheet2020/factsheet:Section 22 act2018/act:clause 31 
+  What are the penalties for violating the Act?                0.124   0.139 constitution1999/constitution:general constitution1999/constitution:S36
+  Does the Act cover access to vehicles and transport?         0.174   0.161 act2018/act:clause 10  constitution1999/constitution:S13
+  What rights do children with disabilities have to educatio   0.357   0.377 factsheet2020/factsheet:Section 19 factsheet2020/factsheet:Section 19
+  How long is the transitional compliance period?              0.128   0.188 constitution1999/constitution:general constitution1999/constitution:S308
+  Does the Constitution guarantee dignity and equality?        0.139   0.178 constitution1999/constitution:general constitution1999/constitution:S17
+  Where can I get legal aid for a disability rights violatio   0.176   0.298 constitution1999/constitution:general constitution1999/constitution:S39
+  mean top-1: before=0.232 after=0.293 | nonzero: before=10/10 after=10/10
+
+== EXIT CRITERIA ==
+  clause 1-58 continuous: True
+  10/10 nonzero (after): True
+  Q9 constitution dignity/equality: before=0.139 after=0.178 (>0.16: True)
+
+PHASE01 BENCHMARK: PASS
+---- exit=0 ----
+
+
+########## scripts\test_phase03.py ##########
+csv=D:\NGORAG\data\ngo.csv
+RECHECK note: RECHECK (medium confidence, 2026-09-08): Nigerian Association of the Blind (NAB) + Nigerian National Association of the Deaf (NNAD) contact pages 404'd on fetch day; phone/email values kept from agreeing official-domain snippets. Re-verify both against official sites before production reliance.
+
+load_ngo: OK (10 rows)
+[PASS] static: 10 verified rows got 10
+[PASS] static: cutoff>=0.5 FUZZY_CUTOFF=0.6
+[PASS] static: Leprosy pruned 
+[PASS] static: Sightsavers pruned 
+[PASS] static: guard rejects 0803-style 
+[PASS] static: guard rejects zeroed 
+[PASS] static: guard rejects empty 
+
+cell disability               location   top-1 org                          fuzzy helpl  res   note
+D1   visual impairment        Lagos      Nigerian Association of the Blind  n     Y      PASS  fuzzy: substring/unfiltered match (no fuzzy fallback) | loc: location 'Lagos' matched 1 row(s) (substring)
+D2   hearing impairment       Abuja      Nigerian National Association of t n     Y      PASS  fuzzy: substring/unfiltered match (no fuzzy fallback) | loc: location 'Abuja' matched 1 row(s) (substring)
+D3   limb loss                Lagos      Irede Foundation                   n     Y      PASS  fuzzy: substring/unfiltered match (no fuzzy fallback) | loc: location 'Lagos' matched 1 row(s) (substring)
+D4   Down syndrome            Lagos      Down Syndrome Foundation Nigeria   n     Y      PASS  fuzzy: substring/unfiltered match (no fuzzy fallback) | loc: location 'Lagos' matched 1 row(s) (substring)
+D5   mental health            Lagos      Mentally Aware Nigeria Initiative  n     Y      PASS  fuzzy: substring/unfiltered match (no fuzzy fallback) | loc: location 'Lagos' matched 1 row(s) (substring)
+D6   albinism                 Abuja      TAF Africa (The Albino Foundation) n     Y      PASS  fuzzy: substring/unfiltered match (no fuzzy fallback) | loc: location 'Abuja' matched 1 row(s) (substring)
+D7   spinal injury            Lagos      Spinal Cord Injuries Association o Y     Y      PASS  fuzzy: fuzzy fallback decided match for: Spinal Cord Injuries Association of Nigeria (SCIAN) | loc: location '
+F1   visually impaired        Lagos      Nigerian Association of the Blind  Y     Y      PASS  fuzzy: fuzzy fallback decided match for: Nigerian Association of the Blind (NAB) | loc: location 'Lagos' match
+F2   hearing impared          Abuja      Nigerian National Association of t Y     Y      PASS  fuzzy: fuzzy fallback decided match for: Nigerian National Association of the Deaf (NNAD) | loc: location 'Abu
+F3   blindnss                 Lagos      Nigerian Association of the Blind  Y     Y      PASS  fuzzy: fuzzy fallback decided match for: Nigerian Association of the Blind (NAB) | loc: location 'Lagos' match
+F4   binness                  rural      Nigerian Association of the Blind  Y     Y      PASS  fuzzy: fuzzy fallback decided match for: Nigerian Association of the Blind (NAB) | loc: location 'rural' match
+F5   depresion                Lagos      Mentally Aware Nigeria Initiative  Y     Y      PASS  fuzzy: fuzzy fallback decided match for: Mentally Aware Nigeria Initiative (MANI) | loc: location 'Lagos' matc
+L1   visual impairment        Kano       Nigerian Association of the Blind  n     Y      PASS  fuzzy: substring/unfiltered match (no fuzzy fallback) | loc: location 'Kano' matched nothing -- kept disabilit
+L2   visual impairment        Abuja      TAF Africa (The Albino Foundation) n     Y      PASS  fuzzy: substring/unfiltered match (no fuzzy fallback) | loc: location 'Abuja' matched 1 row(s) (substring)
+U1   xyzq martian disability  Lagos      Joint National Association of Pers n     Y      PASS  fuzzy: no disability match for 'xyzq martian disability' -> JONAPWD umbrella fallback | loc: fallback: locatio
+U2   xyzq                     Atlantis   Joint National Association of Pers n     Y      PASS  fuzzy: no disability match for 'xyzq' -> JONAPWD umbrella fallback | loc: fallback: location filter not applie
+
+records-shape banner check (depresion/Kano): PASS (row0=08000-3000-100, row1=08000-3000-10, row2=Mentally Aware Nigeria Initiative (MANI))
+
+matrix: 16/16 cells PASS | statics: 7/7 PASS | RECHECK printed: yes
+ALL PASS
+---- exit=0 ----
+
+
+########## scripts\test_phase04.py ##########
+[PASS] static: router.py has no 'genai'
+[PASS] static: router.py has no 'generate_content'
+[PASS] static: router.py has no 'GOOGLE_API_KEY'
+[PASS] static: router.py has no 'GEMINI_API_KEY'
+fixtures: ngo rows=10 corpus docs built OK
+
+#   query                                                      L       H       route          exp    res 
+1   What are my rights to free education under the Act?        5       0       legal          legal  PASS  L=['\\bact\\b', 'free education', 'my rights?'] H=[] slots=
+2   What penalty applies for discrimination?                   2       0       legal          legal  PASS  L=['\\bdiscriminat\\w*', '\\bpenalt\\w*'] H=[] slots=
+3   Does the Constitution guarantee equality?                  2       0       legal          legal  PASS  L=['\\bconstitution\\w*', '\\bequal\\w*'] H=[] slots=
+4   Can my employer sack me because I use a wheelchair?        2       0       legal          legal  PASS  L=['\\bemploy\\w*', '\\bsacks?\\b'] H=['\\bwheelcha\\w*'] slots=
+5   Where can I find help for my deaf child in Abuja?          0       5       help           help   PASS  L=[] H=['find help', '\\bwhere\\b', '\\bdeafs?\\b', '\\babuja\\b'] slots={'disability': 'deaf', 'location': 'abuja'}
+6   I need a prosthetic limb for my son in Lagos, who do I con 0       5       help           help   PASS  L=[] H=['\\bneed\\b', '\\bcontacts?\\b', '\\bprosth\\w*', '\\blimbs?\\b'] slots={'disability': 'prosthetic', 'location': 'lagos'}
+7   Which organisation supports people with albinism near me?  0       5       help           help   PASS  L=[] H=['near me', '\\borganisations?\\b', '\\bsupports?\\b', '\\balbin\\w*'] slots={'disability': 'albinism', 'location': ''}
+8   Mental health helpline in Kano                             0       4       help           help   PASS  L=[] H=['\\bhelplines?\\b', 'mental health', '\\bkano\\b'] slots={'disability': 'mental health', 'location': 'kano'}
+9   My employer fired me because of my disability, who can hel 2       3       help+legal     dual   PASS  L=['\\bemploy\\w*', '\\bfired\\b'] H=['who can help', '\\bdisab\\w*'] slots={'disability': '', 'location': ''}
+10  wetin be my right for work? I need person wey fit help me  2       3       help+legal     dual   PASS  L=['my rights?'] H=['\\bhelps?\\b', '\\bneed\\b', '\\blagos\\b'] slots={'disability': '', 'location': 'lagos'}
+
+routing latency (keyword path, n=10): mean 1.177 ms, max 7.487 ms (budget < 50 ms)
+[PASS] latency negligible vs LLM call
+matrix: 10/10 correct (exit needs >= 8)
+[PASS] vague probe 'tell me something' -> clarify (L=0 H=0, no subsystem call)
+[PASS] positive-tie probe 'rights help' -> clarify (L=1 H=1, no subsystem call)
+[PASS] greeting probe 'hello' -> True
+[PASS] greeting probe 'hi' -> True
+[PASS] greeting probe 'Hello!' -> True
+[PASS] greeting probe 'hey' -> True
+[PASS] greeting probe 'good morning' -> True
+[PASS] greeting probe 'hey, good morning!' -> True
+[PASS] non-greeting probe 'hello, what are my rights?' -> False
+[PASS] non-greeting probe 'hi, I need help in Lagos' -> False
+[PASS] non-greeting probe 'hello there' -> False
+[PASS] non-greeting probe 'good' -> False
+[PASS] non-greeting probe 'tell me something' -> False
+[PASS] non-greeting probe 'Where can I find help for my deaf child in Abuja?' -> False
+
+ALL PASS
+---- exit=0 ----
+
+
+########## scripts\test_phase05.py ##########
+2026-09-11 01:26:41.084 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-09-11 01:26:47.254 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok - banner-has-tollfree 
+ok - banner-has-whatsapp 
+ok - banner-called-before-legal 
+ok - banner-called-before-greeting 
+ok - seam-routes-all-modes 
+ok - banner-called-before-help 
+ok - banner-at-top-of-run 
+ok - no-wide-columns-for-banner 
+ok - banner-single-column 
+ok - legal-hits-nonempty 6
+ok - legal-tags-valid ['[Act general]', '[Factsheet Section 19,17,20]', '[Factsheet Section 17]', '[Constitution s. 27]', '[Act cl. 16,17]', '[Act general]']
+ok - legal-citations-mirror-tags 
+ok - legal-refusal 
+ok - clarify-singleton {'mode': 'clarify', 'routing': {'primary': 'clarify', 'secondary': None, 'clarify_question': 'I want to point you the right way -- do you need (a) legal information about disability rights under the Act or Constitution, or (b) help finding an organisation or helpline near you?', 'scores': {'legal': 0, 'help': 1}, 'matched_cues': {'legal': [], 'help': ['\\bwhere\\b']}}}
+ok - clarify-has-question 
+ok - explicit-overrides-router 
+ok - clarify-render-fn 
+ok - greeting-auto {'mode': 'greeting', 'routing': {'primary': 'greeting', 'secondary': None, 'greeted': True}}
+ok - greeting-beats-explicit 
+ok - greeting-content-not-question 
+ok - greeting-render-fn 
+ok - greeting-text-guidance 
+ok - greeting-speech 
+ok - plain-false-threads 
+ok - plain-true-threads 
+ok - plain-offline-no-llm 
+ok - help-location-narrowed 3
+ok - help-topk 5
+ok - help-banner-first 
+ok - help-confirm-gated-or-clean 
+ok - help-badge-text-in-src 
+ok - help-confirm-prompt-rendered 
+ok - routing-trap-text 
+ok - cache-resource-x2 4
+ok - llm-expander-collapsed 
+ok - llm-default-offline 
+ok - llm-quota-explained 
+ok - no-top-level-generate 
+ok - speech-has-helplines 
+ok - readaloud-webspeech 
+ok - readaloud-no-server 
+ok - mic-recorder-imports 
+ok - mic-import-keeps-repo-chunk D:\NGORAG\src\chunk.py
+ok - mic-fallback-text 
+ok - config-primary-light 
+ok - config-primary-dark 
+ok - css-hc-palette 
+ok - css-rem-scale 
+ok - labeled:Type your question here 
+ok - labeled:Ask about my rights 
+ok - labeled:Find help near me 
+ok - labeled:Explain in plain language 
+ok - labeled:High contrast mode 
+ok - labeled:Text size 
+ok - config-exists 
+ok - config-has-light 
+ok - config-has-dark 
+ok - config-has-light-sidebar 
+ok - config-has-dark-sidebar 
+ok - config-base-light 
+ok - config-widget-border 
+ok - config-sidebar-border 
+ok - config-text-light 
+ok - config-text-dark 
+ok - config-no-remote-fonts 
+ok - css-no-hardcoded-colors []
+ok - css-hc-palette-in-fn 
+ok - css-watermark-url 
+ok - css-watermark-file 
+ok - css-watermark-div 
+ok - css-veil 
+ok - css-no-img-tag 
+ok - css-max-width 
+ok - css-mobile 
+ok - css-banner-accent 
+ok - attribution-in-src 
+ok - attribution-in-sidebar 
+ok - theme-watch-in-readaloud 
+ok - theme-watch-luminance-gate 
+ok - theme-watch-guarded 
+ok - readaloud-transparent-body 
+ok - dark-alert-scope 
+ok - dark-alert-opaque-bg 
+ok - dark-alert-text-pair 
+ok - dark-alert-border-token 
+ok - dark-alert-token-lineage 
+ok - css-base-still-token-only []
+ok - veil-unchanged 
+ok - scrim-sidebar-light 
+ok - scrim-main-light 
+ok - answer-card-opaque 
+ok - scrim-sidebar-dark 
+ok - scrim-main-dark 
+ok - scrim-token-lineage 
+ok - stacking-important 
+ok - sidebar-above-main-context 
+ok - sidebar-bg-important 
+ok - theme-watch-helper 
+ok - theme-watch-on-every-run 
+ok - hc-pins-scrims 
+ok - hc-button-opaque 
+ok - hc-alert-opaque 
+ok - font-still-system-sans 
+ok - css-base-still-token-only-2 []
+
+ALL 104 ASSERTS PASSED
+---- exit=0 ----
+
+
+########## import app smoke ##########
+import app OK
+2026-09-11 01:26:59.621 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+---- exit=0 ----
+
+
+########## scripts\eval_phase06.py --out=scripts\eval_baseline.json ##########
+corpus: {'act2018': 62, 'constitution1999': 2104, 'factsheet2020': 48}
+ground truth verified against corpus (10 questions)
+
+== PER-QUESTION (retrieval live/offline; answers frozen v2) ==
+  id   recall prec   faith  faithA cover  revrel  missed-expected
+  Q1   1.000  0.500  1.000  1.000  0.500  0.667   -
+  Q2   1.000  0.667  1.000  1.000  1.000  1.000   -
+  Q3   1.000  0.167  1.000  1.000  0.600  0.333   -
+  Q4   1.000  0.333  1.000  1.000  1.000  0.667   -
+  Q5   0.000  0.000  1.000  1.000  n/a(ref) n/a(ref)  act2018:1,act2018:10,act2018:13,act2018:2,act2018:29,act2018:30,act2018:8,act2018:9
+  Q6   1.000  0.500  1.000  1.000  0.833  1.000   -
+  Q7   1.000  0.667  1.000  1.000  1.000  0.667   -
+  Q8   0.500  0.167  1.000  1.000  0.250  0.333   act2018:6,act2018:7
+  Q9   0.500  0.167  1.000  1.000  0.600  0.667   constitution1999:34
+  Q10  1.000  0.167  1.000  0.667  0.600  0.333   -
+
+== COVERAGE-MISS WORDS (artifact diagnosis: paraphrase, not off-topic) ==
+  Q1 missing from answer: ['does', 'say']
+  Q3 missing from answer: ['exist', 'protect']
+  Q6 missing from answer: ['does']
+  Q8 missing from answer: ['compliance', 'long', 'transitional']
+  Q9 missing from answer: ['does', 'guarantee']
+  Q10 missing from answer: ['disability', 'violat']
+
+== MEANS vs SPEC TARGETS ==
+  recall>0.75 (context):            0.800 PASS
+  faithfulness_audited>0.85:        0.967 PASS
+  reverse_rel>0.80 (answer relev.): 0.630 FAIL
+  (coverage floor, ungated: 0.709 -- punishes paraphrase, diagnosed metric artifact)
+  (precision diagnostic, ungated: 0.333 -- per-doc merging trades it away by design)
+wrote D:\NGORAG\scripts\eval_baseline.json (10 records)
+---- exit=0 ----
+
+
+########## M0 SUMMARY ##########
+Frozen pre-Phase-08 baseline. Interpreter: C:\conda-envs\drlca-rag\python.exe, cwd D:\NGORAG.
+
+GREEN GATE (all met):
+  bench_phase01        PASS
+  test_phase03         16/16 matrix + 7/7 statics
+  test_phase04         10/10
+  test_phase05         104/104
+  import app           OK (no server started)
+  eval_phase06         recall 0.800 PASS | faithfulness_audited 0.967 PASS | reverse_rel 0.630 FAIL
+
+Eval artefact: scripts/eval_baseline.json (10 records).
+
+KNOWN DEFECTS CARRIED INTO PHASE 08:
+  Q5  recall 0.000 -- vocabulary mismatch ("penalties" vs offence/fine/imprisonment). M1 target.
+  Q8  recall 0.500 -- act2018:6,7 missed.
+  Q9  recall 0.500 -- constitution1999:34 missed.
+  Q10 faithA 0.667 -- "Constitution s. 39" high-court claim, suppressed ONLY by MANUAL_FLAGS. M2 target.
+  reverse_rel 0.630 FAIL -- unarbitrated. M3 target.
+
+MANUAL_FLAGS ACTIVITY (measured, not assumed):
+  Q10 ("Constitution s. 39", "high court") -- FIRING (Q10 faithA 0.667 < faith_auto 1.000).
+  Q9  ("Constitution s. 33", "dignity")    -- NOT firing against this transcript (Q9 faithA 1.000).
+      Phase 06 fix A already demoted the TOC-line chunk to ref "general", so the fixA2
+      transcript no longer emits [Constitution s. 33]. The entry is dead weight, but it is
+      deleted in M2 together with the live one; only the Q10 flip is an M2 acceptance signal.
+
+JUDGE MODEL RESOLUTION (M0, listing call only -- client.models.list(), zero generation quota):
+  models/gemini-2.5-flash-lite  PRESENT  -> resolved judge id: gemini-2.5-flash-lite
+  models/gemini-2.5-flash       PRESENT  -> generator (unchanged, rag.MODEL_NAME)
+  Generator != judge. Free-tier quota is per-model, so the ~30-call judge run in M3 does not
+  spend the generator's 20/day. This is also a methodological improvement over self-judging,
+  not merely a quota dodge. No two-day split needed.
