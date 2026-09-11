@@ -38,6 +38,41 @@ from retrieve import MIN_SCORE, PerDocRetriever  # noqa: E402
 K_PER_DOC = 3   # ask() / eval_phase06 depth
 TOP_N = 6       # ask() / eval_phase06 merge width
 
+# Off-corpus battery. The first version of this harness only asked "does
+# expansion starve a GOOD question below the floor?" and never asked the
+# opposite -- whether it pushes a BAD one above it. It does, or did: review
+# 2026-09-11 found "my job interview went badly" going 0 hits -> 6 hits
+# because the "job" entry fired. MIN_SCORE's one documented job is refusing
+# zero-overlap queries, and app.py's "Ask a Legal Question" button forces the
+# legal route, so that was reachable in one click by any user.
+#
+# Every probe below is off-corpus BUT deliberately carries a word that is a
+# SYNONYMS trigger (job, car, house, bus, money, court, school, compliance,
+# doctor, hospital). The existing regression probe in test_phase05.py
+# ("quantum teleportation zebra unleaded gasoline") cannot catch this class:
+# it avoids every key, so it gives false confidence.
+#
+# NOTE on the two expected non-zero baselines: "sourdough" (0.125) and
+# "maritime shipping insurance law" (0.318) already cleared the floor BEFORE
+# any of this work. That is the inverted-band limitation documented in the
+# MIN_SCORE calibration block -- pre-existing, not caused here. The assertion
+# is therefore not "these score zero" but the sharper, testable one: expansion
+# must not flip ANY query from refused to answered.
+OFF_CORPUS = [
+    "my job interview went badly",
+    "my car broke down on the way home",
+    "I want to buy a house in Lagos",
+    "I have no money for the bus",
+    "which school did Messi go to",
+    "how do I bake sourdough bread",
+    "quantum computing entanglement",
+    "maritime shipping insurance law",
+    "the tennis court surface at Wimbledon",
+    "book me a doctor appointment at the hospital",
+    "regulatory compliance for crypto exchanges",
+    "quantum teleportation zebra unleaded gasoline",
+]
+
 
 def measure(ret, questions, expand: bool) -> list[dict]:
     """Per-question recall + score profile with expansion on or off."""
@@ -116,6 +151,39 @@ def main() -> None:
             qid, b["n_kept"], a["n_kept"], b["top"], a["top"],
             b["docs"] or "-", a["docs"] or "-", flag))
     print("  refusal regressions: %s" % (", ".join(bad) if bad else "none"))
+
+    print("\n== OFF-CORPUS FLOOR INTEGRITY (the direction the first harness missed) ==")
+    print("  Expansion must not flip any query from refused to answered.")
+    print("  %-46s %-14s %-14s %s" % ("query", "before", "after", ""))
+    flips = []
+    for p in OFF_CORPUS:
+        b = measure_one(ret, p, expand=False)
+        a = measure_one(ret, p, expand=True)
+        flipped = b["n_kept"] == 0 and a["n_kept"] > 0
+        if flipped:
+            flips.append(p)
+        print("  %-46s %.4f/%-6d %.4f/%-6d %s" % (
+            p[:45], b["top"], b["n_kept"], a["top"], a["n_kept"],
+            "<== FLOOR DEFEATED" if flipped else ""))
+    print("  refused -> answered flips: %s" % (", ".join(flips) if flips else "none"))
+
+    ok = not bad and not flips and ma > 0.75
+    print("\nABLATION: %s" % ("PASS" if ok else "FAIL"))
+    if not ok:
+        raise SystemExit(1)
+
+
+def measure_one(ret, q: str, expand: bool) -> dict:
+    """Score profile for a single free-text query (off-corpus battery)."""
+    real = retrieve.expand_query
+    if not expand:
+        retrieve.expand_query = lambda x: x
+    try:
+        hits = ret.query(q, k=K_PER_DOC)[:TOP_N]
+        kept = [h for h in hits if h.score >= MIN_SCORE]
+        return {"top": hits[0].score if hits else 0.0, "n_kept": len(kept)}
+    finally:
+        retrieve.expand_query = real
 
 
 if __name__ == "__main__":

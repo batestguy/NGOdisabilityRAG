@@ -151,11 +151,13 @@ SYNONYMS: dict[str, tuple[str, ...]] = {
     "penalty": ("offence", "fine", "imprisonment", "prison", "conviction"),
     "punishment": ("offence", "fine", "imprisonment", "conviction"),
     "sanction": ("offence", "fine", "penalty", "prosecution"),
+    "fine": ("damages", "payable", "liable", "offence"),
     "fined": ("fine", "damages", "payable", "liable"),
     "jail": ("imprisonment", "prison", "conviction"),
-    # -- employment
+    # -- employment. "sacked" is NOT a separate key: it stems to "sack" and
+    #    would silently shadow it in _SYN_WORD (the collision assert below
+    #    catches exactly this). _surface_forms() already routes "sacked" here.
     "sack": ("dismiss", "employment", "employ", "labour"),
-    "sacked": ("dismiss", "employment", "employ", "labour"),
     "fired": ("dismiss", "employment", "employ"),
     "job": ("employment", "employ", "work", "labour"),
     "quota": ("employment", "employ", "percent", "labour"),
@@ -202,10 +204,51 @@ SYNONYMS: dict[str, tuple[str, ...]] = {
     "compliance": ("comply", "conform", "transitory"),
 }
 
-# Single-word keys are compared on stems (so "penalties" -> "penalty" fires);
-# phrase keys keep their raw form and are matched as substrings.
-_SYN_WORD = {stem(k): v for k, v in SYNONYMS.items() if " " not in k}
+# Single-word keys are matched against a normalised token set (see
+# _surface_forms); phrase keys keep their raw form and match as substrings.
+_SYN_WORD = {k: v for k, v in SYNONYMS.items() if " " not in k}
 _SYN_PHRASE = {k: v for k, v in SYNONYMS.items() if " " in k}
+
+# stem() is shared with the INDEX, so it must not be retuned to make keys fire
+# -- changing it would rebuild every TF-IDF vocabulary and invalidate the
+# MIN_SCORE calibration. Instead the collision check below keeps the map
+# honest: two keys that reduce to the same stem would silently shadow each
+# other in a dict comprehension, and a future edit giving them different
+# synonym lists would lose one with no warning.
+_stems: dict[str, str] = {}
+for _k in _SYN_WORD:
+    _s = stem(_k)
+    assert _s not in _stems, (
+        "synonym keys %r and %r collide on stem %r -- one would shadow the "
+        "other; merge them" % (_stems[_s], _k, _s))
+    _stems[_s] = _k
+del _stems, _k, _s
+
+
+def _surface_forms(q: str) -> set[str]:
+    """Every form of a query token a SYNONYMS key could legitimately match.
+
+    stem() is a deliberately tiny rule set with length guards (len > 4 / > 5),
+    which means short nouns do NOT reduce to their singular: "jobs" stems to
+    "jobs", "cars" to "cars", "buses" to "buse", "houses" to "hous". Matching
+    keys on stems alone therefore left several curated entries DEAD against the
+    plural a user would actually type ("Are there job quotas?" fires, "What
+    about accessible buses?" does not). Found in review 2026-09-11.
+
+    The fix is on the key-matching side only -- naive singularisation here is
+    safe because a false match costs at most a few extra query terms, whereas
+    the same rule inside stem() would rewrite the corpus index.
+    """
+    import re as _re
+    raw = set(_re.findall(r"[a-z]+", q.lower()))
+    forms = set(raw) | set(stem_preprocess(q).split())
+    for w in raw:
+        forms.add(stem(w))
+        if w.endswith("es") and len(w) > 3:   # buses -> bus, abuses -> abus
+            forms.add(w[:-2])
+        if w.endswith("s") and len(w) > 2:    # jobs -> job, houses -> house
+            forms.add(w[:-1])
+    return forms
 
 
 def expand_query(q: str) -> str:
@@ -216,16 +259,23 @@ def expand_query(q: str) -> str:
     corpus's register. Order is deterministic (dict insertion order) and
     duplicates are dropped, so the same question always expands identically --
     the ablation stays reproducible.
+
+    NOTE: PerDocRetriever.query() applies this to whatever it is given, and the
+    Phase 06 eval's reverse-retrieval step passes a whole generated ANSWER, not
+    a short question. Long inputs can fire many keys at once. Measured
+    2026-09-11: reverse_rel is bit-identical per question before and after, so
+    the map as it stands is stable there -- but it is tuned against short
+    questions only, so re-check the reverse_rel column when adding entries.
     """
     import re as _re
-    toks = set(stem_preprocess(q).split())
+    forms = _surface_forms(q)
     low = " ".join(_re.findall(r"[a-z]+", q.lower()))
     extra: list[str] = []
     for key, syns in _SYN_PHRASE.items():
         if key in low:
             extra.extend(syns)
-    for key_stem, syns in _SYN_WORD.items():
-        if key_stem in toks:
+    for key, syns in _SYN_WORD.items():
+        if key in forms or stem(key) in forms:
             extra.extend(syns)
     if not extra:
         return q
@@ -272,21 +322,53 @@ class PerDocRetriever:
             for doc_id, chunks in docs.items()
         }
 
-    def query(self, q: str, k: int | None = None) -> list[Hit]:
-        """Top-k hits from EACH doc, merged and sorted by score desc.
-
-        Synonym expansion happens HERE -- once, before the per-doc
-        sub-retrievers run -- so all three docs are searched with the same
-        expanded query and the indexes stay untouched. See expand_query().
-        """
-        k = self.k_default if k is None else k
-        q = expand_query(q)
+    def _merged(self, q: str, k: int) -> list[Hit]:
+        """Top-k from each doc, merged and sorted. No expansion, no gating."""
         hits: list[Hit] = []
         for doc_id, chunks in self.docs.items():
             for i, s, _ in self.sub[doc_id].query(q, k=k):
                 hits.append(Hit(chunks[i].doc_id, chunks[i].ref, chunks[i].text, s))
         hits.sort(key=lambda h: h.score, reverse=True)
         return hits
+
+    def query(self, q: str, k: int | None = None) -> list[Hit]:
+        """Top-k hits from EACH doc, merged and sorted by score desc.
+
+        Synonym expansion happens HERE -- once, before the per-doc
+        sub-retrievers run -- so all three docs are searched with the same
+        expanded query and the indexes stay untouched. See expand_query().
+
+        EXPANSION IS GATED ON THE USER'S OWN WORDS (added 2026-09-11 after
+        review). It is an aid to a query that already overlaps the corpus,
+        never a way to MANUFACTURE overlap. Measured before this gate existed:
+        "my job interview went badly" scored 0.0000 with zero hits above
+        MIN_SCORE, but the "job" -> employment/employ/work/labour entry lifted
+        it to 0.2460 with six hits -- and app.py's "Ask a Legal Question"
+        button forces the legal route, so a user could have been shown
+        dignity and equality clauses as if they answered that sentence. That
+        defeats the single job MIN_SCORE is documented to do (see the
+        calibration block at the top of this file): refuse zero-overlap
+        queries. Synonyms must not be able to talk the gate out of a refusal.
+
+        So: score the ORIGINAL query first; if it cannot clear the floor,
+        return its hits unexpanded and let the caller refuse on the user's own
+        words. The consequence is a property worth stating plainly -- the set
+        of queries that get refused is IDENTICAL to the pre-expansion set.
+        Expansion can only reorder and improve hits for queries that already
+        passed. MIN_SCORE itself is untouched at 0.10; it is used here as a
+        precondition, not renegotiated.
+
+        Cost is one extra TF-IDF transform per expanded query, which is
+        nothing against a 2,104-chunk local index and keeps the path offline.
+        """
+        k = self.k_default if k is None else k
+        base = self._merged(q, k)
+        if not base or base[0].score < MIN_SCORE:
+            return base
+        expanded = expand_query(q)
+        if expanded == q:
+            return base
+        return self._merged(expanded, k)
 
     def retrieve(
         self, q: str, k: int | None = None, min_score: float = MIN_SCORE
