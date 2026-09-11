@@ -244,8 +244,14 @@ def _surface_forms(q: str) -> set[str]:
     forms = set(raw) | set(stem_preprocess(q).split())
     for w in raw:
         forms.add(stem(w))
-        if w.endswith("es") and len(w) > 3:   # buses -> bus, abuses -> abus
-            forms.add(w[:-2])
+        # "-es" is only a plural marker after a sibilant (bus->buses,
+        # box->boxes, church->churches). Without that guard the rule is a
+        # false-positive generator: it stripped "cares" -> "car" and injected
+        # vehicle/transport/parking/road into "nobody cares what happens
+        # next" (found in review 2026-09-11).
+        if w.endswith("es") and len(w) > 3 and w[:-2].endswith(
+                ("s", "x", "z", "ch", "sh")):
+            forms.add(w[:-2])                 # buses -> bus
         if w.endswith("s") and len(w) > 2:    # jobs -> job, houses -> house
             forms.add(w[:-1])
     return forms
@@ -331,44 +337,77 @@ class PerDocRetriever:
         hits.sort(key=lambda h: h.score, reverse=True)
         return hits
 
-    def query(self, q: str, k: int | None = None) -> list[Hit]:
+    def query(
+        self, q: str, k: int | None = None, min_score: float | None = None
+    ) -> list[Hit]:
         """Top-k hits from EACH doc, merged and sorted by score desc.
+
+        min_score is the floor the EXPANSION GATE below consults; it does not
+        filter the returned hits (retrieve() does that). It is threaded
+        through so a caller using a non-default floor gates expansion on the
+        same number it will later filter on, rather than on the module
+        constant. No caller passes a non-default today -- this closes the
+        latent inconsistency rather than leaving it to be discovered later.
 
         Synonym expansion happens HERE -- once, before the per-doc
         sub-retrievers run -- so all three docs are searched with the same
         expanded query and the indexes stay untouched. See expand_query().
 
-        EXPANSION IS GATED ON THE USER'S OWN WORDS (added 2026-09-11 after
-        review). It is an aid to a query that already overlaps the corpus,
-        never a way to MANUFACTURE overlap. Measured before this gate existed:
-        "my job interview went badly" scored 0.0000 with zero hits above
-        MIN_SCORE, but the "job" -> employment/employ/work/labour entry lifted
-        it to 0.2460 with six hits -- and app.py's "Ask a Legal Question"
-        button forces the legal route, so a user could have been shown
-        dignity and equality clauses as if they answered that sentence. That
-        defeats the single job MIN_SCORE is documented to do (see the
-        calibration block at the top of this file): refuse zero-overlap
-        queries. Synonyms must not be able to talk the gate out of a refusal.
+        EXPANSION MAY NOT CHANGE A REFUSAL DECISION, IN EITHER DIRECTION.
+        That is the whole guard, and it needs both halves -- the first version
+        of it shipped only the first half and was caught in review.
 
-        So: score the ORIGINAL query first; if it cannot clear the floor,
-        return its hits unexpanded and let the caller refuse on the user's own
-        words. The consequence is a property worth stating plainly -- the set
-        of queries that get refused is IDENTICAL to the pre-expansion set.
-        Expansion can only reorder and improve hits for queries that already
-        passed. MIN_SCORE itself is untouched at 0.10; it is used here as a
-        precondition, not renegotiated.
+        Entry side (expansion must not MANUFACTURE overlap). Measured before
+        any gate existed: "my job interview went badly" scored 0.0000 with
+        zero hits above MIN_SCORE, but the "job" entry lifted it to 0.2460
+        with six hits. app.py's "Ask a Legal Question" button forces the legal
+        route, so a user could have been shown dignity and equality clauses as
+        if they answered that sentence. That defeats the single job MIN_SCORE
+        is documented to do (calibration block at the top of this file):
+        refuse zero-overlap queries.
 
-        Cost is one extra TF-IDF transform per expanded query, which is
-        nothing against a 2,104-chunk local index and keeps the path offline.
+        Exit side (expansion must not CREATE a false refusal). Appending terms
+        that are absent from the best-matching document dilutes the query
+        vector's norm without adding numerator mass, so a cosine can DROP.
+        Measured: the bare query "blind" -- itself one of the curated keys --
+        scored 0.1367 on Act cl.20, and expanding it to "blind visual
+        impairment braille" pushed it to 0.0821, under the floor. A real,
+        on-topic question about blindness would have been refused. CLAUDE.md
+        is explicit that false refusals deny help to PWDs and that the gate
+        errs low on purpose, so this direction matters at least as much as
+        the first.
+
+        So: score the ORIGINAL query. If it cannot clear the floor, return it
+        unexpanded and let the caller refuse on the user's own words. If it
+        can, expand -- but if the expanded query cannot clear the floor, fall
+        back to the original hits. The honest statement of the property is
+        therefore narrower than "expansion only helps":
+
+          expansion never turns a refusal into an answer, and never turns an
+          answer into a refusal. It only re-ranks within the answered set.
+
+        It is NOT claimed that every expanded top score is higher than its
+        base (Q6 drops 0.1759 -> 0.1696 and stays correct). Re-ranking that
+        lowers the top hit while improving coverage deeper in the top-6 is
+        legitimate -- recall is measured over the merged six, not the first.
+
+        MIN_SCORE itself is untouched at 0.10. It is used here as a
+        precondition, not renegotiated. Cost is one extra TF-IDF transform per
+        expanded query against a 2,104-chunk local index -- negligible, and
+        the path stays fully offline.
         """
         k = self.k_default if k is None else k
+        floor = MIN_SCORE if min_score is None else min_score
         base = self._merged(q, k)
-        if not base or base[0].score < MIN_SCORE:
-            return base
+        if not base or base[0].score < floor:
+            return base                      # entry gate
         expanded = expand_query(q)
         if expanded == q:
             return base
-        return self._merged(expanded, k)
+        hits = self._merged(expanded, k)
+        if not hits or hits[0].score < floor:
+            return base                      # exit gate
+        return hits
 
     def retrieve(
         self, q: str, k: int | None = None, min_score: float = MIN_SCORE
@@ -379,7 +418,8 @@ class PerDocRetriever:
         clears the threshold -- the caller must emit the fixed refusal
         message instead of answering. refused=False always carries >=1 hit.
         """
-        hits = [h for h in self.query(q, k=k) if h.score >= min_score]
+        hits = [h for h in self.query(q, k=k, min_score=min_score)
+                if h.score >= min_score]
         if not hits:
             return [], True
         return hits, False

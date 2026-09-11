@@ -167,7 +167,29 @@ def main() -> None:
             "<== FLOOR DEFEATED" if flipped else ""))
     print("  refused -> answered flips: %s" % (", ".join(flips) if flips else "none"))
 
-    ok = not bad and not flips and ma > 0.75
+    # The mirror image, and the case the first two arms both missed. A bare
+    # trigger word is the SHORTEST possible on-topic query, so it has the least
+    # mass to lose when expansion appends terms that are absent from the
+    # best-matching chunk -- appending dilutes the query vector's norm without
+    # adding numerator mass, so the cosine can DROP below the floor. Measured
+    # 2026-09-11: "blind" scored 0.1367 on Act cl.20 and expanded to 0.0821,
+    # i.e. a legitimate question about blindness would have been REFUSED.
+    # CLAUDE.md: false refusals deny help to PWDs. Every curated key is probed
+    # bare, so the harness can never again be blind to "blind".
+    print("\n== FALSE-REFUSAL INTEGRITY (every SYNONYMS key, queried bare) ==")
+    print("  Expansion must not flip any answerable query to refused.")
+    false_ref = []
+    for key in retrieve.SYNONYMS:
+        b = measure_one(ret, key, expand=False)
+        a = measure_one(ret, key, expand=True)
+        if b["n_kept"] > 0 and a["n_kept"] == 0:
+            false_ref.append(key)
+            print("  %-16s %.4f/%-3d -> %.4f/%-3d  <== FALSE REFUSAL"
+                  % (key, b["top"], b["n_kept"], a["top"], a["n_kept"]))
+    print("  probed %d keys; answered -> refused flips: %s"
+          % (len(retrieve.SYNONYMS), ", ".join(false_ref) if false_ref else "none"))
+
+    ok = not bad and not flips and not false_ref and ma > 0.75
     print("\nABLATION: %s" % ("PASS" if ok else "FAIL"))
     if not ok:
         raise SystemExit(1)
