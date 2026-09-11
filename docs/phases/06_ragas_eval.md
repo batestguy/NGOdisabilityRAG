@@ -152,6 +152,11 @@ completed work.
 - [x] every miss diagnosed by layer: Q10 cite → corpus labelling (fixed, fix B); Q5 recall →
       retrieval vocabulary (fixed, M1); Q3 thinness → prompt/generation (open, Phase 09);
       reverse_rel → metric design (open, named fix, Phase 09)
+- [ ] manual citation check 100% — **NOT met, and carried forward openly.** 11/12 claims are
+      clean; Q10's `[Constitution s. 39]` is confirmed `unsupported` by both the judge and
+      fix B's mechanical check (section C). This is the *original* line-27 exit criterion; it
+      is listed here rather than dropped, because a checklist that quietly omits the one
+      criterion it fails is worse than one that fails visibly.
 - [ ] two-run flakiness check — **NOT done, and not claimed.** Needs a second full generation
       pass (12 calls on the generator). Carried forward.
 

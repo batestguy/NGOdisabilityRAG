@@ -56,6 +56,13 @@ def run_question(ret: PerDocRetriever, q: str, use_llm: bool) -> dict:
         "refused": res["refused"],
         "refusal_layer": res.get("refusal_layer", "gate" if res["refused"] else None),
         "llm_used": res["llm_used"],
+        # The answer cache is a quota saver, never evidence. A warm cache would
+        # otherwise let a REPLAYED answer land in a versioned transcript looking
+        # exactly like a fresh generation -- retrieval and prompt building are
+        # deterministic, so the replay is invisible downstream. Persisting the
+        # flag is what makes "never fake an LLM row" true in the durable record
+        # and not just in ask()'s in-memory return value.
+        "cached": res.get("cached"),
         "llm_error": res.get("llm_error"),
         "citations": res["citations"],
         "cite_check": res.get("cite_check"),
