@@ -624,3 +624,121 @@ That constraint is what turns steps 4/5 from "deferred" into "superseded":
 
 Everything in `docs/phases/09_evidence_and_generation.md`, in its stated order. Owner gates:
 GIF encode, NVDA, physical keyboard, live mic/read-aloud, LinkedIn.
+
+## 2026-09-13 — Phase 09 steps 1 and 2: the held-out set says recall 0.925 was mostly fitting
+
+**Zero Gemini calls.** Both milestones are offline by construction. PRs #9
+(`phase09/ops-hardening`) and #10 (`phase09/evidence-base`).
+
+### The finding
+
+| set | n | mean recall |
+|---|---|---|
+| frozen 10 — the set the synonym map was **fitted on** | 10 | **0.925** |
+| held out — nothing has been tuned on these | 25 | **0.420** |
+| delta | | **−0.505** |
+
+Held-out recall is less than half the headline number. The 2026-09-11 entry recorded the
+*suspicion* — "the synonym map is fitted to the set that scores it", entries kept or deleted by
+their effect on Q5/Q7/Q8/Q9 across only 10 questions. This is the measurement. At n=10 a single
+question is worth 10pp, so 0.925 never could have separated generalisation from memorisation;
+it now looks substantially like the latter.
+
+Per class, and the shape is the tell:
+
+| class | n | recall |
+|---|---|---|
+| vocab-mismatch | 8 | **0.312** |
+| cross-document | 7 | 0.429 |
+| toc-trap | 5 | 0.500 |
+| odd-wording | 5 | 0.500 |
+
+**The worst class is the one the synonym map exists to fix.** Vocabulary mismatch is precisely
+what expansion was added for, and on questions it was not fitted to it is the weakest thing the
+retriever does. That is a much more specific verdict than "recall dropped", and it aims step 3:
+`synonyms_auto.json` now has a real target and, for the first time, an uncontaminated yardstick
+to be judged on.
+
+The generalisation verdict the playbook asked for: **the hand-written synonym map does not
+generalise.** Its frozen-10 gain is not evidence of a retrieval improvement of that size.
+
+### Two numbers nobody had ever measured
+
+- **False-refusal rate 0/25 = 0.0%** on answerable held-out questions (frozen-10 0/10). This is
+  the one that matters most here — false refusals deny help to PWDs — and it is clean.
+  Retrieval returns *something* for every answerable question. It is often the wrong something;
+  that is what 0.420 says. Worth being precise about: the floor is not the problem, ranking is.
+- **Gate-level false-answer rate 5/5 = 100%** of off-corpus questions clear `MIN_SCORE`.
+  Reported ungated, caveat attached, and **`MIN_SCORE` untouched**. It is a weak-overlap floor,
+  not a semantic filter, and the cosine bands are inverted (`src/retrieve.py:26-44`) —
+  "sourdough" scored 0.125 and "maritime shipping insurance" 0.318 long before this work. The
+  semantic layer is the strict-prompt `NO_ANSWER_SENTENCE` path and measuring it costs quota.
+  A bad-looking number here was predicted in advance and is not a reason to move the floor.
+
+### Method notes worth keeping
+
+**A yardstick you can tune is not a yardstick.** `scripts/eval_heldout.py` exits nonzero *only*
+on ground-truth verification failure or a **frozen-10** regression — never on a held-out number.
+A harness that failed when held-out numbers looked bad would manufacture pressure to tune them,
+which is the exact contamination the set exists to prevent.
+
+**Byte-identity as refactor proof.** Moving `EXPECTED` out of `eval_phase06.py` into
+`data/eval/questions.json` is the kind of change that silently shifts a metric. The pre-change
+run was captured *before any edit* (`scripts/eval_p09pre.json`) and the post-change run is
+**byte-identical**, 16335 B both. Cheap, and it converts "I only changed one literal" from a
+claim into a check.
+
+**Two sources that must agree beat one nobody checks.** The playbook proposed retiring the
+notebook-parsing `load_questions()`. Kept instead: `assert_frozen10_matches_notebook()` requires
+the canonical JSON and the notebook literal to agree, in order, on all ten texts. A frozen
+question reworded to move a metric now fails loudly rather than shifting the yardstick under
+every number since Phase 01.
+
+**Prove a failure path by injection, not by causing the failure.** The failover path cannot be
+demonstrated by spending quota — a successful call only exercises the happy path, and the only
+way to make failover fire for real is to exhaust a daily cap, costing a day. `test_phase09_ops.py`
+monkeypatches the client and raises recorded 429s instead. 38/38, zero network. The daily-cap
+string is read verbatim out of the 2026-09-09 transcript at runtime; the per-minute string is
+**reconstructed and labelled as reconstructed**, because the checkpoint holding the raw text was
+deleted after the judge run and the surviving results file has no error strings. Recording that
+honestly costs nothing; a test docstring claiming "captured" would have been a small lie in the
+one place the project trusts most.
+
+**The budget was always 40, not 20.** The 2026-09-11 judge run spent 30 attempts on flash-lite
+while flash recorded 0 calls and was never starved — the two models draw from separate free-tier
+pools. That was visible in the record for two days before anything used it. `FALLBACK_MODEL` is
+opt-in and records `model_used`, because a flash-lite answer is not a flash answer.
+
+**`--no-cache` was load-bearing, not a convenience.** `test_phase02.py:49` never passed
+`use_cache`, which defaults `True`, so the pending two-run flakiness check would have been 12
+cache hits reporting a variance of exactly zero — a number about the cache, not the model. The
+check is now *possible*; it is not run (24 calls).
+
+### Delegation notes
+
+`executor` authored the 30 held-out questions from corpus inspection (high-volume reading, kept
+out of the main thread); `reviewer` re-derived 15 of 30 against `data/processed/` independently.
+Two things came back that were worth more than the questions:
+
+- The author flagged a hazard rather than hiding it: `const_ref` labels Second Schedule
+  legislative-list items as `s. N`, so a schedule hit could be a **false positive** for
+  Constitution recall. Checked directly — of every hit counting toward Constitution recall
+  across all 40 questions, exactly one was schedule-shaped, and it duplicated a genuine Chapter
+  II body hit for the same question, so set-based recall is unaffected. **No score is inflated.**
+  The mislabelling is real, pre-existing, and out of scope here.
+- `reviewer` caught a fabricated number in my own M1 commit message: I wrote the new suite as
+  "45/45" when the true count is **38**. Nothing was wrong with the code; the count was written
+  rather than counted. Corrected before push. This is the second time this project's review step
+  has caught a claim rather than a bug, which is what it is for.
+
+**Corpus gap found while authoring (H1):** Act cl.19 (subsidised special-education personnel) is
+**uncitable** — OCR rendered the heading `19.1`, so the sentence straddles chunks labelled
+`cl. 18` and `cl. 20` and no `act2018` ref carries 19. H1 expects the factsheet limb only. A
+later phase should look at it; `data/processed/` is read-only here.
+
+### Still open, unchanged
+
+Phase 09 steps 3 (BM25 re-rank inside the gate + offline `synonyms_auto.json`) and 4 (Q3
+generation defect), in that order — step 3 now has a real target and an uncontaminated yardstick.
+The two-run flakiness check is unblocked but unrun (24 calls). Owner gates: GIF encode, NVDA,
+physical keyboard, live mic/read-aloud, LinkedIn.

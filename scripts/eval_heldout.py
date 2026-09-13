@@ -82,6 +82,13 @@ def measure_one(ret, row: dict) -> dict:
         # Off-corpus rows expect nothing, so recall/precision are undefined
         # rather than zero. Scoring them 0.0 would drag the mean down with a
         # number that has no meaning.
+        #
+        # RECALL is identical to eval_phase06.eval_question() -- same pair-set
+        # construction, same k/top_n -- which is what makes the frozen-vs-
+        # held-out comparison legitimate. PRECISION is NOT directly comparable:
+        # the eval scores a refused row 0.0 (eval_phase06.py:170) where this
+        # returns None. Only recall was ever claimed comparable; do not quote
+        # the two precision columns against each other.
         "recall": (len(exp_pairs & ret_pairs) / len(exp_pairs)
                    if exp_pairs else None),
         "precision": (rel_hits / len(hits)) if (hits and exp_pairs) else None,

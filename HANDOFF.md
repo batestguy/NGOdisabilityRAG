@@ -1,6 +1,34 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-11)
+# HANDOFF — start here (60 seconds, updated 2026-09-13)
 
-> **Latest (2026-09-11): Phase 06 CLOSED, Phase 08 steps 1/2/3/6a SHIPPED and live.**
+> **Latest (2026-09-13): Phase 09 steps 1 and 2 DONE. Zero Gemini calls spent.**
+> PRs #9 (`phase09/ops-hardening`) and #10 (`phase09/evidence-base`).
+>
+> **READ THIS BEFORE TOUCHING RETRIEVAL — the headline number changed meaning.**
+> Held-out mean recall is **0.420 (n=25)** against frozen-10 **0.925**, delta **−0.505**.
+> The frozen 10 are the questions the synonym map was *fitted on*; the held-out 30 are
+> questions nothing has been tuned on. **0.925 was mostly fitting.** Quote both numbers or
+> neither. Per class, vocab-mismatch is worst at **0.312** — the class the synonym map exists
+> to fix — so **the hand-written map does not generalize**. That is step 3's target.
+>
+> Measured for the first time: **false-refusal 0/25 = 0.0%** on answerable held-out questions
+> (the floor is *not* denying help to PWDs — ranking is the problem, not the gate), and
+> **gate-level false-answer 5/5 = 100%** of off-corpus questions clear `MIN_SCORE`. The second
+> is reported **ungated with its caveat and is NOT a reason to touch `MIN_SCORE`** (weak-overlap
+> floor, not a semantic filter; inverted bands, `src/retrieve.py:26-44`; the semantic layer is
+> the strict-prompt `NO_ANSWER_SENTENCE` path, which costs quota to measure).
+>
+> **Budget is 40/day, not 20** — `gemini-2.5-flash` and `gemini-2.5-flash-lite` draw from
+> separate free-tier pools. `ask(failover=True)` uses the second pool on a **daily-cap** 429
+> only, never a per-minute one, and records `model_used`.
+>
+> New commands: `scripts\test_phase09_ops.py` (38/38, zero network) · `scripts\eval_heldout.py`
+> (retrieval-only baseline) · `test_phase02.py --no-cache --failover`.
+>
+> **Next: Phase 09 step 3**, then step 4. The two-run flakiness check is now *possible* but was
+> NOT run (24 calls). Details: 2026-09-13 journal entry + the Results section of
+> `docs/phases/09_evidence_and_generation.md`.
+
+> **Previous (2026-09-11): Phase 06 CLOSED, Phase 08 steps 1/2/3/6a SHIPPED and live.**
 > `main` @ `f4d18fe`. recall **0.800 → 0.925**, faith_audited **0.867 earned**
 > (`MANUAL_FLAGS == []`), reverse_rel 0.630 arbitrated as a metric artifact.
 > Live-verified on Render. Details in the 2026-09-11 journal entry; the pre-existing
@@ -51,12 +79,12 @@ before picking anything up. In short:
 
 Order (owner-confirmed 2026-09-11, all four, under a **runtime-shippable-only** constraint):
 
-1. **Ops hardening (zero quota, small).** `--no-cache` on `test_phase02.py`; opt-in
-   daily-cap-only model failover. Unblocks the flakiness check and doubles quota.
-2. **Widen the evidence base (zero quota).** `data/eval/questions.json` + ~30 held-out
-   questions with corpus-verified ground truth, incl. the first real measurement of
-   false-refusal and false-answer rates. Frozen 10Q stays frozen and separate.
-3. **Shippable retrieval (zero quota).** BM25 re-rank *inside* the existing cosine gate
+1. ~~**Ops hardening (zero quota, small).**~~ **DONE 2026-09-13, PR #9.** `--no-cache` +
+   `--failover` on `test_phase02.py`; opt-in daily-cap-only failover in `src/rag.py`.
+2. ~~**Widen the evidence base (zero quota).**~~ **DONE 2026-09-13, PR #10.** 30 held-out
+   questions; **held-out recall 0.420 vs frozen-10 0.925** (see the banner at the top).
+   False-refusal 0/25; gate-level false-answer 5/5.
+3. **Shippable retrieval (zero quota) — NEXT.** BM25 re-rank *inside* the existing cosine gate
    (step 4's win, no ONNX) + an offline-computed `synonyms_auto.json` (step 5's win, no
    query-time model).
 4. **Generation fix (quota-paced).** Q3 answer-shape floor + the named `reverse_rel` fix in
@@ -106,7 +134,17 @@ Order (owner-confirmed 2026-09-11, all four, under a **runtime-shippable-only** 
 - Eval script points at fixA2 transcript now. Never fake LLM rows.
   LLM runs → versioned files; dry runs → `--out=<temp path>` (space form ignored!).
 - Test commands (all via project python): `bench_phase01` (PASS) · `test_phase03`
-  (16/16+7/7) · `test_phase04` (PASS) · `test_phase05` (104) · `eval_phase06.py --out=...`.
+  (16/16+7/7) · `test_phase04` (PASS) · `test_phase05` (104) · `eval_phase06.py --out=...` ·
+  `test_phase09_ops` (38/38, zero network) · `eval_heldout` (held-out retrieval baseline) ·
+  `ablate_phase08` (PASS). `eval_heldout.py` exits nonzero **only** on ground-truth failure or
+  a **frozen-10** regression — never on a held-out number, by design.
+- Eval ground truth lives in **`data/eval/questions.json`** (10 `frozen10` + 30 `heldout`),
+  loaded via `scripts/evalset.py`. `eval_phase06.EXPECTED` is now derived from it, and
+  `judge_phase06.py` / `ablate_phase08.py` still import `EXPECTED` unchanged.
+  `bench_phase01.load_questions()` is **KEPT, not retired**: `assert_frozen10_matches_notebook()`
+  requires it and the JSON to agree in order on all ten texts, so a reworded frozen question
+  fails loudly instead of silently moving the yardstick. **Frozen questions are frozen** — add
+  new ones, never edit these, never merge held-out into the frozen 10.
 - Quota: **TWO limits, not one** (corrected 2026-09-11 — the missing one cost 9 calls).
   20/day/model **and 10 requests/MINUTE/model**. The per-minute 429 is
   `GenerateRequestsPerMinutePerProjectPerModel-FreeTier` and carries its own `retryDelay`
@@ -115,19 +153,20 @@ Order (owner-confirmed 2026-09-11, all four, under a **runtime-shippable-only** 
   pacing, `_is_per_minute()`, bounded backoff, checkpoint after EVERY call).
   503-transients retry with backoff, same day OK. Models draw from **separate pools**:
   the judge run spent `gemini-2.5-flash-lite` and touched `gemini-2.5-flash` zero times.
-  **Unused lever:** that makes the real daily budget **40, not 20**. A daily-cap-only failover
-  to flash-lite doubles effective quota for free (Phase 09 step 1). Rules: opt-in by flag,
-  record the model *actually used* not the one requested, and never fail over on a per-minute
-  429 — that one is retried.
+  **Lever now WIRED (2026-09-13, was "unused"):** the real daily budget is **40, not 20**.
+  `rag.FALLBACK_MODEL = gemini-2.5-flash-lite`; `ask(failover=True)` / `generate(failover=True)`
+  fail over **once**, on a **daily-cap** 429 only, and record `model_used` (top level and in
+  `route`; `route["model"]` still means the model *requested*). Off by default — a flash-lite
+  answer is not a flash answer. A per-minute 429 **re-raises** so the caller retries it.
+  `is_per_minute_429()` / `retry_delay()` now live in `src/rag.py`, not the judge script.
 - Answer cache live (`src/rag.py`, gitignored at `scripts/.answer_cache.json`): keyed by
   sha256(model + NUL + **whole rendered prompt**), so context and prompt version are in the
   key. Fails OPEN. Every hit sets `cached=True` and `test_phase02.py` persists it — a replay
   can never be written up as a fresh call.
-  **Corollary found 2026-09-11: the cache currently DEFEATS the pending two-run flakiness
-  check.** `test_phase02.py:49` calls `ask(q, retriever=ret, use_llm=use_llm)` and never
-  passes `use_cache`, which defaults `True` — so run two would be 12 cache hits measuring
-  nothing. `ask()` already accepts `use_cache` (`src/rag.py:438`); only the harness needs a
-  `--no-cache` flag. Do that BEFORE spending quota on the flakiness check.
+  **Corollary found 2026-09-11, FIXED 2026-09-13:** the cache defeated the pending two-run
+  flakiness check — `test_phase02.py` never passed `use_cache`, which defaults `True`, so run
+  two would have been 12 cache hits measuring nothing. `test_phase02.py --no-cache` now exists
+  and threads `use_cache=False` through. **Use it for the flakiness check** (still unrun).
   *(A prompt-version bump does NOT need the flag — the key covers the whole rendered prompt,
   so a new `PROMPT_VERSION` misses the cache automatically.)*
 - **Phase 08 steps 4/5 are SUPERSEDED, not just deferred (2026-09-11).** Both need a model at
@@ -158,12 +197,15 @@ Order (owner-confirmed 2026-09-11, all four, under a **runtime-shippable-only** 
 **Pending owner inputs:** frames→GIF encode + README embed (`docs/demo/` 5 frames +
 `docs/demo_storyboard.md` are ready) + NVDA/keyboard/mic gates + LinkedIn (+ optional
 Streamlit link).
-**Pending quota:** two-run flakiness check (24 calls with failover, or 2 days) — **blocked
-until `--no-cache` lands**, see the cache corollary above; + AI-expander live smoke.
-**Pending code:** all of `docs/phases/09_evidence_and_generation.md`, in its stated order —
-(1) ops hardening, (2) held-out eval set, (3) BM25 re-rank + offline thesaurus, (4) Q3
-answer-shape floor + named reverse_rel fix. Phase 08 steps 4/5 are superseded by (3).
-Nothing is blocked except the flakiness check.
+**Pending quota:** two-run flakiness check (24 calls with failover, or 2 days) — **UNBLOCKED
+2026-09-13, not run.** Use `test_phase02.py --no-cache --failover --out=<versioned path>`;
++ AI-expander live smoke. **Nothing has been spent on Gemini since 2026-09-11.**
+**Pending code:** `docs/phases/09_evidence_and_generation.md` steps **3** (BM25 re-rank inside
+the gate + offline `synonyms_auto.json`) and **4** (Q3 answer-shape floor + named reverse_rel
+fix). Steps 1 and 2 are DONE (2026-09-13). Phase 08 steps 4/5 are superseded by (3). Step 3 now
+has a real target — vocab-mismatch is the weakest held-out class at 0.312 — and, for the first
+time, an uncontaminated set to be judged on. Ablate on frozen-10 **and** held-out, always both.
+Nothing is blocked.
 **Housekeeping:** a 0-byte stray file `D:NGORAG_review_judge.diff` (U+F03A in the name, from a
 bad shell redirect) sits untracked in the repo root; deletion was permission-blocked twice, so
 it needs removing by hand. It is in no commit.
