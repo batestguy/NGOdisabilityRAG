@@ -1,13 +1,30 @@
 """Shared loader for data/eval/questions.json -- the canonical question set.
 
-Two sets live in that one file, and the distinction is the point of Phase 09:
+Three sets live in that one file, and the distinction is the point of Phase 09:
 
   frozen10 : the 10 questions every artifact since Phase 01 was measured on.
              FROZEN. New questions may be added to the file; these ten are
-             never edited, never reordered, and never merged with heldout --
+             never edited, never reordered, and never merged with the others --
              editing one to move a metric would destroy comparability with
              every bench, eval, ablation and transcript in the repo.
-  heldout  : questions authored in Phase 09 that NOTHING has been tuned on.
+  heldout  : THIS IS NOW THE **DEV** SET. It was authored in Phase 09 step 2 as
+             a clean held-out baseline and measured at 0.420 mean recall. On
+             2026-09-13 the owner read its per-question misses -- in-doc ranks,
+             which refs were dropped by the merge -- to design the Phase 09
+             step 3 retrieval fix. That inspection SPENT it: every number it
+             produces from now on is a number the fix was designed against.
+             It is still reported, still frozen (the 0.420 baseline is
+             published in STATUS.md, the playbook and LEARNING_JOURNAL.md, and
+             none of its 30 rows may be edited), but it is NO LONGER CLEAN and
+             must never again be quoted as evidence of generalisation.
+             The `set` value stays the string "heldout" on purpose: renaming it
+             would silently break comparability with that published baseline.
+  test     : the untouched set, authored Phase 09 step 3 M1 BEFORE any
+             retrieval change landed, from the corpus and the class
+             definitions only. It is looked at once, at the end of M3, and is
+             never tuned against. If a `test` number disappoints, that is the
+             finding -- re-authoring or re-weighting questions in response
+             would destroy the only clean yardstick the project has left.
 
 WHY THE SPLIT EXISTS
 --------------------
@@ -15,8 +32,10 @@ recall 0.925 was measured on the same 10 questions the synonym map was fitted
 to -- an `education` key was deleted because it cost Q7, others were kept
 because they lifted Q5/Q8/Q9. With n=10 a single question is worth 10 points,
 so that number cannot distinguish generalisation from memorisation. Phase 09
-step 3 (BM25 re-rank + offline thesaurus) would otherwise be tuned on the same
-10 points, which is exactly the contamination this file exists to stop.
+step 3 (the merge fix + BM25 re-rank) would otherwise be tuned on the same
+10 points, which is exactly the contamination this file exists to stop. The
+dev/test split above is the same argument applied one level up: a held-out set
+stops being held out the moment someone reads its failures.
 
 frozen10 rows were GENERATED ONCE from bench_phase01.load_questions() and
 eval_phase06.EXPECTED by a throwaway script, never retyped, so the canonical
@@ -31,7 +50,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 QUESTIONS_PATH = ROOT / "data" / "eval" / "questions.json"
 
-SETS = ("frozen10", "heldout")
+SETS = ("frozen10", "heldout", "test")
 GATES = ("answer", "refuse")
 DOC_IDS = ("act2018", "constitution1999", "factsheet2020")
 
@@ -39,7 +58,7 @@ DOC_IDS = ("act2018", "constitution1999", "factsheet2020")
 def load_eval_set(which: str | None = None) -> list[dict]:
     """Rows from questions.json, `expected` normalised to {doc_id: set[int]}.
 
-    which=None returns every row; "frozen10"/"heldout" filter.
+    which=None returns every row; any member of SETS filters to that set.
     """
     if which is not None and which not in SETS:
         raise ValueError("unknown set %r (expected one of %s)" % (which, SETS))

@@ -1,6 +1,7 @@
-"""Held-out retrieval baseline -- zero LLM, zero quota, zero network.
+"""Frozen / dev / test retrieval baselines -- zero LLM, zero quota, zero network.
 
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\eval_heldout.py   (from D:\\NGORAG)
+     ... --reveal-test        (see the TEST-SET PROTECTION note below)
 
 WHAT THIS IS FOR
 ----------------
@@ -8,12 +9,33 @@ recall 0.925 was measured on the same 10 questions the synonym map was fitted
 to: an `education` key was deleted because it cost Q7, others kept because they
 lifted Q5/Q8/Q9. With n=10 one question is worth 10 points, so that number
 cannot tell generalisation from memorisation. This harness measures the same
-retrieval on questions NOTHING has been tuned on, and always prints the two
+retrieval on questions NOTHING has been tuned on, and always prints every set
 side by side. The gap -- whatever its sign -- is the finding.
+
+THREE SETS, AND WHY THE MIDDLE ONE CHANGED MEANING (2026-09-13)
+---------------------------------------------------------------
+  frozen10          the historical yardstick, fitted on. Regression tripwire.
+  heldout = DEV     30 questions, first measured 0.420. The owner then read
+                    their per-question misses to design the Phase 09 step 3
+                    retrieval fix, which spent them: they are now a DEV set.
+                    Still reported, still frozen, no longer clean.
+  test              ~20 questions authored AFTER that inspection and BEFORE
+                    any retrieval change, from the corpus only. The clean one.
+The file name is kept as eval_heldout.py deliberately -- renaming it would
+break every doc, PR body and journal entry that points at it. See the header of
+scripts/evalset.py for the full argument.
+
+TEST-SET PROTECTION
+-------------------
+The `test` per-question MISSED-REFS column is withheld by default. Knowing
+which refs a clean set misses is exactly the knowledge that turns it into a dev
+set -- that is how the 30 were spent. Recall, precision, gate and class means
+are always printed in full, so the number is never hidden; only the tuning
+handle is. `--reveal-test` prints it and says plainly what it costs.
 
 WHAT IT DELIBERATELY DOES NOT MEASURE
 -------------------------------------
-The held-out set has no answer transcript, so faithfulness, coverage and
+Neither the dev nor the test set has an answer transcript, so faithfulness, coverage and
 reverse_rel are STRUCTURALLY UNAVAILABLE without spending quota: each needs a
 generated answer to score. They are omitted rather than approximated. This is
 the retrieval half only, and it says so everywhere it prints a number.
@@ -32,10 +54,9 @@ Nonzero ONLY for:
   - ground-truth verification failure (an expected number no chunk carries --
     a bug in the question set, not a measurement), or
   - a FROZEN-10 recall regression below the recorded baseline.
-NEVER for a held-out number. These are a first baseline; a harness that failed
-when they looked bad would create pressure to tune them, which is precisely the
-contamination this file exists to prevent. Held-out numbers are reported
-whatever they say.
+NEVER for a dev or test number. A harness that failed when they looked bad
+would create pressure to tune them, which is precisely the contamination this
+file exists to prevent. Dev and test numbers are reported whatever they say.
 """
 
 import sys
@@ -108,97 +129,127 @@ def fmt(v, spec: str = "%.3f") -> str:
     return "n/a" if v is None else spec % v
 
 
-def main() -> int:
+# Display labels. The `set` strings in questions.json are NOT renamed -- the
+# 0.420 baseline published in STATUS.md, the playbook and LEARNING_JOURNAL.md
+# is a "heldout" number, and renaming the key would silently break that link.
+# The relabelling is presentation only, and it says what happened.
+LABELS = {
+    "frozen10": "frozen-10 (fitted on)",
+    "heldout": "dev (ex-held-out, inspected 2026-09-13)",
+    "test": "test (clean, never tuned against)",
+}
+
+
+def per_question_table(label: str, rows: list[dict], show_missed: bool) -> None:
+    print("\n== %s, PER QUESTION (k=%d/doc, top_n=%d, MIN_SCORE=%.2f) =="
+          % (label.upper(), K_PER_DOC, TOP_N, MIN_SCORE))
+    print("  retrieval only -- no answers exist for this set, so faithfulness /")
+    print("  coverage / reverse_rel are structurally unavailable without quota.")
+    print("  %-6s %-16s %-7s %-7s %-7s %-6s %s" % (
+        "id", "class", "gate", "recall", "prec", "kept", "still-missed"))
+    for r in rows:
+        flag = ""
+        if r["expect_gate"] == "answer" and r["n_kept"] == 0:
+            flag = "  <-- FALSE REFUSAL"
+        elif r["expect_gate"] == "refuse" and r["n_kept"] > 0:
+            flag = "  <-- cleared the floor"
+        missed = (",".join(r["missed"]) or "-") if show_missed else "(withheld)"
+        print("  %-6s %-16s %-7s %-7s %-7s %-6d %s%s" % (
+            r["id"], r["class"], r["expect_gate"], fmt(r["recall"]),
+            fmt(r["precision"]), r["n_kept"], missed, flag))
+
+
+def class_table(label: str, rows: list[dict]) -> None:
+    print("\n== MEANS BY CLASS (%s) ==" % label)
+    print("  %-16s %-5s %-8s %-8s %s" % ("class", "n", "recall", "prec", "kept=0"))
+    for cls in sorted({r["class"] for r in rows}):
+        sub = [r for r in rows if r["class"] == cls]
+        zero = sum(1 for r in sub if r["n_kept"] == 0)
+        print("  %-16s %-5d %-8s %-8s %d/%d" % (
+            cls, len(sub), fmt(mean(r["recall"] for r in sub)),
+            fmt(mean(r["precision"] for r in sub)), zero, len(sub)))
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    reveal_test = "--reveal-test" in argv
+
     assert_frozen10_matches_notebook()
     rows = load_eval_set()
-    frozen = [r for r in rows if r["set"] == "frozen10"]
-    held = [r for r in rows if r["set"] == "heldout"]
+    by_set = {s: [r for r in rows if r["set"] == s] for s in LABELS}
 
     docs = build_corpus()
     print("corpus: %s" % {k: len(v) for k, v in docs.items()})
     n_refs = verify_expected(rows, docs)
     print("ground truth verified against corpus: %d questions, %d expected refs"
           % (len(rows), n_refs))
-    print("sets: frozen10=%d  heldout=%d" % (len(frozen), len(held)))
-    if not held:
-        print("\nNo held-out questions in data/eval/questions.json yet.")
-        return 0
+    print("sets: %s" % "  ".join("%s=%d" % (s, len(by_set[s])) for s in LABELS))
 
     ret = PerDocRetriever(docs)
-    f_rows = [measure_one(ret, r) for r in frozen]
-    h_rows = [measure_one(ret, r) for r in held]
+    measured = {s: [measure_one(ret, r) for r in by_set[s]] for s in LABELS}
 
-    print("\n== HELD-OUT, PER QUESTION (k=%d/doc, top_n=%d, MIN_SCORE=%.2f) =="
-          % (K_PER_DOC, TOP_N, MIN_SCORE))
-    print("  retrieval only -- no answers exist for this set, so faithfulness /")
-    print("  coverage / reverse_rel are structurally unavailable without quota.")
-    print("  %-6s %-16s %-7s %-7s %-7s %-6s %s" % (
-        "id", "class", "gate", "recall", "prec", "kept", "still-missed"))
-    for r in h_rows:
-        flag = ""
-        if r["expect_gate"] == "answer" and r["n_kept"] == 0:
-            flag = "  <-- FALSE REFUSAL"
-        elif r["expect_gate"] == "refuse" and r["n_kept"] > 0:
-            flag = "  <-- cleared the floor"
-        print("  %-6s %-16s %-7s %-7s %-7s %-6d %s%s" % (
-            r["id"], r["class"], r["expect_gate"], fmt(r["recall"]),
-            fmt(r["precision"]), r["n_kept"],
-            ",".join(r["missed"]) or "-", flag))
+    for s in ("heldout", "test"):
+        if not measured[s]:
+            print("\nNo %r questions in data/eval/questions.json yet." % s)
+            continue
+        # The clean set's missed-refs column is the tuning handle, so it is the
+        # one thing withheld by default. See TEST-SET PROTECTION in the header.
+        per_question_table(LABELS[s], measured[s],
+                           show_missed=(s != "test") or reveal_test)
+        if s == "test" and not reveal_test:
+            print("  still-missed withheld: reading which refs a CLEAN set misses")
+            print("  is what turned the 30 dev questions into a dev set. Pass")
+            print("  --reveal-test to print it, and record in the journal that")
+            print("  you did -- it spends the set.")
+        class_table(LABELS[s], measured[s])
 
-    print("\n== MEANS BY CLASS (held-out) ==")
-    print("  %-16s %-5s %-8s %-8s %s" % ("class", "n", "recall", "prec", "kept=0"))
-    for cls in sorted({r["class"] for r in h_rows}):
-        sub = [r for r in h_rows if r["class"] == cls]
-        zero = sum(1 for r in sub if r["n_kept"] == 0)
-        print("  %-16s %-5d %-8s %-8s %d/%d" % (
-            cls, len(sub), fmt(mean(r["recall"] for r in sub)),
-            fmt(mean(r["precision"] for r in sub)), zero, len(sub)))
-
-    # The headline comparison. Both numbers, always, on one line -- a held-out
-    # figure quoted on its own is the thing this phase exists to prevent.
-    f_recall = mean(r["recall"] for r in f_rows)
-    h_recall = mean(r["recall"] for r in h_rows)
-    n_h_scored = sum(1 for r in h_rows if r["recall"] is not None)
-    print("\n== GENERALISATION: FROZEN 10 vs HELD-OUT (the headline) ==")
-    print("  frozen-10 mean recall : %s  (n=%d)  <- the set the synonym map was "
-          "fitted on" % (fmt(f_recall), len(f_rows)))
-    print("  held-out  mean recall : %s  (n=%d)  <- nothing has been tuned on "
-          "these" % (fmt(h_recall), n_h_scored))
-    if f_recall is not None and h_recall is not None:
-        d = h_recall - f_recall
-        print("  delta                 : %+.3f" % d)
-        print("  A drop here is THE FINDING, not a bug to tune away: it is the")
-        print("  first measurement able to separate generalisation from fitting")
-        print("  to 10 points. Do not edit a question to move this number.")
+    # The headline. Every set, always, in one block -- a single number quoted
+    # on its own is the thing this phase exists to prevent.
+    recalls = {s: mean(r["recall"] for r in measured[s]) for s in LABELS}
+    print("\n== GENERALISATION: ALL SETS SIDE BY SIDE (the headline) ==")
+    for s in LABELS:
+        n_scored = sum(1 for r in measured[s] if r["recall"] is not None)
+        print("  %-40s recall %s  (n=%d)"
+              % (LABELS[s], fmt(recalls[s]), n_scored))
+    f_recall = recalls["frozen10"]
+    for s in ("heldout", "test"):
+        if f_recall is not None and recalls[s] is not None:
+            print("  delta vs frozen-10 (%s): %+.3f" % (s, recalls[s] - f_recall))
+    print("  A drop here is THE FINDING, not a bug to tune away: it is the")
+    print("  measurement able to separate generalisation from fitting to 10")
+    print("  points. Do not edit a question to move any of these numbers.")
 
     # ---- false refusals. The number that matters most in this project.
-    ans = [r for r in h_rows if r["expect_gate"] == "answer"]
-    fr = [r for r in ans if r["n_kept"] == 0]
-    print("\n== FALSE-REFUSAL RATE (held-out, answerable questions) ==")
+    print("\n== FALSE-REFUSAL RATE (answerable questions, every set) ==")
     print("  CLAUDE.md: false refusals deny help to PWDs. This is the number")
-    print("  that matters most here, and it has been almost unmeasured until now.")
-    print("  %d/%d = %.1f%% of answerable held-out questions retrieve NOTHING"
-          % (len(fr), len(ans), 100 * len(fr) / len(ans) if ans else 0.0))
-    if fr:
-        print("  offenders: %s" % ", ".join(
-            "%s (%s, top %.4f)" % (r["id"], r["class"], r["top"]) for r in fr))
-    f_ans = [r for r in f_rows if r["expect_gate"] == "answer"]
-    f_fr = sum(1 for r in f_ans if r["n_kept"] == 0)
-    print("  frozen-10 comparison: %d/%d = %.1f%%"
-          % (f_fr, len(f_ans), 100 * f_fr / len(f_ans) if f_ans else 0.0))
+    print("  that matters most here, and it was almost unmeasured before Phase 09.")
+    for s in LABELS:
+        ans = [r for r in measured[s] if r["expect_gate"] == "answer"]
+        fr = [r for r in ans if r["n_kept"] == 0]
+        print("  %-40s %d/%d = %.1f%% retrieve NOTHING"
+              % (LABELS[s], len(fr), len(ans),
+                 100 * len(fr) / len(ans) if ans else 0.0))
+        if fr and (s != "test" or reveal_test):
+            print("    offenders: %s" % ", ".join(
+                "%s (%s, top %.4f)" % (r["id"], r["class"], r["top"]) for r in fr))
 
     # ---- gate-level false answers. Reported UNGATED, caveat attached.
-    ref = [r for r in h_rows if r["expect_gate"] == "refuse"]
-    fa = [r for r in ref if r["n_kept"] > 0]
-    print("\n== GATE-LEVEL FALSE-ANSWER RATE (held-out, off-corpus questions) ==")
-    if ref:
-        print("  %d/%d = %.1f%% of off-corpus questions clear MIN_SCORE=%.2f"
-              % (len(fa), len(ref), 100 * len(fa) / len(ref), MIN_SCORE))
+    print("\n== GATE-LEVEL FALSE-ANSWER RATE (off-corpus questions, every set) ==")
+    any_refuse = False
+    for s in LABELS:
+        ref = [r for r in measured[s] if r["expect_gate"] == "refuse"]
+        if not ref:
+            continue
+        any_refuse = True
+        fa = [r for r in ref if r["n_kept"] > 0]
+        print("  %-40s %d/%d = %.1f%% clear MIN_SCORE=%.2f"
+              % (LABELS[s], len(fa), len(ref), 100 * len(fa) / len(ref),
+                 MIN_SCORE))
         if fa:
-            print("  cleared: %s" % ", ".join(
+            print("    cleared: %s" % ", ".join(
                 "%s (top %.4f)" % (r["id"], r["top"]) for r in fa))
-    else:
-        print("  no expect_gate=refuse questions in the held-out set")
+    if not any_refuse:
+        print("  no expect_gate=refuse questions in any set")
     print("  CAVEAT, and it is load-bearing -- a bad number here is EXPECTED and")
     print("  is NOT a reason to touch MIN_SCORE:")
     print("    * MIN_SCORE is a weak-overlap FLOOR, not a semantic filter, and")
@@ -217,11 +268,11 @@ def main() -> int:
     ok = f_recall is not None and f_recall >= FROZEN10_RECALL_BASELINE - EPS
     print("  frozen-10 recall %s vs recorded baseline %.3f: %s"
           % (fmt(f_recall), FROZEN10_RECALL_BASELINE, "PASS" if ok else "FAIL"))
-    print("  (held-out numbers above can never fail this script, by design)")
+    print("  (dev and test numbers above can never fail this script, by design)")
     if not ok:
         print("\nEVAL_HELDOUT: FAIL -- the frozen yardstick moved.")
         return 1
-    print("\nEVAL_HELDOUT: PASS (frozen yardstick intact; held-out reported as measured)")
+    print("\nEVAL_HELDOUT: PASS (frozen yardstick intact; dev/test reported as measured)")
     return 0
 
 
