@@ -21,6 +21,14 @@ from retrieve import MIN_SCORE, Chunk, PerDocRetriever, cite_tag
 # exists ("Gemini 2.5 Flash"); `gemini-2.0-flash` is gone (retired).
 # Short id "gemini-2.5-flash" is the API-usable form of the same model.
 MODEL_NAME = "gemini-2.5-flash"
+# Failover target. The 2026-09-11 judge run is the evidence: it spent 30
+# attempts on `gemini-2.5-flash-lite` (21 verdicts, 9 lost to a misread 429)
+# on a day when `gemini-2.5-flash` was ALSO available -- the generator model
+# recorded 0 calls and was never starved. The two models therefore draw from
+# SEPARATE free-tier pools, so the real daily budget is 40 calls, not 20.
+# Failing over is opt-in (see generate_with_meta) because a flash-lite answer
+# is not a flash answer and must never be recorded as one.
+FALLBACK_MODEL = "gemini-2.5-flash-lite"
 PROMPT_VERSION = "cite-strict-v2"
 
 # Sizes pinned from Phase 01: Act section-aware 800; Constitution
@@ -317,6 +325,38 @@ def verify_citations(answer: str, hits) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Quota classifiers (moved here from scripts/judge_phase06.py, Phase 09 M1).
+#
+# They used to live in the judge script, which meant the ONE distinction the
+# whole quota discipline rests on -- retryable rate limit vs exhausted daily
+# cap -- was defined in a script and unavailable to the library that actually
+# makes the calls. ask() could not tell the two apart, so it treated every 429
+# identically. They are the single source of truth now; judge_phase06.py
+# imports them rather than keeping a second copy that could drift.
+# ---------------------------------------------------------------------------
+
+
+def is_per_minute_429(err: str) -> bool:
+    """Distinguish a transient RPM limit from the daily cap.
+
+    This distinction is the whole reason a run can be honest about what it
+    did: an RPM 429 deserves a retry, a daily-cap 429 must leave the row
+    PENDING rather than pretend the answer was unobtainable for a trivial
+    reason. Guessing wrong in the lenient direction would mean hammering a
+    exhausted daily quota; guessing wrong in the strict direction would mean
+    abandoning work that a 40-second wait would have completed.
+    """
+    return "PerMinute" in err or "RequestsPerMinute" in err
+
+
+def retry_delay(err: str, attempt: int) -> float:
+    m = re.search(r"retryDelay['\"]?:\s*['\"]?(\d+(?:\.\d+)?)s", err)
+    if m:
+        return float(m.group(1)) + 3.0        # the server's own hint + slack
+    return min(60.0, 8.0 * (2 ** attempt))    # else exponential backoff
+
+
+# ---------------------------------------------------------------------------
 # Answer cache (Phase 08 step 6a, 2026-09-11). A quota saver, NOT evidence.
 #
 # The free tier is 20 calls/day/model (and 10/MINUTE -- measured 2026-09-11),
@@ -393,37 +433,66 @@ def _cache_write(key: str, prompt: str, model: str, answer: str) -> None:
 
 
 def generate_with_meta(
-    prompt: str, model: str = MODEL_NAME, use_cache: bool = True
-) -> tuple[str, bool]:
-    """Single Gemini generation. Returns (answer, cached).
+    prompt: str, model: str = MODEL_NAME, use_cache: bool = True,
+    failover: bool = False,
+) -> tuple[str, bool, str]:
+    """Single Gemini generation. Returns (answer, cached, model_used).
 
     `cached` is what keeps the cache honest: it rides back through ask() into
     the result dict, so a replayed answer can never be written into a
-    transcript as though it had been freshly generated.
+    transcript as though it had been freshly generated. `model_used` does the
+    same job for failover -- the caller records which model actually spoke,
+    not which one it asked for.
+
+    FAILOVER (Phase 09 M1) is opt-in and fires at most once, only for a
+    DAILY-cap 429. Three guards, each load-bearing:
+
+      - `failover` off by default. A flash-lite answer is a different answer,
+        and an eval that silently mixed two models would be measuring neither.
+        Opting in is the caller saying it will record the difference.
+      - a PER-MINUTE 429 re-raises instead. It carries its own retryDelay
+        (~37s) and clears on its own; burning the fallback model's daily pool
+        to dodge a 37-second wait would trade a scarce resource for a cheap
+        one. The caller retries it -- see is_per_minute_429.
+      - `model != FALLBACK_MODEL`, so a failover can never itself fail over.
+        The recursive call also passes failover=False, belt and braces.
+
+    Cache reads AND writes key on the model actually used (_cache_key hashes
+    the model), so a flash-lite answer can never be replayed as a flash one.
     """
     if use_cache:
         hit = _cache_read(_cache_key(prompt, model))
         if hit is not None:
-            return hit, True
+            return hit, True, model
     key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
     if not key:
         raise RuntimeError("GOOGLE_API_KEY/GEMINI_API_KEY not set")
     from google import genai
     client = genai.Client(api_key=key)
-    resp = client.models.generate_content(model=model, contents=prompt)
+    try:
+        resp = client.models.generate_content(model=model, contents=prompt)
+    except Exception as e:
+        msg = "%s" % e
+        if not (failover and "429" in msg and not is_per_minute_429(msg)
+                and model != FALLBACK_MODEL):
+            raise
+        return generate_with_meta(prompt, model=FALLBACK_MODEL,
+                                  use_cache=use_cache, failover=False)
     answer = (resp.text or "").strip()
     if use_cache and answer:  # never cache an empty reply
         _cache_write(_cache_key(prompt, model), prompt, model, answer)
-    return answer, False
+    return answer, False, model
 
 
-def generate(prompt: str, model: str = MODEL_NAME, use_cache: bool = True) -> str:
+def generate(prompt: str, model: str = MODEL_NAME, use_cache: bool = True,
+             failover: bool = False) -> str:
     """Single Gemini generation via the new `google.genai` SDK (not the
     retired `google.generativeai` package, not the retired 2.0-flash).
 
     Back-compatible wrapper over generate_with_meta() for callers that do not
     care whether the answer was replayed."""
-    return generate_with_meta(prompt, model=model, use_cache=use_cache)[0]
+    return generate_with_meta(prompt, model=model, use_cache=use_cache,
+                              failover=failover)[0]
 
 
 def ask(
@@ -436,6 +505,7 @@ def ask(
     model: str = MODEL_NAME,
     use_llm: bool = True,
     use_cache: bool = True,
+    failover: bool = False,
 ) -> dict:
     """Ask one question. Returns {answer, citations, refused, scores, route}.
 
@@ -453,6 +523,14 @@ def ask(
     reported at the top level AND in `route`, so any transcript written from
     this dict records whether the call was real. See the cache block above
     generate_with_meta().
+
+    `route["model"]` keeps its existing meaning -- the model REQUESTED -- so no
+    field in any historical transcript changes meaning. `model_used` is the new
+    key and records what actually ran: the same value normally, FALLBACK_MODEL
+    when failover fired, and None when no model ran at all (gate refusal,
+    use_llm=False, or an error). Opting into `failover` without recording
+    `model_used` would be exactly the "fake an LLM row" failure this project
+    forbids, so the two ship together.
     """
     if retriever is None:
         retriever = PerDocRetriever(build_corpus())
@@ -466,6 +544,7 @@ def ask(
     ]
     route = {
         "model": model,
+        "model_used": None,  # set only when a model actually answered
         "prompt": PROMPT_VERSION + ("-plain" if plain else ""),
         "min_score": min_score,
         "per_doc_top": per_doc_top,
@@ -492,9 +571,9 @@ def ask(
             "llm_used": False,
         }
     try:
-        answer, cached = generate_with_meta(
+        answer, cached, model_used = generate_with_meta(
             build_prompt(question, hits, plain=plain),
-            model=model, use_cache=use_cache)
+            model=model, use_cache=use_cache, failover=failover)
     except Exception as e:  # quota/network: report pending, never fake
         return {
             "question": question,
@@ -505,9 +584,11 @@ def ask(
             "route": route,
             "llm_used": False,
             "cached": False,
+            "model_used": None,  # nothing answered -- the row stays pending
             "llm_error": "%s: %s" % (type(e).__name__, e),
         }
     route["cached"] = cached
+    route["model_used"] = model_used
     if NO_ANSWER_SENTENCE in answer:
         # Second refusal layer: retrieval passed the floor on shared words,
         # but the strict prompt found nothing supporting an answer.
@@ -520,6 +601,7 @@ def ask(
             "route": route,
             "llm_used": True,
             "cached": cached,
+            "model_used": model_used,
             "refusal_layer": "llm-no-answer",
         }
     return {
@@ -531,5 +613,6 @@ def ask(
         "route": route,
         "llm_used": True,
         "cached": cached,
+        "model_used": model_used,
         "cite_check": verify_citations(answer, hits),
     }

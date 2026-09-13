@@ -61,7 +61,12 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from bench_phase01 import load_questions  # noqa: E402 (SAME frozen 10Q set)
 from eval_phase06 import EXPECTED, ref_nums  # noqa: E402
-from rag import MODEL_NAME, build_corpus  # noqa: E402
+from rag import (  # noqa: E402
+    MODEL_NAME,
+    build_corpus,
+    is_per_minute_429,
+    retry_delay,
+)
 from retrieve import PerDocRetriever, cite_tag  # noqa: E402
 
 # Resolved by client.models.list() in M0: models/gemini-2.5-flash-lite exists.
@@ -278,24 +283,11 @@ MAX_RETRIES = 4
 _last_call = [0.0]
 
 
-def _is_per_minute(err: str) -> bool:
-    """Distinguish a transient RPM limit from the daily cap.
-
-    This distinction is the whole reason a run can be honest about what it
-    did: an RPM 429 deserves a retry, a daily-cap 429 must leave the row
-    PENDING rather than pretend the answer was unobtainable for a trivial
-    reason. Guessing wrong in the lenient direction would mean hammering a
-    exhausted daily quota; guessing wrong in the strict direction would mean
-    abandoning work that a 40-second wait would have completed.
-    """
-    return "PerMinute" in err or "RequestsPerMinute" in err
-
-
-def _retry_delay(err: str, attempt: int) -> float:
-    m = re.search(r"retryDelay['\"]?:\s*['\"]?(\d+(?:\.\d+)?)s", err)
-    if m:
-        return float(m.group(1)) + 3.0        # the server's own hint + slack
-    return min(60.0, 8.0 * (2 ** attempt))    # else exponential backoff
+# Both classifiers now live in rag.py (Phase 09 M1), where ask() can reach them
+# too; these aliases keep the call sites below byte-identical. The bodies moved
+# verbatim -- this is a relocation, not a rewrite.
+_is_per_minute = is_per_minute_429
+_retry_delay = retry_delay
 
 
 def judge_call(prompt: str, model: str) -> tuple[str, int]:

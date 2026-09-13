@@ -6,6 +6,15 @@ Run: C:\\conda-envs\\drlca-rag\\python.exe scripts/test_phase02.py [--no-llm] [-
              RULE (review 2026-09-08): LLM runs go to VERSIONED files
              (test_phase02_results_<prompt>_<date>.json); a --no-llm dry
              run must never overwrite an LLM transcript -- pass --out.
+  --no-cache : bypass the prompt-keyed answer cache (ask(use_cache=False)).
+             REQUIRED for the two-run flakiness check. ask() defaults
+             use_cache=True, so a second run against a warm cache would
+             replay all 12 answers verbatim and "measure" a variance of
+             exactly zero -- a number about the cache, not the model.
+  --failover : on a DAILY-cap 429, retry once on rag.FALLBACK_MODEL
+             (separate free-tier pool: 40 calls/day, not 20). Opt-in, because
+             a flash-lite answer is not a flash answer; every row records
+             `model_used` so a mixed-model transcript says so.
 
 Per question records: prompt version, resolved model, top chunks + scores,
 refused?, answer excerpt, mechanical cite check; the MANUAL verdict
@@ -45,11 +54,18 @@ def one_line(s: str, n: int = 220) -> str:
     return s if len(s) <= n else s[:n] + "..."
 
 
-def run_question(ret: PerDocRetriever, q: str, use_llm: bool) -> dict:
-    res = ask(q, retriever=ret, use_llm=use_llm)
+def run_question(ret: PerDocRetriever, q: str, use_llm: bool,
+                 use_cache: bool = True, failover: bool = False) -> dict:
+    res = ask(q, retriever=ret, use_llm=use_llm, use_cache=use_cache,
+              failover=failover)
     rec = {
         "question": q,
         "model": res["route"]["model"],
+        # `model` is what was REQUESTED; `model_used` is what actually answered
+        # (None when nothing did). With --failover the two can differ, and a
+        # transcript that recorded only the request would silently attribute a
+        # flash-lite answer to flash.
+        "model_used": res["route"].get("model_used"),
         "prompt": res["route"]["prompt"],
         "min_score": res["route"]["min_score"],
         "scores": res["scores"],
@@ -74,10 +90,14 @@ def run_question(ret: PerDocRetriever, q: str, use_llm: bool) -> dict:
 
 def main() -> None:
     use_llm = "--no-llm" not in sys.argv
+    use_cache = "--no-cache" not in sys.argv
+    failover = "--failover" in sys.argv
     questions = load_questions()
     assert len(questions) == 10, "expected 10 questions, got %d" % len(questions)
-    print("model=%s prompt=%s min_score=%.2f llm=%s" % (
-        MODEL_NAME, PROMPT_VERSION, MIN_SCORE, use_llm))
+    # The header states the run's own conditions, so a transcript can be read
+    # months later without guessing which flags produced it.
+    print("model=%s prompt=%s min_score=%.2f llm=%s cache=%s failover=%s" % (
+        MODEL_NAME, PROMPT_VERSION, MIN_SCORE, use_llm, use_cache, failover))
     print("Q9=%r" % questions[8])
 
     docs = build_corpus()
@@ -86,7 +106,7 @@ def main() -> None:
 
     records = []
     for i, q in enumerate(questions, 1):
-        rec = run_question(ret, q, use_llm)
+        rec = run_question(ret, q, use_llm, use_cache, failover)
         rec["id"] = "Q%d" % i
         records.append(rec)
         top = rec["scores"][0] if rec["scores"] else {}
@@ -100,11 +120,13 @@ def main() -> None:
     print("\n== REFUSAL DEMO ==")
     if use_llm:
         time.sleep(SLEEP_S)
-    demo_vocab = run_question(ret, OFF_CORPUS_SAME_VOCAB, use_llm)
+    demo_vocab = run_question(ret, OFF_CORPUS_SAME_VOCAB, use_llm,
+                              use_cache, failover)
     demo_vocab["id"] = "R1-same-vocab"
     if use_llm:
         time.sleep(SLEEP_S)
-    demo_generic = run_question(ret, OFF_CORPUS_GENERIC, use_llm)
+    demo_generic = run_question(ret, OFF_CORPUS_GENERIC, use_llm,
+                                use_cache, failover)
     demo_generic["id"] = "R2-generic"
     for d in (demo_vocab, demo_generic):
         records.append(d)
