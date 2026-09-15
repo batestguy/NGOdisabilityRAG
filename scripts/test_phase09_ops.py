@@ -304,6 +304,79 @@ def main() -> int:
           "the real answer cache was never touched by this run")
     tmpdir.cleanup()
 
+    # -----------------------------------------------------------------------
+    # 7. CHAT PROMPT INVARIANTS (Phase 10 B). Zero network, zero corpus --
+    #    synthetic Hits, because what is under test is the prompt STRING.
+    # -----------------------------------------------------------------------
+    print("\n== 7. CHAT: history=None IS BYTE-IDENTICAL, AND STAYS OUT OF THE CACHE ==")
+    from retrieve import Hit  # noqa: E402
+
+    hits = [Hit("act2018", "cl. 28", "28. (1) A person with disability has the "
+                "right to work on an equal basis with others.", 0.4213),
+            Hit("constitution1999", "s. 42", "42. (1) A citizen of Nigeria ...",
+                0.2011)]
+
+    # The pre-chat recipe, spelled out. This is deliberately a SECOND copy of
+    # the old assembly order rather than a call into rag: the claim being tested
+    # is that build_prompt still produces exactly this, so deriving the
+    # expectation from build_prompt itself would test nothing.
+    def pre_chat_prompt(question, hits, plain=False):
+        lines = [rag.SYSTEM_PROMPT]
+        if plain:
+            lines.append(rag.PLAIN_SUFFIX)
+        lines.append("\nRetrieved excerpts (cite VERBATIM, quirks included):")
+        for h in hits:
+            lines.append("\n%s (relevance %.3f):\n%s"
+                         % (rag.cite_tag(h.doc_id, h.ref), h.score, h.text))
+        lines.append("\nQuestion: %s" % question)
+        lines.append("Answer (every factual claim cited, or the exact "
+                     "no-answer sentence):")
+        return "\n".join(lines)
+
+    Q = "What does the Act say about my right to work?"
+    for plain in (False, True):
+        want = pre_chat_prompt(Q, hits, plain=plain)
+        for label, hist in (("None", None), ("empty list", []),
+                            ("blank-question turns", [{"question": "  ",
+                                                       "answer": None}])):
+            check(rag.build_prompt(Q, hits, plain=plain, history=hist) == want,
+                  "history=%s, plain=%s -> byte-identical to the pre-chat prompt"
+                  % (label, plain))
+    # Why this one matters more than it looks: the answer cache keys on
+    # sha256(model + NUL + the WHOLE rendered prompt). One stray newline here
+    # and every cached answer silently misses, and every published transcript
+    # stops describing a prompt this code can still produce.
+
+    hist = [{"question": Q, "answer": "You have the right to work on an equal "
+                                      "basis with others. [Act cl. 28]"}]
+    chat_prompt = rag.build_prompt("so can they fire me?", hits, history=hist)
+    check(chat_prompt != pre_chat_prompt("so can they fire me?", hits),
+          "history that HAS content does change the prompt (control)")
+    check("Earlier in this conversation" in chat_prompt,
+          "history is rendered when present")
+    check(chat_prompt.index("Earlier in this conversation")
+          < chat_prompt.rindex("\nQuestion: "),
+          "history renders BEFORE the final 'Question: ' line")
+
+    # THE PRIVACY ASSERT. _cache_write stores prompt.rsplit("Question: ", 1)[-1]
+    # -- the current question line and nothing else. If history ever moves after
+    # that split point, scripts/.answer_cache.json starts recording whole
+    # conversations to disk, from a population that discloses abuse and
+    # coercion. This assertion is the thing standing between those two states.
+    cached_line = chat_prompt.rsplit("Question: ", 1)[-1].split("\n", 1)[0]
+    check(cached_line == "so can they fire me?",
+          "the cache would store ONLY the current question line")
+    check("right to work" not in cached_line and "[Act cl. 28]" not in cached_line,
+          "no prior turn and no prior citation leaks into the cached line")
+
+    check("You may cite ONLY the retrieved excerpts in THIS turn."
+          in chat_prompt,
+          "the chat-only per-turn citation rule is in the prompt")
+    check(rag.CHAT_PROMPT_VERSION == "chat-cite-strict-v1"
+          and rag.PROMPT_VERSION == "cite-strict-v2",
+          "chat gets its OWN prompt version, so single-turn transcripts stay "
+          "comparable and the two can never share a cache key")
+
     if failures:
         print("\nFAILURES:")
         for f in failures:

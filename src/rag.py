@@ -268,17 +268,79 @@ exactly as [Act cl. 10,11]). Multi-number tags are cited whole, verbatim."""
 PLAIN_SUFFIX = """\nWrite in plain, simple language for low-literacy readers: short \
 sentences, common words, one idea per sentence. Same facts, same citations."""
 
+# ---------------------------------------------------------------------------
+# Chat mode (Phase 10 B). Appended ONLY when build_prompt() is given history,
+# so a single-turn prompt is byte-identical to every one this project has ever
+# sent and every transcript and cache entry keeps its meaning.
+#
+# Rule 8 is the whole citation-safety story for multi-turn. Prior turns enter
+# the prompt so the model can UNDERSTAND an elliptical question ("so can they
+# fire me?"); they are not evidence. The citable set stays exactly this turn's
+# retrieved excerpts. verify_citations() is unchanged and therefore already
+# fails a tag re-cited from an earlier turn -- chat.cross_turn_drift() names
+# that specific case so it can be counted instead of merely failing.
+# ---------------------------------------------------------------------------
+CHAT_PROMPT_VERSION = "chat-cite-strict-v1"
 
-def build_prompt(question: str, hits, plain: bool = False) -> str:
-    """Assemble system instruction + cited excerpts + question."""
+CHAT_SUFFIX = """
+8. This is an ongoing conversation. Earlier turns are shown below for CONTEXT \
+ONLY -- to resolve what the user means by "it", "they" or "that". They are NOT \
+evidence. You may cite ONLY the retrieved excerpts in THIS turn. Never re-cite \
+a tag from an earlier turn that does not appear in this turn's excerpts, and \
+never restate an earlier claim as though it were retrieved now."""
+
+
+def _render_history(history) -> list:
+    """Prior turns as prompt lines. Empty list when there is no history."""
+    lines = []
+    for turn in history or []:
+        q = (turn.get("question") or "").strip() if isinstance(turn, dict) else ""
+        if not q:
+            continue
+        lines.append("User: %s" % q)
+        a = turn.get("answer") if isinstance(turn, dict) else None
+        # answer=None means PENDING (offline path, quota exhausted, or an
+        # error), never "the assistant said nothing". Saying so is more honest
+        # than rendering an empty assistant turn the model would try to explain.
+        lines.append("Assistant: %s" % (
+            a.strip() if a and a.strip() else "(no AI answer was generated for that turn)"))
+    return lines
+
+
+def build_prompt(question: str, hits, plain: bool = False, history=None) -> str:
+    """Assemble system instruction + cited excerpts + question.
+
+    `history` is an optional list of {question, answer} dicts (see
+    chat.history_for_prompt). Two hard requirements, both asserted in
+    scripts/test_phase09_ops.py:
+
+    1. history=None (or empty) renders a BYTE-IDENTICAL prompt to the one this
+       function produced before chat existed. The answer cache is keyed on
+       sha256(model + NUL + whole rendered prompt), so a single stray newline
+       would silently invalidate every cached answer and every published
+       transcript would stop describing a prompt the code can still produce.
+
+    2. History renders BEFORE the final "\\nQuestion: %s" line. This is a
+       PRIVACY requirement, not a formatting preference. _cache_write() stores
+       prompt.rsplit("Question: ", 1)[-1] -- the current question line only. Put
+       history after that split point and the on-disk cache starts recording
+       whole conversations, including disclosures of abuse and coercion, from a
+       population that makes them.
+    """
     lines = [SYSTEM_PROMPT]
     if plain:
         lines.append(PLAIN_SUFFIX)
+    hist = _render_history(history)
+    if hist:
+        lines.append(CHAT_SUFFIX)
     lines.append("\nRetrieved excerpts (cite VERBATIM, quirks included):")
     for h in hits:
         lines.append(
             "\n%s (relevance %.3f):\n%s" % (cite_tag(h.doc_id, h.ref), h.score, h.text)
         )
+    if hist:
+        lines.append("\nEarlier in this conversation (context ONLY, NOT citable):")
+        lines.extend(hist)
     lines.append("\nQuestion: %s" % question)
     lines.append("Answer (every factual claim cited, or the exact no-answer sentence):")
     return "\n".join(lines)
@@ -523,6 +585,8 @@ def ask(
     use_llm: bool = True,
     use_cache: bool = True,
     failover: bool = False,
+    history=None,
+    retrieval_query: str | None = None,
 ) -> dict:
     """Ask one question. Returns {answer, citations, refused, scores, route}.
 
@@ -557,10 +621,27 @@ def ask(
     use_llm=False, or an error). Opting into `failover` without recording
     `model_used` would be exactly the "fake an LLM row" failure this project
     forbids, so the two ship together.
+
+    CHAT (Phase 10 B), both parameters defaulted so every existing caller is
+    untouched:
+
+    `retrieval_query` is what RETRIEVAL sees; `question` stays what the USER
+    asked and is the only thing that reaches the prompt, the citation check and
+    the transcript. Separating them is what lets chat.contextualise() repeat and
+    extend a query without the model ever seeing the mangled string -- and it
+    keeps the refusal gate honest, because the gate is computed on whatever was
+    actually retrieved on. `route["retrieval_query"]` records it whenever it
+    differs, so a run can never hide that it searched for something other than
+    what was asked.
+
+    `history` is passed straight to build_prompt(). history=None renders a
+    byte-identical prompt to the pre-chat one; see build_prompt's docstring for
+    why that is load-bearing for both the cache and privacy.
     """
     if retriever is None:
         retriever = PerDocRetriever(build_corpus())
-    merged = select_top(retriever.query(question, k=k), top_n,
+    query = retrieval_query if retrieval_query is not None else question
+    merged = select_top(retriever.query(query, k=k), top_n,
                         min_per_doc=min_per_doc, floor=min_score)
     per_doc_top = {}
     for h in merged:
@@ -569,14 +650,20 @@ def ask(
     scores = [
         {"doc_id": h.doc_id, "ref": h.ref, "score": round(h.score, 4)} for h in merged
     ]
+    # A chat turn is a different prompt, so it gets a different version string
+    # and therefore a different cache key -- single-turn transcripts stay
+    # comparable to each other and can never be mixed with multi-turn ones.
+    prompt_version = CHAT_PROMPT_VERSION if _render_history(history) else PROMPT_VERSION
     route = {
         "model": model,
         "model_used": None,  # set only when a model actually answered
-        "prompt": PROMPT_VERSION + ("-plain" if plain else ""),
+        "prompt": prompt_version + ("-plain" if plain else ""),
         "min_score": min_score,
         "per_doc_top": per_doc_top,
         "plain": plain,
     }
+    if query != question:
+        route["retrieval_query"] = query
     if not hits:
         return {
             "question": question,
@@ -599,7 +686,7 @@ def ask(
         }
     try:
         answer, cached, model_used = generate_with_meta(
-            build_prompt(question, hits, plain=plain),
+            build_prompt(question, hits, plain=plain, history=history),
             model=model, use_cache=use_cache, failover=failover)
     except Exception as e:  # quota/network: report pending, never fake
         return {

@@ -1,0 +1,218 @@
+CORPUS_VERSION=v1
+corpus: {'act2018': 62, 'constitution1999': 2104, 'factsheet2020': 48}
+chat ground truth verified against corpus: 51 expected refs
+  chat_dev   12 conversations, 35 turns  direct=12 ellipsis=6 handoff=3 narrowing=2 off-corpus-after-legal=2 pronoun=7 topic-shift=3
+  chat_test  10 conversations, 27 turns  direct=10 ellipsis=5 handoff=1 narrowing=1 off-corpus-after-legal=2 pronoun=5 topic-shift=3
+
+  contextualisation thresholds (chat.py, chosen on chat_dev ONLY):
+    CARRY_WINDOW=2  THIN_MAX=3  MARKER_MAX=4  QUESTION_WEIGHT=2
+
+== chat_dev (tuning allowed) -- PER TURN (corpus=v1, k=3/doc, top_n=6, MIN_SCORE=0.10) ==
+  turn       class                  gate    naive   ctx     carry  why / still-missed
+  CD1.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD1.t2     ellipsis               answer  0.000   1.000   True   unbound-pronoun:they | -
+  CD1.t3     pronoun                answer  1.000   1.000   True   unbound-pronoun:they | -
+  CD2.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD2.t2     pronoun                answer  1.000   1.000   True   unbound-pronoun:they,him | -
+  CD2.t3     handoff                help    n/a     n/a     False  self-sufficient:4 content stems, marker='' | -
+  CD3.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD3.t2     pronoun                answer  0.000   1.000   True   unbound-pronoun:they,them | -
+  CD3.t3     topic-shift            answer  0.000   0.000   True   thin:2<=3 | act2018:21
+  CD4.t1     direct                 answer  0.000   0.000   False  no-history | act2018:16
+  CD4.t2     ellipsis               answer  0.000   0.000   True   unbound-pronoun:them,they | factsheet2020:16
+  CD5.t1     direct                 answer  0.000   0.000   False  no-history | act2018:21
+  CD5.t2     ellipsis               answer  0.000   1.000   True   unbound-pronoun:that | -
+  CD5.t3     off-corpus-after-legal refuse  n/a     n/a     True   thin:3<=3 | -
+  CD6.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD6.t2     ellipsis               answer  0.000   0.000   True   thin:3<=3 | constitution1999:42
+  CD6.t3     pronoun                answer  0.000   0.000   True   unbound-pronoun:that | constitution1999:46
+  CD7.t1     direct                 answer  0.000   0.000   False  no-history | act2018:24
+  CD7.t2     handoff                help    n/a     n/a     True   unbound-pronoun:that | -
+  CD7.t3     narrowing              help    n/a     n/a     True   thin:1<=3 | -
+  CD8.t1     direct                 answer  0.000   0.000   False  no-history | act2018:10
+  CD8.t2     ellipsis               answer  0.000   0.000   True   thin:3<=3 | act2018:11
+  CD8.t3     topic-shift            answer  1.000   1.000   True   thin:2<=3 | -
+  CD9.t1     direct                 answer  0.000   0.000   False  no-history | act2018:31
+  CD9.t2     pronoun                answer  0.000   0.000   True   unbound-pronoun:it | act2018:32
+  CD9.t3     pronoun                answer  1.000   1.000   True   unbound-pronoun:it | -
+  CD10.t1    direct                 answer  1.000   1.000   False  no-history | -
+  CD10.t2    ellipsis               answer  0.000   0.000   True   thin:1<=3 | act2018:12
+  CD10.t3    off-corpus-after-legal refuse  n/a     n/a     False  self-sufficient:6 content stems, marker='and' | -
+  CD11.t1    direct                 answer  1.000   1.000   False  no-history | -
+  CD11.t2    handoff                help    n/a     n/a     True   thin:3<=3 | -
+  CD11.t3    narrowing              help    n/a     n/a     True   thin:1<=3 | -
+  CD12.t1    direct                 answer  1.000   1.000   False  no-history | -
+  CD12.t2    pronoun                answer  1.000   1.000   True   unbound-pronoun:it | -
+  CD12.t3    topic-shift            answer  1.000   1.000   False  self-sufficient:5 content stems, marker='' | -
+
+== chat_dev (tuning allowed) -- RECALL BY TURN CLASS, naive vs contextualised ==
+  class                    n    naive    ctx      delta    n-strict c-strict d-strict
+  direct                   12   0.583    0.583    +0.000   0.583    0.583    +0.000
+  ellipsis                 6    0.000    0.333    +0.333   0.000    0.333    +0.333  <-- gain class
+  handoff                  3    (no legal ground truth -- see the slots / off-corpus tables)
+  narrowing                2    (no legal ground truth -- see the slots / off-corpus tables)
+  off-corpus-after-legal   2    (no legal ground truth -- see the slots / off-corpus tables)
+  pronoun                  7    0.571    0.714    +0.143   0.571    0.714    +0.143  <-- gain class
+  topic-shift              3    0.667    0.667    +0.000   0.667    0.667    +0.000
+
+== chat_dev (tuning allowed) -- RECALL@K (pool k=20/doc -> 60 candidates, select_top order) ==
+  NOT the shipping arm (k=3/doc -> top_n=6). This answers 'is the
+  right chunk in the pool at all, and how deep?' -- a wide @6-to-@60
+  gap means a re-ranker could reach it; a flat curve means it is absent.
+  arm              r@3     r@6     r@10    r@20    r@60    MRR     med-rk  found
+  naive            0.179   0.429   0.500   0.571   0.714   0.191   6       20/28
+  contextualised   0.250   0.607   0.643   0.750   0.929   0.271   5       26/28
+
+== chat_dev (tuning allowed) -- HELP SLOTS (handoff + narrowing turns) ==
+  naive = router.extract_help_slots() on this turn ALONE, which is
+  what ships today. contextualised = chat.merge_help_slots() across
+  the conversation. A narrowing turn like 'anywhere in Kano?' has no
+  disability in it, so the stateless scan drops the filter and the
+  connector answers a question the user did not ask.
+  naive            3/5 turns with BOTH slots correct
+  contextualised   5/5 turns with BOTH slots correct
+    CD2.t3     'my son is deaf, who can help us ' naive='deaf'/'lagos' ctx='deaf'/'lagos'
+    CD7.t2     'I am deaf, I need an organisatio' naive='deaf'/'' ctx='deaf'/''
+    CD7.t3     'anywhere in Kano?'                naive=''/'kano' ctx='deaf'/'kano'
+    CD11.t2    'I have albinism and I need suppo' naive='albinism'/'' ctx='albinism'/''
+    CD11.t3    'is there anywhere in Abuja?'      naive=''/'abuja' ctx='albinism'/'abuja'
+
+== chat_dev (tuning allowed) -- FALSE-REFUSAL RATE (answerable turns) ==
+  CLAUDE.md: false refusals deny help to PWDs. This is the number
+  that matters most, and chat can create new ones -- appending
+  absent terms dilutes the query-vector norm and can drop a turn
+  below MIN_SCORE that the raw question cleared.
+  naive            1/28 = 3.6% retrieve NOTHING
+    offenders: CD1.t2 (ellipsis, top 0.0000)
+  contextualised   0/28 = 0.0% retrieve NOTHING
+  CONTEXTUALISATION-INDUCED: 0 turn(s) the naive arm answered and
+  the contextualised arm refuses. This is the one retrieval number
+  here that FAILS the run -- it is our code denying help to someone
+  who would have been helped without it, not a disappointing metric.
+
+== chat_dev (tuning allowed) -- INHERITED-CONTEXT FALSE ANSWERS (off-corpus turns) ==
+  The genuinely NEW failure mode chat creates: carrying prior turns
+  lets an off-corpus question inherit legal vocabulary and clear
+  MIN_SCORE on words the user never wrote.
+  naive            2/2 = 100.0% clear MIN_SCORE=0.10
+    CD5.t3     carried=False top 0.2755  'and how do I renew my international passport?'
+    CD10.t3    carried=False top 0.2551  'and what does the law say about maritime shipping in'
+  contextualised   2/2 = 100.0% clear MIN_SCORE=0.10
+    CD5.t3     carried=True  top 0.2434  'and how do I renew my international passport?'
+    CD10.t3    carried=False top 0.2551  'and what does the law say about maritime shipping in'
+  CAVEAT, load-bearing and identical to eval_heldout's: a bad number
+  here is EXPECTED and is NOT a reason to touch MIN_SCORE. It is a
+  weak-overlap FLOOR, not a semantic filter, and the in-corpus /
+  off-corpus cosine bands are INVERTED (src/retrieve.py:26-44) --
+  single-turn DRLCA already clears it on 5/5 off-corpus questions.
+  The only chat-attributable number is the DELTA between the arms.
+
+== chat_test (authored blind, never tuned against) -- PER TURN (corpus=v1, k=3/doc, top_n=6, MIN_SCORE=0.10) ==
+  turn       class                  gate    naive   ctx     carry  why / still-missed
+  CT1.t1     direct                 answer  0.000   0.000   False  no-history  <-- FALSE REFUSAL
+  CT1.t2     pronoun                answer  0.000   0.000   True   unbound-pronoun:they,it
+  CT1.t3     topic-shift            answer  0.000   0.000   True   thin:1<=3
+  CT2.t1     direct                 answer  1.000   1.000   False  no-history
+  CT2.t2     ellipsis               answer  1.000   1.000   True   unbound-pronoun:it
+  CT2.t3     ellipsis               answer  0.000   1.000   True   unbound-pronoun:he
+  CT3.t1     direct                 answer  1.000   1.000   False  no-history
+  CT3.t2     pronoun                answer  1.000   1.000   True   unbound-pronoun:that
+  CT4.t1     direct                 answer  1.000   1.000   False  no-history
+  CT4.t2     topic-shift            answer  0.000   1.000   True   thin:2<=3
+  CT4.t3     ellipsis               answer  0.000   1.000   True   thin:1<=3
+  CT5.t1     direct                 answer  0.000   0.000   False  no-history
+  CT5.t2     handoff                help    n/a     n/a     False  self-sufficient:4 content stems, marker=''
+  CT5.t3     narrowing              help    n/a     n/a     True   thin:1<=3
+  CT6.t1     direct                 answer  1.000   1.000   False  no-history
+  CT6.t2     ellipsis               answer  0.000   0.000   True   thin:1<=3
+  CT6.t3     off-corpus-after-legal refuse  n/a     n/a     True   thin:3<=3
+  CT7.t1     direct                 answer  1.000   1.000   False  no-history
+  CT7.t2     pronoun                answer  0.000   0.000   True   unbound-pronoun:that
+  CT8.t1     direct                 answer  1.000   1.000   False  no-history
+  CT8.t2     topic-shift            answer  0.000   0.000   True   thin:3<=3
+  CT9.t1     direct                 answer  0.000   0.000   False  no-history
+  CT9.t2     pronoun                answer  0.000   0.000   True   unbound-pronoun:they,it
+  CT9.t3     pronoun                answer  1.000   1.000   True   unbound-pronoun:they
+  CT10.t1    direct                 answer  1.000   1.000   False  no-history
+  CT10.t2    ellipsis               answer  0.000   0.000   True   thin:2<=3
+  CT10.t3    off-corpus-after-legal refuse  n/a     n/a     True   marker:'and',4<=4
+  still-missed withheld: reading which refs a CLEAN set misses
+  is what turned the 30 single-turn held-out questions into a
+  dev set. --reveal-test prints it, and spends the set.
+
+== chat_test (authored blind, never tuned against) -- RECALL BY TURN CLASS, naive vs contextualised ==
+  class                    n    naive    ctx      delta    n-strict c-strict d-strict
+  direct                   10   0.700    0.700    +0.000   0.700    0.700    +0.000
+  ellipsis                 5    0.200    0.600    +0.400   0.200    0.600    +0.400  <-- gain class
+  handoff                  1    (no legal ground truth -- see the slots / off-corpus tables)
+  narrowing                1    (no legal ground truth -- see the slots / off-corpus tables)
+  off-corpus-after-legal   2    (no legal ground truth -- see the slots / off-corpus tables)
+  pronoun                  5    0.400    0.400    +0.000   0.400    0.400    +0.000  <-- GAIN CLASS DID NOT IMPROVE
+  topic-shift              3    0.000    0.333    +0.333   0.000    0.333    +0.333
+
+== chat_test (authored blind, never tuned against) -- RECALL@K (pool k=20/doc -> 60 candidates, select_top order) ==
+  NOT the shipping arm (k=3/doc -> top_n=6). This answers 'is the
+  right chunk in the pool at all, and how deep?' -- a wide @6-to-@60
+  gap means a re-ranker could reach it; a flat curve means it is absent.
+  arm              r@3     r@6     r@10    r@20    r@60    MRR     med-rk  found
+  naive            0.261   0.435   0.478   0.565   0.783   0.290   6       18/23
+  contextualised   0.391   0.565   0.652   0.696   0.913   0.354   5       21/23
+
+== chat_test (authored blind, never tuned against) -- HELP SLOTS (handoff + narrowing turns) ==
+  naive = router.extract_help_slots() on this turn ALONE, which is
+  what ships today. contextualised = chat.merge_help_slots() across
+  the conversation. A narrowing turn like 'anywhere in Kano?' has no
+  disability in it, so the stateless scan drops the filter and the
+  connector answers a question the user did not ask.
+  naive            1/2 turns with BOTH slots correct
+  contextualised   2/2 turns with BOTH slots correct
+    CT5.t2     'I use a wheelchair and want to f' naive='wheelchair'/'' ctx='wheelchair'/''
+    CT5.t3     'and in Kaduna?'                   naive=''/'kaduna' ctx='wheelchair'/'kaduna'
+
+== chat_test (authored blind, never tuned against) -- FALSE-REFUSAL RATE (answerable turns) ==
+  CLAUDE.md: false refusals deny help to PWDs. This is the number
+  that matters most, and chat can create new ones -- appending
+  absent terms dilutes the query-vector norm and can drop a turn
+  below MIN_SCORE that the raw question cleared.
+  naive            3/23 = 13.0% retrieve NOTHING
+  contextualised   1/23 = 4.3% retrieve NOTHING
+  CONTEXTUALISATION-INDUCED: 0 turn(s) the naive arm answered and
+  the contextualised arm refuses. This is the one retrieval number
+  here that FAILS the run -- it is our code denying help to someone
+  who would have been helped without it, not a disappointing metric.
+
+== chat_test (authored blind, never tuned against) -- INHERITED-CONTEXT FALSE ANSWERS (off-corpus turns) ==
+  The genuinely NEW failure mode chat creates: carrying prior turns
+  lets an off-corpus question inherit legal vocabulary and clear
+  MIN_SCORE on words the user never wrote.
+  naive            2/2 = 100.0% clear MIN_SCORE=0.10
+  contextualised   2/2 = 100.0% clear MIN_SCORE=0.10
+  CAVEAT, load-bearing and identical to eval_heldout's: a bad number
+  here is EXPECTED and is NOT a reason to touch MIN_SCORE. It is a
+  weak-overlap FLOOR, not a semantic filter, and the in-corpus /
+  off-corpus cosine bands are INVERTED (src/retrieve.py:26-44) --
+  single-turn DRLCA already clears it on 5/5 off-corpus questions.
+  The only chat-attributable number is the DELTA between the arms.
+
+== HEADLINE: ALL SETS, BOTH ARMS (corpus=v1, shipping arm k=3/doc -> select_top(6)) ==
+  set                                            naive    ctx      delta    n
+  chat_dev (tuning allowed)                      0.464    0.571    +0.107   28
+  chat_test (authored blind, never tuned against) 0.435    0.565    +0.130   23
+  Means over ANSWERABLE turns only. help and off-corpus turns have
+  no legal ground truth and are scored in their own tables, never as
+  0.000 -- see the class table for the per-class split, which is the
+  number that actually says whether contextualisation works.
+
+== PHASE B GATES ==
+  ctx BEATS naive on ellipsis       0.000 -> 0.333   PASS
+  ctx BEATS naive on pronoun        0.571 -> 0.714   PASS
+  topic-shift NOT WORSE than naive  0.667 -> 0.667   PASS
+  help slots naive 3/5 -> ctx 5/5
+  cross-turn citation drift: STRUCTURALLY UNAVAILABLE here -- it
+  needs a generated answer to read. chat.cross_turn_drift() is wired
+  and unmeasured; Phase G's multi-turn transcript is what runs it.
+
+== FAILURE CONDITION (the only retrieval number that can fail) ==
+  0 contextualisation-induced false refusals on either set.
+
+EVAL_CHAT: PASS (ground truth verified; all numbers reported as measured)

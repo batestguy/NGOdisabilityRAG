@@ -870,3 +870,140 @@ notice and a hard-offline toggle before that lands. Free-tier embedding limits a
 commits them with an honest claim — fixes a real defect, provably refusal-invariant, **recall
 unchanged**, needed as the cross-doc merge once a dense arm exists. Do not write it up as a recall
 win. PRs #9, #10, #11 are open and unmerged. Quota untouched since 2026-09-11.
+
+## 2026-09-15 — Phase 10 B (chat-core): the multi-turn set, measured before the UI
+
+**Zero Gemini calls. Zero network. Branch `phase10/chat-core`.**
+
+### The ordering argument, which is the actual decision
+
+The owner added a product requirement: DRLCA must be a chatbot as well as a legal assistant.
+The tempting read is "that is a UI phase". It is not. *"So can they fire me?"* contains no
+disability term and no statutory term, so **no re-ranker, no encoder and no corpus rebuild can
+retrieve an answer to it** — the query does not contain the question. Ellipsis is a retrieval
+problem.
+
+That forces the sequence. If corpus-v2 and the dense arm were tuned against single-turn
+questions only, they would optimise a query distribution the chatbot never issues and chat
+would inherit none of the gains. So the multi-turn set was built and measured **before** the
+chat UI and before the corpus work. Measure first — the same move Phase 09 made, and the
+reason Phase 10's original step B got falsified instead of shipped.
+
+### What was built
+
+`data/eval/conversations.json` (22 conversations, 62 turns, 51 expected refs, all verified
+against the v1 corpus) · `scripts/chatset.py` (validate-on-every-load, a separate file so
+`questions.json`'s loader stays byte-stable) · `src/chat.py` · `history=` on `ask()` /
+`build_prompt()` · `scripts/eval_chat.py` · `scripts/baseline_chat_2026-09-15.txt`.
+
+`chat_test` (10 conversations / 27 turns) was **authored blind, before `src/chat.py` existed.**
+It came out at 27 turns rather than the planned ~30 and was deliberately **not topped up**
+afterwards: adding turns once behaviour is visible is precisely how a blind set stops being
+blind.
+
+### Results
+
+Headline, shipping arm, corpus v1: **chat_dev 0.464 → 0.571 (+0.107)**, **chat_test
+0.435 → 0.565 (+0.130)**. By class the gains land where they should — ellipsis
+**0.000 → 0.333** (dev) and **0.200 → 0.600** (test); `direct`, the control, moves **+0.000**
+on both. Pooled at k=20/doc, recall@60 goes **0.714 → 0.929** (dev) and **0.783 → 0.913**
+(test): the evidence is *in the pool*, and contextualisation is what puts it there.
+
+Help slots — `"I'm deaf"` … `"anywhere in Kano?"` — go **3/5 → 5/5** (dev) and **1/2 → 2/2**
+(test). The stateless scan drops the disability filter on every narrowing turn, so the
+connector was answering a question the user did not ask.
+
+**False refusals fell rather than rose**: dev 1/28 → 0/28, test 3/23 → 1/23, with **0
+contextualisation-induced** on either set. That was the outcome most at risk — appending
+absent terms dilutes the query-vector norm and can drop a turn below `MIN_SCORE` — so it is
+the one number `eval_chat.py` is allowed to fail the run on.
+
+### What did NOT go our way, recorded rather than tuned
+
+- **`chat_test`'s pronoun class did not improve at all** (0.400 → 0.400) while dev's did
+  (+0.143). Left exactly as measured. A threshold moved to fix it would convert the only clean
+  multi-turn yardstick into a dev set — which is exactly how the 30 single-turn held-out
+  questions were spent on 2026-09-13.
+- **A blind prediction in the test set was wrong, and the wrong note stays in the file.**
+  `CT6.t3`'s note predicted the carry-rule would not fire on *"how do I renew my driver's
+  licence?"*; it fires via `thin:3<=3`. The note records what was predicted before `chat.py`
+  existed. Editing it afterwards is the failure mode the discipline exists to prevent, so the
+  behaviour is recorded in the playbook instead.
+
+### The trap that did not fire, and why the measurement still mattered
+
+Carrying prior turns can let a topic shift inherit legal vocabulary and clear `MIN_SCORE` on
+words the user never wrote — a confident cited answer to an off-corpus question, a failure
+mode single-turn DRLCA could not have. Measured: off-corpus-after-legal clears the floor
+**2/2 in both arms on both sets, delta 0.000**. On `CD5.t3` contextualisation actually
+*lowered* the top score (0.2755 → 0.2434). That matches the published single-turn rate of 5/5
+and is a property of the floor (inverted bands, `src/retrieve.py:26-44`), not of chat.
+**`MIN_SCORE` was not touched.** Worth noting that "the risk did not materialise" is only a
+finding because the probe class was authored before the mechanism existed to be measured.
+
+The protective mechanism is visible in the logs: *"and what does the law say about maritime
+shipping insurance?"* opens with a discourse marker and still does not carry, because five
+content stems is a question that stands on its own feet. `MARKER_MAX` is not a free parameter.
+
+### Two invariants that are now asserts, not intentions
+
+`test_phase09_ops.py` grew a section 7 (38 → 51 asserts):
+
+1. **`history=None` renders a byte-identical prompt** to the pre-chat one, checked for
+   `None` / `[]` / blank turns × `plain` both ways against a second, hand-written copy of the
+   old assembly order (deriving the expectation from `build_prompt` itself would test
+   nothing). The answer cache keys on sha256 of the *whole rendered prompt*, so one stray
+   newline would silently miss every cached answer and every published transcript would stop
+   describing a prompt the code can still produce.
+2. **History renders BEFORE the final `"Question: "` line.** This is privacy, not formatting.
+   `_cache_write` stores `prompt.rsplit("Question: ", 1)[-1]`. Move history after that split
+   point and `scripts/.answer_cache.json` starts recording whole conversations to disk — from
+   a population that discloses abuse and coercion. The assert is what stands between those
+   two states.
+
+Chat also got its own `CHAT_PROMPT_VERSION = "chat-cite-strict-v1"` and a rule 8 saying the
+citable set is **only this turn's excerpts**, so single-turn transcripts stay comparable and
+the two can never share a cache key.
+
+### Kept deliberately unmeasured
+
+Cross-turn citation drift. Detecting a tag re-cited from an earlier turn needs a generated
+answer to read, so it costs quota. `chat.cross_turn_drift()` is written and wired but
+**unmeasured**; Phase G's multi-turn transcript runs it. Omitted rather than approximated —
+the same call `eval_heldout.py` makes about faithfulness.
+
+### Untouched, and verified untouched
+
+`MIN_SCORE` · `src/router.py` (still stateless — conversation state lives in `src/chat.py`) ·
+`app.py` · `requirements.txt` · `data/processed/` · `data/eval/questions.json`.
+`eval_phase06.py` output still hashes `CE716FB3…5F19`; bench_phase01, test_phase03/04/05
+(104/104), ablate_phase08, audit_corpus, eval_heldout all green.
+
+### Review addendum (same day) — a fifth finding, and why the number stays
+
+Fresh-eyes review re-derived every quoted number from a clean run (byte-identical to
+`scripts/baseline_chat_2026-09-15.txt`) and found one real ground-truth defect:
+**`CT7.t2` is unscoreable rather than missed.** It expects `act2018:[5]`, but the chunk that
+actually carries the Act's First Schedule list is reffed **`general`**, and
+`evalset.ref_nums("general")` is empty — so no retrieval can ever satisfy it. Both arms *do*
+retrieve that exact chunk, at ranks 5-6, and still score 0.000.
+
+`chatset.verify_expected()` passed it because an unrelated `cl. 3,4,5` header chunk carries a
+5: the check proves the expected *number* exists somewhere in the doc, not that the chunk
+holding the relevant *text* is reffed with it. That gap is now documented in the function
+itself, along with a second one the review surfaced — **Constitution section numbers collide
+across chapters** (s.36 is both the Chapter IV fair-hearing section and a Chapter VIII
+provision; s.18/34/40/42 likewise), so `(doc_id, number)` matching cannot tell them apart in
+principle. Verified that no turn in either set is currently affected, but the failure
+direction there is a false *positive*, which is the more dangerous one.
+
+**The expectation was not edited.** Editing a blind test turn to recover a point is exactly
+the move this discipline exists to stop, and the correction would have moved `chat_test`'s
+pronoun class — the class recorded above as "did not improve" — in our favour. A dated
+addendum went into the turn's `note` instead, so the 0.000 reads as what it is.
+
+The finding is worth more to Phase D than the point was worth here: it is a **second named
+instance** of the uncitable-chunk class alongside the recorded "Act cl.19 is uncitable" gap
+and the 25-of-62 uncitable Act chunks. A better-ranked list of things you may not cite is
+still a list of things you may not cite — which is the Phase D argument, now with one more
+piece of evidence that arrived from a completely different direction.

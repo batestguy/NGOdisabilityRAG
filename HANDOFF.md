@@ -1,6 +1,49 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-13)
+# HANDOFF — start here (60 seconds, updated 2026-09-15)
 
-> **Latest (2026-09-13): Phase 09 steps 1 and 2 DONE. Zero Gemini calls spent.**
+> **Latest (2026-09-15): Phase 10 B (chat-core) DONE. Zero Gemini calls spent.**
+> Branch `phase10/chat-core`. Playbook: `docs/phases/11_chat.md`. Full run:
+> `scripts/baseline_chat_2026-09-15.txt`.
+>
+> **DRLCA is becoming a chatbot, and the reason it is a RETRIEVAL phase, not a UI phase:**
+> *"so can they fire me?"* contains no disability term and no statutory term, so no
+> re-ranker, no encoder and no corpus rebuild can answer it — the query does not contain the
+> question. `src/router.py` is stateless (correctly, and it stays that way), so **nothing in
+> the stack resolved ellipsis before this.** The multi-turn set was therefore built and
+> measured **before** the chat UI and before corpus-v2/dense: tuning those on single-turn
+> questions only would optimise a query distribution the chatbot never issues.
+>
+> New: `data/eval/conversations.json` (22 conversations / 62 turns / 51 corpus-verified refs)
+> · `scripts/chatset.py` · `src/chat.py` · `history=` on `ask()`/`build_prompt()` ·
+> `scripts/eval_chat.py`. **`chat_test` was authored BLIND before `src/chat.py` existed.**
+>
+> **Numbers (corpus v1, shipping arm, naive → contextualised):** chat_dev **0.464 → 0.571**,
+> chat_test **0.435 → 0.565**. Ellipsis **0.000 → 0.333** (dev) / **0.200 → 0.600** (test);
+> the `direct` control moves **+0.000** on both. recall@60 **0.714 → 0.929** / **0.783 →
+> 0.913**. Help slots **3/5 → 5/5** and **1/2 → 2/2**. **False refusals FELL** (1/28 → 0/28,
+> 3/23 → 1/23), **0 contextualisation-induced**.
+>
+> **The new chat-only trap did NOT fire.** Off-corpus-after-legal clears `MIN_SCORE` **2/2 in
+> both arms, both sets, delta 0.000** — same as the published single-turn 5/5, a property of
+> the inverted-band floor, **not** something chat introduced. **`MIN_SCORE` untouched.**
+>
+> **Two things recorded rather than fixed** (read this before "improving" them):
+> chat_test's **pronoun class did not improve at all** (0.400 → 0.400), and a blind test-set
+> note (`CT6.t3`) predicted a carry decision that behaves otherwise. Both stay as measured —
+> tuning either against `chat_test` is exactly how the 30 held-out questions were spent on
+> 2026-09-13. Thresholds were chosen on **chat_dev only**.
+>
+> **Two new hard invariants, now asserts** (`test_phase09_ops.py` 38 → **51**):
+> `history=None` renders a **byte-identical** prompt (the cache keys on the whole rendered
+> prompt), and history renders **BEFORE** the final `"Question: "` line — that one is
+> **privacy**: `_cache_write` stores only that line, and this population discloses abuse and
+> coercion. Chat has its own `CHAT_PROMPT_VERSION = "chat-cite-strict-v1"`.
+>
+> **Unmeasured on purpose:** cross-turn citation drift needs a generated answer to read, so it
+> costs quota. `chat.cross_turn_drift()` is wired and runs in Phase G.
+>
+> **Next: Phase C — the chat UI** (`phase10/chat-ui`, zero quota). See `docs/phases/11_chat.md`.
+
+> **Previous (2026-09-13): Phase 09 steps 1 and 2 DONE. Zero Gemini calls spent.**
 > PRs #9 (`phase09/ops-hardening`) and #10 (`phase09/evidence-base`).
 >
 > **READ THIS BEFORE TOUCHING RETRIEVAL — the headline number changed meaning.**
