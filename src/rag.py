@@ -31,9 +31,25 @@ MODEL_NAME = "gemini-2.5-flash"
 FALLBACK_MODEL = "gemini-2.5-flash-lite"
 PROMPT_VERSION = "cite-strict-v2"
 
+# Identifies WHICH corpus produced a number, stamped into every artifact
+# header from Phase 10 A onward. "v1" is the corpus every published baseline in
+# this repo was measured on: OCR'd Act TXT split section-aware at 800 with refs
+# INFERRED from heading shape (hence 25/62 Act chunks uncitable), Constitution
+# and factsheet re-chunked from their processed TXT. Phase 10 C introduces
+# "v2" -- manifest-anchored Act parsing, re-extraction from the PDF text
+# layers -- alongside v1, never replacing it, so v1 numbers stay reproducible
+# from the same commit. A recall number without this stamp is unattributable.
+CORPUS_VERSION = "v1"
+
 # Sizes pinned from Phase 01: Act section-aware 800; Constitution
 # chapter-aware RECOMMENDED 400 (Q9 needs <=400 to pass 0.16);
 # Factsheet recursive 500/50.
+#
+# Phase 10 C hazard, recorded here because this is where the numbers live:
+# these sizes were measured with TF-IDF only, against the CORRUPTED Act text,
+# and short chunks concentrate term mass and inflate cosine. Longer v2 chunks
+# lower every cosine and can therefore manufacture false refusals. The
+# MIN_SCORE calibration must be RE-DERIVED against v2, not inherited.
 ACT_SIZE = 800
 CONST_SIZE = 400
 FACT_SIZE = 500

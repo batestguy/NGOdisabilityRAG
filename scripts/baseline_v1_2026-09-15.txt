@@ -1,0 +1,308 @@
+DRLCA corpus v1 -- ARCHIVED BASELINE, 2026-09-15 (Phase 10 A, "seal v1")
+========================================================================
+commit      : 8a3e63bb813187d368c4403e10026c37a0eb6c94
+branch      : phase10/seal-v1
+interpreter : C:\conda-envs\drlca-rag\python.exe (Python 3.11.16)
+CORPUS_VERSION : v1
+
+WHY THIS FILE EXISTS
+--------------------
+Everything after Phase 10 A invalidates these numbers: Phase B changes the
+prompt width, Phase C rebuilds the corpus, Phase D adds a dense arm. v1 has to
+be reproducible from an ARTIFACT rather than from prose in a journal entry, or
+the v1-vs-v2 comparison in Phase F becomes an argument about what was measured
+instead of a table.
+
+Captured with the project interpreter from D:\NGORAG, verbatim stdout, no
+edits. eval_heldout.py was run WITHOUT --reveal-test: the clean set's
+missed-refs column is the tuning handle and printing it into a committed file
+would spend the set permanently.
+
+WHICH NUMBERS ARE COMPARABLE LATER, AND WHICH ARE NOT
+-----------------------------------------------------
+  recall_strict   comparable v1 -> v2. This is the migration metric.
+  recall (plain)  NOT comparable v1 -> v2. v1 enjoys a packed-ref subsidy
+                  (one chunk reffed cl. 16,17 scoring two expected refs)
+                  that corpus v2 removes on purpose. On frozen-10 that
+                  subsidy is worth 0.925 - 0.701 = 0.224.
+  recall@k curve  comparable within a corpus version only; the pool is
+                  k=20/doc, which is NOT the shipping arm.
+  context precision 0.333 / reverse_rel 0.630  function of chunk count and
+                  top_n; both are retired as descriptions of the system in
+                  Phase F, though their REASONING survives.
+
+
+
+========================================================================
+== scripts\audit_corpus.py -- corpus shape
+== command: C:\conda-envs\drlca-rag\python.exe scripts\audit_corpus.py 
+========================================================================
+
+== CORPUS AUDIT (CORPUS_VERSION=v1) ==
+  mode: v1 regression tripwire -- pinned to the recorded shape, does NOT fail for being bad
+
+== PER DOC ==
+  doc                chunks uncitable      packed refs    length min/med/max    
+  act2018            62     25 (40.3%)     16 (25.8%)     56/800/800 (cap 800)
+  constitution1999   2104   99 (4.7%)      0 (0.0%)       52/400/400 (cap 400)
+  factsheet2020      48     9 (18.8%)      19 (39.6%)     64/500/500 (cap 500)
+  uncitable   = ref=="general": retrievable, but no legal claim
+                may be cited from it under the project invariant.
+  packed refs = one chunk answering >1 expected number (`cl. 16,17`).
+                These inflate plain recall; see
+                evalset.strict_covered and recall_strict.
+
+== LENGTH HISTOGRAMS (vs size cap) ==
+  act2018 (cap 800, 35 at cap, 0 OVER cap):
+        0-160       3  ###
+      161-320       8  ########
+      321-480       7  #######
+      481-640       4  ####
+      641-800      40  ########################################
+      801+           0  
+  constitution1999 (cap 400, 1492 at cap, 0 OVER cap):
+        0-80        3  ###
+       81-160      80  ############################################################
+      161-240     178  ############################################################
+      241-320     192  ############################################################
+      321-400    1651  ############################################################
+      401+           0  
+  factsheet2020 (cap 500, 46 at cap, 0 OVER cap):
+        0-100       2  ##
+      101-200       0  
+      201-300       0  
+      301-400       0  
+      401-500      46  ##############################################
+      501+           0  
+  Phase 10 C reads this table before touching chunk sizes: short
+  chunks concentrate term mass and INFLATE cosine, so any shift here
+  silently recalibrates MIN_SCORE and can manufacture false
+  refusals -- the worst failure mode this project has.
+
+== ACT CLAUSE MANIFEST COVERAGE (1-58) ==
+  SINGLE-SOURCE for now: derived from the corpus's own refs, not
+  from an independent parse of the Arrangement of Sections. It is a
+  coverage report, not a cross-check. Phase 10 C parses the
+  Arrangement and asserts the two sources AGREE.
+  citable now:            54/58
+  NOT citable, parseable: 19, 35
+    ^ bodies present in the text, invisible only because act_ref()
+      infers refs from heading SHAPE and the gazette's marginal-note
+      column is spliced into the body. Recoverable by parsing, free.
+      This is the Phase 10 C target.
+  NOT citable, ABSENT from source: 38, 40
+    ^ the pixels do not exist. No stub, no paraphrase, no model
+      knowledge -- record the gap and tell the user to call DRAC.
+
+== V1 REGRESSION TRIPWIRE ==
+  act2018            n        recorded 62     measured 62     ok
+  act2018            general  recorded 25     measured 25     ok
+  act2018            packed   recorded 16     measured 16     ok
+  constitution1999   n        recorded 2104   measured 2104   ok
+  constitution1999   general  recorded 99     measured 99     ok
+  constitution1999   packed   recorded 0      measured 0      ok
+  factsheet2020      n        recorded 48     measured 48     ok
+  factsheet2020      general  recorded 9      measured 9      ok
+  factsheet2020      packed   recorded 19     measured 19     ok
+
+AUDIT_CORPUS: PASS
+
+(exit code 0)
+
+
+========================================================================
+== scripts\eval_heldout.py -- recall / recall_strict / recall@k, all three sets
+== command: C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py 
+========================================================================
+
+CORPUS_VERSION=v1
+corpus: {'act2018': 62, 'constitution1999': 2104, 'factsheet2020': 48}
+ground truth verified against corpus: 60 questions, 121 expected refs
+sets: frozen10=10  heldout=30  test=20
+
+== DEV (EX-HELD-OUT, INSPECTED 2026-09-13), PER QUESTION (corpus=v1, k=3/doc, top_n=6, MIN_SCORE=0.10) ==
+  retrieval only -- no answers exist for this set, so faithfulness /
+  coverage / reverse_rel are structurally unavailable without quota.
+  id     class            gate    recall  strict  prec    kept   still-missed
+  H1     vocab-mismatch   answer  0.000   0.000   0.000   6      factsheet2020:19
+  H2     vocab-mismatch   answer  0.000   0.000   0.000   3      act2018:16,factsheet2020:16
+  H3     vocab-mismatch   answer  1.000   1.000   0.333   5      -
+  H4     vocab-mismatch   answer  0.000   0.000   0.000   4      act2018:22,factsheet2020:22
+  H5     vocab-mismatch   answer  1.000   1.000   0.333   6      -
+  H6     vocab-mismatch   answer  0.500   0.500   0.333   6      act2018:12
+  H7     vocab-mismatch   answer  0.000   0.000   0.000   6      act2018:24
+  H8     vocab-mismatch   answer  0.000   0.000   0.000   6      act2018:8
+  H9     toc-trap         answer  0.000   0.000   0.000   6      constitution1999:42
+  H10    toc-trap         answer  1.000   1.000   0.500   3      -
+  H11    toc-trap         answer  0.000   0.000   0.000   3      constitution1999:35
+  H12    toc-trap         answer  1.000   1.000   0.333   6      -
+  H13    toc-trap         answer  0.500   0.500   0.167   6      act2018:34
+  H14    cross-document   answer  0.000   0.000   0.000   4      act2018:30,constitution1999:117,constitution1999:77
+  H15    cross-document   answer  0.000   0.000   0.000   6      act2018:1,constitution1999:42
+  H16    cross-document   answer  0.333   0.333   0.167   6      act2018:20,constitution1999:18
+  H17    cross-document   answer  0.333   0.333   0.167   5      act2018:55,constitution1999:6
+  H18    cross-document   answer  0.667   0.333   0.167   6      constitution1999:17
+  H19    cross-document   answer  0.667   0.667   0.500   6      act2018:29
+  H20    cross-document   answer  1.000   1.000   0.333   5      -
+  H21    off-corpus       refuse  n/a     n/a     n/a     3      -  <-- cleared the floor
+  H22    off-corpus       refuse  n/a     n/a     n/a     6      -  <-- cleared the floor
+  H23    off-corpus       refuse  n/a     n/a     n/a     3      -  <-- cleared the floor
+  H24    off-corpus       refuse  n/a     n/a     n/a     3      -  <-- cleared the floor
+  H25    off-corpus       refuse  n/a     n/a     n/a     1      -  <-- cleared the floor
+  H26    odd-wording      answer  1.000   1.000   0.500   6      -
+  H27    odd-wording      answer  0.000   0.000   0.000   4      act2018:26
+  H28    odd-wording      answer  0.500   0.500   0.167   6      factsheet2020:23
+  H29    odd-wording      answer  1.000   1.000   0.500   4      -
+  H30    odd-wording      answer  0.000   0.000   0.000   6      act2018:2,factsheet2020:2
+
+== MEANS BY CLASS (dev (ex-held-out, inspected 2026-09-13)) ==
+  class            n     recall   strict   prec     kept=0
+  cross-document   7     0.429    0.381    0.190    0/7
+  odd-wording      5     0.500    0.500    0.233    0/5
+  off-corpus       5     n/a      n/a      n/a      0/5
+  toc-trap         5     0.500    0.500    0.200    0/5
+  vocab-mismatch   8     0.312    0.312    0.125    0/8
+
+== TEST (CLEAN, NEVER TUNED AGAINST), PER QUESTION (corpus=v1, k=3/doc, top_n=6, MIN_SCORE=0.10) ==
+  retrieval only -- no answers exist for this set, so faithfulness /
+  coverage / reverse_rel are structurally unavailable without quota.
+  id     class            gate    recall  strict  prec    kept   still-missed
+  T1     vocab-mismatch   answer  0.000   0.000   0.000   3      (withheld)
+  T2     vocab-mismatch   answer  0.000   0.000   0.000   4      (withheld)
+  T3     vocab-mismatch   answer  0.000   0.000   0.000   2      (withheld)
+  T4     vocab-mismatch   answer  0.000   0.000   0.000   6      (withheld)
+  T5     vocab-mismatch   answer  0.000   0.000   0.000   3      (withheld)
+  T6     vocab-mismatch   answer  0.000   0.000   0.000   6      (withheld)
+  T7     vocab-mismatch   answer  1.000   1.000   0.333   6      (withheld)
+  T8     vocab-mismatch   answer  0.000   0.000   0.000   6      (withheld)
+  T9     cross-document   answer  0.000   0.000   0.000   5      (withheld)
+  T10    cross-document   answer  0.750   0.750   0.667   6      (withheld)
+  T11    cross-document   answer  0.000   0.000   0.000   5      (withheld)
+  T12    cross-document   answer  1.000   1.000   0.333   6      (withheld)
+  T13    cross-document   answer  1.000   1.000   0.333   6      (withheld)
+  T14    cross-document   answer  0.000   0.000   0.000   6      (withheld)
+  T15    odd-wording      answer  1.000   1.000   0.500   3      (withheld)
+  T16    odd-wording      answer  1.000   1.000   0.333   6      (withheld)
+  T17    odd-wording      answer  0.000   0.000   0.000   6      (withheld)
+  T18    off-corpus       refuse  n/a     n/a     n/a     6      (withheld)  <-- cleared the floor
+  T19    off-corpus       refuse  n/a     n/a     n/a     5      (withheld)  <-- cleared the floor
+  T20    off-corpus       refuse  n/a     n/a     n/a     6      (withheld)  <-- cleared the floor
+  still-missed withheld: reading which refs a CLEAN set misses
+  is what turned the 30 dev questions into a dev set. Pass
+  --reveal-test to print it, and record in the journal that
+  you did -- it spends the set.
+
+== MEANS BY CLASS (test (clean, never tuned against)) ==
+  class            n     recall   strict   prec     kept=0
+  cross-document   6     0.458    0.458    0.222    0/6
+  odd-wording      3     0.667    0.667    0.278    0/3
+  off-corpus       3     n/a      n/a      n/a      0/3
+  vocab-mismatch   8     0.125    0.125    0.042    0/8
+
+== GENERALISATION: ALL SETS SIDE BY SIDE (the headline) ==
+  corpus=v1, shipping arm k=3/doc -> select_top(top_n=6)
+  frozen-10 (fitted on)                    recall 0.925  strict 0.701  (n=10)
+  dev (ex-held-out, inspected 2026-09-13)  recall 0.420  strict 0.407  (n=25)
+  test (clean, never tuned against)        recall 0.338  strict 0.338  (n=17)
+  strict = evalset.strict_covered, one expected ref per chunk. The
+  recall-minus-strict gap is the PACKED-REF SUBSIDY that v1 enjoys
+  and corpus v2 removes by design. Across corpus versions compare
+  STRICT only; plain recall is not comparable v1 -> v2.
+  delta vs frozen-10 (heldout): -0.505
+  delta vs frozen-10 (test): -0.587
+  A drop here is THE FINDING, not a bug to tune away: it is the
+  measurement able to separate generalisation from fitting to 10
+  points. Do not edit a question to move any of these numbers.
+
+== RECALL@K CURVE (pool k=20/doc -> 60 candidates, select_top order) ==
+  NOT the shipping arm. Shipping is k=3/doc -> top_n=6 and is
+  reported in the headline block below. This answers a DIFFERENT
+  question: is the right chunk in the pool at all, and how deep?
+  A large gap between @6 and @60 means the miss is RANKING, and a
+  re-ranker can reach it. A flat curve would mean the chunk is
+  simply absent, and only a corpus or encoder change could help.
+  set                                      r@3     r@6     r@10    r@20    r@60    MRR     med-rk  found
+  frozen-10 (fitted on)                    0.788   0.867   0.912   0.938   0.950   0.714   2       10/10
+  dev (ex-held-out, inspected 2026-09-13)  0.340   0.400   0.500   0.580   0.773   0.388   2       20/25
+  test (clean, never tuned against)        0.235   0.338   0.338   0.353   0.765   0.328   30      14/17
+
+  same curve, recall_strict (one expected ref per chunk):
+  set                                      rs@3    rs@6    rs@10   rs@20   rs@60  
+  frozen-10 (fitted on)                    0.529   0.643   0.703   0.761   0.799  
+  dev (ex-held-out, inspected 2026-09-13)  0.327   0.387   0.487   0.567   0.760  
+  test (clean, never tuned against)        0.235   0.338   0.338   0.353   0.765  
+
+== FALSE-REFUSAL RATE (answerable questions, every set) ==
+  CLAUDE.md: false refusals deny help to PWDs. This is the number
+  that matters most here, and it was almost unmeasured before Phase 09.
+  frozen-10 (fitted on)                    0/10 = 0.0% retrieve NOTHING
+  dev (ex-held-out, inspected 2026-09-13)  0/25 = 0.0% retrieve NOTHING
+  test (clean, never tuned against)        0/17 = 0.0% retrieve NOTHING
+
+== GATE-LEVEL FALSE-ANSWER RATE (off-corpus questions, every set) ==
+  dev (ex-held-out, inspected 2026-09-13)  5/5 = 100.0% clear MIN_SCORE=0.10
+    cleared: H21 (top 0.1550), H22 (top 0.3369), H23 (top 0.4193), H24 (top 0.1138), H25 (top 0.1032)
+  test (clean, never tuned against)        3/3 = 100.0% clear MIN_SCORE=0.10
+    cleared: T18 (top 0.1988), T19 (top 0.1475), T20 (top 0.2637)
+  CAVEAT, and it is load-bearing -- a bad number here is EXPECTED and
+  is NOT a reason to touch MIN_SCORE:
+    * MIN_SCORE is a weak-overlap FLOOR, not a semantic filter, and
+      the in-corpus/off-corpus cosine bands are INVERTED
+      (src/retrieve.py:26-44). 'sourdough' scored 0.125 and 'maritime
+      shipping insurance' 0.318 before any of this work existed.
+    * The SEMANTIC refusal layer is the strict-prompt
+      NO_ANSWER_SENTENCE path in src/rag.py, which this harness
+      cannot reach -- measuring it costs quota. This measures the
+      floor only; it is half the refusal story by construction.
+    * Both layers are preserved on purpose. The gate errs LOW because
+      false refusals deny help to PWDs.
+
+== FROZEN-10 REGRESSION GUARD (the only thing that can fail here) ==
+  frozen-10 recall 0.925 vs recorded baseline 0.925 (corpus v1): PASS
+  frozen-10 recall_strict 0.701 -- published now, BEFORE v2 exists, so
+  the v2 rebuild has an honest yardstick to be compared against.
+  (dev and test numbers above can never fail this script, by design)
+
+EVAL_HELDOUT: PASS (frozen yardstick intact; dev/test reported as measured)
+
+(exit code 0)
+
+
+========================================================================
+== scripts\eval_phase06.py -- RAGAS proxy, frozen-10 (byte-identical to eval_p09pre.json)
+== command: C:\conda-envs\drlca-rag\python.exe scripts\eval_phase06.py --out=scripts\eval_p10_sealv1.json
+========================================================================
+
+corpus: {'act2018': 62, 'constitution1999': 2104, 'factsheet2020': 48}
+ground truth verified against corpus (10 questions)
+
+== PER-QUESTION (retrieval live/offline; answers frozen v2) ==
+  id   recall prec   faith  faithA cover  revrel  missed-expected
+  Q1   1.000  0.500  1.000  1.000  0.500  0.667   -
+  Q2   1.000  0.500  1.000  1.000  1.000  1.000   -
+  Q3   1.000  0.167  1.000  1.000  0.600  0.333   -
+  Q4   1.000  0.333  1.000  1.000  1.000  0.667   -
+  Q5   0.250  0.333  0.000  0.000  n/a(ref) n/a(ref)  act2018:10,act2018:13,act2018:29,act2018:30,act2018:8,act2018:9
+  Q6   1.000  0.500  1.000  1.000  0.833  1.000   -
+  Q7   1.000  0.667  1.000  1.000  1.000  0.667   -
+  Q8   1.000  0.333  1.000  1.000  0.250  0.333   -
+  Q9   1.000  0.333  1.000  1.000  0.600  0.667   -
+  Q10  1.000  0.167  0.667  0.667  0.600  0.333   -
+
+== COVERAGE-MISS WORDS (artifact diagnosis: paraphrase, not off-topic) ==
+  Q1 missing from answer: ['does', 'say']
+  Q3 missing from answer: ['exist', 'protect']
+  Q6 missing from answer: ['does']
+  Q8 missing from answer: ['compliance', 'long', 'transitional']
+  Q9 missing from answer: ['does', 'guarantee']
+  Q10 missing from answer: ['disability', 'violat']
+
+== MEANS vs SPEC TARGETS ==
+  recall>0.75 (context):            0.925 PASS
+  faithfulness_audited>0.85:        0.867 PASS
+  reverse_rel>0.80 (answer relev.): 0.630 FAIL
+  (coverage floor, ungated: 0.709 -- punishes paraphrase, diagnosed metric artifact)
+  (precision diagnostic, ungated: 0.383 -- per-doc merging trades it away by design)
+wrote D:\NGORAG\scripts\eval_p10_sealv1.json (10 records)
+
+(exit code 0)

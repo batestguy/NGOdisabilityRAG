@@ -109,6 +109,55 @@ def ref_nums(ref: str) -> set:
     return {int(n) for n in re.findall(r"\d+", ref)}
 
 
+def strict_covered(hits, exp: dict) -> int:
+    """Expected (doc, number) pairs covered when each chunk counts at most ONCE.
+
+    WHY THIS EXISTS -- it is the Phase 10 migration metric, and it has to be
+    published on the v1 corpus BEFORE a v2 corpus exists (Phase 10 A).
+
+    Plain `recall` counts pair-set overlap, so a single chunk whose ref is
+    `cl. 16,17` satisfies TWO expected refs at once. 16 of 62 Act chunks and 19
+    of 48 factsheet chunks carry those packed refs. Clause-aligned chunking
+    (Phase 10 C) splits them into one clause per chunk, which is strictly
+    better retrieval and will nonetheless *lower* plain `recall` -- the same
+    question now needs two of its six slots to score what one slot scored
+    before. Reporting only plain `recall` across the rebuild would read as a
+    regression and the explanation would read as excuse-making.
+
+    So: maximum bipartite matching between expected pairs and retrieved chunks,
+    each chunk usable for one pair. Not greedy -- greedy is wrong here. Take
+    expected {cl.16, cl.17} and retrieved [`cl. 16,17`, `cl. 16`]: greedy can
+    spend the packed chunk on 16, leaving 17 with only the `cl. 16` chunk and
+    scoring 1/2, where the correct answer is 2/2 (packed->17, `cl. 16`->16).
+    Kuhn's augmenting path, because the sizes are tiny (<=60 chunks, <=5 pairs)
+    and an off-by-one in a hand-rolled greedy would be invisible.
+
+    Returns the match size; the caller divides by len(exp_pairs). Identical to
+    plain recall's numerator whenever no retrieved chunk carries a packed ref,
+    which is what makes the two columns comparable on v1.
+    """
+    pairs = sorted((d, n) for d, ns in exp.items() for n in ns)
+    if not pairs:
+        return 0
+    # cand[p] = indices of chunks able to satisfy pair p, in retrieval order.
+    cand = [[i for i, h in enumerate(hits)
+             if h.doc_id == d and n in ref_nums(h.ref)]
+            for d, n in pairs]
+    chunk_for: dict[int, int] = {}  # chunk index -> pair index
+
+    def augment(p: int, seen: set) -> bool:
+        for i in cand[p]:
+            if i in seen:
+                continue
+            seen.add(i)
+            if i not in chunk_for or augment(chunk_for[i], seen):
+                chunk_for[i] = p
+                return True
+        return False
+
+    return sum(1 for p in range(len(pairs)) if augment(p, set()))
+
+
 def verify_expected(rows: list[dict], docs: dict) -> int:
     """Every expected number must occur in some chunk's ref, in its own doc.
 
