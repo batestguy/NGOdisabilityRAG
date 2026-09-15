@@ -73,10 +73,11 @@ from evalset import (  # noqa: E402
     verify_expected,
 )
 from rag import build_corpus  # noqa: E402
-from retrieve import MIN_SCORE, PerDocRetriever  # noqa: E402
+from retrieve import MIN_SCORE, PerDocRetriever, select_top  # noqa: E402
 
 K_PER_DOC = 3   # ask() / eval_phase06 / ablate_phase08 depth
 TOP_N = 6       # ask() / eval_phase06 / ablate_phase08 merge width
+MIN_PER_DOC = 1  # ask() default -- the doc-quota merge, Phase 09 step 3 M2
 
 # Recorded frozen-10 mean recall: Phase 08 M1 (synonym map), confirmed by
 # eval_phase06.py on 2026-09-13 and by docs/phases/06_ragas_eval.md. The guard
@@ -89,7 +90,9 @@ EPS = 1e-6
 
 def measure_one(ret, row: dict) -> dict:
     """Retrieval profile for one question. No LLM, no answer, no generation."""
-    hits = ret.query(row["text"], k=K_PER_DOC)[:TOP_N]
+    # select_top, not [:TOP_N] -- the same merge ask() ships.
+    hits = select_top(ret.query(row["text"], k=K_PER_DOC), TOP_N,
+                      min_per_doc=MIN_PER_DOC)
     kept = [h for h in hits if h.score >= MIN_SCORE]
     exp = row["expected"]
     exp_pairs = {(d, n) for d, ns in exp.items() for n in ns}

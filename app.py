@@ -230,17 +230,24 @@ def answer_legal(question: str, retriever=None, plain: bool = False,
 
 
 def offline_legal_hits(question: str, retriever, k: int = 3,
-                       top_n: int = 6, min_score: float = 0.10) -> dict:
+                       top_n: int = 6, min_per_doc: int = 1,
+                       min_score: float = 0.10) -> dict:
     """Offline legal display payload: gated excerpts WITH citation tags.
 
     Never strips citations -- each hit carries cite_tag(doc_id, ref) built by
     Phase 02's own cite_tag(). weak/empty retrieval -> refused with the fixed
     refusal message (+ helplines are rendered by the caller, above this).
+
+    The merge to top_n is select_top(), the same call ask() makes, so the
+    offline excerpt path and the LLM path show the same six chunks. A display
+    path that sliced differently from ask() would be showing the user a system
+    nobody measures.
     """
-    from retrieve import MIN_SCORE, cite_tag
+    from retrieve import MIN_SCORE, cite_tag, select_top
     from rag import REFUSAL_MESSAGE
     floor = MIN_SCORE if min_score is None else min_score
-    merged = retriever.query(question, k=k)[:top_n]
+    merged = select_top(retriever.query(question, k=k), top_n,
+                        min_per_doc=min_per_doc, floor=floor)
     hits = [h for h in merged if h.score >= floor]
     if not hits:
         return {"refused": True, "answer": REFUSAL_MESSAGE,

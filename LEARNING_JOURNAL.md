@@ -742,3 +742,131 @@ Phase 09 steps 3 (BM25 re-rank inside the gate + offline `synonyms_auto.json`) a
 generation defect), in that order — step 3 now has a real target and an uncontaminated yardstick.
 The two-run flakiness check is unblocked but unrun (24 calls). Owner gates: GIF encode, NVDA,
 physical keyboard, live mic/read-aloud, LinkedIn.
+
+## 2026-09-13 (later) — Phase 09 step 3 measured and FALSIFIED; the corpus is the real ceiling
+
+Step 3 was built to plan: a clean 20Q `test` set, a doc-quota cross-doc merge, a BM25 re-rank.
+The test set shipped and is good. **The two retrieval fixes were measured and both are dead.**
+This entry exists so nobody rebuilds them. Zero Gemini calls spent all session.
+
+### M1 shipped and stands (PR #11, `phase09/eval-test-set`)
+
+20 questions `T1`..`T20`, authored blind from `data/processed/*.txt` before any retrieval change,
+reviewed row by row with zero blocking findings. `heldout` is relabelled **dev** in the reporting
+— its per-question misses were read to design the fix, which spent it. The `set` string stays
+`"heldout"` in `questions.json` on purpose: renaming it would silently break the published 0.420
+baseline. `eval_phase06.py` output stayed byte-identical to `scripts/eval_p09pre.json`, proving
+M1 changed no retrieval behaviour.
+
+| set | n | recall |
+|---|---|---|
+| frozen-10 (fitted on) | 10 | 0.925 |
+| dev (ex-held-out) | 25 | 0.420 |
+| **test (clean)** | 17 | **0.338** |
+
+Test lands *below* dev, so dev was not unusually hard — the 0.420 was not bad luck. Weakest class
+on test: vocab-mismatch **0.125**, again the class the synonym map exists to fix. False refusal
+**0/17**: the floor is still not denying help to PWDs.
+
+### M2 — the doc-quota merge is recall-neutral
+
+`select_top(hits, top_n, min_per_doc=1, floor=MIN_SCORE)` reserves each doc's best above-floor
+candidate, then fills by global score. It fixes a **real defect**: `src/rag.py:537` and
+`app.py:243` sorted candidates from three separate TF-IDF spaces by raw cosine, a comparison
+`PerDocRetriever`'s own docstring calls invalid. Refusal invariance is provable (the returned set
+always contains the global max, in both the old and new merge) and was asserted bit-identically
+across **106 probes** — 60 questions + 12 off-corpus + 34 bare synonym keys.
+
+And it buys **nothing**. `min_per_doc=1` reproduces baseline to three decimals on all three sets
+while changing *which* six chunks are shown on 7/60 questions.
+
+### M3 — pool widening is neutral-to-harmful, BM25 is a coin flip
+
+Every "→6" arm below returns exactly 6 chunks.
+
+| arm | frozen10 | dev | test | shown |
+|---|---|---|---|---|
+| current `[:6]` slice | 0.925 | 0.420 | 0.338 | 6 |
+| doc-quota `min_per_doc=1` | 0.925 | **0.420** | **0.338** | 6 |
+| doc-quota `min_per_doc=2` | 0.846 | 0.420 | 0.353 | 6 |
+| k=10 pool, `[:6]` slice | 0.867 | 0.400 | 0.338 | 6 |
+| k=10 pool, quota →6 | 0.879 | 0.420 | 0.338 | 6 |
+| k=10 pool, **no cut** | 0.950 | 0.700 | 0.559 | 30 |
+| k=20 pool, **no cut** | 0.950 | 0.773 | 0.765 | 60 |
+
+**The mistake that produced the plan, named plainly:** the old diagnostic's apparent gains
+(0.460 / 0.627 / 0.700 / 0.773) were all measured with *no cut* — showing 9, 18, 30 and 60 chunks.
+They were a **`top_n` effect, not an ordering effect**. Under the decision "users keep seeing 6
+excerpts" there was never anything for a merge to recover. Widening the pool at a fixed cut of 6
+is worse than not widening: k=10 with the current slice drops frozen-10 to 0.867, *below* the
+0.925 guard.
+
+BM25 over 91 (doc, expected-ref) pairs ranks the expected chunk higher on **15** and lower on
+**16**. Rank buckets barely move (1-3: 50→52, 21+: 12→14).
+
+**Conclusion: lexical retrieval is exhausted.** No reordering of TF-IDF candidates reaches the
+tail. The lesson for the metrics is concrete — from now on report **recall@{3,6,10,20,60}**,
+`rank_of_first_expected` and MRR per set, so "ranking or width?" can never again be answered by
+accident.
+
+### The finding that outranks all of it: 40% of Act chunks are uncitable
+
+Measured via `rag.build_corpus()` — previously unmeasured anywhere in the repo, and reproduced
+independently before writing it down:
+
+| doc | chunks | `ref=="general"` (uncitable) | packed refs (`cl. 16,17`) |
+|---|---|---|---|
+| `act2018` | 62 | **25 (40%)** | 16/62 |
+| `factsheet2020` | 48 | 9 (19%) | 19/48 |
+| `constitution1999` | 2104 | 99 (5%) | 0 |
+
+Act clause numbers **19, 35, 38, 40** produce no `ref` anywhere. Traced individually:
+
+- **19, 35, 37, 54 bodies are all present in the text.** `"35. (1) A person ceases to hold office
+  as a member of the Council if he-"`, `"37. The Council shall have power to-"`. They are invisible
+  only because `act_ref()` infers refs from heading *shape*, and the gazette's marginal-note column
+  is spliced into the body: `"37.The Council shall have power to-\nPower of the\nCouncil.\n(a)
+  manage and superintend..."`. **Recoverable by parsing, free.** I had believed these bodies were
+  missing; a planning agent said they were merely reading-order-damaged and it was right. That
+  correction turned a VLM-re-OCR milestone into a parser fix.
+- **38 and 40 are not in the source at all.** `data/raw/disability_act_2018_full.pdf` is a pure
+  scan — 27 pages, **0** embedded text chars, where the Constitution and factsheet PDFs both have
+  text layers. Raw OCR pages 5 and 6 are the same physical page scanned twice (0.819 similarity,
+  both PART II cl.3–4), so 27 raw pages cover **26 distinct pages of a 27-page instrument**. The
+  missing page carries cl.38's opening and cl.40. **No OCR can recover it** — the pixels do not
+  exist. Owner is hunting for a born-digital copy.
+
+Why this outranks ranking: the project's central invariant is *every legal claim carries a
+citation tag copied verbatim from the chunk header*. With 40% of Act chunks uncitable that
+invariant is structurally broken on the app's most important document. **A better ranking over
+uncitable chunks is a better-ranked list of things you are not allowed to cite.** Also
+user-facing: excerpts render verbatim and the text contains `"Apersonwith disabilityhas theright
+to access"` — a screen reader says that out loud.
+
+### What the owner decided in response
+
+The goal was restated: a genuinely top-tier chatbot at **$0.00**, with heavy offline work on free
+Colab/Kaggle GPU allowed. Four calls, all recorded in
+`docs/phases/10_corpus_rebuild_and_dense.md`: cheap measurable wins first, then the corpus, then
+fine-tuning · **Gemini embeddings at query time** for the dense arm · parser fix now, VLM re-OCR
+later · owner hunts for a born-digital Act.
+
+**One recommendation was overruled and that is recorded on purpose.** I argued for static
+(model2vec-class) embeddings because query-time Gemini puts a network call in the default user
+path. The owner chose Gemini. The plan therefore engineers around the two consequences instead of
+discovering them later: a **degradation ladder** (tier 1 Gemini → tier 2 static distilled → tier 3
+TF-IDF, so quota exhaustion is a quality degradation and never an outage), and a **privacy**
+control — today Gemini is opt-in behind an expander defaulting OFF, so a user who never opts in
+keeps their question on the device; embedding at query time would send **every** question to
+Google, and these questions describe disability, abuse and begging coercion. M2 ships a visible
+notice and a hard-offline toggle before that lands. Free-tier embedding limits are **unknown**
+(Google's rate-limit page now defers to AI Studio, and the 20/day in `CLAUDE.md` is the
+*generation* cap), so M2 opens with an empirical 429 probe — the same precedent that established
+20/day.
+
+### Still open
+
+`select_top` and its call-site migration sit **uncommitted on `phase09/merge-fix`**. Phase 10 M0
+commits them with an honest claim — fixes a real defect, provably refusal-invariant, **recall
+unchanged**, needed as the cross-doc merge once a dense arm exists. Do not write it up as a recall
+win. PRs #9, #10, #11 are open and unmerged. Quota untouched since 2026-09-11.

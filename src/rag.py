@@ -15,7 +15,7 @@ from pathlib import Path
 
 from chunk import constitution_aware_split, recursive_split, section_aware_split
 from load import build_clean_text, clean_text, repair_joins
-from retrieve import MIN_SCORE, Chunk, PerDocRetriever, cite_tag
+from retrieve import MIN_SCORE, Chunk, PerDocRetriever, cite_tag, select_top
 
 # Resolved 2026-09-08 via client.models.list(): `models/gemini-2.5-flash`
 # exists ("Gemini 2.5 Flash"); `gemini-2.0-flash` is gone (retired).
@@ -501,6 +501,7 @@ def ask(
     plain: bool = False,
     k: int = 3,
     top_n: int = 6,
+    min_per_doc: int = 1,
     min_score: float = MIN_SCORE,
     model: str = MODEL_NAME,
     use_llm: bool = True,
@@ -513,6 +514,15 @@ def ask(
     preamble at top-4 (retrieval miss, not corpus gap); fragmented
     Constitution sections (s.46 split across chunks) need fuller context.
     Tuned 2026-09-08; still cheap for the free tier (6 short chunks).
+
+    The merge to those six is select_top(), NOT a `[:top_n]` slice (Phase 09
+    step 3 M2). The slice sorted candidates from three separate TF-IDF spaces
+    by raw cosine -- a comparison PerDocRetriever's own docstring says is
+    invalid -- and so re-introduced the Constitution flooding that per-doc
+    retrieval exists to prevent. min_per_doc reserves each doc's best
+    above-floor candidate; the budget stays six, only WHICH six changes. The
+    refusal decision is provably unchanged -- see the block above select_top
+    in src/retrieve.py.
 
     refused=True (answer = REFUSAL_MESSAGE, no LLM call) when nothing clears
     min_score. With use_llm=False (or no key) the retrieval half still runs
@@ -534,7 +544,8 @@ def ask(
     """
     if retriever is None:
         retriever = PerDocRetriever(build_corpus())
-    merged = retriever.query(question, k=k)[:top_n]
+    merged = select_top(retriever.query(question, k=k), top_n,
+                        min_per_doc=min_per_doc, floor=min_score)
     per_doc_top = {}
     for h in merged:
         per_doc_top.setdefault(h.doc_id, round(h.score, 4))

@@ -67,7 +67,7 @@ from rag import (  # noqa: E402
     is_per_minute_429,
     retry_delay,
 )
-from retrieve import PerDocRetriever, cite_tag  # noqa: E402
+from retrieve import PerDocRetriever, cite_tag, select_top  # noqa: E402
 
 # Resolved by client.models.list() in M0: models/gemini-2.5-flash-lite exists.
 JUDGE_MODEL = "gemini-2.5-flash-lite"
@@ -78,7 +78,7 @@ CHECKPOINT = ROOT / "scripts" / ".judge_phase06_checkpoint.json"
 OUT = ROOT / "scripts" / ("judge_phase06_results_%s_%s.json"
                           % (JUDGE_MODEL, date.today().isoformat()))
 
-K_PER_DOC, TOP_N = 3, 6
+K_PER_DOC, TOP_N, MIN_PER_DOC = 3, 6, 1
 
 
 # --------------------------------------------------------------------------
@@ -180,7 +180,12 @@ def build_tasks(questions, recs, rows, ret) -> list[dict]:
     """Priority-ordered judging tasks. The 13 that decide A/B/C come first."""
     hits_by_q = {}
     for i, q in enumerate(questions):
-        hits_by_q["Q%d" % (i + 1)] = ret.query(q, k=K_PER_DOC)[:TOP_N]
+        # select_top, not [:TOP_N] -- the same merge ask() ships. This script
+        # spends quota and was NOT re-run in Phase 09 step 3 M2, so the judge
+        # transcript on disk was scored against the old slice; a future run
+        # will differ for that reason and must say so.
+        hits_by_q["Q%d" % (i + 1)] = select_top(
+            ret.query(q, k=K_PER_DOC), TOP_N, min_per_doc=MIN_PER_DOC)
 
     def ctx(qid: str) -> str:
         return "\n\n".join(
@@ -450,7 +455,11 @@ def ceiling(row_of: dict) -> None:
         if recs[qid]["refused"]:
             continue
         exp = EXPECTED[qid]
-        rev = ret.query(recs[qid]["answer_full"], k=3)[:3]
+        # min_per_doc=0: metric probe, 3 slots / 3 docs would force round-robin.
+        # Falls through to global order, i.e. identical to the [:3] it replaces.
+        # Same reasoning as eval_phase06.eval_question().
+        rev = select_top(ret.query(recs[qid]["answer_full"], k=3), 3,
+                         min_per_doc=0)
         if not rev:
             continue
         countable = sum(1 for h in rev if h.doc_id in exp)

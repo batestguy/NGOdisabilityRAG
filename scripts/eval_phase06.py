@@ -75,7 +75,7 @@ from evalset import (  # noqa: E402
     load_eval_set,
 )
 from rag import CITE_TAG_RE, build_corpus  # noqa: E402
-from retrieve import PerDocRetriever, stem  # noqa: E402
+from retrieve import PerDocRetriever, select_top, stem  # noqa: E402
 
 TRANSCRIPT = (ROOT / "scripts"
               / "test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json")
@@ -219,7 +219,13 @@ def eval_question(qid, question, rec, hits, ret) -> dict:
     q_words = content_stems(question)
     cov = len(q_words & ans_words) / len(q_words) if q_words else 1.0
     # Reverse retrieval: the answer as a query must land on its own support.
-    rev = ret.query(answer, k=3)[:3]
+    # min_per_doc=0 ON PURPOSE. This is a metric probe, not the user path: with
+    # 3 slots and 3 docs a quota would force exactly one hit per doc and turn
+    # reverse_rel into a different measurement. min_per_doc=0 makes select_top
+    # fall straight through to global order, i.e. bit-identical to the [:3]
+    # slice it replaces -- written as a call rather than a slice so the one
+    # site that legitimately wants raw global order says so.
+    rev = select_top(ret.query(answer, k=3), 3, min_per_doc=0)
     rev_rel = (sum(1 for h in rev
                    if ref_nums(h.ref) & exp.get(h.doc_id, set()))
                / len(rev)) if rev else 0.0
@@ -246,8 +252,10 @@ def main() -> None:
     recs = {r["id"]: r for r in json.loads(
         TRANSCRIPT.read_text(encoding="utf-8")) if r["id"].startswith("Q")}
 
+    # select_top, not [:6] -- the same merge ask() ships. A harness that slices
+    # differently from ask() is measuring a system nobody ships.
     rows = [eval_question("Q%d" % (i + 1), q, recs["Q%d" % (i + 1)],
-                          ret.query(q, k=3)[:6], ret)
+                          select_top(ret.query(q, k=3), 6), ret)
             for i, q in enumerate(questions)]
     print("\n== PER-QUESTION (retrieval live/offline; answers frozen v2) ==")
     print("  %-4s %-6s %-6s %-6s %-6s %-6s %-6s  missed-expected" % (
