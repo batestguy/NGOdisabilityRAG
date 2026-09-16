@@ -56,8 +56,10 @@
 > published since Phase 05) was rewritten so it can fail. Both evals re-run after: still
 > byte-identical to `368f083`.
 >
-> **Next: Phase D — corpus v2** (`docs/phases/10_corpus_rebuild_and_dense.md`). See the
-> **PHASE D — START HERE** section below.
+> **Next: Phase D — corpus v2** (**`docs/phases/12_corpus_v2.md`**, written 2026-09-16; M3 of
+> `10_corpus_rebuild_and_dense.md` is **superseded**). See **PHASE D — START HERE** below: the
+> download is done, and **two of M3's premises turned out to be false** — Act cl.38/40 are
+> **recoverable**, and the Constitution needs only the cheap fix.
 
 > **Previous (2026-09-15): Phase 10 B (chat-core) DONE. Zero Gemini calls spent.**
 > Branch `phase10/chat-core`. Playbook: `docs/phases/11_chat.md`. Full run:
@@ -113,8 +115,9 @@ file and no prompt string — the chat UI is a surface for Phase B's engine and 
 Three of the remaining phases have hard external dependencies the next session should know
 about before planning:
 
-- **D** needs a >10MB download (`ncpwd.gov.ng/pdfs/6document.pdf`, the one untested lead for
-  the missing Act cl.38/40) fetched locally, not via a fetch tool.
+- ~~**D** needs a >10MB download…~~ **DISCHARGED 2026-09-16.** `6document.pdf` is downloaded
+  (14.1 MB, repo root, to be moved into `data/raw/` in D1) and verified as the authoritative
+  gazette. It resolved the cl.38/40 question — **they were never missing**. See Finding 1.
 - **F** needs **Colab or Kaggle GPU**. `torch`/`sentence-transformers` must **never** be
   installed into `drlca-rag` — `CLAUDE.md` records an env break from exactly that.
 - **G** needs **~42 Gemini calls across 2 days** (40/day budget, two pools). That is an owner
@@ -123,14 +126,67 @@ about before planning:
 Working tree is clean apart from the known stray `D:NGORAG_review_judge.diff` (0 bytes,
 U+F03A in the name, in no commit, deletion permission-blocked — still needs removing by hand).
 
-## PHASE D — START HERE (corpus v2, `docs/phases/10_corpus_rebuild_and_dense.md`)
+## PHASE D — START HERE (corpus v2, **`docs/phases/12_corpus_v2.md`**)
 
-The Phase C reconnaissance that used to live here is **spent** — the chat UI is built, and
-the `app.py` line numbers it quoted are gone. What Phase C actually shipped is in
-`docs/phases/11_chat.md` (Step C results) and the 2026-09-16 journal entry; read those, not a
-reconstruction.
+> **The playbook moved.** Phase D is **`docs/phases/12_corpus_v2.md`**, written 2026-09-16, not
+> M3 of `10_corpus_rebuild_and_dense.md`. **M3 is superseded and must not be executed** — two of
+> its premises were measured on 2026-09-16 and are false. M3 is kept, with amendment boxes, so
+> nobody re-picks up an invalidated step.
+>
+> **Branch:** `phase10/corpus-v2`, off `phase10/chat-ui`. **Zero quota. No new packages.**
 
-**What `app.py` looks like now**, so the next session does not have to re-derive it:
+**Phase D's download dependency is DISCHARGED.** `6document.pdf` (14.1 MB) is downloaded and sits
+in the repo root awaiting a move into `data/raw/` (first task of D1).
+
+### Finding 1 — the Act gap is a SOURCING failure, not an OCR failure. cl.38 and cl.40 are recoverable.
+
+The download is *Federal Republic of Nigeria Official Gazette No. **10**, Vol. 106, 21 January
+2019, Act No. 2, pages **A97–A122*** — the authoritative gazette. 27 pages, 0 embedded text chars
+(a scan, like the existing copy), but **no duplicate adjacent page pair**. Targeted OCR
+(`rapidocr_onnxruntime`, dpi 200) of gazette pages **13, 14, 15** recovered both clauses in full.
+
+**Then the sharper correction: both bodies were in the v1 processed text all along.**
+
+| clause | gazette | `data/processed/disability_act_2018_full.txt` | why `act_ref()` missed it |
+|---|---|---|---|
+| 38 | `38.TheCommissionshall-` (A109) | `(1)TheCommissionshall--` (**L614**) | OCR read `38.` as `(1)` |
+| 40 | `40.—(1) There shall be an Executive Secretary…` (A111) | `(1) There shall be an Executive Secretary for the Commission who shall-` (**L545**) | OCR dropped the numeral |
+
+The duplicate page **is** real (adjacent-page cosine **0.978 p5–p6** vs a 0.794 runner-up, dpi 100,
+16×16 mean-pooled, **mean-centred**) — it just did not cost cl.38 or cl.40.
+
+**Retires by name:** `ACT_KNOWN_ABSENT = {38, 40}` at **`scripts/audit_corpus.py:80`** (deleted,
+**not emptied**) · `audit_corpus.py`'s *"the pixels do not exist"* line · the 2026-09-13
+`LEARNING_JOURNAL.md` claim · the old standing fact below.
+
+**All 58 clauses are reachable and the gap manifest may end up empty.** *Scope limit: only pages
+1, 13, 14, 15 of 27 were OCRed. "All 58 clauses present" is a D2 verification task, not a finding.*
+
+### Finding 2 — the Constitution needs only the cheap fix to clear the gate
+
+**All 99 uncitable Constitution chunks are Arrangement-of-Sections material** — 88 under 60 words,
+and every one of the 11 at ≥60 words is *also* a numbered title listing (`"236 Practice and
+procedure"`). **Zero substantive body text is uncitable.** Excluding the Arrangement pages takes
+`general` 99 (4.7%) → ≈0 and deletes the `toc-trap` class **without touching `CONST_SIZE = 400`**.
+
+M3's 2104 → ~500 section-unit re-extract — the riskiest change in the whole plan — **is not needed
+for the gate** and defers to Phase E, where the dense arm actually wants it.
+
+### Finding 3 — M3's milestone order is backwards
+
+M3 runs M1 (width) → M2 (dense) → M3 (corpus). M2 ships `data/embed/chunks_gemini.f16.npy`, a
+**per-chunk** artifact keyed on a corpus sha256 — rebuilding the corpus afterwards invalidates
+every vector and forces a full re-embed. **Corpus first.** This is what `HANDOFF.md` already
+assumed by putting D before E; the playbook never said why.
+
+**Also measured:** the Act's **16 packed refs are all consecutive runs** (`cl. 3,4,5` … `cl. 56,57`)
+— pure 800-char cutting, fixable mechanically. The Factsheet's 19 packed refs are **disordered**
+(`Section 51,40`, `Section 50,45,54`) — `recursive_split(500/50)` cutting the S/N table mid-row.
+
+**The audit gate is `ref == "general"` ≤1% per doc** — the gate that removes the uncitable-chunk
+class named three separate times now (Act cl.19, `CT7.t2`, and the 25-of-62 uncitable Act chunks).
+
+### What `app.py` looks like now (Phase C, so Phase D does not re-derive it)
 
 - `render_turn(question, explicit, plain, history, turn_index) -> TurnPayload` — computes AND
   renders one new turn. Fused on purpose: `test_phase05.py` asserts the banner invariant on
@@ -161,18 +217,31 @@ reading why:
    forbids a display path that slices differently from `ask()`. Move the harnesses in the
    same commit or the shipped system detaches from every published number.
 
-**Phase D's own dependency, unchanged:** it needs a >10 MB download
-(`ncpwd.gov.ng/pdfs/6document.pdf`, the one untested lead for the missing Act cl.38/40)
-fetched locally, not via a fetch tool. Its audit gate is `ref == "general"` **≤1% per doc** —
-the gate that removes the uncitable-chunk class named three separate times now (Act cl.19,
-`CT7.t2`, and the 25-of-62 uncitable Act chunks).
+**Housekeeping.** `phase10/chat-core` → `phase10/chat-ui` → (`phase10/corpus-v2`) is about to be
+**three unpushed branches deep** off `main` — **still open**, worth deciding whether to push and
+PR the chat work before Phase D starts. `CLAUDE.md`'s *"Next up:
+`docs/phases/08_retrieval_upgrades.md`"* pointer is **stale** — fix it when `CLAUDE.md` is next
+opened, in D6. **DECIDED 2026-09-16:** the 14 MB gazette PDF **gets committed** to `data/raw/`
+(consistent with the already-tracked 5.2 MB Act and 8.5 MB Constitution; never read at boot, so
+the Render runtime is untouched) — in its **own commit** in D1, so the blob is easy to find later.
 
-## Next, in this order (full plan: `docs/phases/09_evidence_and_generation.md`)
+## Next, in this order
 
-Phase 08 steps 1 (synonym map), 2 (cite-constrain fix-B), 3 (judge) and 6a (answer cache)
-are **DONE 2026-09-11 and live**. A planning pass on 2026-09-11 then found three code facts
-that **change what should come next** — read `docs/phases/09_evidence_and_generation.md`
-before picking anything up. In short:
+**Updated 2026-09-16.** The phase ordering is now:
+
+| phase | what | playbook | quota |
+|---|---|---|---|
+| **D — NEXT** | **corpus v2** (Act re-OCR + manifest parse, Factsheet table, Constitution Arrangement exclusion, refusal re-calibration, re-baseline) | **`docs/phases/12_corpus_v2.md`** | **0** |
+| E | width / pool depth + dense retrieval + the Constitution section-unit re-extract | `10_corpus_rebuild_and_dense.md` **M1, M2** (reordered to here) | probe + embeddings |
+| F | fine-tune on free GPU + distil the offline tier | `10_...md` M4 | 0–20 |
+| G | fresh transcripts, judge, cross-turn citation drift | `10_...md` M5 + `11_chat.md` | ~42 over 2 days |
+
+**Why D before E:** M2's `data/embed/chunks_gemini.f16.npy` is a **per-chunk** artifact keyed on a
+corpus sha256. Embedding before the rebuild throws all of it away. See Finding 3 above.
+
+The older Phase 08/09 backlog below is **still open but now sits behind D**, and part of it is
+already overtaken — Phase 10 measured lexical retrieval as exhausted, and Phase D is the response.
+Read `docs/phases/09_evidence_and_generation.md` before picking any of it up. In short:
 
 - **Phase 08 steps 4/5 as written cannot reach a real user.** Both need a model at *query*
   time (step 4 a cross-encoder; step 5 to embed the incoming query — prebuilt chunk vectors
@@ -191,9 +260,11 @@ Order (owner-confirmed 2026-09-11, all four, under a **runtime-shippable-only** 
 2. ~~**Widen the evidence base (zero quota).**~~ **DONE 2026-09-13, PR #10.** 30 held-out
    questions; **held-out recall 0.420 vs frozen-10 0.925** (see the banner at the top).
    False-refusal 0/25; gate-level false-answer 5/5.
-3. **Shippable retrieval (zero quota) — NEXT.** BM25 re-rank *inside* the existing cosine gate
-   (step 4's win, no ONNX) + an offline-computed `synonyms_auto.json` (step 5's win, no
-   query-time model).
+3. **Shippable retrieval (zero quota).** ~~NEXT~~ — **BM25 was built and FALSIFIED 2026-09-13**
+   (a coin flip: ranks the expected chunk higher on 15 of 91 pairs, lower on 16). The
+   offline-computed `synonyms_auto.json` half is still open, but Phase 10 B/D supersede the
+   motivation: the hand-written map's weakest class is the one it exists to fix, and the corpus,
+   not the ranker, is the ceiling.
 4. **Generation fix (quota-paced).** Q3 answer-shape floor + the named `reverse_rel` fix in
    its own commit + a fresh 12-call generation pass.
 5. **Owner-side:** frames → GIF encode + README embed (`docs/demo/` + storyboard are
@@ -201,6 +272,16 @@ Order (owner-confirmed 2026-09-11, all four, under a **runtime-shippable-only** 
 
 ## Standing facts (don't re-derive)
 
+- ~~**Act cl.38 and cl.40 are absent from the source PDF; no OCR or VLM can recover them.**~~
+  **FALSIFIED 2026-09-16 — this was wrong for three days and the project acted on it.** Both
+  clause bodies are in `data/processed/disability_act_2018_full.txt` **right now**, at **L614**
+  (`(1)TheCommissionshall--`, whose `38.` OCR'd as `(1)`) and **L545** (`(1) There shall be an
+  Executive Secretary for the Commission who shall-`, whose `40.—` OCR'd away entirely). The
+  gazette copy has both numerals clean. The duplicate page 5–6 **is** real (adjacent-page cosine
+  0.978 vs a 0.794 runner-up) — it simply did not cost these two clauses. The error was inferring
+  *what* the duplicate cost without checking the text for the bodies. `ACT_KNOWN_ABSENT = {38, 40}`
+  at `scripts/audit_corpus.py:80` is a **false constant**, deleted in Phase D. **The no-stub /
+  no-paraphrase / no-model-knowledge rule stands regardless** — it governs real gaps.
 - ~~Q5 penalties = correct refusal ×4 runs~~ **SUPERSEDED 2026-09-11.** The synonym map
   closed the vocabulary gap (corpus says *offence/fine/imprisonment*, query says
   *penalties*): Q5 recall **0.000 → 0.250**, live-verified returning `[Act cl. 2]` /

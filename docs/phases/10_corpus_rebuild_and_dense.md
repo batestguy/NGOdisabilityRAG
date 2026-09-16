@@ -1,5 +1,42 @@
 # Phase 10 — Corpus rebuild + dense retrieval (planned 2026-09-13)
 
+> ## ⚠ AMENDED 2026-09-16 — read this before picking up any milestone below
+>
+> This playbook was written 2026-09-13, before anything in Phase 10 was built. Three of its
+> premises were measured on 2026-09-16 and **two are false**. Nothing below is deleted — a future
+> session must be able to see what was believed and why it was wrong — but three things are no
+> longer safe to execute as written.
+>
+> **1. M3 is SUPERSEDED by [`12_corpus_v2.md`](12_corpus_v2.md).** Do not execute M3. The
+> replacement is smaller, in a different order, and drops M3's riskiest change.
+>
+> **2. M3's cl.38/40 premise is FALSIFIED.** M3 says clauses 38 and 40 are *"not in the source at
+> all"* and *"no OCR can recover"* them. Both are **recoverable**, and in fact both bodies were
+> already present in the v1 processed text the whole time:
+>
+> | clause | authoritative gazette | `data/processed/disability_act_2018_full.txt` | why `act_ref()` missed it |
+> |---|---|---|---|
+> | 38 | `38.TheCommissionshall-` (page A109) | `(1)TheCommissionshall--` (**L614**) | OCR read the numeral `38.` as `(1)` |
+> | 40 | `40.—(1) There shall be an Executive Secretary…` (A111) | `(1) There shall be an Executive Secretary for the Commission who shall-` (**L545**) | OCR dropped the numeral entirely |
+>
+> The duplicate page **is** real — measured again 2026-09-16, adjacent-page cosine **0.978 for
+> p5–p6** against a 0.794 runner-up, on a dpi-100, 16×16 mean-pooled, **mean-centred** grayscale
+> signature. It just did not cost cl.38 or cl.40. The owner's untested lead turned out to be
+> *Federal Republic of Nigeria Official Gazette No. **10**, Vol. 106, 21 January 2019, Act No. 2,
+> pages A97–A122* (M3 guessed "No. 11"), and it has **no duplicate page at all**.
+>
+> Therefore `ACT_KNOWN_ABSENT = {38, 40}` at `scripts/audit_corpus.py:80` is a **false constant**
+> and is deleted in Phase D. The "no stub / no paraphrase / no model knowledge" rule in M3 stays
+> — it is about what to do *if* a gap is ever real.
+>
+> **3. M1 and M2 are REORDERED to AFTER corpus v2.** M2 ships `data/embed/chunks_gemini.f16.npy`,
+> a **per-chunk** artifact keyed on a corpus sha256. Running it before the corpus rebuild
+> invalidates every vector and forces a full re-embed. The corpus comes first. `HANDOFF.md`
+> already assumed this by putting Phase D before Phase E; this playbook never said why.
+>
+> M0 is **DONE** (2026-09-13). M1, M2, M4 and M5 remain valid **as sequenced after Phase D**, with
+> M5's re-baseline work partly absorbed into Phase D's D6.
+
 ## Goal
 
 A genuinely top-tier legal-aid chatbot at **$0.00**, with heavy offline work on free
@@ -74,11 +111,13 @@ Act clause numbers **19, 35, 38, 40** produce no `ref` anywhere. Each was traced
   invisible only because `act_ref()` infers refs from heading *shape*, and the gazette's
   marginal-note column is spliced into the body: `"37.The Council shall have power
   to-\nPower of the\nCouncil.\n(a) manage and superintend..."`. **Recoverable by parsing, free.**
-- **38 and 40 are not in the source at all.** `data/raw/disability_act_2018_full.pdf` is a pure
-  scan (27 pages, **0** embedded text chars — the Constitution and factsheet PDFs both *have*
-  text layers). Raw OCR pages 5 and 6 are the same physical page scanned twice (0.819
-  similarity, both PART II cl.3–4), so 27 raw pages cover 26 distinct pages of a 27-page
-  instrument. The missing page carries cl.38's opening and cl.40. **No OCR can recover it.**
+- ~~**38 and 40 are not in the source at all.**~~ **FALSIFIED 2026-09-16 — see the amendment box
+  at the top of this file.** What stands: the PDF is a pure scan (27 pages, **0** embedded text
+  chars) and pages 5–6 *are* the same physical page twice. What does **not** stand: the inference
+  that this cost cl.38 and cl.40. Both bodies are present in the v1 processed text at **L614** and
+  **L545**, unreffed only because OCR mangled their numerals — and both are clean in the gazette
+  copy, which has no duplicate page. **OCR recovered them.** Details in
+  [`12_corpus_v2.md`](12_corpus_v2.md), Finding 1.
 
 This matters more than ranking. The project's central invariant is *every legal claim carries a
 citation tag copied verbatim from the chunk header*. With 40% of Act chunks uncitable, that
@@ -162,6 +201,11 @@ still byte-identical.
 
 ### M1 — Widen the prompt, not the screen
 
+> **REORDERED 2026-09-16: runs AFTER Phase D (`12_corpus_v2.md`), in Phase E.** Still valid;
+> just not next. Note also that the **display** half (3 inline excerpts + one expander) already
+> landed in Phase 10 C — what remains here is the pool/prompt width, which Phase 10 B measured at
+> **test +0.000**, and it must move in the same commit as the harnesses.
+
 Branch `phase10/prompt-width`. Zero quota. The free, immediate win.
 
 Three budgets are conflated under one `top_n` today. Separate them:
@@ -186,6 +230,12 @@ update those assertions in the same commit.
 on screen · suites 03/04/05 green · `import app` clean.
 
 ### M2 — Dense retrieval via Gemini embeddings, fused by rank
+
+> **REORDERED 2026-09-16: runs AFTER Phase D (`12_corpus_v2.md`), in Phase E.** This is the
+> reordering that actually matters. `data/embed/chunks_gemini.f16.npy` is a **per-chunk** artifact
+> keyed on a corpus sha256; building it before the corpus rebuild invalidates every vector and
+> forces a full re-embed. Phase E also gets the Constitution section-unit re-extract that Phase D
+> deliberately defers (see `12_corpus_v2.md` D4) — the dense arm is what actually wants it.
 
 Branch `phase10/dense-gemini`. This is the quality step.
 
@@ -252,6 +302,26 @@ offline toggle present.
 
 ### M3 — Act parser, clause-aligned chunking, clean re-extraction
 
+> ## ⛔ SUPERSEDED 2026-09-16 by [`12_corpus_v2.md`](12_corpus_v2.md) — do NOT execute this milestone
+>
+> Kept in full because a future session must be able to read what was believed. Three specific
+> reasons it cannot be run as written:
+>
+> 1. **Its cl.38/40 premise is false.** Both clauses are recoverable; the gap manifest may end up
+>    empty. See the amendment box at the top of this file.
+> 2. **The Constitution re-extract (2104 → ~400–600 section units) is NOT needed for the gate.**
+>    Measured 2026-09-16: **all 99** uncitable Constitution chunks are Arrangement-of-Sections
+>    material — 88 under 60 words, and every one of the 11 at ≥60 words is *also* a numbered title
+>    listing (`"236 Practice and procedure"`, `"89 Power as to matters of evidence"`). **Zero
+>    substantive body text is uncitable.** Simply excluding the Arrangement pages takes `general`
+>    99 (4.7%) → ≈0 and deletes the `toc-trap` class **without touching `CONST_SIZE = 400`**. The
+>    re-extract — the riskiest change in this plan — defers to Phase E.
+> 3. **It runs third.** It must run first. See amendment point 3.
+>
+> What Phase D keeps from M3, near-verbatim: manifest-anchored parsing, the `Chunk` defaulted-field
+> trick, `act_ref()` demoted to a validator, the Factsheet S/N table parse, the refusal-floor
+> recalibration block, and the no-stub/no-paraphrase/no-model-knowledge rule.
+
 Branch `phase10/corpus-v2`. Zero quota. The stage that fixes the citation invariant.
 
 **Versioned, never destructive:** `build_corpus(version="v2")` with `v1` preserved verbatim —
@@ -289,7 +359,11 @@ fixed; per-doc imbalance falls from 95% to ~75%.
 **Factsheet — re-extract from its text layer**, parsing the S/N table so one row = one
 `Section N`. That is the source of its 19/48 packed refs.
 
-**Clauses 38 and 40.** Owner hunts for a born-digital Act first (PLAC/`placng.org`, National
+**Clauses 38 and 40.** ⛔ **RESOLVED 2026-09-16 — the hunt succeeded and this whole paragraph is
+moot.** Both clauses are recoverable, from the v1 text *and* from the gazette. Do not implement
+the `body_present: false` manifest, the corpus exclusion, or the *"My copy of the Act is missing
+clauses 38 and 40"* caption. The original text follows for provenance only.
+Owner hunts for a born-digital Act first (PLAC/`placng.org`, National
 Assembly, `nigeria-law.org`, ILO NATLEX, Official Gazette No. 11 Vol. 106 of 2019; also re-check
 `data/raw/disability_act_JONAPWD.html`, 162KB raw vs 1.5KB processed). If that fails: record
 `body_present: false` in `data/processed/act2018_manifest.json`, exclude them from the corpus,
@@ -447,7 +521,8 @@ LinkedIn) · the stray `D:NGORAG_review_judge.diff` (owner removes by hand).
 - **`test` is read once, at the end of a milestone, never tuned against.** A disappointing test
   number is the finding. `test2` is authored from v2 before v2 retrieval is measured.
 - **Never select a checkpoint or a fusion weight on dev or test.** Synthetic val split, by chunk.
-- **No stub chunk, no paraphrase, no model knowledge for cl.38/40.**
+- **No stub chunk, no paraphrase, no model knowledge** for any clause that turns out to be
+  missing. (cl.38/40 specifically are **not** missing — 2026-09-16. The rule stands anyway.)
 - **Retire questions, never edit them. Never merge new questions into an existing set.**
 - Every harness uses `select_top`, never its own `[:TOP_N]`.
 - `verify_expected` hard-crashes before printing if an expected number is missing — verify each
@@ -455,4 +530,10 @@ LinkedIn) · the stray `D:NGORAG_review_judge.diff` (owner removes by hand).
 
 ## Results
 
-*(none yet — planned 2026-09-13, no milestone started)*
+- **M0 DONE 2026-09-13** (`0e6615c`) — `recall_strict`, the recall@k curve, `scripts/audit_corpus.py`
+  and the sealed v1 baseline. This is what made Phase D's findings measurable at all.
+- **M1 / M2 / M4 / M5 — not started, and REORDERED after Phase D** (2026-09-16).
+- **M3 — SUPERSEDED, never started** (2026-09-16) → [`12_corpus_v2.md`](12_corpus_v2.md).
+
+*Phases 10 B (chat-core) and 10 C (chat UI) were inserted ahead of all of the above and are
+recorded separately in [`11_chat.md`](11_chat.md).*

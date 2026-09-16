@@ -1202,3 +1202,145 @@ The review also flagged the quota log and the *"AI-answer every new turn"* switc
 work beyond "wire the engine in and nothing else". Both were in the agreed Phase C scope; the
 reviewer had the diff and not the plan. Recorded rather than argued, because a scope question
 raised by someone reading only the code is worth answering in the docs once.
+
+
+---
+
+## 2026-09-16 — Phase D planning: a published claim, three days old, falsified by one download and one grep
+
+This session wrote no code. It went to write the Phase D playbook, started by checking the
+premises it was about to build on, and found that **two of the three were false**. The
+headline is not the playbook. It is this:
+
+> On 2026-09-13 this project concluded that Act clauses 38 and 40 were *"not in the source at
+> all"* and that *"no OCR and no VLM can recover pixels that were never captured."* That
+> conclusion was written into the learning journal, into `HANDOFF.md`'s standing facts, and —
+> the part that actually cost something — into **code**, as
+> `ACT_KNOWN_ABSENT = {38, 40}` at `scripts/audit_corpus.py:80`, a constant whose entire job
+> is to excuse two clauses from the coverage gate.
+>
+> **Both clause bodies were sitting in `data/processed/disability_act_2018_full.txt` the
+> whole time.**
+
+### How the wrong answer was reached, which is the interesting part
+
+The 2026-09-13 reasoning was not sloppy. It was a genuine measurement followed by an
+unchecked inference, and the measurement was *right*:
+
+- the Act PDF is a pure scan — 27 pages, **0** embedded text characters (re-confirmed today)
+- raw OCR pages 5 and 6 are the same physical page scanned twice (re-confirmed today:
+  adjacent-page cosine **0.978**, against a 0.794 runner-up — a clear outlier)
+- therefore 27 raw pages cover only 26 distinct pages of a 27-page instrument
+
+All true. Then came the step that failed: *therefore the lost page is the one carrying cl.38
+and cl.40.* That is an inference about **which** page was lost, and it was never checked
+against the one artifact that could check it — the extracted text. Nobody grepped for the
+clause bodies.
+
+Today's grep takes about four seconds:
+
+| clause | authoritative gazette | v1 processed text | why `act_ref()` missed it |
+|---|---|---|---|
+| 38 | `38.TheCommissionshall-` (A109) | `(1)TheCommissionshall--` (**L614**) | OCR read the numeral `38.` as `(1)` |
+| 40 | `40.—(1) There shall be an Executive Secretary…` (A111) | `(1) There shall be an Executive Secretary for the Commission who shall-` (**L545**) | OCR dropped the numeral entirely |
+
+The clauses were never missing. They were **unreffed**, for exactly the same reason the other
+uncitable Act chunks are unreffed: `act_ref()` infers refs from heading *shape*, and this scan
+mangles numerals. cl.38 and cl.40 were not a different problem from cl.19/35/37/54. They were
+the *same* problem, misdiagnosed as a harder one because a real, correctly-measured defect —
+the duplicate page — was sitting right next to them and looked like an explanation.
+
+**The lesson, stated so it generalises:** a correct measurement next to a plausible story is
+how a wrong conclusion gets published. The duplicate page was evidence that *something* was
+lost. It was never evidence about *what*. The check that would have caught it was cheaper
+than the measurement that produced it.
+
+### The download, and the honest limit on what it proves
+
+The owner fetched the untested lead to `6document.pdf` (14.1 MB). It is *Federal Republic of
+Nigeria Official Gazette No. **10**, Vol. 106, Lagos, 21 January 2019, Act No. 2, pages
+**A97–A122*** — the authoritative publication. (The old playbook guessed "No. 11 Vol. 106";
+worth noting that even the citation in the plan was wrong.) Like the existing copy it is 27
+pages with no text layer. Unlike the existing copy it has **no duplicate adjacent page**.
+
+Targeted OCR of gazette pages 13/14/15 returned `38.TheCommissionshall-` with its marginal
+note `Functions of the Commission.` (A109), the `(e)…(r) procure assistive devices for all
+disability types.` tail (A110), and `40.—(1) There` under `PART VIII` (A111).
+
+**What this does not prove:** only pages 1, 13, 14 and 15 of 27 were read. Fewer than half the
+document. The playbook says so in a box, because the failure being corrected here is precisely
+the failure of extrapolating from a partial read. *"All 58 clauses are present"* is written
+down as a **D2 verification task**, not as a finding.
+
+### A methodological note worth keeping: mean-centring is load-bearing
+
+Re-deriving the duplicate-page result nearly reproduced the original error in a new form. The
+first attempt rendered pages at dpi 36, mean-pooled to a 16×16 grayscale signature, and took
+the cosine — and reported **1.000 for essentially every adjacent pair, in both PDFs**. Scanned
+legal pages are ~90% white, so the uncentred vectors are dominated by a large shared constant
+and the cosine saturates. It detects nothing while looking exactly like a detector that works.
+
+Mean-centring each signature before normalising is what separates 0.978 from 0.794. It is now
+written into the playbook's verification recipe **with the reason attached**, because the
+recipe is the part that has to survive — a future session re-running this without centring
+would conclude "no duplicates anywhere" and be confidently wrong in the opposite direction.
+
+### Finding 2: the expensive change was not needed
+
+M3 planned to re-extract the Constitution from its text layer into section units, 2104 chunks
+→ ~400–600. That is the riskiest change in the entire Phase 10 plan: it moves every chunk
+length, which moves every cosine, which moves the refusal floor, which is the mechanism that
+manufactures false refusals — the worst failure this codebase has.
+
+It was planned to clear a gate: `ref=="general"` ≤1% per doc, currently 99/2104 = 4.7%.
+
+So the 99 were read. **All 99 are Arrangement-of-Sections material.** 88 are under 60 words.
+Every one of the 11 that clears 60 words is *also* a numbered title listing — `"236 Practice
+and procedure"`, `"89 Power as to matters of evidence"`. **Not one chunk of substantive
+constitutional body text is uncitable.**
+
+Which means excluding the Arrangement pages — a filter, not a re-extraction — takes 4.7% to
+≈0, clears the gate, and deletes the `toc-trap` class outright, **without touching
+`CONST_SIZE = 400`**. The re-extract still has value, but its value is to the *dense* arm, and
+it can be paid for in Phase E where something actually wants it.
+
+Reading the 99 rows took a few minutes and removed the highest-risk change from the phase. The
+general shape: **the plan's riskiest step existed to fix a number nobody had looked at the
+components of.** That is the same failure as Finding 1 wearing different clothes — an
+aggregate treated as a diagnosis.
+
+### Finding 3: ordering, and an artifact that would have been thrown away
+
+M3 sequenced M1 (width) → M2 (dense) → M3 (corpus). M2's deliverable is
+`data/embed/chunks_gemini.f16.npy`: a **per-chunk** embedding artifact keyed on a corpus
+sha256. Rebuilding the corpus after building it invalidates every vector.
+
+`HANDOFF.md` already had Phase D before Phase E, so the *sequence* in use was right. But it
+was right by accident — the playbook never stated the dependency, so nothing stopped a future
+session from working the playbook in its written order. The reason is now written down in both
+files. An ordering that is correct but unexplained is one session away from being reversed by
+someone tidying up.
+
+### Why M3 was superseded rather than edited
+
+M3 stays in the repo, in full, with amendment boxes. Deleting it would erase the record of
+what was believed on 2026-09-13 and why — and that record is the only thing that makes the
+correction legible. A future reader needs to be able to see the duplicate-page measurement,
+see that it was sound, and see that the inference on top of it was not. Amendment boxes sit at
+the top of the file, on M1, on M2, on M3 and on the specific cl.38/40 paragraph, because
+somebody skimming for their next task reads a section header, not a preamble.
+
+### What this cost, and what it bought
+
+Three days of a false constant in the coverage gate, and a planned user-facing caption — *"My
+copy of the Act is missing clauses 38 and 40 — for those, call DRAC"* — that would have told
+disabled users the tool could not help them with two clauses it could in fact quote verbatim.
+That is the part worth sitting with. The invariant this project cares most about is that every
+legal claim carries a real citation, and the failure mode it guards hardest against is
+fabricating law. This was the mirror image: **wrongly disclaiming law it actually had.** The
+no-stub rule protects against the first and says nothing about the second.
+
+What it bought: all 58 clauses reachable, the gap manifest probably empty, the riskiest change
+in the plan deferred, and a verification recipe — page count, text-layer check, mean-centred
+duplicate detection, targeted OCR, **then grep the extracted text** — written down with the
+last step no longer optional.
