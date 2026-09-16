@@ -29,16 +29,41 @@ md = app.helpline_banner_markdown()
 check("banner-has-tollfree", "08000-3000-100" in md)
 check("banner-has-whatsapp", "08000-3000-10" in md)
 src = (ROOT / "app.py").read_text(encoding="utf-8")
-i_banner = src.index("render_helpline_banner()\n\n    # Single routing seam")
-i_greet_branch = src.index('if mode == "greeting":')
-i_legal = src.index('render_legal(question, plain)')
-i_help = src.index('render_help(question)')
+# --- Phase 10 C RESCOPE (2026-09-16) ------------------------------------------
+# The five asserts below used to .index() into the WHOLE module. That was only
+# ever correct because run() held the entire answer flow. The flow now lives in
+# render_turn(), and in file order `def render_helpline_banner` sits AFTER
+# `def render_help` -- so a module-wide `i_banner < i_help` would fail on source
+# layout alone while the RENDERED order is exactly what it always was. Scoped to
+# render_turn()'s body: same property, asserted where it is actually true.
+turn_body = src.split("def render_turn")[1].split("\ndef ")[0]
+run_body = src.split("def run()")[1].split("\ndef ")[0]
+i_banner = turn_body.index("render_helpline_banner()\n\n    # Single routing seam")
+i_greet_branch = turn_body.index('if mode == "greeting":')
+# was 'render_legal(question, plain)' -- the call gained turn_index/retrieval_query
+i_legal = turn_body.index("render_legal(question, plain")
+# was 'render_help(question)' -- the call gained turn_index/slots
+i_help = turn_body.index("render_help(question")
 check("banner-called-before-legal", i_banner < i_legal)
 check("banner-called-before-greeting", i_banner < i_greet_branch)
 check("seam-routes-all-modes", 'resolved = resolve_mode(question, explicit)' in src)
 check("banner-called-before-help", i_banner < i_help)
-check("banner-at-top-of-run", src.index("render_helpline_banner()") < src.index('st.text_input('))
-check("no-wide-columns-for-banner", "st.columns" not in src.split("render_helpline_banner")[0][-200:] or True)
+# was: src.index("render_helpline_banner()") < src.index("st.text_input(") --
+# module-wide, so it compared two `def` lines and was very nearly vacuous.
+# Scoped to run(), where the claim is real; the single-turn form is gone, so the
+# input the banner must precede is now st.chat_input.
+check("banner-at-top-of-run",
+      run_body.index("render_helpline_banner()") < run_body.index("st.chat_input("))
+# Was: `"st.columns" not in src.split("render_helpline_banner")[0][-200:] or True`
+# -- the trailing `or True` made it pass unconditionally, so it asserted nothing
+# (flagged in review 2026-09-16). Replaced with the property its NAME claims,
+# in a form that can fail: every render_helpline_banner() CALL sits at function
+# top level (4-space indent) and is never nested inside a `with col:` block,
+# which is how a banner ends up squeezed into a narrow column at 360px.
+_banner_calls = re.findall(r"^( *)render_helpline_banner\(\)", src, re.M)
+check("no-wide-columns-for-banner",
+      len(_banner_calls) >= 3 and all(len(i) == 4 for i in _banner_calls),
+      str([len(i) for i in _banner_calls]))
 # banner function body must not use st.columns
 banner_body = src.split("def render_helpline_banner")[1].split("def ")[0]
 check("banner-single-column", "columns" not in banner_body)
@@ -251,5 +276,156 @@ check("font-still-system-sans", 'font = "sans-serif"' in toml
 # Base CSS before the HC gate still token-only (scrims live after the gate):
 check("css-base-still-token-only-2", not hex_re.search(fn_src[:gate]),
       str(hex_re.findall(fn_src[:gate])[:5]))
+
+# 14. Phase 10 C: the multi-turn chat UI ---------------------------------------
+# src/chat.py was built and measured headless in Phase B (+0.107 strict recall
+# on chat_dev, +0.130 on chat_test). These asserts cover the UI contract that
+# spends that gain. Still zero LLM, zero network, zero quota.
+replay_body = src.split("def replay_turn")[1].split("\ndef ")[0]
+hist_body = src.split("def render_history")[1].split("\ndef ")[0]
+ai_body = src.split("def render_ai_expander")[1].split("\ndef ")[0]
+
+# The Phase B engine is actually wired, and contextualisation happens BEFORE the
+# routing seam (a follow-up's retrieval query is decided before anything else).
+check("turn-contextualises-before-seam",
+      turn_body.index("chat.contextualise(history, question)") < i_banner
+      and turn_body.index("chat.merge_help_slots(history, question)") < i_banner)
+check("turn-threads-retrieval-query", "retrieval_query=retrieval_query" in turn_body
+      and "slots=slots" in turn_body)
+check("ai-turn-uses-history-for-prompt", "chat.history_for_prompt(prior)" in src
+      and "chat.cross_turn_drift(" in src)
+check("drift-surfaced-not-absorbed", "Cross-turn citation drift" in src
+      and "context, not evidence" in src)
+
+# Replay must NOT recompute. Streamlit reruns the whole script on every
+# interaction; a history loop that re-queried each turn would cost N retrievals
+# per keystroke, and several times that again once the dense arm lands.
+check("replay-no-recompute",
+      not any(s in replay_body for s in ("load_retriever", "offline_legal_hits",
+                                         "resolve_mode", "help_display",
+                                         "route_question")),
+      "replay_turn renders from the stored TurnPayload only")
+check("replay-reads-stored-routing", "payload.routing.get" in replay_body
+      and "payload.excerpts" in replay_body)
+
+# Helplines first on EVERY turn -- live and replayed alike -- and above history.
+check("banner-in-render-turn", "render_helpline_banner()" in turn_body)
+check("banner-in-replay-turn", "render_helpline_banner()" in replay_body)
+check("banner-above-history-in-run",
+      run_body.index("render_helpline_banner()") < run_body.index("render_history("))
+
+# Read-aloud is PER TURN (it speaks that turn's own text), not one page-level
+# button that would read whichever answer happened to render last.
+check("readaloud-per-turn", "read_aloud_html" in turn_body
+      and "read_aloud_html" in replay_body and "read_aloud_html" not in run_body)
+
+# Both AI opt-ins default OFF: the per-turn expander and the every-turn switch.
+check("ai-expander-collapsed-per-turn",
+      'st.expander("🤖 Answer with AI' in ai_body and "expanded=False" in ai_body)
+check("ai-button-keyed-per-turn", 'key="llm-go-%d" % turn_index' in ai_body)
+check("ai-every-turn-defaults-off", '"ai_every_turn": False' in run_body
+      and 'st.sidebar.checkbox("AI-answer every new turn", value=False' in run_body)
+
+# Chat surface: chat_input in, the single-turn form out.
+check("chat-input-present", 'st.chat_input("Type your question here"' in src)
+check("no-form-widget", "st.form" not in src)
+check("chat-message-bubbles", 'st.chat_message("user")' in hist_body
+      and 'st.chat_message("assistant")' in hist_body)
+check("clear-conversation-control",
+      'st.sidebar.button("Clear conversation"' in run_body
+      and '"turns"] = []' in run_body)
+check("history-uses-turnpayload", "from chat import TurnPayload" in src
+      and "TurnPayload(question=question" in turn_body
+      and 'st.session_state["turns"].append(turn)' in run_body)
+
+# --- PRIVACY: the conversation reaches no file --------------------------------
+# History lives in st.session_state for the life of the browser session and
+# nowhere else. This population discloses abuse and coercion; a log that holds
+# none of it cannot leak any of it.
+import json as _json  # noqa: E402
+import tempfile as _tf  # noqa: E402
+from datetime import date as _date  # noqa: E402
+
+from chat import TurnPayload as _TP  # noqa: E402
+
+_sentinel = "SENTINEL-my-husband-locked-me-in-do-not-persist"
+_qlog = Path(_tf.mkdtemp()) / ".quota_log.json"
+
+
+class _FakeSt:
+    """Stand-in for streamlit carrying a conversation full of sentinel text."""
+
+    session_state = {"turns": [_TP(question=_sentinel, answer=_sentinel)],
+                     "last_q": _sentinel}
+
+
+_orig_st = app._st
+app._st = lambda: _FakeSt()
+try:
+    app.quota_log_record("gemini-2.5-flash", path=_qlog)
+    app.quota_log_record("gemini-2.5-flash", path=_qlog)
+finally:
+    app._st = _orig_st
+_blob = _qlog.read_text(encoding="utf-8")
+check("quota-log-holds-no-conversation", _sentinel not in _blob, _blob.strip())
+check("quota-log-counts-only",
+      _json.loads(_blob) == {_date.today().isoformat(): {"gemini-2.5-flash": 2}},
+      _blob.strip())
+# Fails open like rag._cache_write: a log we cannot write is still a working
+# assistant. (Path under a FILE, so mkdir cannot succeed on any platform.)
+_bad = Path(__file__) / "nested" / "x.json"
+check("quota-log-fails-open",
+      app.quota_log_record("gemini-2.5-flash", path=_bad) is None
+      and app.quota_log_counts(path=_bad) == {})
+# The ONLY writer in app.py is quota_log_record, and its body never sees turns.
+_qbody = src.split("def quota_log_record")[1].split("\ndef ")[0]
+check("only-writer-is-quota-log",
+      not re.search(r"write_text\(|json\.dump|to_csv\(|to_json\(|pickle\.",
+                    src.replace(_qbody, "")))
+check("quota-log-never-sees-turns",
+      "turns" not in _qbody and "session_state" not in _qbody)
+check("history-is-session-state-only", 'st.session_state["turns"]' in src)
+check("quota-readout-labelled-honestly", "THIS INSTANCE SINCE RESTART" in src
+      and "quota_log_counts()" in run_body)
+
+# --- Plumbing byte-identity ----------------------------------------------------
+# Every new parameter is defaulted, and omitting it must change nothing. This is
+# what lets test_phase03/04 and every Phase 08-10 eval number stand unmoved.
+import router as _router  # noqa: E402
+
+_q = "What are my education rights under the Act?"
+check("help-payload-slots-none-identical",
+      _router._help_payload("find blind support in Lagos", df=None, k=3)
+      == _router._help_payload("find blind support in Lagos", df=None, k=3,
+                               slots=None))
+_hp_c = app.help_display("and their phone number?",
+                         slots={"disability": "blind", "location": "lagos"})
+check("help-payload-slots-honoured",
+      _hp_c["slots"] == {"disability": "blind", "location": "lagos"}
+      and len(_hp_c["records"]) == 3, str(len(_hp_c["records"])))
+check("retrieval-query-default-identical",
+      app.offline_legal_hits(_q, retr)
+      == app.offline_legal_hits(_q, retr, retrieval_query=_q))
+check("retrieval-query-separates-query-from-question",
+      app.offline_legal_hits(_q, retr, retrieval_query="employment dismissal")
+      != app.offline_legal_hits(_q, retr))
+check("turnpayload-new-fields-defaulted",
+      _TP(question="x").drift == [] and _TP(question="x").help_payload == {})
+# The prompt-version caption must EVALUATE ask()'s condition, not approximate
+# it with `turn_index > 0` (review 2026-09-16). history_for_prompt() applies
+# CARRY_WINDOW and drops blank turns, so a turn can have predecessors and still
+# render a single-turn prompt.
+import rag as _rag  # noqa: E402
+
+check("prompt-id-reads-rag-constants",
+      app._prompt_id(False, False) == _rag.PROMPT_VERSION
+      and app._prompt_id(True, True) == _rag.CHAT_PROMPT_VERSION + "-plain")
+check("multi-turn-is-asks-own-condition",
+      app._multi_turn(None) is False
+      and app._multi_turn([_TP(question="   ")]) is False   # blank -> no history
+      and app._multi_turn([_TP(question="what are my rights?")]) is True)
+check("plain-caption-takes-prior-not-index",
+      "render_plain_caption(plain, prior)" in src
+      and "from rag import _render_history" in src)
 
 print("\nALL %d ASSERTS PASSED" % len(passed))

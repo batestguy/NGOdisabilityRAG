@@ -1007,3 +1007,198 @@ instance** of the uncitable-chunk class alongside the recorded "Act cl.19 is unc
 and the 25-of-62 uncitable Act chunks. A better-ranked list of things you may not cite is
 still a list of things you may not cite — which is the Phase D argument, now with one more
 piece of evidence that arrived from a completely different direction.
+
+---
+
+## 2026-09-16 — Phase 10 C (chat UI): spending a measured gain without touching the measurement
+
+Phase B ended with a number and no user: contextualisation was worth **+0.107 strict recall
+on `chat_dev` and +0.130 on `chat_test`**, and `app.py` was still a single-turn form with
+`st.text_input`, three buttons and one answer per page. Nothing in `src/chat.py` was
+reachable by a person with a question.
+
+So this session had exactly one job — wire the engine to the surface — and the discipline
+that mattered was **not** writing good Streamlit. It was making sure that a 700-line UI
+restructure could be shown, afterwards, to have changed no number at all. `eval_chat.py` and
+`eval_heldout.py` were run and captured **before** the first edit, and re-run after: stdout
+**byte-identical to `368f083`** in both cases. `eval_phase06.py` still hashes
+`CE716FB3…5F19`. `requirements.txt` diff against `main` is empty. Any movement would have
+been a bug, not a result, and the only way to say that with confidence was to have the
+baseline in hand before touching anything.
+
+### The rescope that was necessary, not cosmetic
+
+`test_phase05.py:32-39` asserted "helplines first, always" by `.index()`-ing into the whole
+of `app.py` and comparing offsets. That worked only because `run()` happened to contain the
+entire answer flow. Moving the flow into `render_turn()` puts `def render_helpline_banner`
+*after* `def render_help` in file order, so `i_banner < i_help` would have gone red on source
+layout while the rendered order was exactly what it had always been.
+
+The temptation there is to delete the assert, or to reorder the functions to keep it happy.
+Both are wrong for the same reason: the property is real, and it was being asserted in the
+wrong scope. It now scopes to `render_turn`'s body, where the adjacency it checks is actually
+true — and every one of the six moved lines carries an inline comment saying what it used to
+assert and why it moved. **104 → 137 asserts, all green.**
+
+A related observation worth keeping: `:40` (`banner-at-top-of-run`) was **nearly vacuous**
+before this session. Module-wide, it compared the position of two `def` lines. Scoping it to
+`run()` is the first time that assert has meant what its name claims.
+
+### Compute and render stayed fused, on purpose
+
+`render_turn` both computes a turn and draws it, which is not how one would normally factor
+this. It is fused because the banner-ordering guarantee is asserted on the *literal adjacency*
+of `render_helpline_banner()` and the `# Single routing seam` comment. Split compute from
+render and that adjacency has nowhere to live — the invariant becomes unassertable at the one
+place it is true. A slightly awkward function is a cheap price for keeping the project's most
+load-bearing rule mechanically checked.
+
+### Replay, and the cost of not replaying
+
+Streamlit re-executes the entire script on every interaction: every keystroke in the chat box,
+every checkbox, every theme flip. A history loop that re-queried each turn would pay **N
+retrievals per rerun**, and several times that again once the dense arm lands in Phase E. So
+`replay_turn` renders from the stored `TurnPayload` and nothing else, and that is now
+**asserted** rather than intended — its body may contain no `load_retriever`,
+`offline_legal_hits`, `resolve_mode`, `help_display` or `route_question`.
+
+That assert is what forced the first disclosed deviation from the plan. The plan said
+`TurnPayload` gains "`drift`. Nothing else." But replaying a *help* turn with no stored
+payload means calling `router._help_payload` live on every rerun — precisely what
+`replay_turn` exists to prevent. So `help_payload: dict` went in beside `drift: list`. Both
+are defaulted; neither is read by `eval_chat.py` or `eval_heldout.py`, which work on the raw
+conversation JSON and never construct a `TurnPayload`. No measured number can move because of
+them. The deviation is small and it is disclosed in three places rather than absorbed
+silently, which is the part that matters.
+
+### A render worth deleting, and the second retrieval hiding behind it
+
+Phase 05's `render_legal` called `answer_legal(question, ..., use_llm=False)` purely so it
+could print `route["prompt"]` — the prompt-version string — in a caption. In a single-turn UI
+that is one extra retrieval per page view and nobody notices. In a chat UI it is **a second
+full retrieval per turn, per rerun**, on top of the one that produced the excerpts.
+
+It is now `_prompt_id()`, four lines that read `PROMPT_VERSION` / `CHAT_PROMPT_VERSION` from
+`src/rag.py` and mirror the single line in `ask()` that chooses between them — so the caption
+cannot drift from what `build_prompt` actually renders, and costs nothing. The thing the probe
+was "proving" (that the plain flag threads through) is still proven, in the place proof
+belongs: the `answer_legal` asserts in `test_phase05.py`, untouched.
+
+The general lesson: a debug artifact that is free at one call rate can be expensive at
+another, and a UI rewrite is when you find out.
+
+### What the browser told us that the asserts could not
+
+Three things were confirmed by running it, not by reading it.
+
+**Per-turn read-aloud does not collide.** `read_aloud_html()` hardcodes the element ids
+`drlca-speak` and `drlca-speech`, and eleven asserts ride on the function staying
+byte-identical. N turns means N copies of those ids on one page, which looks like an obvious
+bug — except each `components.html` is its own iframe *document*, so `getElementById` inside
+each frame resolves to that frame's own nodes. Verified by reading `#drlca-speech` out of
+every frame and seeing different text per turn. **The real cost is the one nobody would have
+predicted:** each read-aloud iframe also carries the shared theme watch, with its own
+`setInterval(apply, 1000)`. An N-turn conversation runs N pollers. That is **recorded and not
+fixed** — `test_phase05.py:182` requires the watch to be present, so removing or centralising
+it is a deliberate, asserted decision, not a drive-by in a chat phase.
+
+**A latent Streamlit bug had been shipped since Phase 05.** `try_voice_input()` set
+`st.session_state["q"]` *after* the `q`-keyed `st.text_input` had already rendered in the same
+run — which Streamlit forbids outright. It never fired because the mic path is owner-gated and
+nobody had exercised it end to end. Restructuring the input surface is what surfaced it: the
+mic now writes `voice_draft`, and `render_voice_draft()` copies it into `q` **before**
+instantiating the widget. Clearing after Send works the same way, one run later. Voice keeps
+its editable-draft review step for the reason the plan gives — `st.chat_input` cannot be
+pre-filled, and without the review step a mis-transcription becomes a submitted turn on a
+service where the question decides which law gets searched.
+
+**Slot memory works at conversational distance.** *"I'm deaf"* on its own routes to
+**clarify** — the router is stateless and sees one thin string. Two turns later *"anywhere in
+Kano?"* still answers **NNAD**, because `chat.merge_help_slots` carried `disability=deaf`
+across the intervening clarify turn. That is the Phase B design paying out in a way a unit
+test shows but a demo makes obvious.
+
+### Privacy, stated as a file that does not exist
+
+The strongest evidence from the whole session is negative: after a full four-turn
+conversation, **neither `scripts/.answer_cache.json` nor `scripts/.quota_log.json` existed at
+all**. The offline path wrote nothing because it had nothing to write. The new quota log holds
+`{"YYYY-MM-DD": {"model": 3}}` — a date, a model name, an integer — and `test_phase05.py` now
+proves it by calling `quota_log_record` with a sentinel-bearing conversation in a stubbed
+session state and asserting the sentinel is absent from the written bytes, plus a structural
+check that the *only* writer in `app.py` is that function and that its body never touches
+`turns`.
+
+The readout is labelled **"this instance since restart"**, never "today". On the free host the
+filesystem is ephemeral and the instance sleeps after 15 minutes idle, so the number is a
+floor and saying otherwise would be a small, quiet lie in the direction of comfort. Cache
+replays are not counted either — they spend no quota, and counting them would over-report.
+
+### The offline failure paths, proven without spending the thing being tested
+
+"Test it with the key removed, the quota exhausted, and the network down" is easy to write and
+awkward to do: a `GOOGLE_API_KEY` was live in the shell the Streamlit server inherited, so
+clicking **Generate AI answer** once would have spent real quota against a phase whose budget
+is zero. All three were proven headlessly instead, by substituting `app.answer_legal` with the
+three failure shapes and driving `_run_ai_turn` directly. In every case the answer stays
+`None` — **pending, never faked** — no quota is recorded, and the user sees one
+plain-language warning with no traceback. This is the same argument `test_phase09_ops.py`
+makes about failover: proving it live means deliberately destroying the resource you are
+trying to conserve.
+
+### Width, and the temptation to fold a free change into a busy phase
+
+The older plan folded the width change (`k=20/doc`, 12 chunks to the prompt) into this phase
+alongside the display split. It did not land, and the reason is worth keeping. A display path
+that sliced differently from `ask()` would show the user a system nobody measures —
+`offline_legal_hits`' own docstring says exactly that — and both `eval_chat.py:106-108` and
+`eval_heldout.py` measure `k=3/doc, top_n=6`. Changing the UI without moving the harnesses in
+the same commit detaches the shipped system from every number in the playbook. Phase B had
+already measured the width change at **test +0.000**, so there was nothing to lose by waiting.
+It moves in Phase E, with the harnesses, where the dense arm actually needs the deeper pool.
+
+The **display** split did land — 3 excerpts inline, the rest behind one fold — because that is
+presentation. In a single-turn UI six excerpt cards *were* the page; in a conversation they are
+six cards between the user and their next question.
+
+### Recorded, not changed
+
+In **dark mode and high contrast together**, the sidebar computes to `#010409` rather than the
+forced `#000`: `body.drlca-dark section[data-testid='stSidebar']` and
+`body:has(.drlca-hc-on) section[...]` have equal specificity, and the dark rule is emitted
+later in `accessibility_css()`. Contrast against white text is ~19:1, so it is cosmetic, it
+predates this phase, and `accessibility_css()` was not opened during it. Logged here rather
+than fixed, because a one-line CSS nudge inside a chat-UI commit is how CSS regressions get
+attributed to the wrong phase.
+
+### What the review caught, and the one that was actually interesting
+
+Fresh eyes on the diff found no blocking issue, and independently reproduced the claims worth
+doubting — the widget-ordering audit, that no fixed key renders twice in one script run, that
+`src/router.py` gained no module-level state, and that `write_text` appears nowhere in
+`app.py` outside `quota_log_record`. Two things were taken.
+
+The interesting one is a lesson about **how a comment can be more absolute than its code**.
+`_prompt_id()` decided "is this a multi-turn prompt?" from `turn_index > 0`, and its docstring
+said the caption "cannot drift from what `build_prompt` actually renders". `ask()` does not
+branch on a turn index — it branches on `rag._render_history(history)` being non-empty, and
+`chat.history_for_prompt()` sits in between applying `CARRY_WINDOW` and dropping blank turns.
+The two agree today, and only by caller discipline. That is exactly the kind of agreement that
+survives a review and dies a year later to an unrelated change, with no test to notice.
+`_multi_turn(prior)` now calls the same two functions `ask()` calls, `render_plain_caption`
+takes `prior` instead of a boolean, and three asserts pin it. The fix is four lines. **The
+comment was the defect** — the code was merely lucky.
+
+The second was a **pre-existing assert that could not fail**:
+`check("no-wide-columns-for-banner", … or True)` had been passing unconditionally since Phase
+05, quietly padding every assert count this project has published. It now checks the property
+its name claims — that every `render_helpline_banner()` *call site* sits at 4-space function
+top level, never nested in a `with col:` — and can go red. The count went 134 → 137, and one
+of those three is an assert that already existed and meant nothing. Worth saying plainly: a
+suite grows by counting, and a tautology is the one kind of growth that makes the number less
+true rather than more.
+
+The review also flagged the quota log and the *"AI-answer every new turn"* switch as feature
+work beyond "wire the engine in and nothing else". Both were in the agreed Phase C scope; the
+reviewer had the diff and not the plan. Recorded rather than argued, because a scope question
+raised by someone reading only the code is worth answering in the docs once.

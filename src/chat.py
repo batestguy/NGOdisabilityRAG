@@ -281,6 +281,16 @@ class TurnPayload:
     ctx_meta: dict = field(default_factory=dict)  # contextualise() meta
     slots: dict = field(default_factory=dict)     # merge_help_slots() output
     refused: bool = False
+    # Phase C (UI) additions. Both DEFAULTED, both write-only from the UI's
+    # point of view, and neither is read by any eval: scripts/eval_chat.py and
+    # scripts/eval_heldout.py never construct a TurnPayload (they work on the
+    # raw conversation JSON), so no measured number can move because of them.
+    drift: list = field(default_factory=list)     # cross_turn_drift() output
+    # The help branch's replayable payload (router._help_payload output:
+    # records / meta / slots / needs_confirmation / confirm_prompt). It lives
+    # here for the same reason `excerpts` does -- re-rendering a stored help
+    # turn must not re-run the NGO lookup on every Streamlit rerun.
+    help_payload: dict = field(default_factory=dict)
 
     @property
     def tags(self) -> list:

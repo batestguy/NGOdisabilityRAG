@@ -32,3 +32,11 @@ scripts/.judge_phase06_checkpoint.json
 # marked cached=True so a replay can never be written up as a fresh call.
 scripts/.answer_cache.json
 scripts/.answer_cache.tmp
+
+# Quota readout (Phase 10 C). COUNTS ONLY -- {"YYYY-MM-DD": {"model": 3}}: a
+# date, a model name and an integer, never a word of any conversation. Local and
+# ephemeral by design -- on the free host the filesystem is wiped on restart, so
+# it is a floor on this instance's spend, never a day's total, and there is
+# nothing in it worth versioning.
+scripts/.quota_log.json
+scripts/.quota_log.tmp

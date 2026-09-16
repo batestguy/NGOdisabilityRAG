@@ -1,6 +1,65 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-15)
+# HANDOFF — start here (60 seconds, updated 2026-09-16)
 
-> **Latest (2026-09-15): Phase 10 B (chat-core) DONE. Zero Gemini calls spent.**
+> **Latest (2026-09-16): Phase 10 C (chat UI) DONE. Zero Gemini calls spent.**
+> Branch `phase10/chat-ui`, off `phase10/chat-core`. Playbook: `docs/phases/11_chat.md`
+> (Step C results). **DRLCA is a chatbot now** — `streamlit run app.py` gives you a
+> multi-turn conversation, not the single-turn form.
+>
+> **This phase spent Phase B's gain and measured nothing new.** No retrieval, scoring, corpus
+> or prompt change — so `eval_chat.py` and `eval_heldout.py` were *required* to reproduce
+> `368f083` exactly, and did: **byte-identical stdout**. `eval_phase06.py` still hashes
+> `CE716FB3…5F19`. `git diff --stat main -- requirements.txt` **empty**. Baselines were
+> captured **before** the first edit, which is the only reason that can be claimed.
+>
+> `app.py` → **`render_turn`** (computes + renders one new turn; compute and render stay
+> fused because the banner invariant is asserted on literal source adjacency inside it) ·
+> **`replay_turn`** (renders a stored `TurnPayload` — **no retrieval, no router, no
+> network**, now asserted) · `render_history` · a `st.chat_input`-driven `run()`.
+> `src/router.py` gained **one defaulted arg** and **stays stateless**.
+> **`test_phase05.py` 104 → 137, all green**, 6 rescoped with an inline note each.
+>
+> **Two deviations from the plan, disclosed not absorbed:** (1) a **second** defaulted
+> `TurnPayload` field, `help_payload` — without it, replaying a help turn forces a live
+> router call every rerun, the exact thing `replay_turn` exists to prevent; neither new field
+> is read by any eval. (2) the per-turn `answer_legal(..., use_llm=False)` **probe was
+> deleted** — it existed only to print the prompt-version string and cost **a whole second
+> retrieval per turn per rerun**; now `_prompt_id()`, reading the constants from `src/rag.py`.
+>
+> **Width/pool depth did NOT land here** (the older plan had it in this phase). `k=3/doc,
+> top_n=6` is what both harnesses measure; Phase B measured the change at **test +0.000**. It
+> moves in **Phase E**, in the same commit as the harnesses. The **display** split (3
+> excerpts inline + rest in one fold) did land — that is presentation, not retrieval.
+>
+> **Privacy: history is `st.session_state` only.** After a full four-turn conversation
+> **neither `scripts/.answer_cache.json` nor `scripts/.quota_log.json` existed at all** — the
+> offline path wrote nothing. The new quota log (gitignored) holds counts only,
+> `{"YYYY-MM-DD": {"model": 3}}`, and the sidebar says *"THIS INSTANCE SINCE RESTART"*, never
+> *"today"* — the free host's filesystem is ephemeral and it sleeps after 15 min.
+>
+> **Browser-verified** (Chrome/DevTools, no key spent): ellipsis *"so can they fire me?"*
+> carried on `unbound-pronoun:they`; *"I'm deaf"* → clarify, then *"anywhere in Kano?"* two
+> turns later still answers **NNAD** from the carried slot; banner at page top **and** leading
+> every assistant turn; per-turn read-aloud genuinely isolated (each `components.html` is its
+> own iframe document); both AI toggles OFF; Clear conversation works; 360 px no overflow;
+> dark + HC coherent. The three AI-failure paths (no key / 429 daily cap / network down) were
+> proven **headlessly at zero quota** — `answer` stays `None`, **pending, never faked**.
+>
+> **Latent bug fixed in passing:** `try_voice_input()` wrote `session_state["q"]` *after* the
+> `q`-keyed widget had rendered, which Streamlit forbids. It never fired because the mic path
+> is owner-gated. It now writes `voice_draft`, copied into `q` before instantiation.
+>
+> **Fresh-eyes review: no blocking issues, verdict ship.** Two fixes taken (→ **137** asserts):
+> `_prompt_id()` decided multi-turn from `turn_index > 0` while `ask()` branches on
+> `rag._render_history()` being non-empty — equivalent today only by caller discipline, now
+> `_multi_turn(prior)` calls the same two functions `ask()` calls; and a **pre-existing
+> tautological assert** (`no-wide-columns-for-banner` ended in `or True`, padding every count
+> published since Phase 05) was rewritten so it can fail. Both evals re-run after: still
+> byte-identical to `368f083`.
+>
+> **Next: Phase D — corpus v2** (`docs/phases/10_corpus_rebuild_and_dense.md`). See the
+> **PHASE D — START HERE** section below.
+
+> **Previous (2026-09-15): Phase 10 B (chat-core) DONE. Zero Gemini calls spent.**
 > Branch `phase10/chat-core`. Playbook: `docs/phases/11_chat.md`. Full run:
 > `scripts/baseline_chat_2026-09-15.txt`.
 >
@@ -41,19 +100,15 @@
 > **Unmeasured on purpose:** cross-turn citation drift needs a generated answer to read, so it
 > costs quota. `chat.cross_turn_drift()` is wired and runs in Phase G.
 >
-> **Next: Phase C — the chat UI** (`phase10/chat-ui`, zero quota). See `docs/phases/11_chat.md`
-> and the **PHASE C — START HERE** section immediately below, which already contains the
-> `app.py` reconnaissance so you do not have to re-derive it.
+> ~~**Next: Phase C — the chat UI.**~~ **DONE 2026-09-16** — see the banner at the top.
 
-## Session close 2026-09-15 — what is done, what is NOT
+## Session close 2026-09-16 — what is done, what is NOT
 
-**Done and committed this session:** Phase 10 **B only** (`368f083` on `phase10/chat-core`).
-**Gemini spend this session: ZERO.** Nothing is pushed; `phase10/chat-core` is 8 commits
-ahead of `main` and has not been PR'd.
+**Done this session:** Phase 10 **C only**, on `phase10/chat-ui` (branched off
+`phase10/chat-core`). **Gemini spend this session: ZERO.** Nothing is pushed.
 
-**Not started:** Phases **C, D, E, F, G** of the chat/corpus plan. Phase B's deliverables are
-headless by design — **there is no chat UI yet.** `app.py` is untouched and still the
-single-turn form. `streamlit run app.py` gives you the old app, exactly as before.
+**Not started:** Phases **D, E, F, G**. Phase C touched no retrieval parameter, no corpus
+file and no prompt string — the chat UI is a surface for Phase B's engine and nothing more.
 
 Three of the remaining phases have hard external dependencies the next session should know
 about before planning:
@@ -68,147 +123,49 @@ about before planning:
 Working tree is clean apart from the known stray `D:NGORAG_review_judge.diff` (0 bytes,
 U+F03A in the name, in no commit, deletion permission-blocked — still needs removing by hand).
 
-## PHASE C — START HERE (chat UI, zero quota, branch `phase10/chat-ui`)
+## PHASE D — START HERE (corpus v2, `docs/phases/10_corpus_rebuild_and_dense.md`)
 
-Everything in this section was read and verified on 2026-09-15. Line numbers are from
-`368f083`.
+The Phase C reconnaissance that used to live here is **spent** — the chat UI is built, and
+the `app.py` line numbers it quoted are gone. What Phase C actually shipped is in
+`docs/phases/11_chat.md` (Step C results) and the 2026-09-16 journal entry; read those, not a
+reconstruction.
 
-**The contract Phase B already gives you** (all in `src/chat.py`, all offline, all tested):
+**What `app.py` looks like now**, so the next session does not have to re-derive it:
 
-- `contextualise(turns, question) -> (retrieval_query, meta)` — `meta` records what was
-  carried and why, so the UI can show it.
-- `merge_help_slots(turns, question)` — the `"I'm deaf"` … `"anywhere in Kano?"` fix.
-- `TurnPayload` — dataclass with exactly the fields the UI needs to **replay** a turn without
-  recomputing: `question, retrieval_query, mode, excerpts, answer, routing, cite_check,
-  ctx_meta, slots, refused`, plus a `.tags` property (this turn's citable set).
-- `history_for_prompt(turns)` → the `[{question, answer}]` list `ask(history=...)` wants.
-- `cross_turn_drift(answer, turns, hits)` — wired, unmeasured until Phase G.
-- `ask()` now takes **`history=`** and **`retrieval_query=`** (both defaulted; `question`
-  stays what the user asked and is the only thing that reaches the prompt/citation check).
+- `render_turn(question, explicit, plain, history, turn_index) -> TurnPayload` — computes AND
+  renders one new turn. Fused on purpose: `test_phase05.py` asserts the banner invariant on
+  the *literal adjacency* of `render_helpline_banner()` and the `# Single routing seam`
+  comment inside this function's body. Splitting compute from render makes that unassertable.
+- `replay_turn(payload, turn_index, live)` — renders a stored turn. **No retrieval, no
+  router, no network** — asserted, because Streamlit reruns the whole script on every
+  interaction.
+- `render_history(live_last)` · `render_excerpts` · `render_ai_expander` · `render_defects` ·
+  `render_help_records` · `render_plain_caption` — the last five are shared by both paths.
+- `run()` — sidebar → title → banner → history → voice draft → `st.chat_input`. A submitted
+  question goes into `st.session_state["pending"]` and reruns, so the new turn paints in
+  position at the end of the thread.
+- Fixed-key controls (`switch-%s`, `clarify-legal`, `clarify-help`) render on the **last turn
+  only**; acting on one pops that turn and re-queues it (`_requeue_last`).
 
-**`app.py` map for the migration:**
+**Three things Phase C recorded and deliberately did NOT fix.** Do not "tidy" them without
+reading why:
 
-| what | where |
-|---|---|
-| `run()` | `app.py:604-710` |
-| the answer-flow body to move into `render_turn(...)` | `app.py:677-710` |
-| `resolve_mode` (keep — the single routing seam) | `app.py:197` |
-| `render_legal` / `render_help` (both RETURN their payload) | `app.py:473` / `app.py:515` |
-| `render_clarify` (keys `clarify-legal`/`clarify-help`) | `app.py:457` |
-| `render_helpline_banner` | `app.py:417` |
-| `read_aloud_html` / `build_speech_text` | `app.py:338` / `app.py:274` |
-| `theme_watch_html` (mounts at `height=1`, never 0) | `app.py:300` |
-| session keys in use | `explicit`, `submitted`, `last_q`, `q`, `mic_sig` |
+1. **N read-aloud iframes means N `setInterval` theme pollers.** Each `components.html` is
+   its own iframe carrying `theme_watch_html()`. `test_phase05.py:182` requires the watch to
+   be present, so centralising it is a deliberate, asserted change — not a drive-by.
+2. **Dark + high contrast together leaves the sidebar `#010409`, not `#000`** (equal
+   specificity, dark rule emitted later in `accessibility_css()`). ~19:1 contrast, predates
+   Phase C, `accessibility_css()` was not opened.
+3. **Width / pool depth is Phase E, not a UI change.** `k=3/doc, top_n=6` is what
+   `eval_chat.py:106-108` and `eval_heldout.py` measure, and `offline_legal_hits`' docstring
+   forbids a display path that slices differently from `ask()`. Move the harnesses in the
+   same commit or the shipped system detaches from every published number.
 
-**`test_phase05.py` asserts on `app.py` SOURCE TEXT — these are the ones that will break:**
-
-- `:32` indexes the literal `"render_helpline_banner()\n\n    # Single routing seam"`. That
-  exact adjacency (call, blank line, that comment) must survive the move into `render_turn`,
-  or the suite fails by design.
-- `:40` `banner-at-top-of-run` compares against `src.index('st.text_input(')` — **this is the
-  one that breaks on `st.chat_input`.** Update it, and per the plan every changed assert gets
-  a comment saying what it used to assert and why it moved.
-- `:135-137` requires all six labels present in source, **including the string
-  `"Type your question here"`** — which today is the `st.text_input` label. `st.chat_input`
-  takes a placeholder, so keep that literal reachable or the label assert fails.
-- `:104` requires `'st.expander("🤖 Answer with AI'` **and** `expanded=False` — the per-turn
-  AI opt-in must keep that exact shape.
-- `:64` requires `render_clarify` + both clarify keys to still exist (clarify becomes a
-  *turn*, but the function and keys stay).
-
-**Design decisions already taken (owner), do not re-litigate:**
-
-1. Chat **replaces** the single-turn form — one code path, so there is never a second refusal
-   path or a second citation path to keep measured.
-2. **Full banner at page top; a compact one-line helpline leads every assistant turn.** NGO
-   results keep the full banner rows via `ngo.with_helplines()`, untouched.
-3. **Replay, don't recompute.** Streamlit re-executes on every interaction; a loop that
-   re-queried each turn would cost N retrievals per rerun, and N× that once the dense arm
-   lands. Render completed turns from their stored `TurnPayload`.
-4. **Read-aloud becomes per assistant turn** — one global button would read the whole history
-   aloud. Needs unique component keys per turn.
-5. **Privacy:** history lives in `st.session_state` only, **never on disk**; a **Clear
-   conversation** control, always visible.
-6. Width, folded in honestly: pool **k=20/doc**, **12** to the prompt (≤4/doc), **3 inline
-   excerpts + rest in one expander**. Claim it as *plumbing for the dense arm*, not a recall
-   win — measured **test +0.000, dev +0.100, frozen-10 strict +0.048**.
-7. Quota visible: `scripts/.quota_log.json` (**counts only** — date, model, call count; never
-   questions) + a sidebar readout. An *"AI-answer every new turn"* toggle, **default OFF**.
-
-**Two invariants you can break silently — both are already asserts, keep them passing:**
-
-- `build_prompt(..., history=None)` must stay **byte-identical** to the pre-chat prompt. The
-  answer cache keys on sha256 of the *whole rendered prompt*.
-- History must render **BEFORE** the final `"Question: "` line. `_cache_write` stores
-  `prompt.rsplit("Question: ", 1)[-1]`; put history after that split point and
-  `scripts/.answer_cache.json` starts recording whole conversations — from a population that
-  discloses abuse and coercion. Both live in `test_phase09_ops.py` §7.
-
-**Phase C exit criteria:** multi-turn conversation works end to end offline · 104+ asserts
-green with every change documented · `import app` clean · **history absent from
-`.answer_cache.json` after a session** · read-aloud per turn · both AI toggles default OFF ·
-Clear conversation works. Then test the offline path three ways: key removed, quota exhausted
-(inject a 429), network down.
-
-> **Previous (2026-09-13): Phase 09 steps 1 and 2 DONE. Zero Gemini calls spent.**
-> PRs #9 (`phase09/ops-hardening`) and #10 (`phase09/evidence-base`).
->
-> **READ THIS BEFORE TOUCHING RETRIEVAL — the headline number changed meaning.**
-> Held-out mean recall is **0.420 (n=25)** against frozen-10 **0.925**, delta **−0.505**.
-> The frozen 10 are the questions the synonym map was *fitted on*; the held-out 30 are
-> questions nothing has been tuned on. **0.925 was mostly fitting.** Quote both numbers or
-> neither. Per class, vocab-mismatch is worst at **0.312** — the class the synonym map exists
-> to fix — so **the hand-written map does not generalize**. That is step 3's target.
->
-> Measured for the first time: **false-refusal 0/25 = 0.0%** on answerable held-out questions
-> (the floor is *not* denying help to PWDs — ranking is the problem, not the gate), and
-> **gate-level false-answer 5/5 = 100%** of off-corpus questions clear `MIN_SCORE`. The second
-> is reported **ungated with its caveat and is NOT a reason to touch `MIN_SCORE`** (weak-overlap
-> floor, not a semantic filter; inverted bands, `src/retrieve.py:26-44`; the semantic layer is
-> the strict-prompt `NO_ANSWER_SENTENCE` path, which costs quota to measure).
->
-> **Budget is 40/day, not 20** — `gemini-2.5-flash` and `gemini-2.5-flash-lite` draw from
-> separate free-tier pools. `ask(failover=True)` uses the second pool on a **daily-cap** 429
-> only, never a per-minute one, and records `model_used`.
->
-> New commands: `scripts\test_phase09_ops.py` (38/38, zero network) · `scripts\eval_heldout.py`
-> (retrieval-only baseline) · `test_phase02.py --no-cache --failover`.
->
-> **Next: Phase 09 step 3**, then step 4. The two-run flakiness check is now *possible* but was
-> NOT run (24 calls). Details: 2026-09-13 journal entry + the Results section of
-> `docs/phases/09_evidence_and_generation.md`.
-
-> **Previous (2026-09-11): Phase 06 CLOSED, Phase 08 steps 1/2/3/6a SHIPPED and live.**
-> `main` @ `f4d18fe`. recall **0.800 → 0.925**, faith_audited **0.867 earned**
-> (`MANUAL_FLAGS == []`), reverse_rel 0.630 arbitrated as a metric artifact.
-> Live-verified on Render. Details in the 2026-09-11 journal entry; the pre-existing
-> text below is kept as dated history and is superseded where it conflicts.
->
-> **Planned next: `docs/phases/09_evidence_and_generation.md` (written 2026-09-11, NOT
-> started).** Read that playbook first — a planning pass found three code facts that
-> **reorder the Phase 08 backlog**, summarised under "Next, in this order" below. Phase 08
-> steps 4/5 are superseded there, not merely deferred.
-
-**Env:** `C:\conda-envs\drlca-rag\python.exe` (py 3.11). Rebuild: `requirements-rag.txt`.
-Never install into `ds-general` / `base` / system Python. Full machine notes: `ENVIRONMENTS.md`.
-Local app: http://localhost:8501 (`python -m streamlit run app.py` from `D:\NGORAG`).
-**Live:** https://ngodisabilityrag.onrender.com (Render free, service
-`srv-dah26opt0dsc73e9a350`, python 3.11, Oregon; auto-deploys on push to `main`).
-Render CLI v2.27.0 installed (winget `Render.CLI`); auth in `~/.render/cli.yaml`.
-Git: https://github.com/batestguy/NGOdisabilityRAG (`main`, pushed, tree clean).
-
-**State:** Phases 01–05 DONE (re-verified 2026-09-10: bench 10/10, 03 16/16+7/7,
-04 10/10, 05 **104/104**, boot import OK; NGO 10/10 HIGH incl. NAB/NNAD byte-verified).
-Phase 02 fixA2 COMPLETE 12/12 (`test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json`):
-Q9 s.33 hallucination REMOVED (s.17 x3+general) but s.34-body omission remains
-(recall 0.5); Q10 PARTIAL (2×s.46 correct + s.39 misattr of High-Court text —
-same TOC-trap class, `MANUAL_FLAGS` now flags it); Q3 recovered (cl.29,30 5%);
-Q8 five-years; Q5 correct-refusal ×4; R1/R2 verbatim DRAC refusal.
-Phase 06 custom eval on fixA2 (`eval_phase06_results_fixA2-flagged_2026-09-10.json`,
-pointer swapped): recall 0.800 PASS, faith_audited 0.967 PASS (Q10 flagged),
-reverse_rel 0.630 FAIL gated (short-answer artifact — recorded FAIL, judge arbiter).
-Phase 07 LIVE on Render (browser-verified banner + help query; README link in).
-Helplines always on top: DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp `08000-3000-10`.
+**Phase D's own dependency, unchanged:** it needs a >10 MB download
+(`ncpwd.gov.ng/pdfs/6document.pdf`, the one untested lead for the missing Act cl.38/40)
+fetched locally, not via a fetch tool. Its audit gate is `ref == "general"` **≤1% per doc** —
+the gate that removes the uncitable-chunk class named three separate times now (Act cl.19,
+`CT7.t2`, and the 25-of-62 uncitable Act chunks).
 
 ## Next, in this order (full plan: `docs/phases/09_evidence_and_generation.md`)
 

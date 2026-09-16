@@ -82,7 +82,7 @@ Branch `phase10/chat-core`. Zero quota, zero Streamlit, zero network.
 
 **Exit criteria and what they measured — see Results below.**
 
-### C — The chat UI
+### C — The chat UI ✅ DONE 2026-09-16
 
 Branch `phase10/chat-ui`. Zero quota. Consumes `src/chat.py`; adds no new packages.
 
@@ -102,9 +102,16 @@ Branch `phase10/chat-ui`. Zero quota. Consumes `src/chat.py`; adds no new packag
   conversation** control, always visible.
 - **Quota made visible:** `scripts/.quota_log.json` (counts only) + a sidebar readout.
   An *"AI-answer every new turn"* toggle, **default OFF**.
-- Width, folded in honestly: pool **k=20/doc**, **12** chunks to the prompt (≤4 per doc),
-  **3 excerpts inline + rest in one `st.expander`**. Claimed as *plumbing for the dense arm*:
-  **test +0.000, dev +0.100, frozen-10 strict +0.048.** Not a recall win.
+- ~~Width, folded in honestly: pool **k=20/doc**, **12** chunks to the prompt (≤4 per doc).~~
+  **SUPERSEDED 2026-09-16 — width moved to Phase E.** The display split (**3 excerpts inline
+  + the rest in one `st.expander`**) lands here, because that is presentation. Pool depth
+  does not: `offline_legal_hits`' own docstring forbids a display path that slices
+  differently from `ask()` ("*showing the user a system nobody measures*"), and
+  `eval_chat.py:106-108` and `eval_heldout.py` both measure `k=3/doc, top_n=6`. Changing the
+  UI without the harnesses would have detached the shipped system from every number in this
+  file. Phase B measured the width change at **test +0.000**, so there is nothing to lose by
+  waiting; it moves in Phase E, in the same commit as the harnesses, where the dense arm
+  actually needs the deeper pool.
 
 ### D — Corpus v2 · E — Dense arm · F — Fine-tune · G — Re-baseline
 
@@ -242,3 +249,138 @@ selected on `chat_dev` and nothing else.
 earlier turn needs a generated answer to read, so it costs quota. `chat.cross_turn_drift()`
 is written and wired but **unmeasured**; Phase G's multi-turn transcript is what runs it.
 Omitted rather than approximated, exactly as `eval_heldout.py` omits faithfulness.
+
+### Step C — DONE 2026-09-16, zero Gemini calls, zero network
+
+Phase B's gain was real and unreachable. This step spends it and measures nothing new: **no
+retrieval parameter, no scoring parameter, no corpus file and no prompt string changed**, so
+`eval_chat.py` and `eval_heldout.py` were required to reproduce `368f083` **exactly** — and
+they did, byte-identical stdout. `eval_phase06.py` output still hashes
+`CE716FB3C1EA139B5E3A6885D732C5EBBD3F1B57981635F7D97DA5911EDF5F19`.
+`git diff --stat main -- requirements.txt` is empty.
+
+**What shipped.** `app.py` splits into `render_turn` (computes + renders one new turn),
+`replay_turn` (renders a stored `TurnPayload`), `render_history`, and a `run()` driven by
+`st.chat_input`. `render_excerpts` / `render_ai_expander` / `render_help_records` /
+`render_plain_caption` are shared by both paths, so a live turn and a replayed turn are the
+same pixels. `src/router.py` gained exactly one defaulted argument
+(`_help_payload(..., slots=None)`) and **stays stateless** — accumulated slots arrive as an
+argument and are never stored.
+
+**`test_phase05.py` 104 → 137 asserts, all green.** Six were rescoped with an inline note
+saying what each used to assert and why it moved; the rest are new. The rescope was
+necessary, not cosmetic: `:32-39` `.index()`-ed into the whole module, and in file order
+`def render_helpline_banner` now sits *after* `def render_help`, so a module-wide
+`i_banner < i_help` would have failed on source layout while the rendered order was
+unchanged. They now scope to `render_turn`'s body — the same property, asserted where it is
+true.
+
+**Findings and decisions, recorded:**
+
+1. **`replay_turn` must not recompute, and that is now asserted, not intended.** Streamlit
+   re-executes the whole script on every interaction. A history loop that re-queried each
+   turn would pay N retrievals per keystroke and several times that once the dense arm
+   lands. `test_phase05.py` checks `replay_turn`'s body contains no `load_retriever`,
+   `offline_legal_hits`, `resolve_mode`, `help_display` or `route_question`.
+2. **A second defaulted `TurnPayload` field was added, against the plan's letter.** The plan
+   said "`TurnPayload.drift`. Nothing else." Replaying a *help* turn without one forces a
+   live `router._help_payload` call on every rerun — which is the thing `replay_turn` exists
+   to prevent — so `help_payload: dict` was added alongside `drift: list`. Both are
+   defaulted; neither is read by `eval_chat.py` or `eval_heldout.py` (which work on the raw
+   conversation JSON and never construct a `TurnPayload`), so no measured number can move.
+   Disclosed rather than quietly absorbed.
+3. **A Phase 05 render was deleted, and the second retrieval with it.** `render_legal` used
+   to call `answer_legal(..., use_llm=False)` purely to print the prompt-version string —
+   a *whole second retrieval per turn*, affordable once per page, not once per turn per
+   rerun. It is now `_prompt_id()`, which reads `PROMPT_VERSION` / `CHAT_PROMPT_VERSION`
+   from `src/rag.py` and mirrors the one line in `ask()` that chooses between them. That the
+   plain flag really threads through is still proven, in the place proof belongs:
+   `test_phase05.py`'s `answer_legal` asserts, untouched.
+4. **Per-turn read-aloud does not collide, confirmed in the browser.** `read_aloud_html()`
+   is byte-identical (11 asserts ride on it) and still hardcodes the ids `drlca-speak` /
+   `drlca-speech`. Each `components.html` is its own iframe document, so N turns give N
+   independent buttons — verified by reading `#drlca-speech` out of each frame and seeing
+   different text per turn. **The cost is recorded, not fixed:** every read-aloud iframe
+   carries its own `setInterval(apply, 1000)` theme watch, so an N-turn conversation runs N
+   pollers. `test_phase05.py:182` requires the watch to be present, so removing it is a
+   separate, asserted decision — not a drive-by.
+5. **Fixed-key controls render on the last turn only, which is also the only correct
+   scope.** `switch-%s`, `clarify-legal` and `clarify-help` are page-global keys. Acting on
+   one pops the last turn, sets `explicit`, re-queues the question and reruns
+   (`_requeue_last`). Re-answering a *mid*-conversation turn would invalidate every turn
+   after it, because each was contextualised against it.
+6. **Voice keeps its review step, and a latent Streamlit bug was fixed on the way.**
+   `st.chat_input` cannot be pre-filled programmatically, so the mic feeds an editable draft
+   `st.text_input` with a Send button. `try_voice_input()` previously wrote
+   `st.session_state["q"]` *after* the `q`-keyed widget had rendered in the same run, which
+   Streamlit forbids; it now writes `voice_draft`, and `render_voice_draft()` copies it into
+   `q` **before** instantiating the widget. Clearing works the same way, on the next run.
+7. **Quota readout ships labelled honestly.** `scripts/.quota_log.json` holds
+   `{"YYYY-MM-DD": {"model": 3}}` — a date, a model name and an integer, **never a word of
+   any conversation** — and fails open like `rag._cache_write`. The sidebar says *"recorded
+   by THIS INSTANCE SINCE RESTART"*, never *"today"*: on the free host the filesystem is
+   ephemeral and the instance sleeps after 15 minutes idle, so the number is a floor. Cache
+   replays are deliberately **not** counted; they spend no quota.
+
+**Browser verification** (`streamlit run app.py`, Chrome via DevTools, no key spent): a
+four-turn conversation covering an ellipsis (*"so can they fire me?"* → carried on
+`unbound-pronoun:they`), a clarify turn, and a narrowing (*"I'm deaf"* … *"anywhere in
+Kano?"* → answered NNAD from the accumulated `disability` slot two turns later). Full banner
+at page top **and** a helpline line leading every assistant turn; three excerpts inline plus
+a *"3 more excerpt(s)"* fold; citation tags on every turn; per-turn read-aloud reading only
+its own turn; both AI toggles OFF by default; **Clear conversation** empties the thread;
+360 px viewport with **no horizontal overflow**; dark theme (`body.drlca-dark` set by the
+theme-watch iframe, excerpt cards opaque `#0d1117` on `#e6edf3`) and high contrast (black /
+white, white-bordered buttons) both coherent. **After the whole session neither
+`scripts/.answer_cache.json` nor `scripts/.quota_log.json` existed at all** — the offline
+path wrote nothing, because it had nothing to write.
+
+**The three AI-failure paths were proven headlessly, at zero quota** — no key, a daily-cap
+429, and a dead network. In all three `_run_ai_turn` returns False, `payload.answer` stays
+`None` (**pending, never faked**), no quota is recorded, and the user sees one
+plain-language warning with no traceback. Proving these live would mean deliberately
+exhausting a daily cap, the same argument `test_phase09_ops.py` makes for failover.
+
+**Observed, not changed:** in **dark + high contrast together** the sidebar computes to
+`#010409` rather than the forced `#000`, because `body.drlca-dark section[...]` and
+`body:has(.drlca-hc-on) section[...]` have equal specificity and the dark rule is emitted
+later. Contrast against white text is ~19:1, so this is cosmetic, it predates this phase,
+and `accessibility_css()` was not touched by it. Logged for whoever next opens that CSS.
+
+**Owner-gated, as in Phase 05:** NVDA, a physical keyboard run, a live mic, and the
+AI-expander live smoke (which costs quota).
+
+#### Review pass — no blocking issues, two fixes taken
+
+A fresh-eyes review re-ran `test_phase05.py` / `test_phase03.py` / `test_phase04.py`, checked
+`import app`, traced every `session_state[key] = …` write in `app.py` against every widget
+`key=`, and followed `_cache_write` / `ask()` / `build_prompt()` to confirm history never
+reaches disk. **Verdict: ship.** It independently confirmed the widget-ordering audit (the
+only widget-keyed value written outside its own widget is `q`, and both writes happen strictly
+*before* the `q` widget is instantiated), that no fixed key renders twice in one script run,
+and that `src/router.py` acquired no module-level state.
+
+Two findings were acted on, taking the suite to **137**:
+
+1. **`_prompt_id()` claimed more than the code enforced.** It derived "is this a multi-turn
+   prompt?" from `turn_index > 0`, while `ask()` branches on
+   `rag._render_history(history)` being non-empty. Equivalent today, but only by caller
+   discipline — `chat.history_for_prompt()` applies `CARRY_WINDOW` and drops blank turns, so
+   a future turn type could have predecessors and still render a single-turn prompt, and the
+   caption would have been silently wrong with nothing to catch it. Now
+   `_multi_turn(prior)` calls the same two functions `ask()` calls, `render_plain_caption`
+   takes `prior` rather than a boolean, and three asserts pin it.
+2. **A pre-existing assert was tautological.** `test_phase05.py`'s
+   `no-wide-columns-for-banner` ended in `or True`, so it passed unconditionally and had
+   been inflating the count since Phase 05. Rewritten to check the property its name claims
+   and can now fail: every `render_helpline_banner()` **call site** sits at 4-space function
+   top level, never nested inside a `with col:` block — which is how a banner ends up
+   squeezed into a narrow column at 360 px.
+
+The review also flagged the quota log and the *"AI-answer every new turn"* switch as feature
+work beyond "wire the engine in". Both were in the agreed Phase C scope (see the bullets
+above) and are documented here, in `STATUS.md` and in `HANDOFF.md`; the reviewer was working
+from the diff and did not have the plan text. Recorded so the question is not re-opened.
+
+Both eval harnesses were re-run after these fixes and are **still byte-identical to
+`368f083`**.
