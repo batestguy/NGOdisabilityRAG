@@ -41,7 +41,114 @@
 > **Unmeasured on purpose:** cross-turn citation drift needs a generated answer to read, so it
 > costs quota. `chat.cross_turn_drift()` is wired and runs in Phase G.
 >
-> **Next: Phase C — the chat UI** (`phase10/chat-ui`, zero quota). See `docs/phases/11_chat.md`.
+> **Next: Phase C — the chat UI** (`phase10/chat-ui`, zero quota). See `docs/phases/11_chat.md`
+> and the **PHASE C — START HERE** section immediately below, which already contains the
+> `app.py` reconnaissance so you do not have to re-derive it.
+
+## Session close 2026-09-15 — what is done, what is NOT
+
+**Done and committed this session:** Phase 10 **B only** (`368f083` on `phase10/chat-core`).
+**Gemini spend this session: ZERO.** Nothing is pushed; `phase10/chat-core` is 8 commits
+ahead of `main` and has not been PR'd.
+
+**Not started:** Phases **C, D, E, F, G** of the chat/corpus plan. Phase B's deliverables are
+headless by design — **there is no chat UI yet.** `app.py` is untouched and still the
+single-turn form. `streamlit run app.py` gives you the old app, exactly as before.
+
+Three of the remaining phases have hard external dependencies the next session should know
+about before planning:
+
+- **D** needs a >10MB download (`ncpwd.gov.ng/pdfs/6document.pdf`, the one untested lead for
+  the missing Act cl.38/40) fetched locally, not via a fetch tool.
+- **F** needs **Colab or Kaggle GPU**. `torch`/`sentence-transformers` must **never** be
+  installed into `drlca-rag` — `CLAUDE.md` records an env break from exactly that.
+- **G** needs **~42 Gemini calls across 2 days** (40/day budget, two pools). That is an owner
+  decision to spend, not something to start unprompted.
+
+Working tree is clean apart from the known stray `D:NGORAG_review_judge.diff` (0 bytes,
+U+F03A in the name, in no commit, deletion permission-blocked — still needs removing by hand).
+
+## PHASE C — START HERE (chat UI, zero quota, branch `phase10/chat-ui`)
+
+Everything in this section was read and verified on 2026-09-15. Line numbers are from
+`368f083`.
+
+**The contract Phase B already gives you** (all in `src/chat.py`, all offline, all tested):
+
+- `contextualise(turns, question) -> (retrieval_query, meta)` — `meta` records what was
+  carried and why, so the UI can show it.
+- `merge_help_slots(turns, question)` — the `"I'm deaf"` … `"anywhere in Kano?"` fix.
+- `TurnPayload` — dataclass with exactly the fields the UI needs to **replay** a turn without
+  recomputing: `question, retrieval_query, mode, excerpts, answer, routing, cite_check,
+  ctx_meta, slots, refused`, plus a `.tags` property (this turn's citable set).
+- `history_for_prompt(turns)` → the `[{question, answer}]` list `ask(history=...)` wants.
+- `cross_turn_drift(answer, turns, hits)` — wired, unmeasured until Phase G.
+- `ask()` now takes **`history=`** and **`retrieval_query=`** (both defaulted; `question`
+  stays what the user asked and is the only thing that reaches the prompt/citation check).
+
+**`app.py` map for the migration:**
+
+| what | where |
+|---|---|
+| `run()` | `app.py:604-710` |
+| the answer-flow body to move into `render_turn(...)` | `app.py:677-710` |
+| `resolve_mode` (keep — the single routing seam) | `app.py:197` |
+| `render_legal` / `render_help` (both RETURN their payload) | `app.py:473` / `app.py:515` |
+| `render_clarify` (keys `clarify-legal`/`clarify-help`) | `app.py:457` |
+| `render_helpline_banner` | `app.py:417` |
+| `read_aloud_html` / `build_speech_text` | `app.py:338` / `app.py:274` |
+| `theme_watch_html` (mounts at `height=1`, never 0) | `app.py:300` |
+| session keys in use | `explicit`, `submitted`, `last_q`, `q`, `mic_sig` |
+
+**`test_phase05.py` asserts on `app.py` SOURCE TEXT — these are the ones that will break:**
+
+- `:32` indexes the literal `"render_helpline_banner()\n\n    # Single routing seam"`. That
+  exact adjacency (call, blank line, that comment) must survive the move into `render_turn`,
+  or the suite fails by design.
+- `:40` `banner-at-top-of-run` compares against `src.index('st.text_input(')` — **this is the
+  one that breaks on `st.chat_input`.** Update it, and per the plan every changed assert gets
+  a comment saying what it used to assert and why it moved.
+- `:135-137` requires all six labels present in source, **including the string
+  `"Type your question here"`** — which today is the `st.text_input` label. `st.chat_input`
+  takes a placeholder, so keep that literal reachable or the label assert fails.
+- `:104` requires `'st.expander("🤖 Answer with AI'` **and** `expanded=False` — the per-turn
+  AI opt-in must keep that exact shape.
+- `:64` requires `render_clarify` + both clarify keys to still exist (clarify becomes a
+  *turn*, but the function and keys stay).
+
+**Design decisions already taken (owner), do not re-litigate:**
+
+1. Chat **replaces** the single-turn form — one code path, so there is never a second refusal
+   path or a second citation path to keep measured.
+2. **Full banner at page top; a compact one-line helpline leads every assistant turn.** NGO
+   results keep the full banner rows via `ngo.with_helplines()`, untouched.
+3. **Replay, don't recompute.** Streamlit re-executes on every interaction; a loop that
+   re-queried each turn would cost N retrievals per rerun, and N× that once the dense arm
+   lands. Render completed turns from their stored `TurnPayload`.
+4. **Read-aloud becomes per assistant turn** — one global button would read the whole history
+   aloud. Needs unique component keys per turn.
+5. **Privacy:** history lives in `st.session_state` only, **never on disk**; a **Clear
+   conversation** control, always visible.
+6. Width, folded in honestly: pool **k=20/doc**, **12** to the prompt (≤4/doc), **3 inline
+   excerpts + rest in one expander**. Claim it as *plumbing for the dense arm*, not a recall
+   win — measured **test +0.000, dev +0.100, frozen-10 strict +0.048**.
+7. Quota visible: `scripts/.quota_log.json` (**counts only** — date, model, call count; never
+   questions) + a sidebar readout. An *"AI-answer every new turn"* toggle, **default OFF**.
+
+**Two invariants you can break silently — both are already asserts, keep them passing:**
+
+- `build_prompt(..., history=None)` must stay **byte-identical** to the pre-chat prompt. The
+  answer cache keys on sha256 of the *whole rendered prompt*.
+- History must render **BEFORE** the final `"Question: "` line. `_cache_write` stores
+  `prompt.rsplit("Question: ", 1)[-1]`; put history after that split point and
+  `scripts/.answer_cache.json` starts recording whole conversations — from a population that
+  discloses abuse and coercion. Both live in `test_phase09_ops.py` §7.
+
+**Phase C exit criteria:** multi-turn conversation works end to end offline · 104+ asserts
+green with every change documented · `import app` clean · **history absent from
+`.answer_cache.json` after a session** · read-aloud per turn · both AI toggles default OFF ·
+Clear conversation works. Then test the offline path three ways: key removed, quota exhausted
+(inject a 429), network down.
 
 > **Previous (2026-09-13): Phase 09 steps 1 and 2 DONE. Zero Gemini calls spent.**
 > PRs #9 (`phase09/ops-hardening`) and #10 (`phase09/evidence-base`).
