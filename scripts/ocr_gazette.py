@@ -4,6 +4,13 @@ Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\ocr_gazette.py
      ... --pages=2-4      front matter pages to OCR (1-based, inclusive)
      ... --dpi=200        ~33 s/page on this CPU
      ... --json=<path>    checkpoint location (resumable; default below)
+     ... --ocr-only       OCR the pages into the checkpoint and STOP: no
+                          Arrangement parse, no gate, no manifest write
+
+`--ocr-only` exists because the gate below is a FRONT-MATTER gate. Pointed at
+body pages it parses statutory text as Arrangement entries and writes the
+result over gazette_arrangement.json -- the verified 58-entry manifest D2's
+parser is anchored on. Use it for the 27-page body pass.
 
 DEV-ONLY. With scripts/ocrlib.py this is one of only two files that touch
 pymupdf/rapidocr. Neither is importable from app.py's path at runtime and
@@ -39,7 +46,7 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from load import detect_duplicate_pages  # noqa: E402
-from ocrlib import DEFAULT_DPI, ocr_pdf, page_lines  # noqa: E402
+from ocrlib import DEFAULT_DPI, ocr_pdf, page_lines, rows as _rows  # noqa: E402
 
 PDF = ROOT / "data" / "raw" / "disability_act_2018_gazette_FGP.pdf"
 JSON_OUT = ROOT / "data" / "processed" / "gazette_frontmatter_rapidocr.json"
@@ -60,40 +67,6 @@ NOISE_RE = re.compile(
     r"|IN\s*POLITICS"
     r"|DISCRIMINATION\s*AGAINST|Discrimination\s*against|\(PROHIBITION\)"
     r"|\(Prohibition\))", re.IGNORECASE)
-
-
-def _rows(lines: list[dict]) -> list[list[dict]]:
-    """Group one page's OCR boxes into visual ROWS, then order each left-to-right.
-
-    THIS IS THE WHOLE TRICK, and it is why ocrlib keeps the geometry. RapidOCR
-    emits the clause number and its title as SEPARATE boxes ("3." | "Right of
-    access to public premises."), and their vertical centres differ by a few
-    pixels -- often enough that the title sorts BEFORE its own number. A
-    text-only, line-at-a-time parse therefore reads 23 of 58 entries and looks
-    exactly like a truncated source. It is not; it is a lost-geometry artifact,
-    the same class of failure that left 25/62 v1 Act chunks uncitable.
-
-    Two boxes share a row when their vertical extents overlap by more than half
-    the shorter box's height. Tolerance is relative, so it survives a dpi change.
-    """
-    def y0(l): return min(p[1] for p in l["box"])
-    def y1(l): return max(p[1] for p in l["box"])
-
-    rows: list[list[dict]] = []
-    for line in sorted(lines, key=lambda l: (y0(l) + y1(l)) / 2):
-        placed = False
-        for row in rows:
-            top, bot = min(y0(x) for x in row), max(y1(x) for x in row)
-            overlap = min(bot, y1(line)) - max(top, y0(line))
-            if overlap > 0.5 * min(bot - top, y1(line) - y0(line)):
-                row.append(line)
-                placed = True
-                break
-        if not placed:
-            rows.append([line])
-    for row in rows:
-        row.sort(key=lambda l: min(p[0] for p in l["box"]))
-    return rows
 
 
 def _squash(text: str) -> str:
@@ -164,6 +137,10 @@ def main(argv: list[str] | None = None) -> int:
 
     ckpt = ocr_pdf(PDF, json_out, dpi=dpi, pages=range(first, last + 1))
 
+    if "--ocr-only" in argv:
+        print("\n--ocr-only: %d pages in checkpoint, gate skipped." % len(ckpt))
+        return 0
+
     # ---- duplicate-page check ------------------------------------------
     # dedupe_pages() must NEVER run on v2. Its salvage branch
     # (src/load.py:347-363) appends unmatched lines of the DROPPED twin onto the
@@ -221,6 +198,19 @@ def main(argv: list[str] | None = None) -> int:
         "clause. Never author a title for the gap."))
 
     out = json_out.with_name("gazette_arrangement.json")
+    # A clean manifest is never silently replaced by a dirty one. The gate is a
+    # FRONT-MATTER gate; run over body pages it produces a plausible-looking but
+    # wrong entry set, and the manifest is what every v2 clause title is anchored
+    # to. Downgrade requires deleting the file by hand, deliberately.
+    if out.exists() and not clean:
+        prior = json.loads(out.read_text(encoding="utf-8"))
+        if prior.get("clean"):
+            raise SystemExit(
+                "refusing to overwrite a CLEAN manifest (%d entries) with a "
+                "dirty parse (%d entries, holes=%s). If you meant to OCR body "
+                "pages, pass --ocr-only. If you really mean to re-derive the "
+                "manifest, delete %s first."
+                % (len(prior.get("entries", {})), len(entries), missing, out))
     out.write_text(json.dumps(
         {"source": PDF.name, "pages": [first, last], "dpi": dpi,
          "clean": clean, "entries": {str(k): v for k, v in entries.items()},

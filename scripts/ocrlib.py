@@ -96,6 +96,52 @@ def page_lines(ckpt: dict[str, list[dict]], page: int) -> list[dict]:
     return ckpt.get(str(page), [])
 
 
+def y_top(line: dict) -> float:
+    return min(p[1] for p in line["box"])
+
+
+def y_bottom(line: dict) -> float:
+    return max(p[1] for p in line["box"])
+
+
+def rows(lines: list[dict], overlap_frac: float = 0.5) -> list[list[dict]]:
+    """Group one page's OCR boxes into visual ROWS, each ordered left-to-right.
+
+    THIS IS THE FUNCTION THE D2 GATE TURNED ON, and it is why this module keeps
+    geometry. RapidOCR emits a clause number and its title as SEPARATE boxes
+    ("3." | "Right of access to public premises."), and their vertical centres
+    differ by a few pixels -- often enough that the title sorts BEFORE its own
+    number. A text-only, line-at-a-time parse therefore read 23 of 58 Arrangement
+    entries and looked exactly like a truncated source. It was not; it was a
+    lost-geometry artifact, the same class of failure that left 25/62 v1 Act
+    chunks uncitable.
+
+    Two boxes share a row when their vertical extents overlap by more than
+    `overlap_frac` of the shorter box's height. The tolerance is relative, so it
+    survives a dpi change.
+
+    Extracted verbatim from ocr_gazette._rows once the body parser needed it too.
+    The gate was re-run after the move and still answers 58/58.
+    """
+    out: list[list[dict]] = []
+    for line in sorted(lines, key=lambda l: (y_top(l) + y_bottom(l)) / 2):
+        placed = False
+        for row in out:
+            top = min(y_top(x) for x in row)
+            bot = max(y_bottom(x) for x in row)
+            overlap = min(bot, y_bottom(line)) - max(top, y_top(line))
+            shorter = min(bot - top, y_bottom(line) - y_top(line))
+            if overlap > overlap_frac * shorter:
+                row.append(line)
+                placed = True
+                break
+        if not placed:
+            out.append([line])
+    for row in out:
+        row.sort(key=lambda l: min(p[0] for p in l["box"]))
+    return out
+
+
 def x_left(line: dict) -> float:
     """Left edge of a line's box. The marginal-note column is identified by
     this, not by text content."""
