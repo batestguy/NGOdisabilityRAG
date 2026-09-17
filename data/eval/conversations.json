@@ -1,0 +1,620 @@
+[
+ {
+  "id": "CD1",
+  "set": "chat_dev",
+  "topic": "employment",
+  "note": "Act Part VI (cl.28-30) read from data/processed/disability_act_2018_full.txt via build_corpus(); factsheet Section 28 read from disability_act_factsheet_PLAC.txt. Authored 2026-09-15.",
+  "turns": [
+   {
+    "text": "What does the Act say about my right to work?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [28]},
+    "note": "Act cl.28(1): 'A person with disability has the right to work on an equal basis with others' -- chunk [Act cl. 28] opens with PART VI and that sentence."
+   },
+   {
+    "text": "so can they fire me?",
+    "class": "ellipsis",
+    "expect_gate": "answer",
+    "expected": {"act2018": [28]},
+    "note": "THE canonical ellipsis probe from the Phase 10 plan. Zero disability terms, zero statutory terms; unanswerable by retrieval in isolation. Truth is still cl.28 (equal right to work, incl. discrimination in employment)."
+   },
+   {
+    "text": "and what would they have to pay me?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"factsheet2020": [28]},
+    "note": "Factsheet Section 28: 'liable on conviction to nominal damages of a minimum of N250,000 payable to the affected person'. 'they' is unbound; 'pay' alone is not a corpus term."
+   }
+  ]
+ },
+ {
+  "id": "CD2",
+  "set": "chat_dev",
+  "topic": "education",
+  "note": "Act cl.17 (free education to secondary level) and cl.18 (public schools inclusive) read from the [Act cl. 16,17] and [Act cl. 18] chunks. Handoff turn scored on slots, not recall.",
+  "turns": [
+   {
+    "text": "Is education free for children with disabilities?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [17]},
+    "note": "Act cl.17(2): 'A person with disability is entitled to free education to secondary school level.' Text sits at the head of the [Act cl. 18] chunk and in [Act cl. 16,17]."
+   },
+   {
+    "text": "do they have to take him at a normal school?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"act2018": [18]},
+    "note": "Act cl.18(1): 'All public schools, whether primary, secondary or tertiary...' -- inclusion/accessibility. 'they'/'him' are both unbound; 'normal school' is lay register, not corpus vocabulary."
+   },
+   {
+    "text": "my son is deaf, who can help us in Lagos?",
+    "class": "handoff",
+    "expect_gate": "help",
+    "expected": {},
+    "expect_slots": {"disability": "deaf", "location": "lagos"},
+    "note": "legal -> help handoff. Both slots are stated in this turn, so merge_help_slots must NOT need history here; this is the control for CD7/CD11 where they are split across turns."
+   }
+  ]
+ },
+ {
+  "id": "CD3",
+  "set": "chat_dev",
+  "topic": "physical access, then a shift to healthcare",
+  "note": "Act cl.3 (right of access to public premises) and cl.6 (five-year transitory period) read from [Act cl. 3,4,5] and [Act cl. 6,7]. Turn 3 is an IN-CORPUS topic shift -- the trap is contextualisation dragging 'buildings' into a healthcare question.",
+  "turns": [
+   {
+    "text": "Do public buildings have to be wheelchair accessible?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [3]},
+    "note": "Act cl.3: 'A person with disability has the right to access the physical environment and buildings on an equal basis with others.'"
+   },
+   {
+    "text": "how long do they have to fix them?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"act2018": [6]},
+    "note": "Act cl.6: 'there shall be a transitory period of five years within which all public buildings and structures ... shall be modified'. Both 'they' and 'them' are unbound."
+   },
+   {
+    "text": "What about free healthcare?",
+    "class": "topic-shift",
+    "expect_gate": "answer",
+    "expected": {"act2018": [21]},
+    "note": "IN-CORPUS shift. Act cl.21(1): 'Government shall guarantee that persons with disabilities have unfettered access to adequate healthcare without discrimination.' Leading 'What about' is a discourse marker, so a naive carry-rule WILL fire here -- and must not drag buildings/transitory vocabulary in. This is the topic-shift gate of Phase B."
+   }
+  ]
+ },
+ {
+  "id": "CD4",
+  "set": "chat_dev",
+  "topic": "begging / alms",
+  "note": "Act cl.16 read from the [Act cl. 16,17] chunk; factsheet Section 16 read from the factsheet table.",
+  "turns": [
+   {
+    "text": "Is it legal to use a disabled person to beg for money?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [16]},
+    "note": "Act cl.16(1): 'A person shall not- (a) employ, use or involve a person with disability in begging or soliciting for alms'."
+   },
+   {
+    "text": "what happens to them if they do?",
+    "class": "ellipsis",
+    "expect_gate": "answer",
+    "expected": {"factsheet2020": [16]},
+    "note": "Factsheet Section 16 carries the penalty summary for the begging prohibition. Turn has no content stem at all outside 'happen'."
+   }
+  ]
+ },
+ {
+  "id": "CD5",
+  "set": "chat_dev",
+  "topic": "healthcare, then off-corpus",
+  "note": "Act cl.21/22 read from [Act cl. 21,22]. Turn 3 is the inherited-context false-answer trap: an off-corpus question asked immediately after two legal turns.",
+  "turns": [
+   {
+    "text": "What health rights do persons with disabilities have?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [21]},
+    "note": "Act cl.21(1) free/unfettered access to adequate healthcare without discrimination."
+   },
+   {
+    "text": "do I need a certificate for that?",
+    "class": "ellipsis",
+    "expect_gate": "answer",
+    "expected": {"act2018": [22]},
+    "note": "Act cl.22: Certificate of Disability issued by the Commission; 'that' refers to the previous turn's healthcare entitlement."
+   },
+   {
+    "text": "and how do I renew my international passport?",
+    "class": "off-corpus-after-legal",
+    "expect_gate": "refuse",
+    "expected": {},
+    "note": "OFF CORPUS. Neither the Act nor the Constitution nor the factsheet covers passport renewal. Leading 'and' plus two prior legal turns is exactly the configuration in which carrying history can manufacture enough legal vocabulary to clear MIN_SCORE. Measured, never assumed."
+   }
+  ]
+ },
+ {
+  "id": "CD6",
+  "set": "chat_dev",
+  "topic": "discrimination, Act and Constitution",
+  "note": "Act cl.1 read from [Act cl. 1]; Constitution s.42 read from the Chapter IV chunk '42. (1) A citizen of Nigeria ... shall not, by reason only that he is such a person'.",
+  "turns": [
+   {
+    "text": "Is discrimination against disabled people against the law in Nigeria?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [1]},
+    "note": "Act cl.1: prohibition of discrimination and penalty -- the opening operative clause of the 2018 Act."
+   },
+   {
+    "text": "does the constitution say anything?",
+    "class": "ellipsis",
+    "expect_gate": "answer",
+    "expected": {"constitution1999": [42]},
+    "note": "Constitution s.42: right to freedom from discrimination. The turn names the document but not the subject -- the subject must come from turn 1."
+   },
+   {
+    "text": "where do I take a case like that?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"constitution1999": [46]},
+    "note": "Constitution s.46(1): 'Any person who alleges that any of the provisions of this Chapter has been ... contravened ... may apply to a High Court in that State for redress.'"
+   }
+  ]
+ },
+ {
+  "id": "CD7",
+  "set": "chat_dev",
+  "topic": "legal then help, slots split across turns",
+  "note": "This conversation exists to test merge_help_slots, not recall. Turn 2 states the disability, turn 3 states only the location -- the narrowing turn is unanswerable for the connector unless 'deaf' survives from turn 2.",
+  "turns": [
+   {
+    "text": "What are my rights if a hospital refuses to communicate with me?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [24]},
+    "note": "Act cl.24: provision of special communication at hospitals (Arrangement of Sections: '24. Provision of special communication at hospitals'; body in the [Act cl. 23,24] chunk)."
+   },
+   {
+    "text": "I am deaf, I need an organisation that can help",
+    "class": "handoff",
+    "expect_gate": "help",
+    "expected": {},
+    "expect_slots": {"disability": "deaf", "location": ""},
+    "note": "Help route with a disability slot and no location."
+   },
+   {
+    "text": "anywhere in Kano?",
+    "class": "narrowing",
+    "expect_gate": "help",
+    "expected": {},
+    "expect_slots": {"disability": "deaf", "location": "kano"},
+    "note": "THE canonical narrowing probe. router.extract_help_slots() on this turn alone returns disability='' -- the connector would drop the deafness filter. merge_help_slots must carry it."
+   }
+  ]
+ },
+ {
+  "id": "CD8",
+  "set": "chat_dev",
+  "topic": "road transport, then an in-corpus shift",
+  "note": "Act cl.10 (accessibility of vehicles) read from [Act cl. 11] chunk head and the Arrangement of Sections; cl.12 reserved parking read from [Act cl. 13].",
+  "turns": [
+   {
+    "text": "Are public buses required to be accessible?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [10]},
+    "note": "Act cl.10: accessibility of vehicles -- 'lifts, ramps and other accessibility aids to enhance the accessibility of their vehicles, parks and bus stops'."
+   },
+   {
+    "text": "what if the driver just drives off?",
+    "class": "ellipsis",
+    "expect_gate": "answer",
+    "expected": {"act2018": [11]},
+    "note": "Act cl.11(4): duty of care on a driver, who must ensure the vehicle comes to a stop before a person with disability alights (body in the [Act cl. 12] chunk, corroborated by factsheet Section 11,12)."
+   },
+   {
+    "text": "and parking spaces?",
+    "class": "topic-shift",
+    "expect_gate": "answer",
+    "expected": {"act2018": [12]},
+    "note": "NEAR shift -- same Part, different provision. Act cl.12: reserved places/parking. Leading 'and' plus a two-stem turn; a carry-rule fires, and here carrying IS correct. Contrast CD3 turn 3, where it is not."
+   }
+  ]
+ },
+ {
+  "id": "CD9",
+  "set": "chat_dev",
+  "topic": "the National Commission",
+  "note": "Act cl.31 read from [Act cl. 31]; cl.32 from [Act cl. 32].",
+  "turns": [
+   {
+    "text": "Is there a government body for disability issues?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [31]},
+    "note": "Act cl.31(1): 'There is established the National Commission for Persons with Disabilities'."
+   },
+   {
+    "text": "who runs it?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"act2018": [32]},
+    "note": "Act cl.32: the Governing Council and its composition. Two content stems, one unbound pronoun."
+   },
+   {
+    "text": "can it be sued?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"act2018": [32]},
+    "note": "Act cl.32(2)(b): the Commission 'may sue and be sued in its corporate name'."
+   }
+  ]
+ },
+ {
+  "id": "CD10",
+  "set": "chat_dev",
+  "topic": "parking, then off-corpus with shared legal vocabulary",
+  "note": "Turn 3 is the harder version of the CD5 trap: an off-corpus question that itself contains legal register, asked after two legal turns.",
+  "turns": [
+   {
+    "text": "Can someone without a disability park in a reserved space?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"factsheet2020": [12]},
+    "note": "Factsheet Section 12,14: 'A person without disability commits an offence if he/she also parks in a reserved space'."
+   },
+   {
+    "text": "how much is the fine?",
+    "class": "ellipsis",
+    "expect_gate": "answer",
+    "expected": {"act2018": [12]},
+    "note": "Act cl.12(3): fine of N1,000 for each day of default (body in the [Act cl. 13] chunk)."
+   },
+   {
+    "text": "and what does the law say about maritime shipping insurance?",
+    "class": "off-corpus-after-legal",
+    "expect_gate": "refuse",
+    "expected": {},
+    "note": "OFF CORPUS, and deliberately the probe that already defeats the floor single-turn: src/retrieve.py:26-44 records 'maritime shipping insurance (law)' scoring 0.249-0.306, ABOVE the weakest in-corpus hit. Included so the multi-turn number is comparable to the published single-turn one."
+   }
+  ]
+ },
+ {
+  "id": "CD11",
+  "set": "chat_dev",
+  "topic": "certificate of disability, then help",
+  "note": "Slots split across turns again, with a different disability so a hard-coded fix to CD7 would not pass.",
+  "turns": [
+   {
+    "text": "How do I get a disability certificate?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [22]},
+    "note": "Act cl.22: Permanent/Temporary Certificate of Disability, issued by the Commission on a doctor's recommendation."
+   },
+   {
+    "text": "I have albinism and I need support",
+    "class": "handoff",
+    "expect_gate": "help",
+    "expected": {},
+    "expect_slots": {"disability": "albinism", "location": ""},
+    "note": "router._DISABILITY_SCAN maps the substring 'albin' -> 'albinism'."
+   },
+   {
+    "text": "is there anywhere in Abuja?",
+    "class": "narrowing",
+    "expect_gate": "help",
+    "expected": {},
+    "expect_slots": {"disability": "albinism", "location": "abuja"},
+    "note": "Narrowing on location only; the albinism filter must survive from turn 2."
+   }
+  ]
+ },
+ {
+  "id": "CD12",
+  "set": "chat_dev",
+  "topic": "transitory period, then a far in-corpus shift",
+  "note": "Act cl.6 read from [Act cl. 6,7]; Constitution s.18 read from the Chapter II chunk.",
+  "turns": [
+   {
+    "text": "What is the transitory period in the Act?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [6]},
+    "note": "Act cl.6: 'there shall be a transitory period of five years' from commencement."
+   },
+   {
+    "text": "when does it end?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"act2018": [6]},
+    "note": "Same clause; 'it' is the only referring expression in the turn."
+   },
+   {
+    "text": "Does the constitution promise equal education?",
+    "class": "topic-shift",
+    "expect_gate": "answer",
+    "expected": {"constitution1999": [18]},
+    "note": "FAR shift, different document. Constitution s.18(1): 'Government shall direct its policy towards ensuring that there are equal and adequate educational opportunities at all levels.' No discourse marker and a full content load, so the carry-rule must NOT fire -- this is the negative control for contextualise()."
+   }
+  ]
+ },
+
+ {
+  "id": "CT1",
+  "set": "chat_test",
+  "topic": "air travel",
+  "note": "AUTHORED BLIND 2026-09-15, from the corpus text only, BEFORE src/chat.py existed and before any contextualisation was measured. Act cl.14/15 read from [Act cl. 14] / [Act cl. 15].",
+  "turns": [
+   {
+    "text": "Are airlines required to help disabled passengers?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [14]},
+    "note": "Act cl.14: airport/aircraft duties, incl. presentable and functional assistive and protective devices to and from the aircraft."
+   },
+   {
+    "text": "must they announce it in a way I can follow?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"act2018": [15]},
+    "note": "Act cl.15: 'Any general information shall be translated into the accessible format appropriate to the specific disability.'"
+   },
+   {
+    "text": "what about trains?",
+    "class": "topic-shift",
+    "expect_gate": "answer",
+    "expected": {"act2018": [13]},
+    "note": "Act cl.13(2): 'Railway stations, trains and facilities in the trains shall be made accessible to persons with disabilities' (body in the [Act cl. 14] chunk head, marginal note 'Seaports and railways')."
+   }
+  ]
+ },
+ {
+  "id": "CT2",
+  "set": "chat_test",
+  "topic": "building plans and offences",
+  "note": "AUTHORED BLIND. Act cl.7/8 read from [Act cl. 8].",
+  "turns": [
+   {
+    "text": "Does a new building plan have to include accessibility?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [7]},
+    "note": "Act cl.7: building plan must conform to a building code carrying accessibility features (factsheet Section 7 corroborates: 'This provides the procedure for erecting public structures, so it conforms with a building code')."
+   },
+   {
+    "text": "what if an officer approves it anyway?",
+    "class": "ellipsis",
+    "expect_gate": "answer",
+    "expected": {"act2018": [8]},
+    "note": "Act cl.8(3): 'An officer who approves or directs the approval of a building plan that contravenes the building code, commits an offence'."
+   },
+   {
+    "text": "so is he personally liable?",
+    "class": "ellipsis",
+    "expect_gate": "answer",
+    "expected": {"act2018": [8]},
+    "note": "Same clause -- liable on conviction. Leading 'so', one content stem, unbound 'he'/'it': the maximal-ellipsis case in this set."
+   }
+  ]
+ },
+ {
+  "id": "CT3",
+  "set": "chat_test",
+  "topic": "dignity and inhuman treatment",
+  "note": "AUTHORED BLIND. Constitution s.34 read from the Chapter IV chunk.",
+  "turns": [
+   {
+    "text": "What does the constitution say about degrading treatment?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"constitution1999": [34]},
+    "note": "Constitution s.34(1)(a): 'no person shall be subject to torture or to inhuman or degrading treatment'."
+   },
+   {
+    "text": "does that cover forced labour too?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"constitution1999": [34]},
+    "note": "Same section -- s.34(1)(b)/(c) cover slavery and forced or compulsory labour. 'that' is unbound."
+   }
+  ]
+ },
+ {
+  "id": "CT4",
+  "set": "chat_test",
+  "topic": "queues and accommodation",
+  "note": "AUTHORED BLIND. Act cl.26/27 read from the Arrangement of Sections and the [Act cl. 25,26,27] chunk.",
+  "turns": [
+   {
+    "text": "Do persons with disabilities get priority in queues?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [26]},
+    "note": "Act cl.26: service at queues -- 'first consideration' (Arrangement of Sections: '26. Service at queues')."
+   },
+   {
+    "text": "and for free accommodation?",
+    "class": "topic-shift",
+    "expect_gate": "answer",
+    "expected": {"act2018": [27]},
+    "note": "NEAR shift, adjacent clause. Act cl.27: accommodation."
+   },
+   {
+    "text": "what about during a flood?",
+    "class": "ellipsis",
+    "expect_gate": "answer",
+    "expected": {"act2018": [25]},
+    "note": "Act cl.25: 'situation of risk and humanitarian emergencies ... the occurrences of natural disasters'. 'flood' is lay vocabulary absent from the corpus -- deliberately a vocab-mismatch inside an ellipsis turn."
+   }
+  ]
+ },
+ {
+  "id": "CT5",
+  "set": "chat_test",
+  "topic": "politics, then help, slots split",
+  "note": "AUTHORED BLIND. Act cl.30 read from the Arrangement of Sections ('30. Participation in politics and public life') and factsheet Section 30,31.",
+  "turns": [
+   {
+    "text": "Can a person with disability run for office?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [30]},
+    "note": "Act cl.30: participation in politics and public life."
+   },
+   {
+    "text": "I use a wheelchair and want to find a group",
+    "class": "handoff",
+    "expect_gate": "help",
+    "expected": {},
+    "expect_slots": {"disability": "wheelchair", "location": ""},
+    "note": "router._DISABILITY_SCAN maps 'wheelchair' -> 'wheelchair'."
+   },
+   {
+    "text": "and in Kaduna?",
+    "class": "narrowing",
+    "expect_gate": "help",
+    "expected": {},
+    "expect_slots": {"disability": "wheelchair", "location": "kaduna"},
+    "note": "Narrowing on location; the wheelchair filter must survive."
+   }
+  ]
+ },
+ {
+  "id": "CT6",
+  "set": "chat_test",
+  "topic": "employment quota",
+  "note": "AUTHORED BLIND. Act cl.29 read from [Act cl. 29,30]; factsheet Section 38 read from the factsheet table.",
+  "turns": [
+   {
+    "text": "Must employers reserve jobs for persons with disabilities?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [29]},
+    "note": "Act cl.29: 'All employers of labour in public organisations shall, as much as possible, have persons with disabilities...'"
+   },
+   {
+    "text": "what percentage?",
+    "class": "ellipsis",
+    "expect_gate": "answer",
+    "expected": {"factsheet2020": [38]},
+    "note": "Factsheet Section 38: 'making available not less than 5 percent of the work force to persons with disabilities'. A two-word turn with one content stem -- the shortest probe in either set."
+   },
+   {
+    "text": "how do I renew my driver's licence?",
+    "class": "off-corpus-after-legal",
+    "expect_gate": "refuse",
+    "expected": {},
+    "note": "OFF CORPUS. No discourse marker and a full content load, so the carry-rule should NOT fire -- this probes whether a topic shift alone (without a marker) can still inherit legal vocabulary through the retrieval query."
+   }
+  ]
+ },
+ {
+  "id": "CT7",
+  "set": "chat_test",
+  "topic": "special facilities",
+  "note": "AUTHORED BLIND. Act cl.5 and the First Schedule read from [Act cl. 3,4,5] and the 'Section 5 First Schedule Special Facilities' chunk.",
+  "turns": [
+   {
+    "text": "What special facilities must a public building provide?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [5]},
+    "note": "Act cl.5 + First Schedule: wheelchairs, clear floor space, crutches, guide canes, hearing aid, curb ramps, ramps, handrails."
+   },
+   {
+    "text": "are guide canes on that list?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"act2018": [5]},
+    "note": "First Schedule item 2, 'Crutches, guide canes etc'. 'that list' is unbound. ADDENDUM 2026-09-15 (post-hoc, after the blind authoring, review-found -- the expectation is deliberately NOT edited): this turn is UNSCOREABLE on corpus v1. The chunk that actually carries the First Schedule list is reffed 'general', and evalset.ref_nums('general') is empty, so no retrieval can ever satisfy expected act2018:[5] here -- both arms do retrieve that exact chunk, at ranks 5-6, and still score 0.000. Same uncitable-chunk class as the recorded 'Act cl.19 is uncitable' gap; corpus v2 is what fixes it. Recall 0.000 on this turn is a corpus-ref artifact, NOT a contextualisation failure."
+   }
+  ]
+ },
+ {
+  "id": "CT8",
+  "set": "chat_test",
+  "topic": "awareness programmes, then far shift",
+  "note": "AUTHORED BLIND. Act cl.2 read from the Arrangement of Sections ('2. Awareness programmes') and [Act cl. 2]; Constitution s.40 read from the Chapter IV chunk.",
+  "turns": [
+   {
+    "text": "Does government have to run disability awareness campaigns?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [2]},
+    "note": "Act cl.2: awareness programmes, with the Federal Ministry of Information (factsheet Section 3 chunk corroborates the Ministry of Information link)."
+   },
+   {
+    "text": "can we form our own association instead?",
+    "class": "topic-shift",
+    "expect_gate": "answer",
+    "expected": {"constitution1999": [40]},
+    "note": "FAR shift, different document. Constitution s.40: 'Every person shall be entitled to assemble freely and associate with other persons'. No discourse marker, full content load -- carry-rule must not fire."
+   }
+  ]
+ },
+ {
+  "id": "CT9",
+  "set": "chat_test",
+  "topic": "Commission funds and reporting",
+  "note": "AUTHORED BLIND. Act cl.45 (Funds) read from [Act cl. 44,45]; cl.50 (annual report) read from [Act cl. 50,51,52].",
+  "turns": [
+   {
+    "text": "Where does the Commission get its money?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"act2018": [45]},
+    "note": "Act cl.45(1): 'The Commission shall establish and maintain a Fund' -- marginal note 'Funds of the Commission'."
+   },
+   {
+    "text": "does anyone check how they spend it?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"act2018": [49]},
+    "note": "Act cl.49: Audit -- 'The Auditor-General for the Federation...'. Two unbound referring expressions ('they', 'it')."
+   },
+   {
+    "text": "do they report to anyone?",
+    "class": "pronoun",
+    "expect_gate": "answer",
+    "expected": {"act2018": [50]},
+    "note": "Act cl.50: 'The Commission shall submit ... annual report' to the National Assembly (factsheet Section 50,45,54 corroborates)."
+   }
+  ]
+ },
+ {
+  "id": "CT10",
+  "set": "chat_test",
+  "topic": "fair hearing, then off-corpus",
+  "note": "AUTHORED BLIND. Constitution s.36 read from the Chapter IV chunk.",
+  "turns": [
+   {
+    "text": "Am I entitled to a fair hearing in court?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {"constitution1999": [36]},
+    "note": "Constitution s.36(1): 'a person shall be entitled to a fair hearing within a reasonable time by a court'."
+   },
+   {
+    "text": "so what if I cannot afford a lawyer?",
+    "class": "ellipsis",
+    "expect_gate": "answer",
+    "expected": {"constitution1999": [46]},
+    "note": "Constitution s.46(4)(b): provision for legal aid / financial assistance to indigent citizens seeking redress. Leading 'so' plus an unbound context."
+   },
+   {
+    "text": "and what is the naira to dollar rate today?",
+    "class": "off-corpus-after-legal",
+    "expect_gate": "refuse",
+    "expected": {},
+    "note": "OFF CORPUS and time-varying -- nothing in a 1999 Constitution or a 2018 Act can answer it. Leading 'and' after two Constitution turns: the strongest inherited-context configuration in this set."
+   }
+  ]
+ }
+]

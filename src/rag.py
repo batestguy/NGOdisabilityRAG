@@ -15,17 +15,41 @@ from pathlib import Path
 
 from chunk import constitution_aware_split, recursive_split, section_aware_split
 from load import build_clean_text, clean_text, repair_joins
-from retrieve import MIN_SCORE, Chunk, PerDocRetriever, cite_tag
+from retrieve import MIN_SCORE, Chunk, PerDocRetriever, cite_tag, select_top
 
 # Resolved 2026-09-08 via client.models.list(): `models/gemini-2.5-flash`
 # exists ("Gemini 2.5 Flash"); `gemini-2.0-flash` is gone (retired).
 # Short id "gemini-2.5-flash" is the API-usable form of the same model.
 MODEL_NAME = "gemini-2.5-flash"
+# Failover target. The 2026-09-11 judge run is the evidence: it spent 30
+# attempts on `gemini-2.5-flash-lite` (21 verdicts, 9 lost to a misread 429)
+# on a day when `gemini-2.5-flash` was ALSO available -- the generator model
+# recorded 0 calls and was never starved. The two models therefore draw from
+# SEPARATE free-tier pools, so the real daily budget is 40 calls, not 20.
+# Failing over is opt-in (see generate_with_meta) because a flash-lite answer
+# is not a flash answer and must never be recorded as one.
+FALLBACK_MODEL = "gemini-2.5-flash-lite"
 PROMPT_VERSION = "cite-strict-v2"
+
+# Identifies WHICH corpus produced a number, stamped into every artifact
+# header from Phase 10 A onward. "v1" is the corpus every published baseline in
+# this repo was measured on: OCR'd Act TXT split section-aware at 800 with refs
+# INFERRED from heading shape (hence 25/62 Act chunks uncitable), Constitution
+# and factsheet re-chunked from their processed TXT. Phase 10 C introduces
+# "v2" -- manifest-anchored Act parsing, re-extraction from the PDF text
+# layers -- alongside v1, never replacing it, so v1 numbers stay reproducible
+# from the same commit. A recall number without this stamp is unattributable.
+CORPUS_VERSION = "v1"
 
 # Sizes pinned from Phase 01: Act section-aware 800; Constitution
 # chapter-aware RECOMMENDED 400 (Q9 needs <=400 to pass 0.16);
 # Factsheet recursive 500/50.
+#
+# Phase 10 C hazard, recorded here because this is where the numbers live:
+# these sizes were measured with TF-IDF only, against the CORRUPTED Act text,
+# and short chunks concentrate term mass and inflate cosine. Longer v2 chunks
+# lower every cosine and can therefore manufacture false refusals. The
+# MIN_SCORE calibration must be RE-DERIVED against v2, not inherited.
 ACT_SIZE = 800
 CONST_SIZE = 400
 FACT_SIZE = 500
@@ -244,17 +268,79 @@ exactly as [Act cl. 10,11]). Multi-number tags are cited whole, verbatim."""
 PLAIN_SUFFIX = """\nWrite in plain, simple language for low-literacy readers: short \
 sentences, common words, one idea per sentence. Same facts, same citations."""
 
+# ---------------------------------------------------------------------------
+# Chat mode (Phase 10 B). Appended ONLY when build_prompt() is given history,
+# so a single-turn prompt is byte-identical to every one this project has ever
+# sent and every transcript and cache entry keeps its meaning.
+#
+# Rule 8 is the whole citation-safety story for multi-turn. Prior turns enter
+# the prompt so the model can UNDERSTAND an elliptical question ("so can they
+# fire me?"); they are not evidence. The citable set stays exactly this turn's
+# retrieved excerpts. verify_citations() is unchanged and therefore already
+# fails a tag re-cited from an earlier turn -- chat.cross_turn_drift() names
+# that specific case so it can be counted instead of merely failing.
+# ---------------------------------------------------------------------------
+CHAT_PROMPT_VERSION = "chat-cite-strict-v1"
 
-def build_prompt(question: str, hits, plain: bool = False) -> str:
-    """Assemble system instruction + cited excerpts + question."""
+CHAT_SUFFIX = """
+8. This is an ongoing conversation. Earlier turns are shown below for CONTEXT \
+ONLY -- to resolve what the user means by "it", "they" or "that". They are NOT \
+evidence. You may cite ONLY the retrieved excerpts in THIS turn. Never re-cite \
+a tag from an earlier turn that does not appear in this turn's excerpts, and \
+never restate an earlier claim as though it were retrieved now."""
+
+
+def _render_history(history) -> list:
+    """Prior turns as prompt lines. Empty list when there is no history."""
+    lines = []
+    for turn in history or []:
+        q = (turn.get("question") or "").strip() if isinstance(turn, dict) else ""
+        if not q:
+            continue
+        lines.append("User: %s" % q)
+        a = turn.get("answer") if isinstance(turn, dict) else None
+        # answer=None means PENDING (offline path, quota exhausted, or an
+        # error), never "the assistant said nothing". Saying so is more honest
+        # than rendering an empty assistant turn the model would try to explain.
+        lines.append("Assistant: %s" % (
+            a.strip() if a and a.strip() else "(no AI answer was generated for that turn)"))
+    return lines
+
+
+def build_prompt(question: str, hits, plain: bool = False, history=None) -> str:
+    """Assemble system instruction + cited excerpts + question.
+
+    `history` is an optional list of {question, answer} dicts (see
+    chat.history_for_prompt). Two hard requirements, both asserted in
+    scripts/test_phase09_ops.py:
+
+    1. history=None (or empty) renders a BYTE-IDENTICAL prompt to the one this
+       function produced before chat existed. The answer cache is keyed on
+       sha256(model + NUL + whole rendered prompt), so a single stray newline
+       would silently invalidate every cached answer and every published
+       transcript would stop describing a prompt the code can still produce.
+
+    2. History renders BEFORE the final "\\nQuestion: %s" line. This is a
+       PRIVACY requirement, not a formatting preference. _cache_write() stores
+       prompt.rsplit("Question: ", 1)[-1] -- the current question line only. Put
+       history after that split point and the on-disk cache starts recording
+       whole conversations, including disclosures of abuse and coercion, from a
+       population that makes them.
+    """
     lines = [SYSTEM_PROMPT]
     if plain:
         lines.append(PLAIN_SUFFIX)
+    hist = _render_history(history)
+    if hist:
+        lines.append(CHAT_SUFFIX)
     lines.append("\nRetrieved excerpts (cite VERBATIM, quirks included):")
     for h in hits:
         lines.append(
             "\n%s (relevance %.3f):\n%s" % (cite_tag(h.doc_id, h.ref), h.score, h.text)
         )
+    if hist:
+        lines.append("\nEarlier in this conversation (context ONLY, NOT citable):")
+        lines.extend(hist)
     lines.append("\nQuestion: %s" % question)
     lines.append("Answer (every factual claim cited, or the exact no-answer sentence):")
     return "\n".join(lines)
@@ -314,6 +400,38 @@ def verify_citations(answer: str, hits) -> list[dict]:
         out.append({"tag": tag,
                     "number_ok": all(n in retrieved_refs for n in nums)})
     return out
+
+
+# ---------------------------------------------------------------------------
+# Quota classifiers (moved here from scripts/judge_phase06.py, Phase 09 M1).
+#
+# They used to live in the judge script, which meant the ONE distinction the
+# whole quota discipline rests on -- retryable rate limit vs exhausted daily
+# cap -- was defined in a script and unavailable to the library that actually
+# makes the calls. ask() could not tell the two apart, so it treated every 429
+# identically. They are the single source of truth now; judge_phase06.py
+# imports them rather than keeping a second copy that could drift.
+# ---------------------------------------------------------------------------
+
+
+def is_per_minute_429(err: str) -> bool:
+    """Distinguish a transient RPM limit from the daily cap.
+
+    This distinction is the whole reason a run can be honest about what it
+    did: an RPM 429 deserves a retry, a daily-cap 429 must leave the row
+    PENDING rather than pretend the answer was unobtainable for a trivial
+    reason. Guessing wrong in the lenient direction would mean hammering a
+    exhausted daily quota; guessing wrong in the strict direction would mean
+    abandoning work that a 40-second wait would have completed.
+    """
+    return "PerMinute" in err or "RequestsPerMinute" in err
+
+
+def retry_delay(err: str, attempt: int) -> float:
+    m = re.search(r"retryDelay['\"]?:\s*['\"]?(\d+(?:\.\d+)?)s", err)
+    if m:
+        return float(m.group(1)) + 3.0        # the server's own hint + slack
+    return min(60.0, 8.0 * (2 ** attempt))    # else exponential backoff
 
 
 # ---------------------------------------------------------------------------
@@ -393,37 +511,66 @@ def _cache_write(key: str, prompt: str, model: str, answer: str) -> None:
 
 
 def generate_with_meta(
-    prompt: str, model: str = MODEL_NAME, use_cache: bool = True
-) -> tuple[str, bool]:
-    """Single Gemini generation. Returns (answer, cached).
+    prompt: str, model: str = MODEL_NAME, use_cache: bool = True,
+    failover: bool = False,
+) -> tuple[str, bool, str]:
+    """Single Gemini generation. Returns (answer, cached, model_used).
 
     `cached` is what keeps the cache honest: it rides back through ask() into
     the result dict, so a replayed answer can never be written into a
-    transcript as though it had been freshly generated.
+    transcript as though it had been freshly generated. `model_used` does the
+    same job for failover -- the caller records which model actually spoke,
+    not which one it asked for.
+
+    FAILOVER (Phase 09 M1) is opt-in and fires at most once, only for a
+    DAILY-cap 429. Three guards, each load-bearing:
+
+      - `failover` off by default. A flash-lite answer is a different answer,
+        and an eval that silently mixed two models would be measuring neither.
+        Opting in is the caller saying it will record the difference.
+      - a PER-MINUTE 429 re-raises instead. It carries its own retryDelay
+        (~37s) and clears on its own; burning the fallback model's daily pool
+        to dodge a 37-second wait would trade a scarce resource for a cheap
+        one. The caller retries it -- see is_per_minute_429.
+      - `model != FALLBACK_MODEL`, so a failover can never itself fail over.
+        The recursive call also passes failover=False, belt and braces.
+
+    Cache reads AND writes key on the model actually used (_cache_key hashes
+    the model), so a flash-lite answer can never be replayed as a flash one.
     """
     if use_cache:
         hit = _cache_read(_cache_key(prompt, model))
         if hit is not None:
-            return hit, True
+            return hit, True, model
     key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
     if not key:
         raise RuntimeError("GOOGLE_API_KEY/GEMINI_API_KEY not set")
     from google import genai
     client = genai.Client(api_key=key)
-    resp = client.models.generate_content(model=model, contents=prompt)
+    try:
+        resp = client.models.generate_content(model=model, contents=prompt)
+    except Exception as e:
+        msg = "%s" % e
+        if not (failover and "429" in msg and not is_per_minute_429(msg)
+                and model != FALLBACK_MODEL):
+            raise
+        return generate_with_meta(prompt, model=FALLBACK_MODEL,
+                                  use_cache=use_cache, failover=False)
     answer = (resp.text or "").strip()
     if use_cache and answer:  # never cache an empty reply
         _cache_write(_cache_key(prompt, model), prompt, model, answer)
-    return answer, False
+    return answer, False, model
 
 
-def generate(prompt: str, model: str = MODEL_NAME, use_cache: bool = True) -> str:
+def generate(prompt: str, model: str = MODEL_NAME, use_cache: bool = True,
+             failover: bool = False) -> str:
     """Single Gemini generation via the new `google.genai` SDK (not the
     retired `google.generativeai` package, not the retired 2.0-flash).
 
     Back-compatible wrapper over generate_with_meta() for callers that do not
     care whether the answer was replayed."""
-    return generate_with_meta(prompt, model=model, use_cache=use_cache)[0]
+    return generate_with_meta(prompt, model=model, use_cache=use_cache,
+                              failover=failover)[0]
 
 
 def ask(
@@ -432,10 +579,14 @@ def ask(
     plain: bool = False,
     k: int = 3,
     top_n: int = 6,
+    min_per_doc: int = 1,
     min_score: float = MIN_SCORE,
     model: str = MODEL_NAME,
     use_llm: bool = True,
     use_cache: bool = True,
+    failover: bool = False,
+    history=None,
+    retrieval_query: str | None = None,
 ) -> dict:
     """Ask one question. Returns {answer, citations, refused, scores, route}.
 
@@ -443,6 +594,15 @@ def ask(
     preamble at top-4 (retrieval miss, not corpus gap); fragmented
     Constitution sections (s.46 split across chunks) need fuller context.
     Tuned 2026-09-08; still cheap for the free tier (6 short chunks).
+
+    The merge to those six is select_top(), NOT a `[:top_n]` slice (Phase 09
+    step 3 M2). The slice sorted candidates from three separate TF-IDF spaces
+    by raw cosine -- a comparison PerDocRetriever's own docstring says is
+    invalid -- and so re-introduced the Constitution flooding that per-doc
+    retrieval exists to prevent. min_per_doc reserves each doc's best
+    above-floor candidate; the budget stays six, only WHICH six changes. The
+    refusal decision is provably unchanged -- see the block above select_top
+    in src/retrieve.py.
 
     refused=True (answer = REFUSAL_MESSAGE, no LLM call) when nothing clears
     min_score. With use_llm=False (or no key) the retrieval half still runs
@@ -453,10 +613,36 @@ def ask(
     reported at the top level AND in `route`, so any transcript written from
     this dict records whether the call was real. See the cache block above
     generate_with_meta().
+
+    `route["model"]` keeps its existing meaning -- the model REQUESTED -- so no
+    field in any historical transcript changes meaning. `model_used` is the new
+    key and records what actually ran: the same value normally, FALLBACK_MODEL
+    when failover fired, and None when no model ran at all (gate refusal,
+    use_llm=False, or an error). Opting into `failover` without recording
+    `model_used` would be exactly the "fake an LLM row" failure this project
+    forbids, so the two ship together.
+
+    CHAT (Phase 10 B), both parameters defaulted so every existing caller is
+    untouched:
+
+    `retrieval_query` is what RETRIEVAL sees; `question` stays what the USER
+    asked and is the only thing that reaches the prompt, the citation check and
+    the transcript. Separating them is what lets chat.contextualise() repeat and
+    extend a query without the model ever seeing the mangled string -- and it
+    keeps the refusal gate honest, because the gate is computed on whatever was
+    actually retrieved on. `route["retrieval_query"]` records it whenever it
+    differs, so a run can never hide that it searched for something other than
+    what was asked.
+
+    `history` is passed straight to build_prompt(). history=None renders a
+    byte-identical prompt to the pre-chat one; see build_prompt's docstring for
+    why that is load-bearing for both the cache and privacy.
     """
     if retriever is None:
         retriever = PerDocRetriever(build_corpus())
-    merged = retriever.query(question, k=k)[:top_n]
+    query = retrieval_query if retrieval_query is not None else question
+    merged = select_top(retriever.query(query, k=k), top_n,
+                        min_per_doc=min_per_doc, floor=min_score)
     per_doc_top = {}
     for h in merged:
         per_doc_top.setdefault(h.doc_id, round(h.score, 4))
@@ -464,13 +650,20 @@ def ask(
     scores = [
         {"doc_id": h.doc_id, "ref": h.ref, "score": round(h.score, 4)} for h in merged
     ]
+    # A chat turn is a different prompt, so it gets a different version string
+    # and therefore a different cache key -- single-turn transcripts stay
+    # comparable to each other and can never be mixed with multi-turn ones.
+    prompt_version = CHAT_PROMPT_VERSION if _render_history(history) else PROMPT_VERSION
     route = {
         "model": model,
-        "prompt": PROMPT_VERSION + ("-plain" if plain else ""),
+        "model_used": None,  # set only when a model actually answered
+        "prompt": prompt_version + ("-plain" if plain else ""),
         "min_score": min_score,
         "per_doc_top": per_doc_top,
         "plain": plain,
     }
+    if query != question:
+        route["retrieval_query"] = query
     if not hits:
         return {
             "question": question,
@@ -492,9 +685,9 @@ def ask(
             "llm_used": False,
         }
     try:
-        answer, cached = generate_with_meta(
-            build_prompt(question, hits, plain=plain),
-            model=model, use_cache=use_cache)
+        answer, cached, model_used = generate_with_meta(
+            build_prompt(question, hits, plain=plain, history=history),
+            model=model, use_cache=use_cache, failover=failover)
     except Exception as e:  # quota/network: report pending, never fake
         return {
             "question": question,
@@ -505,9 +698,11 @@ def ask(
             "route": route,
             "llm_used": False,
             "cached": False,
+            "model_used": None,  # nothing answered -- the row stays pending
             "llm_error": "%s: %s" % (type(e).__name__, e),
         }
     route["cached"] = cached
+    route["model_used"] = model_used
     if NO_ANSWER_SENTENCE in answer:
         # Second refusal layer: retrieval passed the floor on shared words,
         # but the strict prompt found nothing supporting an answer.
@@ -520,6 +715,7 @@ def ask(
             "route": route,
             "llm_used": True,
             "cached": cached,
+            "model_used": model_used,
             "refusal_layer": "llm-no-answer",
         }
     return {
@@ -531,5 +727,6 @@ def ask(
         "route": route,
         "llm_used": True,
         "cached": cached,
+        "model_used": model_used,
         "cite_check": verify_citations(answer, hits),
     }

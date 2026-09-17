@@ -231,16 +231,25 @@ def get_ngo_df():
     return _ngo_df
 
 
-def _help_payload(question: str, df=None, k: int = 3) -> dict:
+def _help_payload(question: str, df=None, k: int = 3, slots=None) -> dict:
     """Helplines-first NGO records via find_ngo_with_meta (never bare find_ngo).
 
     Phase 03 residual: meta.fuzzy_fallback stays visible; when True the
     payload carries needs_confirmation=True + a "did you mean ...?" prompt
     so the UI asks instead of presenting an approximate top-1 as fact.
+
+    `slots` (Phase 10 C) lets a CALLER supply the {disability, location} pair
+    instead of having it scanned from this turn alone -- chat.merge_help_slots()
+    accumulates "I'm deaf" ... "anywhere in Kano?" across turns. It arrives as
+    an ARGUMENT and is never stored: this module has no conversation state and
+    keeps none, which is what makes every routing decision depend only on its
+    inputs and what lets test_phase04.py assert on ten fixed strings. When it is
+    None the behaviour is byte-identical to before -- the same
+    extract_help_slots(question) call, in the same place.
     """
     from ngo import find_ngo_with_meta
     df = get_ngo_df() if df is None else df
-    slots = extract_help_slots(question)
+    slots = extract_help_slots(question) if slots is None else slots
     frame, meta = find_ngo_with_meta(
         df, disability=slots["disability"], location=slots["location"], k=k)
     payload = {"records": frame.to_dict("records"), "meta": meta,

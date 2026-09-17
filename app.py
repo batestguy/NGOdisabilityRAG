@@ -18,7 +18,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
-from ngo import DRAC_TOLLFREE, DRAC_WHATSAPP
+import chat  # noqa: E402  (contextualise / merge_help_slots / drift -- offline, free)
+from chat import TurnPayload  # noqa: E402  (the stored unit of conversation)
+from ngo import DRAC_TOLLFREE, DRAC_WHATSAPP  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Pure helpers (import-safe, unit-assertable without a browser)
@@ -218,29 +220,50 @@ def resolve_mode(question: str, explicit: str = "auto", route_fn=None) -> dict:
 
 
 def answer_legal(question: str, retriever=None, plain: bool = False,
-                 use_llm: bool = False) -> dict:
+                 use_llm: bool = False, history=None,
+                 retrieval_query: str | None = None) -> dict:
     """Thin wrapper over rag.ask so the plain-language flag threads through.
 
     Offline default: use_llm=False (retrieval excerpts + citation tags, no
     Gemini call). plain=True appends the Phase 02 plain suffix to the prompt
     and is recorded in result['route']['plain'] / ['prompt'].
+
+    `history` and `retrieval_query` (Phase 10 C) pass STRAIGHT THROUGH to
+    ask(), which is where both are documented. Nothing is reinterpreted here --
+    the UI and the eval harness therefore drive exactly the same contract, and
+    omitting both leaves every pre-chat caller byte-identical.
     """
     from rag import ask
-    return ask(question, retriever=retriever, plain=plain, use_llm=use_llm)
+    return ask(question, retriever=retriever, plain=plain, use_llm=use_llm,
+               history=history, retrieval_query=retrieval_query)
 
 
 def offline_legal_hits(question: str, retriever, k: int = 3,
-                       top_n: int = 6, min_score: float = 0.10) -> dict:
+                       top_n: int = 6, min_per_doc: int = 1,
+                       min_score: float = 0.10,
+                       retrieval_query: str | None = None) -> dict:
     """Offline legal display payload: gated excerpts WITH citation tags.
 
     Never strips citations -- each hit carries cite_tag(doc_id, ref) built by
     Phase 02's own cite_tag(). weak/empty retrieval -> refused with the fixed
     refusal message (+ helplines are rendered by the caller, above this).
+
+    The merge to top_n is select_top(), the same call ask() makes, so the
+    offline excerpt path and the LLM path show the same six chunks. A display
+    path that sliced differently from ask() would be showing the user a system
+    nobody measures.
+
+    `retrieval_query` mirrors ask()'s own parameter of the same name, for the
+    same reason and with the same default: chat.contextualise() may hand
+    retrieval a merged query while `question` stays what the USER asked. Omit
+    it and behaviour is byte-identical to the pre-chat path.
     """
-    from retrieve import MIN_SCORE, cite_tag
+    from retrieve import MIN_SCORE, cite_tag, select_top
     from rag import REFUSAL_MESSAGE
     floor = MIN_SCORE if min_score is None else min_score
-    merged = retriever.query(question, k=k)[:top_n]
+    query = retrieval_query if retrieval_query is not None else question
+    merged = select_top(retriever.query(query, k=k), top_n,
+                        min_per_doc=min_per_doc, floor=floor)
     hits = [h for h in merged if h.score >= floor]
     if not hits:
         return {"refused": True, "answer": REFUSAL_MESSAGE,
@@ -252,16 +275,20 @@ def offline_legal_hits(question: str, retriever, k: int = 3,
             "citations": [e["tag"] for e in excerpts]}
 
 
-def help_display(question: str, df=None, k: int = 3) -> dict:
+def help_display(question: str, df=None, k: int = 3, slots=None) -> dict:
     """Offline help payload via router._help_payload (helplines-first, top-k).
 
     Returns {records, meta, slots, needs_confirmation, confirm_prompt}.
     records[0:2] are the DRAC banner rows; the rest are the TOP-K org rows
     (never top-1-only). When needs_confirmation, the caller must show
     confirm_prompt + badge contacts as 'please confirm this matches your need'.
+
+    `slots` (Phase 10 C) carries chat.merge_help_slots()' accumulated
+    {disability, location} so "I'm deaf" ... "anywhere in Kano?" keeps BOTH
+    filters. slots=None reproduces the single-turn scan exactly.
     """
     from router import _help_payload
-    return _help_payload(question, df=df, k=k)
+    return _help_payload(question, df=df, k=k, slots=slots)
 
 
 def build_speech_text(legal: dict | None, help_payload: dict | None,
@@ -355,6 +382,69 @@ def read_aloud_html(speech_text: str, button_label: str = "🔊 Read answer alou
 
 
 # ---------------------------------------------------------------------------
+# Quota readout (Phase 10 C) -- COUNTS ONLY, never a word of the conversation
+# ---------------------------------------------------------------------------
+#
+# The free tier is 20 calls/day/model and the UI now has a "AI-answer every new
+# turn" switch, so a user can spend the day's pool without noticing. A readout
+# is the cheapest guard.
+#
+# What is stored is the whole design: {"YYYY-MM-DD": {"gemini-2.5-flash": 3}} --
+# a date, a model name, an integer. No question, no answer, no citation, no
+# session id. This population discloses abuse and coercion; a usage log is not
+# worth the risk of holding any of it, and a log that holds none cannot leak
+# any.
+#
+# The label is "this instance since restart", never "today". On Render the free
+# instance has an EPHEMERAL filesystem and sleeps after 15 minutes idle, so the
+# file is routinely empty at boot even when quota was spent an hour ago. The
+# date key is structure, not a claim about completeness.
+
+QUOTA_LOG_PATH = Path(__file__).resolve().parent / "scripts" / ".quota_log.json"
+
+
+def quota_log_record(model: str, path=None) -> None:
+    """Count one COMPLETED LLM call. Fails open, exactly like rag._cache_write.
+
+    Called only where a model actually answered -- a log entry is evidence that
+    quota was spent, so writing one for a failed call would make the readout
+    lie in the direction that matters (over-reporting spend is annoying;
+    under-reporting it strands a user mid-conversation).
+    """
+    p = QUOTA_LOG_PATH if path is None else Path(path)
+    try:
+        import datetime as _dt
+        import json as _json
+        data = {}
+        if p.exists():
+            try:
+                data = _json.loads(p.read_text(encoding="utf-8"))
+            except Exception:
+                data = {}  # corrupt file: start over rather than fail the call
+        day = _dt.date.today().isoformat()
+        bucket = data.setdefault(day, {})
+        bucket[model] = int(bucket.get(model, 0)) + 1
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_suffix(".tmp")
+        tmp.write_text(_json.dumps(data, indent=1), encoding="utf-8")
+        tmp.replace(p)  # atomic-ish: never leaves a half-written file
+    except Exception:
+        pass  # a log we cannot write is still a working assistant
+
+
+def quota_log_counts(path=None) -> dict:
+    """{model: calls} for the current date key, or {} if there is no log yet."""
+    p = QUOTA_LOG_PATH if path is None else Path(path)
+    try:
+        import datetime as _dt
+        import json as _json
+        data = _json.loads(p.read_text(encoding="utf-8"))
+        return dict(data.get(_dt.date.today().isoformat(), {}))
+    except Exception:
+        return {}  # missing/corrupt/unreadable: report nothing, never raise
+
+
+# ---------------------------------------------------------------------------
 # Cached resources (the performance trap: never rebuild per keystroke)
 # ---------------------------------------------------------------------------
 
@@ -423,23 +513,47 @@ def render_helpline_banner():
                 unsafe_allow_html=True)
 
 
+def _requeue_last(route: str):
+    """Re-ask the LAST turn on `route`: pop it, re-queue it, rerun.
+
+    Scoped to the last turn, which is both the only turn whose fixed-key
+    controls are rendered and the only turn it is safe to re-answer: every
+    later turn was contextualised against this one (chat.contextualise), so
+    re-answering a mid-conversation turn would silently invalidate answers the
+    user has already read.
+    """
+    st = _st()
+    turns = st.session_state.get("turns") or []
+    question = turns[-1].question if turns else st.session_state.get("last_q", "")
+    if turns:
+        turns.pop()
+    st.session_state["explicit"] = route
+    st.session_state["submitted"] = True
+    st.session_state["pending"] = question
+    st.rerun()
+
+
 def render_routing_trap(mode: str):
-    """'I treated this as X [switch to Y]' -- a misroute costs one click."""
+    """'I treated this as X [switch to Y]' -- a misroute costs one click.
+
+    Last turn only. The key is fixed (switch-legal / switch-help) and Streamlit
+    keys are page-global, so one per page is all the widget system allows --
+    and re-answering an older turn is wrong anyway (see _requeue_last).
+    """
     st = _st()
     other = _switch_label(mode)
     st.caption("I treated this as a **%s** question." % mode.upper())
     if st.button("Switch to %s" % other, key="switch-%s" % mode,
                  help="Re-answer the same question via the other route"):
-        st.session_state["explicit"] = other
-        st.session_state["submitted"] = True
-        st.rerun()
+        _requeue_last(other)
 
 
 GREETING_TEXT = (
     "Hello! I'm DRLCA — I answer questions about Nigerian disability rights "
     "(Disability Act 2018 + 1999 Constitution, always with citations) and help "
-    "find verified organisations and helplines near you. Type your question "
-    "above, then press one of the three buttons.")
+    "find verified organisations and helplines near you. Ask your question in "
+    "the box at the bottom of the page, then just keep replying — I follow the "
+    "conversation.")
 
 
 def render_greeting():
@@ -447,69 +561,230 @@ def render_greeting():
     st.success("👋 " + GREETING_TEXT)
 
 
-def render_clarify(clarify_text: str):
+def render_clarify(clarify_text: str, live: bool = True):
+    """The clarifying question, plus its two one-click answers on the last turn.
+
+    Clarify is now ALSO just a turn: the user can ignore the buttons and simply
+    reply. The buttons stay because one click is cheaper than retyping, and
+    because their keys are asserted -- but they are rendered only for the
+    newest turn, where re-asking is safe.
+    """
     st = _st()
     st.warning("❓ " + clarify_text)
+    if not live:
+        return
     c1, c2 = st.columns(2)
     with c1:
         if st.button("Legal info about my rights", key="clarify-legal"):
-            st.session_state["explicit"] = "legal"
-            st.session_state["submitted"] = True
-            st.rerun()
+            _requeue_last("legal")
     with c2:
         if st.button("Find help near me", key="clarify-help"):
-            st.session_state["explicit"] = "help"
-            st.session_state["submitted"] = True
-            st.rerun()
+            _requeue_last("help")
+    st.caption("…or just reply in the box below — a clarification is only a turn.")
 
 
-def render_legal(question: str, plain: bool):
+# How many excerpt cards render inline before the rest fold into one expander.
+# A DISPLAY split and nothing else: retrieval still returns the same six chunks
+# ask() sees, and a generated answer may still cite all six. Pool depth is a
+# Phase E change and moves in the same commit as the harnesses that measure it.
+INLINE_EXCERPTS = 3
+
+
+def _render_excerpt(e):
     st = _st()
-    retriever = load_retriever()
-    payload = offline_legal_hits(question, retriever)
-    # Prove the plain flag threads through (Phase 02 toggle reuse, offline).
-    probe = answer_legal(question, retriever=retriever, plain=plain,
-                         use_llm=False)
+    st.markdown("`%s` (relevance %.3f)" % (e["tag"], e["score"]))
+    st.markdown("<div class='drlca-answer'>%s…</div>"
+                % html.escape(e["text"][:700]), unsafe_allow_html=True)
+
+
+def render_excerpts(excerpts, turn_index: int):
+    """One turn's excerpt cards: INLINE_EXCERPTS inline, the rest behind one fold.
+
+    Shared by the live path and the replay path so a turn looks the same
+    however it got on screen. In a single-turn UI six cards were the page; in a
+    conversation they are six cards between the user and their next question.
+    """
+    st = _st()
+    st.markdown("**Retrieved excerpts (offline, citations kept):**")
+    for e in excerpts[:INLINE_EXCERPTS]:
+        _render_excerpt(e)
+    rest = excerpts[INLINE_EXCERPTS:]
+    if rest:
+        with st.expander("📄 %d more excerpt(s) retrieved for this turn"
+                         % len(rest), expanded=False):
+            for e in rest:
+                _render_excerpt(e)
+
+
+class _HitRef:
+    """(doc_id, ref) duck type for verify_citations / chat.cross_turn_drift.
+
+    Both read only those two attributes. Rebuilding them from the stored
+    excerpts keeps a REPLAYED turn checkable without pinning retriever Hit
+    objects -- and their full chunk text -- in session state for the whole
+    session.
+    """
+
+    __slots__ = ("doc_id", "ref")
+
+    def __init__(self, doc_id, ref):
+        self.doc_id, self.ref = doc_id, ref
+
+
+def _multi_turn(prior) -> bool:
+    """Will this turn's history actually REACH the prompt?
+
+    The real condition ask() branches on -- rag._render_history() non-empty --
+    not a proxy like `turn_index > 0`. chat.history_for_prompt() applies
+    CARRY_WINDOW and drops blank turns, so a turn can have predecessors and
+    still render a single-turn prompt. Asking the same two functions ask() asks
+    is what makes the caption below track the prompt builder instead of merely
+    agreeing with it today.
+    """
+    from rag import _render_history
+    return bool(_render_history(chat.history_for_prompt(prior)))
+
+
+def _prompt_id(plain: bool, multi_turn: bool) -> str:
+    """The prompt version a turn uses, READ FROM rag rather than hardcoded.
+
+    Mirrors the single line in ask() that picks between the two versions --
+    given a `multi_turn` computed by _multi_turn(), which evaluates the same
+    condition rather than approximating it. It replaces Phase 05's probe, which
+    cost a SECOND full ask() per turn purely to display this string --
+    affordable once per page, not once per turn per rerun. That the plain flag
+    really threads through is proven where proof belongs: the answer_legal
+    asserts in scripts/test_phase05.py.
+    """
+    from rag import CHAT_PROMPT_VERSION, PROMPT_VERSION
+    return ((CHAT_PROMPT_VERSION if multi_turn else PROMPT_VERSION)
+            + ("-plain" if plain else ""))
+
+
+def render_plain_caption(plain: bool, prior=None):
+    st = _st()
     st.caption("Plain-language mode: **%s** (prompt: `%s`)"
                % ("ON" if plain else "OFF",
-                  probe.get("route", {}).get("prompt", "?")))
-    if payload["refused"]:
-        st.warning("🚫 " + str(payload["answer"]))
-        return payload
-    st.markdown("**Retrieved excerpts (offline, citations kept):**")
-    for e in payload["excerpts"]:
-        st.markdown("`%s` (relevance %.3f)" % (e["tag"], e["score"]))
-        st.markdown("<div class='drlca-answer'>%s…</div>"
-                    % html.escape(e["text"][:700]), unsafe_allow_html=True)
+                  _prompt_id(plain, _multi_turn(prior))))
+
+
+def render_context_note(payload):
+    """Why this turn searched for what it searched for -- carried context, visible.
+
+    chat.contextualise() can quietly change the query behind a two-word
+    follow-up. Saying so is the difference between a system that resolves
+    ellipsis and one that appears to read minds.
+    """
+    st = _st()
+    meta = payload.ctx_meta or {}
+    if not meta.get("carried"):
+        return
+    st.caption("🔗 Read as a follow-up (%s) — I searched using the previous "
+               "turn as well as this one." % meta.get("reason", "context carried"))
+
+
+def render_defects(payload):
+    """Citation failures and cross-turn drift, in the OPEN -- never behind a fold.
+
+    chat.cross_turn_drift() names the chat-only failure mode: the model
+    re-cited a tag it saw in an EARLIER turn that this turn did not retrieve.
+    The response is never to widen the citable set to absorb it. It is shown to
+    the user, on the turn, as a defect in the text they are reading.
+    """
+    st = _st()
+    bad = [c["tag"] for c in (payload.cite_check or []) if not c.get("number_ok")]
+    if bad:
+        st.warning("⚠️ %d citation(s) in the AI text name a section number this "
+                   "turn did not retrieve: %s. Trust the excerpts above."
+                   % (len(bad), ", ".join(bad)))
+    if payload.drift:
+        st.warning("⚠️ Cross-turn citation drift: %s. The AI re-used evidence "
+                   "from an earlier turn that this turn did not retrieve. "
+                   "Earlier turns are context, not evidence." % ", ".join(payload.drift))
+
+
+def _run_ai_turn(payload, turn_index: int, plain: bool) -> bool:
+    """The ONE place an LLM call happens. True when an answer actually landed.
+
+    History reaches the prompt only through chat.history_for_prompt(), which
+    trims prior turns to {question, answer}: no excerpts, no tags, no scores.
+    Under CHAT_PROMPT_VERSION rule 8 those turns are context, not evidence, and
+    the citable set stays this turn's hits alone -- which is exactly what
+    verify_citations() and cross_turn_drift() are checked against below.
+
+    A refusal from the strict prompt comes back as REFUSAL_MESSAGE and is
+    stored verbatim. Both refusal layers survive; nothing is ever substituted
+    for an answer the model declined to give.
+    """
+    st = _st()
+    prior = list((st.session_state.get("turns") or [])[:turn_index])
+    try:
+        res = answer_legal(payload.question, retriever=load_retriever(),
+                           plain=plain, use_llm=True,
+                           history=chat.history_for_prompt(prior),
+                           retrieval_query=payload.retrieval_query or None)
+    except Exception as exc:  # quota/network: explain, never a traceback
+        st.warning("⚠️ AI answer unavailable (%s). Your quota may be "
+                   "exhausted or the network unreachable. The offline "
+                   "excerpts above remain fully usable." % type(exc).__name__)
+        return False
+    if res.get("answer") is None:
+        err = res.get("llm_error", "quota or network error")
+        st.warning("⚠️ AI answer unavailable (%s). The offline excerpts above "
+                   "remain fully usable." % err)
+        return False
+    route = res.get("route", {})
+    if not route.get("cached"):
+        # A cache replay spends no quota, so counting it would over-report.
+        quota_log_record(route.get("model_used") or route.get("model") or "?")
+    from rag import verify_citations
+    hits = [_HitRef(e["doc_id"], e["ref"]) for e in payload.excerpts]
+    payload.answer = res["answer"]
+    payload.cite_check = verify_citations(res["answer"], hits)
+    payload.drift = chat.cross_turn_drift(res["answer"], prior, hits)
+    return True
+
+
+def render_ai_expander(payload, turn_index: int, plain: bool):
+    """The opt-in Gemini expander for ONE turn. Collapsed, and OFF by default.
+
+    Shared by render_turn and replay_turn so a live turn and a replayed turn
+    are the same pixels. The button key carries the turn index because
+    Streamlit keys are page-global and a conversation renders N of these.
+    """
+    st = _st()
     with st.expander("🤖 Answer with AI (needs internet + quota)", expanded=False):
         st.caption("Optional. Off by default -- the excerpts above are the "
                    "complete offline answer. Generation uses your Gemini quota.")
-        if st.button("Generate AI answer", key="llm-go"):
-            try:
-                res = answer_legal(question, retriever=retriever,
-                                   plain=plain, use_llm=True)
-            except Exception as exc:  # quota/network: explain, never traceback
-                st.warning("⚠️ AI answer unavailable (%s). Your quota may be "
-                           "exhausted or the network unreachable. The offline "
-                           "excerpts above remain fully usable."
-                           % type(exc).__name__)
-            else:
-                if res.get("answer") is None:
-                    err = res.get("llm_error", "quota or network error")
-                    st.warning("⚠️ AI answer unavailable (%s). The offline "
-                               "excerpts above remain fully usable." % err)
-                else:
-                    st.markdown(res["answer"])
-                    if res.get("citations"):
-                        st.caption("Citations: " + ", ".join(res["citations"]))
+        if payload.answer:
+            st.markdown(payload.answer)
+            if payload.cite_check:
+                st.caption("Citations: "
+                           + ", ".join(c["tag"] for c in payload.cite_check))
+        elif st.button("Generate AI answer", key="llm-go-%d" % turn_index):
+            if _run_ai_turn(payload, turn_index, plain):
+                st.rerun()  # stored once; the replay above renders it from now on
+
+
+def render_legal(question: str, plain: bool, turn_index: int = 0,
+                 retrieval_query=None, prior=None):
+    """Compute AND render one turn's legal half. Returns the offline payload."""
+    st = _st()
+    retriever = load_retriever()
+    payload = offline_legal_hits(question, retriever,
+                                 retrieval_query=retrieval_query)
+    render_plain_caption(plain, prior)
+    if payload["refused"]:
+        st.warning("🚫 " + str(payload["answer"]))
+        return payload
+    render_excerpts(payload["excerpts"], turn_index)
     return payload
 
 
-def render_help(question: str):
+def render_help_records(payload):
+    """Render a help payload -- shared by the live path and the replay path."""
     st = _st()
-    df = load_ngo_df()
-    payload = help_display(question, df=df, k=3)
-    records = payload["records"]
+    records = (payload or {}).get("records", [])
     st.markdown("**Showing %d contact(s) (helplines first, then top-%d "
                 "organisations -- never top-1-only):**"
                 % (len(records), max(len(records) - 2, 0)))
@@ -523,6 +798,17 @@ def render_help(question: str):
                     % (r.get("disability_focus", ""), r.get("location", ""),
                        r.get("phone", ""), r.get("email", ""),
                        r.get("website", ""), r.get("description", "")))
+
+
+def render_help(question: str, turn_index: int = 0, slots=None):
+    """Compute AND render one turn's help half. Returns the replayable payload.
+
+    `slots` is chat.merge_help_slots()' accumulation across the conversation,
+    passed as an argument so src/router.py acquires no state of its own.
+    """
+    df = load_ngo_df()
+    payload = help_display(question, df=df, k=3, slots=slots)
+    render_help_records(payload)
     return payload
 
 
@@ -576,7 +862,7 @@ def try_voice_input():
                    "permission). Or type in the box above.")
         return
     sig = (len(audio["bytes"]), hash(audio["bytes"]) % 10**8)
-    if st.session_state.get("mic_sig") == sig and st.session_state.get("q"):
+    if st.session_state.get("mic_sig") == sig:
         return  # already transcribed this clip; don't redo every rerun
     try:
         import io
@@ -584,14 +870,204 @@ def try_voice_input():
         rec = sr.Recognizer()
         with sr.AudioFile(io.BytesIO(audio["bytes"])) as src:
                     heard = rec.recognize_google(rec.record(src))
-        st.session_state["q"] = heard
+        # Writes `voice_draft`, NOT `q`. Streamlit forbids mutating a
+        # widget-keyed session_state value after that widget has rendered in
+        # the same run, and the draft box below owns `q`; render_voice_draft()
+        # copies voice_draft -> q BEFORE instantiating it.
+        st.session_state["voice_draft"] = heard
         st.session_state["mic_sig"] = sig
-        st.success("Heard: “%s” -- review/edit above, then submit." % heard)
+        st.success("Heard: “%s” -- review/edit it below, then press Send." % heard)
     except Exception as exc:
         st.warning("🎤 Could not transcribe that clip (%s). The text box "
                    "above is fully sufficient -- please type your question. "
                    "Mic needs Chrome/Edge + permission + internet."
                    % type(exc).__name__)
+
+
+def render_voice_draft():
+    """Mic -> editable draft -> Send. The review step is the whole point.
+
+    st.chat_input cannot be pre-filled programmatically, so a transcript can
+    never land in it. Routing the mic through a draft box the user can correct
+    is the safer half of that trade anyway: without a review step a
+    mis-transcription becomes a submitted turn, and here the question decides
+    which law gets searched and which contacts get shown.
+    """
+    st = _st()
+    with st.expander("🎤 Voice input (optional)", expanded=False):
+        try_voice_input()
+        # Seeding and clearing both happen BEFORE the widget is instantiated.
+        # Streamlit forbids mutating a widget-keyed session_state value once
+        # its widget has rendered in the same run, so Send asks for the clear
+        # and the NEXT run performs it.
+        if st.session_state.pop("voice_clear", False):
+            st.session_state["q"] = ""
+        if st.session_state.get("voice_draft"):
+            st.session_state["q"] = st.session_state.pop("voice_draft")
+        draft = st.text_input("Type your question here", key="q",
+                              placeholder="e.g. What are my education rights? / "
+                                          "Find blind support in Lagos",
+                              help="A voice transcript lands here for review. "
+                                   "Edit it, then press Send.")
+        if st.button("Send this question", key="voice-send"):
+            if (draft or "").strip():
+                st.session_state["pending"] = draft.strip()
+                st.session_state["voice_clear"] = True
+                st.rerun()
+            st.warning("Please record or type a question first.")
+
+
+def render_turn(question: str, explicit: str, plain: bool, history,
+                turn_index: int) -> TurnPayload:
+    """Compute AND render one NEW turn. Returns the TurnPayload to store.
+
+    Compute and render are deliberately not split. "Helplines first, always" is
+    asserted on the literal adjacency of render_helpline_banner() and the
+    routing seam below; separate the two and the project's most load-bearing
+    invariant becomes unassertable at the one place it is actually true.
+
+    The body sits at 4-space indent and run() calls it from inside
+    `with st.chat_message("assistant")`. A Streamlit context manager applies to
+    st.* calls made in nested frames, so every line below lands in the bubble.
+    """
+    st = _st()
+    import streamlit.components.v1 as components
+
+    # Contextualisation FIRST. This turn's RETRIEVAL query may carry prior user
+    # turns (chat.contextualise), and help slots accumulate across the whole
+    # conversation (chat.merge_help_slots). Both are pure, offline and free,
+    # and both were measured headless in Phase B before this UI existed:
+    # +0.107 strict recall on chat_dev, +0.130 on chat_test.
+    retrieval_query, ctx_meta = chat.contextualise(history, question)
+    slots = chat.merge_help_slots(history, question)
+    st.session_state["last_q"] = question
+
+    render_helpline_banner()
+
+    # Single routing seam
+    resolved = resolve_mode(question, explicit)
+    mode, routing = resolved["mode"], resolved["routing"]
+    payload = TurnPayload(question=question, retrieval_query=retrieval_query,
+                          mode=mode, routing=dict(routing), ctx_meta=ctx_meta,
+                          slots=slots)
+
+    legal_view, help_view, clarify_text = None, None, ""
+    if mode == "greeting":
+        # Pure greeting: friendly panel + guidance, no retrieval/LLM calls.
+        render_greeting()
+        speech = build_speech_text(None, None, greeting=GREETING_TEXT)
+        components.html(read_aloud_html(speech), height=60)
+        return payload
+    if mode == "clarify":
+        clarify_text = routing.get("clarify_question", "")
+        render_clarify(clarify_text)
+    else:
+        secondary = routing.get("secondary")
+        wants_legal = mode == "legal" or secondary == "legal"
+        wants_help = mode == "help" or secondary == "help"
+        if wants_legal:
+            st.subheader("⚖️ Your rights (offline excerpts)")
+            legal_view = render_legal(question, plain, turn_index,
+                                      retrieval_query=retrieval_query,
+                                      prior=history)
+            payload.excerpts = legal_view["excerpts"]
+            payload.refused = bool(legal_view["refused"])
+            payload.answer = legal_view["answer"]
+            if not payload.refused:
+                if st.session_state.get("ai_every_turn"):
+                    _run_ai_turn(payload, turn_index, plain)
+                render_defects(payload)
+                render_ai_expander(payload, turn_index, plain)
+        if wants_help:
+            st.subheader("🤝 Help near you (offline directory)")
+            help_view = render_help(question, turn_index, slots=slots)
+            payload.help_payload = help_view
+        render_routing_trap(mode)
+        render_context_note(payload)
+
+    # --- Read aloud (client-side Web Speech API, zero server cost) ---------
+    speech = build_speech_text(legal_view, help_view, clarify_text)
+    components.html(read_aloud_html(speech), height=60)
+    return payload
+
+
+def replay_turn(payload, turn_index: int, live: bool = False):
+    """Re-render a STORED turn. No retrieval, no router, no network, no LLM.
+
+    Streamlit re-executes the whole script on every interaction -- every
+    keystroke, every checkbox, every theme flip. A history loop that re-queried
+    each turn would pay N retrievals per rerun, and several times that again
+    once the dense arm lands in Phase E. Everything below is read out of the
+    TurnPayload, which is why TurnPayload stores what it stores.
+
+    `live` is True only for the newest turn: the routing trap and the clarify
+    buttons use page-global fixed keys, and the newest turn is also the only
+    one that can safely be re-answered.
+    """
+    st = _st()
+    import streamlit.components.v1 as components
+    plain = bool(st.session_state.get("plain"))
+    # Reading stored turns, not recomputing any: this is the same slice
+    # _run_ai_turn() would pass to chat.history_for_prompt(), so the caption and
+    # a regeneration can never disagree about which prompt version applies.
+    prior = list((st.session_state.get("turns") or [])[:turn_index])
+    render_helpline_banner()
+
+    legal_view, help_view, clarify_text, greeting = None, None, "", ""
+    if payload.mode == "greeting":
+        render_greeting()
+        greeting = GREETING_TEXT
+    elif payload.mode == "clarify":
+        clarify_text = payload.routing.get("clarify_question", "")
+        render_clarify(clarify_text, live=live)
+    else:
+        secondary = payload.routing.get("secondary")
+        # Read off the STORED routing dict -- no router call, no re-decision.
+        wants_legal = payload.mode == "legal" or secondary == "legal"
+        wants_help = payload.mode == "help" or secondary == "help"
+        if wants_legal:
+            st.subheader("⚖️ Your rights (offline excerpts)")
+            legal_view = {"refused": payload.refused, "answer": payload.answer,
+                          "excerpts": payload.excerpts,
+                          "citations": payload.tags}
+            render_plain_caption(plain, prior)
+            if payload.refused:
+                st.warning("🚫 " + str(payload.answer or ""))
+            else:
+                render_excerpts(payload.excerpts, turn_index)
+                render_defects(payload)
+                render_ai_expander(payload, turn_index, plain)
+        if wants_help and payload.help_payload:
+            st.subheader("🤝 Help near you (offline directory)")
+            help_view = payload.help_payload
+            render_help_records(help_view)
+        if live:
+            render_routing_trap(payload.mode)
+        render_context_note(payload)
+
+    speech = build_speech_text(legal_view, help_view, clarify_text, greeting)
+    components.html(read_aloud_html(speech), height=60)
+
+
+def render_history(live_last: bool = True):
+    """The conversation so far, oldest first, replayed from session state.
+
+    `live_last=False` while a NEW turn is being rendered below: the newest
+    stored turn must not paint its fixed-key controls in the same run as the
+    turn that is about to replace it at the end of the thread.
+    """
+    st = _st()
+    turns = st.session_state.get("turns") or []
+    if not turns:
+        return
+    st.markdown("### Conversation so far (%d turn%s)"
+                % (len(turns), "" if len(turns) == 1 else "s"))
+    last = len(turns) - 1
+    for i, stored in enumerate(turns):
+        with st.chat_message("user"):
+            st.markdown(stored.question)
+        with st.chat_message("assistant"):
+            replay_turn(stored, i, live=(live_last and i == last))
 
 
 def run():
@@ -607,8 +1083,12 @@ def run():
     # very top, invisible in practice.
     components.html(theme_watch_html(), height=1, scrolling=False)
 
-    for k, v in {"explicit": "auto", "submitted": False,
-                 "last_q": ""}.items():
+    # The conversation lives HERE and nowhere else: st.session_state, for the
+    # life of the browser session. It is never written to disk. This population
+    # discloses abuse and coercion, and a file that holds none of it cannot
+    # leak any of it.
+    for k, v in {"explicit": "auto", "submitted": False, "last_q": "",
+                 "turns": [], "pending": "", "ai_every_turn": False}.items():
         st.session_state.setdefault(k, v)
 
     # --- Sidebar: accessibility controls ----------------------------------
@@ -619,7 +1099,49 @@ def run():
     font_size = st.sidebar.slider("Text size", min_value=14, max_value=28,
                                    value=18, step=1,
                                    help="Scales answer and banner text")
+    plain = st.sidebar.checkbox("Explain in plain language", value=False,
+                                key="plain",
+                                help="Renders AI answers in simple words "
+                                     "(same facts, same citations)")
     st.sidebar.caption(WATERMARK_ATTRIBUTION)
+
+    # --- Sidebar: conversation controls ------------------------------------
+    st.sidebar.header("💬 Conversation")
+    if st.sidebar.button("Clear conversation", key="clear-convo",
+                         help="Forget every turn. Nothing was stored on disk."):
+        st.session_state["turns"] = []
+        st.session_state["pending"] = ""
+        st.session_state["explicit"] = "auto"
+        st.session_state["submitted"] = False
+        st.rerun()
+    st.sidebar.markdown("**How should I handle your next question?**")
+    if st.sidebar.button("⚖️ Ask about my rights", key="mode-legal",
+                         help="Force the legal route (overrides auto-routing)"):
+        st.session_state["explicit"] = "legal"
+    if st.sidebar.button("🤝 Find help near me", key="mode-help",
+                         help="Force the help route (overrides auto-routing)"):
+        st.session_state["explicit"] = "help"
+    if st.sidebar.button("✨ Auto-route", key="mode-auto",
+                         help="Let the router decide (legal / help / clarify)"):
+        st.session_state["explicit"] = "auto"
+    st.sidebar.caption("Next question: **%s**. An override lasts one turn, "
+                       "then resets." % st.session_state["explicit"].upper())
+
+    # --- Sidebar: AI + quota readout ---------------------------------------
+    st.sidebar.header("🤖 AI answers")
+    st.sidebar.checkbox("AI-answer every new turn", value=False,
+                        key="ai_every_turn",
+                        help="OFF by default. When off, every turn is answered "
+                             "offline from retrieved excerpts and the AI "
+                             "expander stays a per-turn opt-in.")
+    counts = quota_log_counts()
+    st.sidebar.caption(
+        "Gemini calls recorded by THIS INSTANCE SINCE RESTART: %s. Free tier "
+        "is 20/day/model. On the free host the filesystem is wiped on restart, "
+        "so this is a floor, never a day's total."
+        % (", ".join("`%s` %d" % (m, n) for m, n in sorted(counts.items()))
+           or "none"))
+
     st.markdown(accessibility_css(high_contrast, font_size),
                 unsafe_allow_html=True)
 
@@ -627,80 +1149,31 @@ def run():
     st.title("DRLCA — Disability Rights & Help Finder")
     render_helpline_banner()  # compact single-column banner, no wide columns
 
-    # --- Input (tab order: input -> mode buttons -> submit -> answer) -------
-    st.text_input("Type your question here", key="q",
-                  placeholder="e.g. What are my education rights? / "
-                              "Find blind support in Lagos",
-                  help="Primary input. Voice recording below is optional.")
-    try_voice_input()
+    # --- The conversation ---------------------------------------------------
+    pending = (st.session_state.pop("pending", "") or "").strip()
+    render_history(live_last=not pending)
+    if pending:
+        history = list(st.session_state["turns"])
+        with st.chat_message("user"):
+            st.markdown(pending)
+        with st.chat_message("assistant"):
+            turn = render_turn(pending, st.session_state["explicit"], plain,
+                               history, len(history))
+        st.session_state["turns"].append(turn)
+        st.session_state["explicit"] = "auto"  # an override is per-turn
+        st.session_state["submitted"] = True
+    elif not st.session_state["turns"]:
+        st.caption("Ask your question in the box at the bottom of the page "
+                   "(keyboard: Tab to it, Enter to send). No answer yet.")
 
-    st.markdown("**How should I handle your question?**")
-    b1, b2, b3 = st.columns(3)
-    with b1:
-        if st.button("⚖️ Ask about my rights", key="mode-legal",
-                     help="Force the legal route (overrides auto-routing)"):
-            st.session_state["explicit"] = "legal"
-            st.session_state["submitted"] = True
-    with b2:
-        if st.button("🤝 Find help near me", key="mode-help",
-                     help="Force the help route (overrides auto-routing)"):
-            st.session_state["explicit"] = "help"
-            st.session_state["submitted"] = True
-    with b3:
-        if st.button("✨ Auto-route", key="mode-auto",
-                     help="Let the router decide (legal / help / clarify)"):
-            st.session_state["explicit"] = "auto"
-            st.session_state["submitted"] = True
-
-    plain = st.checkbox("Explain in plain language", value=False,
-                        help="Re-renders the answer in simple words "
-                             "(same facts, same citations)")
-
-    if not st.session_state.get("submitted"):
-        st.caption("Press one of the three buttons above (keyboard: Tab to "
-                   "the button, Enter to submit). No answer yet.")
-        return
-
-    question = (st.session_state.get("q") or "").strip()
-    if not question:
-        st.warning("Please type a question first (or record one above).")
-        return
-    explicit = st.session_state.get("explicit", "auto")
-
-    # --- Answer: helplines re-asserted ABOVE every answer -------------------
-    st.divider()
-    render_helpline_banner()
-
-    # Single routing seam (explicit buttons, auto router, greeting-first).
-    resolved = resolve_mode(question, explicit)
-    mode, routing = resolved["mode"], resolved["routing"]
-    st.session_state["last_q"] = question
-
-    legal_payload, help_payload, clarify_text = None, None, ""
-    if mode == "greeting":
-        # Pure greeting: friendly panel + guidance, no retrieval/LLM calls.
-        render_greeting()
-        speech = build_speech_text(None, None, greeting=GREETING_TEXT)
-        components.html(read_aloud_html(speech), height=60)
-        return
-    if mode == "clarify":
-        clarify_text = routing.get("clarify_question", "")
-        render_clarify(clarify_text)
-    else:
-        secondary = routing.get("secondary")
-        wants_legal = mode == "legal" or secondary == "legal"
-        wants_help = mode == "help" or secondary == "help"
-        if wants_legal:
-            st.subheader("⚖️ Your rights (offline excerpts)")
-            legal_payload = render_legal(question, plain)
-        if wants_help:
-            st.subheader("🤝 Help near you (offline directory)")
-            help_payload = render_help(question)
-        render_routing_trap(mode)
-
-    # --- Read aloud (client-side Web Speech API, zero server cost) ---------
-    speech = build_speech_text(legal_payload, help_payload, clarify_text)
-    components.html(read_aloud_html(speech), height=60)
+    # --- Input: optional voice draft, then the chat box ---------------------
+    render_voice_draft()
+    typed = st.chat_input("Type your question here", key="chat-in")
+    if typed and typed.strip():
+        # Queue and rerun so the new turn paints in position at the end of the
+        # thread rather than below the input Streamlit pins to the viewport.
+        st.session_state["pending"] = typed.strip()
+        st.rerun()
 
 
 def _running_under_streamlit() -> bool:

@@ -20,8 +20,10 @@ Phase playbooks: `docs/phases/`. Machine/env notes: `ENVIRONMENTS.md`.
 
 ## Working conventions
 - Work the active playbook in `docs/phases/` in order; each defines its exit criteria.
+  **Active: Phase D — `docs/phases/12_corpus_v2.md`.** (M3 of `10_corpus_rebuild_and_dense.md`
+  is SUPERSEDED; `08_retrieval_upgrades.md` steps 4/5 are superseded.)
 - Keep code rerunnable end-to-end and modular with comments.
-- Required deliverables: `README.md` (setup, usage, demo link), learning journal (what worked/didn't, benchmarks), architecture diagram, live Spaces link.
+- Required deliverables: `README.md` (setup, usage, demo link), learning journal (what worked/didn't, benchmarks), architecture diagram, **live demo link — Render, not Spaces** (corrected 2026-09-17; HF Spaces was dropped 2026-09-10, see above).
 - Eval targets: RAGAS faithfulness >0.85, answer relevancy >0.80, context relevancy >0.75.
 - Doc hygiene (mandatory): every build session ends updating `STATUS.md` + the active playbook's
   results + dated `LEARNING_JOURNAL.md` entry. Progress must survive the session.

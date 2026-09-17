@@ -153,15 +153,103 @@ effective**. A 12-call generation run fits one day; the two-run flakiness check 
 day with failover, two without.
 
 ## Exit criteria
-- [ ] `--no-cache` flag exists and the two-run flakiness check is actually runnable.
-- [ ] Held-out set of ~30 questions with corpus-verified ground truth; frozen-10 reproduces
-      bit-identically; held-out baseline recorded.
-- [ ] False-refusal and false-answer rates measured for the first time.
+- [x] `--no-cache` flag exists and the two-run flakiness check is actually runnable.
+      (2026-09-13. The check itself is **not** run — it costs 24 calls.)
+- [x] Held-out set of ~30 questions with corpus-verified ground truth; frozen-10 reproduces
+      bit-identically; held-out baseline recorded. (2026-09-13; 30 questions, 16335 B both runs.)
+- [x] False-refusal and false-answer rates measured for the first time. (2026-09-13.)
 - [ ] BM25 re-rank shipped inside the gate, ablated on frozen-10 **and** held-out.
 - [ ] `synonyms_auto.json` shipped and ablated against the hand-written map on held-out data.
 - [ ] Q3 answers ≥2 cited claims; faith_audited ≥ 0.85 earned on a FRESH transcript.
 - [ ] `reverse_rel` re-baselined in its own commit, old and new numbers side by side.
 - [ ] `requirements.txt` still byte-identical; live smoke green on Render.
+
+## Results — steps 1 and 2, session 2026-09-13 (steps 3 and 4 NOT started)
+
+**Zero Gemini calls spent this session.** Both milestones are offline by construction.
+
+### Step 1 — ops hardening (PR #9, `phase09/ops-hardening`)
+
+| Green criterion (as written above) | Outcome |
+|---|---|
+| `--no-cache` run shows `cached: false` on every row | flag lands; threaded into the existing `ask(use_cache=)` |
+| failover records the real model id | `model_used` at top level **and** in `route`; `route["model"]` keeps its old meaning |
+| a per-minute 429 still retries | proven: RPM 429 re-raises, zero fallback calls |
+
+`FALLBACK_MODEL = gemini-2.5-flash-lite`. `is_per_minute_429()` / `retry_delay()` moved
+verbatim from `scripts/judge_phase06.py` into `src/rag.py`; the judge imports and aliases them,
+so its call sites and printed output are byte-unchanged.
+
+New `scripts/test_phase09_ops.py`, **38/38**, zero network. The failover path is proven by
+**injection**, not by spending quota — a live call only ever exercises the happy path, and the
+sole way to make failover fire for real is to exhaust a daily cap, which costs a day.
+
+Two honest deviations from this playbook's step-1 text:
+- It says to reuse the judge's "7s pacing … checkpoint after every call" pattern. Only the two
+  **classifiers** were reused. The pacing loop and checkpointing live in `judge_call()` and are
+  specific to a long batch run; `ask()` answers one question and has no batch to checkpoint.
+- The per-minute 429 test string is **reconstructed, not captured**, and is labelled as such in
+  the test. The planning note expected it to be recoverable from
+  `judge_phase06_results_gemini-2.5-flash-lite_2026-09-11.json`; that file holds verdicts only
+  and contains no error strings, and the checkpoint that held the raw text was deleted after the
+  run. The daily-cap string **is** genuine, read out of the 2026-09-09 transcript at runtime.
+
+### Step 2 — held-out evidence base (PR #10, `phase09/evidence-base`)
+
+| Green criterion (as written above) | Outcome |
+|---|---|
+| `verify_ground_truth` passes over the full set | 40 questions, 87 expected refs, verified against live chunk refs |
+| frozen-10 numbers reproduce **bit-identically** | **16335 B == 16335 B**, byte-compared; baseline kept at `scripts/eval_p09pre.json` |
+| held-out numbers recorded separately, whatever they say | done — see below |
+
+**THE FINDING — the number this phase was built to produce:**
+
+| set | n | mean recall | note |
+|---|---|---|---|
+| frozen 10 | 10 | **0.925** | the set the synonym map was fitted on |
+| held out | 25 | **0.420** | nothing has been tuned on these |
+| delta | | **−0.505** | |
+
+Held-out recall is **less than half** the frozen figure. Per class: vocab-mismatch 0.312 (n=8),
+cross-document 0.429 (n=7), toc-trap 0.500 (n=5), odd-wording 0.500 (n=5). The weakest class is
+exactly the one the synonym map was supposed to fix. Nothing was reworded or re-expected in
+response to this; every `text` and `expected` was fixed from corpus reading before the harness
+was first run.
+
+**Measured for the first time:**
+- **False-refusal rate 0/25 = 0.0%** on answerable held-out questions (frozen-10 0/10).
+  Retrieval returns *something* for every answerable question. It is frequently the wrong
+  something — that is what recall 0.420 says. The floor is not denying help to PWDs.
+- **Gate-level false-answer rate 5/5 = 100%** of off-corpus questions clear `MIN_SCORE`.
+  Printed **ungated with the caveat attached** and **not** a reason to touch `MIN_SCORE`:
+  it is a weak-overlap *floor*, not a semantic filter, and the in-corpus/off-corpus cosine
+  bands are inverted (`src/retrieve.py:26-44`) — "sourdough" already scored 0.125 and
+  "maritime shipping insurance" 0.318 before any of this work. The semantic layer is the
+  strict-prompt `NO_ANSWER_SENTENCE` path, and measuring it costs quota.
+
+**Deviation from this playbook's step-2 text, deliberate:** it proposed *retiring* the
+notebook-parsing `load_questions()`. It is **kept**. `assert_frozen10_matches_notebook()` now
+requires the canonical file and the notebook literal to agree, in order, on all ten texts —
+two independent sources that must agree is a stronger invariant than one source nobody checks.
+Drift was verified to raise.
+
+**Verification-integrity note.** Ground truth was authored by `executor` from corpus inspection
+only and reviewed by `reviewer`, which re-derived 15 of 30 rows against `data/processed/`
+independently. The author raised a real hazard — `const_ref` labels Second Schedule legislative
+list items as `s. N`, so a schedule hit could be a false positive for Constitution recall. It
+was checked directly: of every hit that counted toward Constitution recall across all 40
+questions, exactly one looked schedule-shaped, and it was a duplicate of a genuine Chapter II
+body hit for the same question, so set-based recall is unaffected. **No held-out score is
+inflated.** The `const_ref` mislabelling is real but pre-existing and out of scope here.
+
+**Corpus gap found while authoring (H1):** the Act's cl.19 subsidy for special-education
+personnel is **uncitable** — OCR rendered the heading `19.1`, so the sentence straddles chunks
+labelled `cl. 18` and `cl. 20` and no `act2018` chunk ref carries 19. H1 expects the factsheet
+limb only. Worth a look in a later phase; not touched here (`data/processed/` is read-only).
+
+### Not done this session (unchanged, still open)
+Steps 3 and 4 · the two-run flakiness check itself (step 1 only makes it *possible*; running it
+costs 24 calls) · any Gemini call.
 
 ## Record results in
 `LEARNING_JOURNAL.md` → per-step ablation tables (frozen-10 vs held-out side by side, always

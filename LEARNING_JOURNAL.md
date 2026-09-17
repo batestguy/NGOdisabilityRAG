@@ -624,3 +624,895 @@ That constraint is what turns steps 4/5 from "deferred" into "superseded":
 
 Everything in `docs/phases/09_evidence_and_generation.md`, in its stated order. Owner gates:
 GIF encode, NVDA, physical keyboard, live mic/read-aloud, LinkedIn.
+
+## 2026-09-13 — Phase 09 steps 1 and 2: the held-out set says recall 0.925 was mostly fitting
+
+**Zero Gemini calls.** Both milestones are offline by construction. PRs #9
+(`phase09/ops-hardening`) and #10 (`phase09/evidence-base`).
+
+### The finding
+
+| set | n | mean recall |
+|---|---|---|
+| frozen 10 — the set the synonym map was **fitted on** | 10 | **0.925** |
+| held out — nothing has been tuned on these | 25 | **0.420** |
+| delta | | **−0.505** |
+
+Held-out recall is less than half the headline number. The 2026-09-11 entry recorded the
+*suspicion* — "the synonym map is fitted to the set that scores it", entries kept or deleted by
+their effect on Q5/Q7/Q8/Q9 across only 10 questions. This is the measurement. At n=10 a single
+question is worth 10pp, so 0.925 never could have separated generalisation from memorisation;
+it now looks substantially like the latter.
+
+Per class, and the shape is the tell:
+
+| class | n | recall |
+|---|---|---|
+| vocab-mismatch | 8 | **0.312** |
+| cross-document | 7 | 0.429 |
+| toc-trap | 5 | 0.500 |
+| odd-wording | 5 | 0.500 |
+
+**The worst class is the one the synonym map exists to fix.** Vocabulary mismatch is precisely
+what expansion was added for, and on questions it was not fitted to it is the weakest thing the
+retriever does. That is a much more specific verdict than "recall dropped", and it aims step 3:
+`synonyms_auto.json` now has a real target and, for the first time, an uncontaminated yardstick
+to be judged on.
+
+The generalisation verdict the playbook asked for: **the hand-written synonym map does not
+generalise.** Its frozen-10 gain is not evidence of a retrieval improvement of that size.
+
+### Two numbers nobody had ever measured
+
+- **False-refusal rate 0/25 = 0.0%** on answerable held-out questions (frozen-10 0/10). This is
+  the one that matters most here — false refusals deny help to PWDs — and it is clean.
+  Retrieval returns *something* for every answerable question. It is often the wrong something;
+  that is what 0.420 says. Worth being precise about: the floor is not the problem, ranking is.
+- **Gate-level false-answer rate 5/5 = 100%** of off-corpus questions clear `MIN_SCORE`.
+  Reported ungated, caveat attached, and **`MIN_SCORE` untouched**. It is a weak-overlap floor,
+  not a semantic filter, and the cosine bands are inverted (`src/retrieve.py:26-44`) —
+  "sourdough" scored 0.125 and "maritime shipping insurance" 0.318 long before this work. The
+  semantic layer is the strict-prompt `NO_ANSWER_SENTENCE` path and measuring it costs quota.
+  A bad-looking number here was predicted in advance and is not a reason to move the floor.
+
+### Method notes worth keeping
+
+**A yardstick you can tune is not a yardstick.** `scripts/eval_heldout.py` exits nonzero *only*
+on ground-truth verification failure or a **frozen-10** regression — never on a held-out number.
+A harness that failed when held-out numbers looked bad would manufacture pressure to tune them,
+which is the exact contamination the set exists to prevent.
+
+**Byte-identity as refactor proof.** Moving `EXPECTED` out of `eval_phase06.py` into
+`data/eval/questions.json` is the kind of change that silently shifts a metric. The pre-change
+run was captured *before any edit* (`scripts/eval_p09pre.json`) and the post-change run is
+**byte-identical**, 16335 B both. Cheap, and it converts "I only changed one literal" from a
+claim into a check.
+
+**Two sources that must agree beat one nobody checks.** The playbook proposed retiring the
+notebook-parsing `load_questions()`. Kept instead: `assert_frozen10_matches_notebook()` requires
+the canonical JSON and the notebook literal to agree, in order, on all ten texts. A frozen
+question reworded to move a metric now fails loudly rather than shifting the yardstick under
+every number since Phase 01.
+
+**Prove a failure path by injection, not by causing the failure.** The failover path cannot be
+demonstrated by spending quota — a successful call only exercises the happy path, and the only
+way to make failover fire for real is to exhaust a daily cap, costing a day. `test_phase09_ops.py`
+monkeypatches the client and raises recorded 429s instead. 38/38, zero network. The daily-cap
+string is read verbatim out of the 2026-09-09 transcript at runtime; the per-minute string is
+**reconstructed and labelled as reconstructed**, because the checkpoint holding the raw text was
+deleted after the judge run and the surviving results file has no error strings. Recording that
+honestly costs nothing; a test docstring claiming "captured" would have been a small lie in the
+one place the project trusts most.
+
+**The budget was always 40, not 20.** The 2026-09-11 judge run spent 30 attempts on flash-lite
+while flash recorded 0 calls and was never starved — the two models draw from separate free-tier
+pools. That was visible in the record for two days before anything used it. `FALLBACK_MODEL` is
+opt-in and records `model_used`, because a flash-lite answer is not a flash answer.
+
+**`--no-cache` was load-bearing, not a convenience.** `test_phase02.py:49` never passed
+`use_cache`, which defaults `True`, so the pending two-run flakiness check would have been 12
+cache hits reporting a variance of exactly zero — a number about the cache, not the model. The
+check is now *possible*; it is not run (24 calls).
+
+### Delegation notes
+
+`executor` authored the 30 held-out questions from corpus inspection (high-volume reading, kept
+out of the main thread); `reviewer` re-derived 15 of 30 against `data/processed/` independently.
+Two things came back that were worth more than the questions:
+
+- The author flagged a hazard rather than hiding it: `const_ref` labels Second Schedule
+  legislative-list items as `s. N`, so a schedule hit could be a **false positive** for
+  Constitution recall. Checked directly — of every hit counting toward Constitution recall
+  across all 40 questions, exactly one was schedule-shaped, and it duplicated a genuine Chapter
+  II body hit for the same question, so set-based recall is unaffected. **No score is inflated.**
+  The mislabelling is real, pre-existing, and out of scope here.
+- `reviewer` caught a fabricated number in my own M1 commit message: I wrote the new suite as
+  "45/45" when the true count is **38**. Nothing was wrong with the code; the count was written
+  rather than counted. Corrected before push. This is the second time this project's review step
+  has caught a claim rather than a bug, which is what it is for.
+
+**Corpus gap found while authoring (H1):** Act cl.19 (subsidised special-education personnel) is
+**uncitable** — OCR rendered the heading `19.1`, so the sentence straddles chunks labelled
+`cl. 18` and `cl. 20` and no `act2018` ref carries 19. H1 expects the factsheet limb only. A
+later phase should look at it; `data/processed/` is read-only here.
+
+### Still open, unchanged
+
+Phase 09 steps 3 (BM25 re-rank inside the gate + offline `synonyms_auto.json`) and 4 (Q3
+generation defect), in that order — step 3 now has a real target and an uncontaminated yardstick.
+The two-run flakiness check is unblocked but unrun (24 calls). Owner gates: GIF encode, NVDA,
+physical keyboard, live mic/read-aloud, LinkedIn.
+
+## 2026-09-13 (later) — Phase 09 step 3 measured and FALSIFIED; the corpus is the real ceiling
+
+Step 3 was built to plan: a clean 20Q `test` set, a doc-quota cross-doc merge, a BM25 re-rank.
+The test set shipped and is good. **The two retrieval fixes were measured and both are dead.**
+This entry exists so nobody rebuilds them. Zero Gemini calls spent all session.
+
+### M1 shipped and stands (PR #11, `phase09/eval-test-set`)
+
+20 questions `T1`..`T20`, authored blind from `data/processed/*.txt` before any retrieval change,
+reviewed row by row with zero blocking findings. `heldout` is relabelled **dev** in the reporting
+— its per-question misses were read to design the fix, which spent it. The `set` string stays
+`"heldout"` in `questions.json` on purpose: renaming it would silently break the published 0.420
+baseline. `eval_phase06.py` output stayed byte-identical to `scripts/eval_p09pre.json`, proving
+M1 changed no retrieval behaviour.
+
+| set | n | recall |
+|---|---|---|
+| frozen-10 (fitted on) | 10 | 0.925 |
+| dev (ex-held-out) | 25 | 0.420 |
+| **test (clean)** | 17 | **0.338** |
+
+Test lands *below* dev, so dev was not unusually hard — the 0.420 was not bad luck. Weakest class
+on test: vocab-mismatch **0.125**, again the class the synonym map exists to fix. False refusal
+**0/17**: the floor is still not denying help to PWDs.
+
+### M2 — the doc-quota merge is recall-neutral
+
+`select_top(hits, top_n, min_per_doc=1, floor=MIN_SCORE)` reserves each doc's best above-floor
+candidate, then fills by global score. It fixes a **real defect**: `src/rag.py:537` and
+`app.py:243` sorted candidates from three separate TF-IDF spaces by raw cosine, a comparison
+`PerDocRetriever`'s own docstring calls invalid. Refusal invariance is provable (the returned set
+always contains the global max, in both the old and new merge) and was asserted bit-identically
+across **106 probes** — 60 questions + 12 off-corpus + 34 bare synonym keys.
+
+And it buys **nothing**. `min_per_doc=1` reproduces baseline to three decimals on all three sets
+while changing *which* six chunks are shown on 7/60 questions.
+
+### M3 — pool widening is neutral-to-harmful, BM25 is a coin flip
+
+Every "→6" arm below returns exactly 6 chunks.
+
+| arm | frozen10 | dev | test | shown |
+|---|---|---|---|---|
+| current `[:6]` slice | 0.925 | 0.420 | 0.338 | 6 |
+| doc-quota `min_per_doc=1` | 0.925 | **0.420** | **0.338** | 6 |
+| doc-quota `min_per_doc=2` | 0.846 | 0.420 | 0.353 | 6 |
+| k=10 pool, `[:6]` slice | 0.867 | 0.400 | 0.338 | 6 |
+| k=10 pool, quota →6 | 0.879 | 0.420 | 0.338 | 6 |
+| k=10 pool, **no cut** | 0.950 | 0.700 | 0.559 | 30 |
+| k=20 pool, **no cut** | 0.950 | 0.773 | 0.765 | 60 |
+
+**The mistake that produced the plan, named plainly:** the old diagnostic's apparent gains
+(0.460 / 0.627 / 0.700 / 0.773) were all measured with *no cut* — showing 9, 18, 30 and 60 chunks.
+They were a **`top_n` effect, not an ordering effect**. Under the decision "users keep seeing 6
+excerpts" there was never anything for a merge to recover. Widening the pool at a fixed cut of 6
+is worse than not widening: k=10 with the current slice drops frozen-10 to 0.867, *below* the
+0.925 guard.
+
+BM25 over 91 (doc, expected-ref) pairs ranks the expected chunk higher on **15** and lower on
+**16**. Rank buckets barely move (1-3: 50→52, 21+: 12→14).
+
+**Conclusion: lexical retrieval is exhausted.** No reordering of TF-IDF candidates reaches the
+tail. The lesson for the metrics is concrete — from now on report **recall@{3,6,10,20,60}**,
+`rank_of_first_expected` and MRR per set, so "ranking or width?" can never again be answered by
+accident.
+
+### The finding that outranks all of it: 40% of Act chunks are uncitable
+
+Measured via `rag.build_corpus()` — previously unmeasured anywhere in the repo, and reproduced
+independently before writing it down:
+
+| doc | chunks | `ref=="general"` (uncitable) | packed refs (`cl. 16,17`) |
+|---|---|---|---|
+| `act2018` | 62 | **25 (40%)** | 16/62 |
+| `factsheet2020` | 48 | 9 (19%) | 19/48 |
+| `constitution1999` | 2104 | 99 (5%) | 0 |
+
+Act clause numbers **19, 35, 38, 40** produce no `ref` anywhere. Traced individually:
+
+- **19, 35, 37, 54 bodies are all present in the text.** `"35. (1) A person ceases to hold office
+  as a member of the Council if he-"`, `"37. The Council shall have power to-"`. They are invisible
+  only because `act_ref()` infers refs from heading *shape*, and the gazette's marginal-note column
+  is spliced into the body: `"37.The Council shall have power to-\nPower of the\nCouncil.\n(a)
+  manage and superintend..."`. **Recoverable by parsing, free.** I had believed these bodies were
+  missing; a planning agent said they were merely reading-order-damaged and it was right. That
+  correction turned a VLM-re-OCR milestone into a parser fix.
+- **38 and 40 are not in the source at all.** `data/raw/disability_act_2018_full.pdf` is a pure
+  scan — 27 pages, **0** embedded text chars, where the Constitution and factsheet PDFs both have
+  text layers. Raw OCR pages 5 and 6 are the same physical page scanned twice (0.819 similarity,
+  both PART II cl.3–4), so 27 raw pages cover **26 distinct pages of a 27-page instrument**. The
+  missing page carries cl.38's opening and cl.40. **No OCR can recover it** — the pixels do not
+  exist. Owner is hunting for a born-digital copy.
+
+Why this outranks ranking: the project's central invariant is *every legal claim carries a
+citation tag copied verbatim from the chunk header*. With 40% of Act chunks uncitable that
+invariant is structurally broken on the app's most important document. **A better ranking over
+uncitable chunks is a better-ranked list of things you are not allowed to cite.** Also
+user-facing: excerpts render verbatim and the text contains `"Apersonwith disabilityhas theright
+to access"` — a screen reader says that out loud.
+
+### What the owner decided in response
+
+The goal was restated: a genuinely top-tier chatbot at **$0.00**, with heavy offline work on free
+Colab/Kaggle GPU allowed. Four calls, all recorded in
+`docs/phases/10_corpus_rebuild_and_dense.md`: cheap measurable wins first, then the corpus, then
+fine-tuning · **Gemini embeddings at query time** for the dense arm · parser fix now, VLM re-OCR
+later · owner hunts for a born-digital Act.
+
+**One recommendation was overruled and that is recorded on purpose.** I argued for static
+(model2vec-class) embeddings because query-time Gemini puts a network call in the default user
+path. The owner chose Gemini. The plan therefore engineers around the two consequences instead of
+discovering them later: a **degradation ladder** (tier 1 Gemini → tier 2 static distilled → tier 3
+TF-IDF, so quota exhaustion is a quality degradation and never an outage), and a **privacy**
+control — today Gemini is opt-in behind an expander defaulting OFF, so a user who never opts in
+keeps their question on the device; embedding at query time would send **every** question to
+Google, and these questions describe disability, abuse and begging coercion. M2 ships a visible
+notice and a hard-offline toggle before that lands. Free-tier embedding limits are **unknown**
+(Google's rate-limit page now defers to AI Studio, and the 20/day in `CLAUDE.md` is the
+*generation* cap), so M2 opens with an empirical 429 probe — the same precedent that established
+20/day.
+
+### Still open
+
+`select_top` and its call-site migration sit **uncommitted on `phase09/merge-fix`**. Phase 10 M0
+commits them with an honest claim — fixes a real defect, provably refusal-invariant, **recall
+unchanged**, needed as the cross-doc merge once a dense arm exists. Do not write it up as a recall
+win. PRs #9, #10, #11 are open and unmerged. Quota untouched since 2026-09-11.
+
+## 2026-09-15 — Phase 10 B (chat-core): the multi-turn set, measured before the UI
+
+**Zero Gemini calls. Zero network. Branch `phase10/chat-core`.**
+
+### The ordering argument, which is the actual decision
+
+The owner added a product requirement: DRLCA must be a chatbot as well as a legal assistant.
+The tempting read is "that is a UI phase". It is not. *"So can they fire me?"* contains no
+disability term and no statutory term, so **no re-ranker, no encoder and no corpus rebuild can
+retrieve an answer to it** — the query does not contain the question. Ellipsis is a retrieval
+problem.
+
+That forces the sequence. If corpus-v2 and the dense arm were tuned against single-turn
+questions only, they would optimise a query distribution the chatbot never issues and chat
+would inherit none of the gains. So the multi-turn set was built and measured **before** the
+chat UI and before the corpus work. Measure first — the same move Phase 09 made, and the
+reason Phase 10's original step B got falsified instead of shipped.
+
+### What was built
+
+`data/eval/conversations.json` (22 conversations, 62 turns, 51 expected refs, all verified
+against the v1 corpus) · `scripts/chatset.py` (validate-on-every-load, a separate file so
+`questions.json`'s loader stays byte-stable) · `src/chat.py` · `history=` on `ask()` /
+`build_prompt()` · `scripts/eval_chat.py` · `scripts/baseline_chat_2026-09-15.txt`.
+
+`chat_test` (10 conversations / 27 turns) was **authored blind, before `src/chat.py` existed.**
+It came out at 27 turns rather than the planned ~30 and was deliberately **not topped up**
+afterwards: adding turns once behaviour is visible is precisely how a blind set stops being
+blind.
+
+### Results
+
+Headline, shipping arm, corpus v1: **chat_dev 0.464 → 0.571 (+0.107)**, **chat_test
+0.435 → 0.565 (+0.130)**. By class the gains land where they should — ellipsis
+**0.000 → 0.333** (dev) and **0.200 → 0.600** (test); `direct`, the control, moves **+0.000**
+on both. Pooled at k=20/doc, recall@60 goes **0.714 → 0.929** (dev) and **0.783 → 0.913**
+(test): the evidence is *in the pool*, and contextualisation is what puts it there.
+
+Help slots — `"I'm deaf"` … `"anywhere in Kano?"` — go **3/5 → 5/5** (dev) and **1/2 → 2/2**
+(test). The stateless scan drops the disability filter on every narrowing turn, so the
+connector was answering a question the user did not ask.
+
+**False refusals fell rather than rose**: dev 1/28 → 0/28, test 3/23 → 1/23, with **0
+contextualisation-induced** on either set. That was the outcome most at risk — appending
+absent terms dilutes the query-vector norm and can drop a turn below `MIN_SCORE` — so it is
+the one number `eval_chat.py` is allowed to fail the run on.
+
+### What did NOT go our way, recorded rather than tuned
+
+- **`chat_test`'s pronoun class did not improve at all** (0.400 → 0.400) while dev's did
+  (+0.143). Left exactly as measured. A threshold moved to fix it would convert the only clean
+  multi-turn yardstick into a dev set — which is exactly how the 30 single-turn held-out
+  questions were spent on 2026-09-13.
+- **A blind prediction in the test set was wrong, and the wrong note stays in the file.**
+  `CT6.t3`'s note predicted the carry-rule would not fire on *"how do I renew my driver's
+  licence?"*; it fires via `thin:3<=3`. The note records what was predicted before `chat.py`
+  existed. Editing it afterwards is the failure mode the discipline exists to prevent, so the
+  behaviour is recorded in the playbook instead.
+
+### The trap that did not fire, and why the measurement still mattered
+
+Carrying prior turns can let a topic shift inherit legal vocabulary and clear `MIN_SCORE` on
+words the user never wrote — a confident cited answer to an off-corpus question, a failure
+mode single-turn DRLCA could not have. Measured: off-corpus-after-legal clears the floor
+**2/2 in both arms on both sets, delta 0.000**. On `CD5.t3` contextualisation actually
+*lowered* the top score (0.2755 → 0.2434). That matches the published single-turn rate of 5/5
+and is a property of the floor (inverted bands, `src/retrieve.py:26-44`), not of chat.
+**`MIN_SCORE` was not touched.** Worth noting that "the risk did not materialise" is only a
+finding because the probe class was authored before the mechanism existed to be measured.
+
+The protective mechanism is visible in the logs: *"and what does the law say about maritime
+shipping insurance?"* opens with a discourse marker and still does not carry, because five
+content stems is a question that stands on its own feet. `MARKER_MAX` is not a free parameter.
+
+### Two invariants that are now asserts, not intentions
+
+`test_phase09_ops.py` grew a section 7 (38 → 51 asserts):
+
+1. **`history=None` renders a byte-identical prompt** to the pre-chat one, checked for
+   `None` / `[]` / blank turns × `plain` both ways against a second, hand-written copy of the
+   old assembly order (deriving the expectation from `build_prompt` itself would test
+   nothing). The answer cache keys on sha256 of the *whole rendered prompt*, so one stray
+   newline would silently miss every cached answer and every published transcript would stop
+   describing a prompt the code can still produce.
+2. **History renders BEFORE the final `"Question: "` line.** This is privacy, not formatting.
+   `_cache_write` stores `prompt.rsplit("Question: ", 1)[-1]`. Move history after that split
+   point and `scripts/.answer_cache.json` starts recording whole conversations to disk — from
+   a population that discloses abuse and coercion. The assert is what stands between those
+   two states.
+
+Chat also got its own `CHAT_PROMPT_VERSION = "chat-cite-strict-v1"` and a rule 8 saying the
+citable set is **only this turn's excerpts**, so single-turn transcripts stay comparable and
+the two can never share a cache key.
+
+### Kept deliberately unmeasured
+
+Cross-turn citation drift. Detecting a tag re-cited from an earlier turn needs a generated
+answer to read, so it costs quota. `chat.cross_turn_drift()` is written and wired but
+**unmeasured**; Phase G's multi-turn transcript runs it. Omitted rather than approximated —
+the same call `eval_heldout.py` makes about faithfulness.
+
+### Untouched, and verified untouched
+
+`MIN_SCORE` · `src/router.py` (still stateless — conversation state lives in `src/chat.py`) ·
+`app.py` · `requirements.txt` · `data/processed/` · `data/eval/questions.json`.
+`eval_phase06.py` output still hashes `CE716FB3…5F19`; bench_phase01, test_phase03/04/05
+(104/104), ablate_phase08, audit_corpus, eval_heldout all green.
+
+### Review addendum (same day) — a fifth finding, and why the number stays
+
+Fresh-eyes review re-derived every quoted number from a clean run (byte-identical to
+`scripts/baseline_chat_2026-09-15.txt`) and found one real ground-truth defect:
+**`CT7.t2` is unscoreable rather than missed.** It expects `act2018:[5]`, but the chunk that
+actually carries the Act's First Schedule list is reffed **`general`**, and
+`evalset.ref_nums("general")` is empty — so no retrieval can ever satisfy it. Both arms *do*
+retrieve that exact chunk, at ranks 5-6, and still score 0.000.
+
+`chatset.verify_expected()` passed it because an unrelated `cl. 3,4,5` header chunk carries a
+5: the check proves the expected *number* exists somewhere in the doc, not that the chunk
+holding the relevant *text* is reffed with it. That gap is now documented in the function
+itself, along with a second one the review surfaced — **Constitution section numbers collide
+across chapters** (s.36 is both the Chapter IV fair-hearing section and a Chapter VIII
+provision; s.18/34/40/42 likewise), so `(doc_id, number)` matching cannot tell them apart in
+principle. Verified that no turn in either set is currently affected, but the failure
+direction there is a false *positive*, which is the more dangerous one.
+
+**The expectation was not edited.** Editing a blind test turn to recover a point is exactly
+the move this discipline exists to stop, and the correction would have moved `chat_test`'s
+pronoun class — the class recorded above as "did not improve" — in our favour. A dated
+addendum went into the turn's `note` instead, so the 0.000 reads as what it is.
+
+The finding is worth more to Phase D than the point was worth here: it is a **second named
+instance** of the uncitable-chunk class alongside the recorded "Act cl.19 is uncitable" gap
+and the 25-of-62 uncitable Act chunks. A better-ranked list of things you may not cite is
+still a list of things you may not cite — which is the Phase D argument, now with one more
+piece of evidence that arrived from a completely different direction.
+
+---
+
+## 2026-09-16 — Phase 10 C (chat UI): spending a measured gain without touching the measurement
+
+Phase B ended with a number and no user: contextualisation was worth **+0.107 strict recall
+on `chat_dev` and +0.130 on `chat_test`**, and `app.py` was still a single-turn form with
+`st.text_input`, three buttons and one answer per page. Nothing in `src/chat.py` was
+reachable by a person with a question.
+
+So this session had exactly one job — wire the engine to the surface — and the discipline
+that mattered was **not** writing good Streamlit. It was making sure that a 700-line UI
+restructure could be shown, afterwards, to have changed no number at all. `eval_chat.py` and
+`eval_heldout.py` were run and captured **before** the first edit, and re-run after: stdout
+**byte-identical to `368f083`** in both cases. `eval_phase06.py` still hashes
+`CE716FB3…5F19`. `requirements.txt` diff against `main` is empty. Any movement would have
+been a bug, not a result, and the only way to say that with confidence was to have the
+baseline in hand before touching anything.
+
+### The rescope that was necessary, not cosmetic
+
+`test_phase05.py:32-39` asserted "helplines first, always" by `.index()`-ing into the whole
+of `app.py` and comparing offsets. That worked only because `run()` happened to contain the
+entire answer flow. Moving the flow into `render_turn()` puts `def render_helpline_banner`
+*after* `def render_help` in file order, so `i_banner < i_help` would have gone red on source
+layout while the rendered order was exactly what it had always been.
+
+The temptation there is to delete the assert, or to reorder the functions to keep it happy.
+Both are wrong for the same reason: the property is real, and it was being asserted in the
+wrong scope. It now scopes to `render_turn`'s body, where the adjacency it checks is actually
+true — and every one of the six moved lines carries an inline comment saying what it used to
+assert and why it moved. **104 → 137 asserts, all green.**
+
+A related observation worth keeping: `:40` (`banner-at-top-of-run`) was **nearly vacuous**
+before this session. Module-wide, it compared the position of two `def` lines. Scoping it to
+`run()` is the first time that assert has meant what its name claims.
+
+### Compute and render stayed fused, on purpose
+
+`render_turn` both computes a turn and draws it, which is not how one would normally factor
+this. It is fused because the banner-ordering guarantee is asserted on the *literal adjacency*
+of `render_helpline_banner()` and the `# Single routing seam` comment. Split compute from
+render and that adjacency has nowhere to live — the invariant becomes unassertable at the one
+place it is true. A slightly awkward function is a cheap price for keeping the project's most
+load-bearing rule mechanically checked.
+
+### Replay, and the cost of not replaying
+
+Streamlit re-executes the entire script on every interaction: every keystroke in the chat box,
+every checkbox, every theme flip. A history loop that re-queried each turn would pay **N
+retrievals per rerun**, and several times that again once the dense arm lands in Phase E. So
+`replay_turn` renders from the stored `TurnPayload` and nothing else, and that is now
+**asserted** rather than intended — its body may contain no `load_retriever`,
+`offline_legal_hits`, `resolve_mode`, `help_display` or `route_question`.
+
+That assert is what forced the first disclosed deviation from the plan. The plan said
+`TurnPayload` gains "`drift`. Nothing else." But replaying a *help* turn with no stored
+payload means calling `router._help_payload` live on every rerun — precisely what
+`replay_turn` exists to prevent. So `help_payload: dict` went in beside `drift: list`. Both
+are defaulted; neither is read by `eval_chat.py` or `eval_heldout.py`, which work on the raw
+conversation JSON and never construct a `TurnPayload`. No measured number can move because of
+them. The deviation is small and it is disclosed in three places rather than absorbed
+silently, which is the part that matters.
+
+### A render worth deleting, and the second retrieval hiding behind it
+
+Phase 05's `render_legal` called `answer_legal(question, ..., use_llm=False)` purely so it
+could print `route["prompt"]` — the prompt-version string — in a caption. In a single-turn UI
+that is one extra retrieval per page view and nobody notices. In a chat UI it is **a second
+full retrieval per turn, per rerun**, on top of the one that produced the excerpts.
+
+It is now `_prompt_id()`, four lines that read `PROMPT_VERSION` / `CHAT_PROMPT_VERSION` from
+`src/rag.py` and mirror the single line in `ask()` that chooses between them — so the caption
+cannot drift from what `build_prompt` actually renders, and costs nothing. The thing the probe
+was "proving" (that the plain flag threads through) is still proven, in the place proof
+belongs: the `answer_legal` asserts in `test_phase05.py`, untouched.
+
+The general lesson: a debug artifact that is free at one call rate can be expensive at
+another, and a UI rewrite is when you find out.
+
+### What the browser told us that the asserts could not
+
+Three things were confirmed by running it, not by reading it.
+
+**Per-turn read-aloud does not collide.** `read_aloud_html()` hardcodes the element ids
+`drlca-speak` and `drlca-speech`, and eleven asserts ride on the function staying
+byte-identical. N turns means N copies of those ids on one page, which looks like an obvious
+bug — except each `components.html` is its own iframe *document*, so `getElementById` inside
+each frame resolves to that frame's own nodes. Verified by reading `#drlca-speech` out of
+every frame and seeing different text per turn. **The real cost is the one nobody would have
+predicted:** each read-aloud iframe also carries the shared theme watch, with its own
+`setInterval(apply, 1000)`. An N-turn conversation runs N pollers. That is **recorded and not
+fixed** — `test_phase05.py:182` requires the watch to be present, so removing or centralising
+it is a deliberate, asserted decision, not a drive-by in a chat phase.
+
+**A latent Streamlit bug had been shipped since Phase 05.** `try_voice_input()` set
+`st.session_state["q"]` *after* the `q`-keyed `st.text_input` had already rendered in the same
+run — which Streamlit forbids outright. It never fired because the mic path is owner-gated and
+nobody had exercised it end to end. Restructuring the input surface is what surfaced it: the
+mic now writes `voice_draft`, and `render_voice_draft()` copies it into `q` **before**
+instantiating the widget. Clearing after Send works the same way, one run later. Voice keeps
+its editable-draft review step for the reason the plan gives — `st.chat_input` cannot be
+pre-filled, and without the review step a mis-transcription becomes a submitted turn on a
+service where the question decides which law gets searched.
+
+**Slot memory works at conversational distance.** *"I'm deaf"* on its own routes to
+**clarify** — the router is stateless and sees one thin string. Two turns later *"anywhere in
+Kano?"* still answers **NNAD**, because `chat.merge_help_slots` carried `disability=deaf`
+across the intervening clarify turn. That is the Phase B design paying out in a way a unit
+test shows but a demo makes obvious.
+
+### Privacy, stated as a file that does not exist
+
+The strongest evidence from the whole session is negative: after a full four-turn
+conversation, **neither `scripts/.answer_cache.json` nor `scripts/.quota_log.json` existed at
+all**. The offline path wrote nothing because it had nothing to write. The new quota log holds
+`{"YYYY-MM-DD": {"model": 3}}` — a date, a model name, an integer — and `test_phase05.py` now
+proves it by calling `quota_log_record` with a sentinel-bearing conversation in a stubbed
+session state and asserting the sentinel is absent from the written bytes, plus a structural
+check that the *only* writer in `app.py` is that function and that its body never touches
+`turns`.
+
+The readout is labelled **"this instance since restart"**, never "today". On the free host the
+filesystem is ephemeral and the instance sleeps after 15 minutes idle, so the number is a
+floor and saying otherwise would be a small, quiet lie in the direction of comfort. Cache
+replays are not counted either — they spend no quota, and counting them would over-report.
+
+### The offline failure paths, proven without spending the thing being tested
+
+"Test it with the key removed, the quota exhausted, and the network down" is easy to write and
+awkward to do: a `GOOGLE_API_KEY` was live in the shell the Streamlit server inherited, so
+clicking **Generate AI answer** once would have spent real quota against a phase whose budget
+is zero. All three were proven headlessly instead, by substituting `app.answer_legal` with the
+three failure shapes and driving `_run_ai_turn` directly. In every case the answer stays
+`None` — **pending, never faked** — no quota is recorded, and the user sees one
+plain-language warning with no traceback. This is the same argument `test_phase09_ops.py`
+makes about failover: proving it live means deliberately destroying the resource you are
+trying to conserve.
+
+### Width, and the temptation to fold a free change into a busy phase
+
+The older plan folded the width change (`k=20/doc`, 12 chunks to the prompt) into this phase
+alongside the display split. It did not land, and the reason is worth keeping. A display path
+that sliced differently from `ask()` would show the user a system nobody measures —
+`offline_legal_hits`' own docstring says exactly that — and both `eval_chat.py:106-108` and
+`eval_heldout.py` measure `k=3/doc, top_n=6`. Changing the UI without moving the harnesses in
+the same commit detaches the shipped system from every number in the playbook. Phase B had
+already measured the width change at **test +0.000**, so there was nothing to lose by waiting.
+It moves in Phase E, with the harnesses, where the dense arm actually needs the deeper pool.
+
+The **display** split did land — 3 excerpts inline, the rest behind one fold — because that is
+presentation. In a single-turn UI six excerpt cards *were* the page; in a conversation they are
+six cards between the user and their next question.
+
+### Recorded, not changed
+
+In **dark mode and high contrast together**, the sidebar computes to `#010409` rather than the
+forced `#000`: `body.drlca-dark section[data-testid='stSidebar']` and
+`body:has(.drlca-hc-on) section[...]` have equal specificity, and the dark rule is emitted
+later in `accessibility_css()`. Contrast against white text is ~19:1, so it is cosmetic, it
+predates this phase, and `accessibility_css()` was not opened during it. Logged here rather
+than fixed, because a one-line CSS nudge inside a chat-UI commit is how CSS regressions get
+attributed to the wrong phase.
+
+### What the review caught, and the one that was actually interesting
+
+Fresh eyes on the diff found no blocking issue, and independently reproduced the claims worth
+doubting — the widget-ordering audit, that no fixed key renders twice in one script run, that
+`src/router.py` gained no module-level state, and that `write_text` appears nowhere in
+`app.py` outside `quota_log_record`. Two things were taken.
+
+The interesting one is a lesson about **how a comment can be more absolute than its code**.
+`_prompt_id()` decided "is this a multi-turn prompt?" from `turn_index > 0`, and its docstring
+said the caption "cannot drift from what `build_prompt` actually renders". `ask()` does not
+branch on a turn index — it branches on `rag._render_history(history)` being non-empty, and
+`chat.history_for_prompt()` sits in between applying `CARRY_WINDOW` and dropping blank turns.
+The two agree today, and only by caller discipline. That is exactly the kind of agreement that
+survives a review and dies a year later to an unrelated change, with no test to notice.
+`_multi_turn(prior)` now calls the same two functions `ask()` calls, `render_plain_caption`
+takes `prior` instead of a boolean, and three asserts pin it. The fix is four lines. **The
+comment was the defect** — the code was merely lucky.
+
+The second was a **pre-existing assert that could not fail**:
+`check("no-wide-columns-for-banner", … or True)` had been passing unconditionally since Phase
+05, quietly padding every assert count this project has published. It now checks the property
+its name claims — that every `render_helpline_banner()` *call site* sits at 4-space function
+top level, never nested in a `with col:` — and can go red. The count went 134 → 137, and one
+of those three is an assert that already existed and meant nothing. Worth saying plainly: a
+suite grows by counting, and a tautology is the one kind of growth that makes the number less
+true rather than more.
+
+The review also flagged the quota log and the *"AI-answer every new turn"* switch as feature
+work beyond "wire the engine in and nothing else". Both were in the agreed Phase C scope; the
+reviewer had the diff and not the plan. Recorded rather than argued, because a scope question
+raised by someone reading only the code is worth answering in the docs once.
+
+
+---
+
+## 2026-09-16 — Phase D planning: a published claim, three days old, falsified by one download and one grep
+
+> ## ⚠ CORRECTED 2026-09-17 — this entry's headline is itself half wrong, by the mechanism it warns about
+>
+> Read the **2026-09-17** entry at the end of this file before trusting anything below. In short:
+> **cl.40's row is right; cl.38's row is wrong.** `(1)TheCommissionshall--` at **L614 is clause
+> 48**, not clause 38. The correction below was reached by matching that line to the gazette's
+> `38.TheCommissionshall-` on string similarity **without reading the next line** — a textbook
+> instance of *"a correct measurement next to a plausible story"*, which is the exact lesson this
+> entry was written to record. It stays unedited: an entry about publishing a wrong inference is
+> worth more with its own wrong inference left in it.
+>
+> **What survives:** the conclusion (`ACT_KNOWN_ABSENT` retires, all 58 clauses reachable in v2),
+> the mean-centring methodology note, and Findings 2 and 3 in full.
+
+This session wrote no code. It went to write the Phase D playbook, started by checking the
+premises it was about to build on, and found that **two of the three were false**. The
+headline is not the playbook. It is this:
+
+> On 2026-09-13 this project concluded that Act clauses 38 and 40 were *"not in the source at
+> all"* and that *"no OCR and no VLM can recover pixels that were never captured."* That
+> conclusion was written into the learning journal, into `HANDOFF.md`'s standing facts, and —
+> the part that actually cost something — into **code**, as
+> `ACT_KNOWN_ABSENT = {38, 40}` at `scripts/audit_corpus.py:80`, a constant whose entire job
+> is to excuse two clauses from the coverage gate.
+>
+> **Both clause bodies were sitting in `data/processed/disability_act_2018_full.txt` the
+> whole time.**
+
+### How the wrong answer was reached, which is the interesting part
+
+The 2026-09-13 reasoning was not sloppy. It was a genuine measurement followed by an
+unchecked inference, and the measurement was *right*:
+
+- the Act PDF is a pure scan — 27 pages, **0** embedded text characters (re-confirmed today)
+- raw OCR pages 5 and 6 are the same physical page scanned twice (re-confirmed today:
+  adjacent-page cosine **0.978**, against a 0.794 runner-up — a clear outlier)
+- therefore 27 raw pages cover only 26 distinct pages of a 27-page instrument
+
+All true. Then came the step that failed: *therefore the lost page is the one carrying cl.38
+and cl.40.* That is an inference about **which** page was lost, and it was never checked
+against the one artifact that could check it — the extracted text. Nobody grepped for the
+clause bodies.
+
+Today's grep takes about four seconds:
+
+| clause | authoritative gazette | v1 processed text | why `act_ref()` missed it |
+|---|---|---|---|
+| 38 | `38.TheCommissionshall-` (A109) | `(1)TheCommissionshall--` (**L614**) | OCR read the numeral `38.` as `(1)` |
+| 40 | `40.—(1) There shall be an Executive Secretary…` (A111) | `(1) There shall be an Executive Secretary for the Commission who shall-` (**L545**) | OCR dropped the numeral entirely |
+
+The clauses were never missing. They were **unreffed**, for exactly the same reason the other
+uncitable Act chunks are unreffed: `act_ref()` infers refs from heading *shape*, and this scan
+mangles numerals. cl.38 and cl.40 were not a different problem from cl.19/35/37/54. They were
+the *same* problem, misdiagnosed as a harder one because a real, correctly-measured defect —
+the duplicate page — was sitting right next to them and looked like an explanation.
+
+**The lesson, stated so it generalises:** a correct measurement next to a plausible story is
+how a wrong conclusion gets published. The duplicate page was evidence that *something* was
+lost. It was never evidence about *what*. The check that would have caught it was cheaper
+than the measurement that produced it.
+
+### The download, and the honest limit on what it proves
+
+The owner fetched the untested lead to `6document.pdf` (14.1 MB). It is *Federal Republic of
+Nigeria Official Gazette No. **10**, Vol. 106, Lagos, 21 January 2019, Act No. 2, pages
+**A97–A122*** — the authoritative publication. (The old playbook guessed "No. 11 Vol. 106";
+worth noting that even the citation in the plan was wrong.) Like the existing copy it is 27
+pages with no text layer. Unlike the existing copy it has **no duplicate adjacent page**.
+
+Targeted OCR of gazette pages 13/14/15 returned `38.TheCommissionshall-` with its marginal
+note `Functions of the Commission.` (A109), the `(e)…(r) procure assistive devices for all
+disability types.` tail (A110), and `40.—(1) There` under `PART VIII` (A111).
+
+**What this does not prove:** only pages 1, 13, 14 and 15 of 27 were read. Fewer than half the
+document. The playbook says so in a box, because the failure being corrected here is precisely
+the failure of extrapolating from a partial read. *"All 58 clauses are present"* is written
+down as a **D2 verification task**, not as a finding.
+
+### A methodological note worth keeping: mean-centring is load-bearing
+
+Re-deriving the duplicate-page result nearly reproduced the original error in a new form. The
+first attempt rendered pages at dpi 36, mean-pooled to a 16×16 grayscale signature, and took
+the cosine — and reported **1.000 for essentially every adjacent pair, in both PDFs**. Scanned
+legal pages are ~90% white, so the uncentred vectors are dominated by a large shared constant
+and the cosine saturates. It detects nothing while looking exactly like a detector that works.
+
+Mean-centring each signature before normalising is what separates 0.978 from 0.794. It is now
+written into the playbook's verification recipe **with the reason attached**, because the
+recipe is the part that has to survive — a future session re-running this without centring
+would conclude "no duplicates anywhere" and be confidently wrong in the opposite direction.
+
+### Finding 2: the expensive change was not needed
+
+M3 planned to re-extract the Constitution from its text layer into section units, 2104 chunks
+→ ~400–600. That is the riskiest change in the entire Phase 10 plan: it moves every chunk
+length, which moves every cosine, which moves the refusal floor, which is the mechanism that
+manufactures false refusals — the worst failure this codebase has.
+
+It was planned to clear a gate: `ref=="general"` ≤1% per doc, currently 99/2104 = 4.7%.
+
+So the 99 were read. **All 99 are Arrangement-of-Sections material.** 88 are under 60 words.
+Every one of the 11 that clears 60 words is *also* a numbered title listing — `"236 Practice
+and procedure"`, `"89 Power as to matters of evidence"`. **Not one chunk of substantive
+constitutional body text is uncitable.**
+
+Which means excluding the Arrangement pages — a filter, not a re-extraction — takes 4.7% to
+≈0, clears the gate, and deletes the `toc-trap` class outright, **without touching
+`CONST_SIZE = 400`**. The re-extract still has value, but its value is to the *dense* arm, and
+it can be paid for in Phase E where something actually wants it.
+
+Reading the 99 rows took a few minutes and removed the highest-risk change from the phase. The
+general shape: **the plan's riskiest step existed to fix a number nobody had looked at the
+components of.** That is the same failure as Finding 1 wearing different clothes — an
+aggregate treated as a diagnosis.
+
+### Finding 3: ordering, and an artifact that would have been thrown away
+
+M3 sequenced M1 (width) → M2 (dense) → M3 (corpus). M2's deliverable is
+`data/embed/chunks_gemini.f16.npy`: a **per-chunk** embedding artifact keyed on a corpus
+sha256. Rebuilding the corpus after building it invalidates every vector.
+
+`HANDOFF.md` already had Phase D before Phase E, so the *sequence* in use was right. But it
+was right by accident — the playbook never stated the dependency, so nothing stopped a future
+session from working the playbook in its written order. The reason is now written down in both
+files. An ordering that is correct but unexplained is one session away from being reversed by
+someone tidying up.
+
+### Why M3 was superseded rather than edited
+
+M3 stays in the repo, in full, with amendment boxes. Deleting it would erase the record of
+what was believed on 2026-09-13 and why — and that record is the only thing that makes the
+correction legible. A future reader needs to be able to see the duplicate-page measurement,
+see that it was sound, and see that the inference on top of it was not. Amendment boxes sit at
+the top of the file, on M1, on M2, on M3 and on the specific cl.38/40 paragraph, because
+somebody skimming for their next task reads a section header, not a preamble.
+
+### What this cost, and what it bought
+
+Three days of a false constant in the coverage gate, and a planned user-facing caption — *"My
+copy of the Act is missing clauses 38 and 40 — for those, call DRAC"* — that would have told
+disabled users the tool could not help them with two clauses it could in fact quote verbatim.
+That is the part worth sitting with. The invariant this project cares most about is that every
+legal claim carries a real citation, and the failure mode it guards hardest against is
+fabricating law. This was the mirror image: **wrongly disclaiming law it actually had.** The
+no-stub rule protects against the first and says nothing about the second.
+
+What it bought: all 58 clauses reachable, the gap manifest probably empty, the riskiest change
+in the plan deferred, and a verification recipe — page count, text-layer check, mean-centred
+duplicate detection, targeted OCR, **then grep the extracted text** — written down with the
+last step no longer optional.
+
+*(Caveat added 2026-09-17: the recipe's last step is right and was the step that was skipped on
+2026-09-13. But it is not sufficient — see the next entry. Grepping found the right *string*
+and the wrong *clause*.)*
+
+
+---
+
+## 2026-09-17 — the correction to the correction: I warned about a failure and then committed it one day later
+
+This session wrote no code either. It set out to document Phase D's implementation design so the
+next session could execute rather than re-derive, and started — per the lesson of the previous
+entry — by re-checking the finding it was about to build on. **The finding was wrong.**
+
+> Yesterday's entry says: *"a correct measurement next to a plausible story is how a wrong
+> conclusion gets published."* It then published a wrong conclusion, from a correct measurement,
+> next to a plausible story. The commit is `4bcc763`. It stood for one day.
+
+### What was claimed, and what is actually there
+
+`4bcc763` claimed both cl.38 and cl.40 were in the v1 text all along:
+
+| clause | `4bcc763` claim | verified 2026-09-17 |
+|---|---|---|
+| 38 | present at **L614**, numeral OCR'd as `(1)` | **ABSENT from v1** |
+| 40 | present at **L545**, numeral dropped | **CORRECT** |
+
+L614 reads `(1)TheCommissionshall--`. The gazette's cl.38 opens `38.TheCommissionshall-`. The
+strings are nearly identical, and that is the whole of the evidence that was gathered. One line
+further down settles it:
+
+```
+612  48.
+613  Annual estimate
+614  (1)TheCommissionshall--
+615  and expenditure.
+616  (a) cause tobekept accounts and records of transaction and affairs
+```
+
+**L612 is the clause number: 48.** L613 and L615 are the marginal note *Annual estimate and
+expenditure.* wrapped around the body line — the Arrangement at L74 reads
+`48.Annual estimate and expenditure.`, verbatim. And the body continues `(a) cause to be kept
+accounts and records`, where the gazette's cl.38 continues `(a) formulate and implement policies`.
+
+`grep "formulate and implement" data/processed/disability_act_2018_full.txt` returns **nothing**.
+Four seconds, again. The check that would have caught it was, again, cheaper than the measurement
+that produced the error.
+
+### Why the same mechanism fired twice, in opposite directions
+
+2026-09-13: measured a duplicate page correctly, then inferred *what it cost* without checking
+the text. 2026-09-16: checked the text, found a matching string, then inferred *what clause it
+belonged to* without checking its neighbours.
+
+Both are the same shape — **a local match treated as a global identification.** The Act has 58
+clauses that all begin `(1)The Commission shall`-ish; "this string looks like clause 38" was never
+evidence, because the string is not unique. The discriminator was always going to be the
+surrounding structure: the preceding numeral, the marginal note, the next paragraph. Yesterday's
+lesson was *"check the text"*. The actual lesson is one level up: **a match is a hypothesis; the
+neighbourhood is the test.** String similarity that ignores context is exactly the failure
+`act_ref()` has — inferring a ref from local shape — reproduced by hand, in a document explaining
+why `act_ref()` fails.
+
+There is a mild irony worth recording: the fix designed for this in D2 — a **monotonic cursor**
+that will only accept clause `n` after clause `n-1`'s anchor — would have rejected the L614 match
+instantly, because L614 comes *after* clause 47 at L609. The design that prevents the machine from
+making this error was written in the same session that made it by hand.
+
+### What the re-check found, which is the actual return on doing it
+
+Three findings, none of which were being looked for, all of which strengthen the case for v2:
+
+**1. v1's clause 37 is silently corrupted, and a physical page really is missing.** Raw OCR page 13
+ends at cl.37(b) `…make rules and regulations for the effective running of the / Commission;`, and
+page 14 opens mid-list at cl.38(j) `()establish and promote inclusive schools`. So 2026-09-13's
+inference was **half right after all**: the lost page does carry cl.38's opening (and cl.37's
+tail). It just never carried cl.40. A claim can be wrong in its reasoning, wrong in half its
+conclusion, and right in the other half — which is why "FALSIFIED" was too coarse a verdict and
+the standing fact is now itemised per clause.
+
+**2. A live citation-integrity defect, in `main`, today.** Chunk boundaries do not respect the
+damage:
+
+| chunk | ref | carries |
+|---|---|---|
+| 31 | `cl. 36,37` | cl.36 + cl.37 through `(b)` — clean |
+| 32 | `general` | cl.38 `(j)`–`(o)` — uncitable |
+| **33** | **`cl. 39`** | **cl.38 `(o)`–`(r)`** then `39.` and cl.39's body |
+
+Ask DRLCA about assistive devices and it can quote *"procure assistive devices for all disability
+types"* — cl.38(r) — under the tag **`[Act cl. 39]`**. And `verify_citations()` passes it, because
+the number in the tag genuinely is that chunk's `ref`. This is the project's central invariant
+failing in production, and it was found by re-checking a finding rather than by any test. Worth
+sitting with: the mechanical citation check cannot detect a citation that is wrong about *which
+provision the text is*. It only checks that the tag matches the chunk. **The chunk was the lie.**
+
+*(Also worth recording: the session plan for this documentation pass predicted this misattribution
+would be under `cl. 37`. It is under `cl. 39`. Predicted wrong, checked, corrected before writing
+— which is the loop working.)*
+
+**3. Two smaller v1 defects.** L542 reads `PARTVII` where the Arrangement (L64) and the gazette
+both say **PART VIII**. And v1's Arrangement **truncates at L77, `51.Power to acquire land.`** —
+`scripts/audit_corpus.py:64-66` cites the Arrangement as the source of `ACT_CLAUSES = range(1, 59)`
+and it does not contain 52–58. The number is right; the cited source is wrong. This one has teeth:
+D2's manifest-anchored parse is built on the Arrangement yielding a clean `1..58`, so the go/no-go
+gate has to run against the **gazette's** Arrangement pages — **which have not been OCRed yet.**
+That is now the first task of D2 rather than an assumption underneath it.
+
+### What this cost, and the policy change
+
+Cost: one day, one commit, and a load-bearing false fact in the file every session reads first.
+Cheap only because the re-check happened. It happened because yesterday's entry made re-checking
+the habit — so the process caught its own error at a one-day latency instead of the three-day
+latency before it. That is the one genuinely good number here.
+
+Policy, written into the playbook rather than just noted:
+
+- **Findings are itemised per entity, never per batch.** "cl.38 and cl.40 are absent" bundled two
+  claims with different truth values, and both corrections inherited the bundle. The standing fact
+  in `HANDOFF.md` is now one bullet per clause.
+- **A string match is not an identification.** Record the discriminator — the preceding numeral,
+  the marginal note, the following paragraph — or record the claim as unverified.
+- **D2's cross-check predictions are written before the first run** (they are, now, in the
+  playbook), so the output is falsifiable rather than interpretable.
+- **`ACT_KNOWN_ABSENT` is deleted in D6, not D2.** The reason changed with the facts: cl.38's
+  retirement now depends on the gazette re-OCR actually landing, not on a re-parse of v1. Deleting
+  the constant before the corpus that justifies it exists would be the same error a third time.
+
+### Postscript: the review caught me doing it a third time, in the same document
+
+The fresh-eyes review of this session's diff re-derived all six corrections independently — every
+one reproduces — and then found **two wrong line references in the new D1 implementation notes**:
+
+- the `bench_phase01.py` "known near-miss" was cited as `:159,251,253`. Those lines are two
+  `sum(...)` comprehensions and an `assert`. The actual three-tuple unpacks are at
+  **`:244,246,250`**.
+- the caller-policy table claimed **13** `build_corpus()` call sites and omitted **`src/rag.py:642`**
+  — `ask()`'s own fallback `PerDocRetriever(build_corpus())`. Of the fourteen callers, the one
+  left out was the **user path's default corpus build**: precisely the caller a policy table about
+  not letting a corpus version reach users exists to cover. Two more entries cited the
+  `from rag import …` line instead of the call line.
+
+The `grep` output containing `src/rag.py:642` was in my own terminal, minutes earlier. I
+transcribed a table from it and dropped a row.
+
+So: the same failure, a third time in two days, at a third level of zoom — **a claim written from
+a source that was open, without re-reading the source.** 09-13 inferred from a measurement without
+checking the text. 09-16 matched a string without checking its neighbours. 09-17 built a table
+without re-checking its rows. The content of the error changes; the shape does not. It is always
+**"I already looked at this"** standing in for looking at it.
+
+Two things follow, and only the second is a lesson:
+
+1. The corrections are noted **in place, dated, not silently fixed** — including this one, and
+   including the fact that a note about verifying line references had a wrong line reference in it.
+2. **The review is not optional, and it is not a formality.** Every substantive finding in this
+   session survived it; every *citation* did not. Self-checking caught the 09-16 error only
+   because a different session looked at it with fresh eyes. Within a session, the thing that
+   caught it was a second reader. Budget for one.

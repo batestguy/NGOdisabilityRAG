@@ -33,10 +33,11 @@ import retrieve  # noqa: E402
 from bench_phase01 import load_questions  # noqa: E402 (SAME 10Q set)
 from eval_phase06 import EXPECTED, ref_nums  # noqa: E402 (SAME ground truth)
 from rag import build_corpus  # noqa: E402
-from retrieve import MIN_SCORE, PerDocRetriever  # noqa: E402
+from retrieve import MIN_SCORE, PerDocRetriever, select_top  # noqa: E402
 
 K_PER_DOC = 3   # ask() / eval_phase06 depth
 TOP_N = 6       # ask() / eval_phase06 merge width
+MIN_PER_DOC = 1  # ask() default -- the doc-quota merge, Phase 09 step 3 M2
 
 # Off-corpus battery. The first version of this harness only asked "does
 # expansion starve a GOOD question below the floor?" and never asked the
@@ -83,7 +84,8 @@ def measure(ret, questions, expand: bool) -> list[dict]:
         rows = []
         for i, q in enumerate(questions):
             qid = "Q%d" % (i + 1)
-            hits = ret.query(q, k=K_PER_DOC)[:TOP_N]
+            hits = select_top(ret.query(q, k=K_PER_DOC), TOP_N,
+                              min_per_doc=MIN_PER_DOC)
             exp = EXPECTED[qid]
             exp_pairs = {(d, n) for d, ns in exp.items() for n in ns}
             ret_pairs = {(h.doc_id, n) for h in hits for n in ref_nums(h.ref)}
@@ -201,7 +203,8 @@ def measure_one(ret, q: str, expand: bool) -> dict:
     if not expand:
         retrieve.expand_query = lambda x: x
     try:
-        hits = ret.query(q, k=K_PER_DOC)[:TOP_N]
+        hits = select_top(ret.query(q, k=K_PER_DOC), TOP_N,
+                          min_per_doc=MIN_PER_DOC)
         kept = [h for h in hits if h.score >= MIN_SCORE]
         return {"top": hits[0].score if hits else 0.0, "n_kept": len(kept)}
     finally:

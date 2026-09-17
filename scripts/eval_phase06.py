@@ -69,8 +69,13 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS  # noqa: E402
 
 from bench_phase01 import load_questions  # noqa: E402 (SAME 10Q set)
+from evalset import (  # noqa: E402
+    assert_frozen10_matches_notebook,
+    expected_map,
+    load_eval_set,
+)
 from rag import CITE_TAG_RE, build_corpus  # noqa: E402
-from retrieve import PerDocRetriever, stem  # noqa: E402
+from retrieve import PerDocRetriever, select_top, stem  # noqa: E402
 
 TRANSCRIPT = (ROOT / "scripts"
               / "test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json")
@@ -83,18 +88,18 @@ TRANSCRIPT = (ROOT / "scripts"
 #  Q9 s.33 is a bare TOC line ("33. Right to life. 34 Right to dignity..."),
 #    explicitly NOT expected for dignity; s.34 (body) + s.17 are.
 #  Q10 s.46 holds the legal-aid provision; factsheet S39 is commission powers.
-EXPECTED = {
-    "Q1": {"act2018": {1}, "factsheet2020": {1, 2}},
-    "Q2": {"act2018": {3, 4, 5, 6, 7}, "factsheet2020": {6, 7}},
-    "Q3": {"act2018": {29, 30}},
-    "Q4": {"act2018": {31}, "factsheet2020": {30, 31}},
-    "Q5": {"act2018": {1, 2, 8, 9, 10, 13, 29, 30}},
-    "Q6": {"act2018": {11}, "factsheet2020": {10, 11}},
-    "Q7": {"act2018": {16, 17, 20}, "factsheet2020": {17, 19, 20}},
-    "Q8": {"act2018": {6, 7}, "factsheet2020": {6, 7}},
-    "Q9": {"constitution1999": {17, 34}},
-    "Q10": {"constitution1999": {46}},
-}
+#
+# The literal moved to data/eval/questions.json in Phase 09 (M2). It was
+# GENERATED from the literal that used to sit here, not retyped, and every line
+# of the provenance block above is mirrored into that file's per-question
+# `note` field so the reasoning travels with the data instead of living only in
+# this comment. The values are unchanged: this module's output is byte-identical
+# across the move, which is the refactor's proof.
+#
+# The point of the move is that ground truth now has ONE home shared with the
+# held-out set, so eval_phase06 (frozen 10) and eval_heldout (held-out) cannot
+# drift into measuring recall two different ways.
+EXPECTED = expected_map(load_eval_set("frozen10"))
 
 # Audited overrides from Phase 02 manual verdicts (qid, tag-sub, claim-word).
 #
@@ -214,7 +219,13 @@ def eval_question(qid, question, rec, hits, ret) -> dict:
     q_words = content_stems(question)
     cov = len(q_words & ans_words) / len(q_words) if q_words else 1.0
     # Reverse retrieval: the answer as a query must land on its own support.
-    rev = ret.query(answer, k=3)[:3]
+    # min_per_doc=0 ON PURPOSE. This is a metric probe, not the user path: with
+    # 3 slots and 3 docs a quota would force exactly one hit per doc and turn
+    # reverse_rel into a different measurement. min_per_doc=0 makes select_top
+    # fall straight through to global order, i.e. bit-identical to the [:3]
+    # slice it replaces -- written as a call rather than a slice so the one
+    # site that legitimately wants raw global order says so.
+    rev = select_top(ret.query(answer, k=3), 3, min_per_doc=0)
     rev_rel = (sum(1 for h in rev
                    if ref_nums(h.ref) & exp.get(h.doc_id, set()))
                / len(rev)) if rev else 0.0
@@ -230,6 +241,10 @@ def eval_question(qid, question, rec, hits, ret) -> dict:
 def main() -> None:
     questions = load_questions()
     assert len(questions) == 10
+    # Two independent sources of the frozen 10 must agree: the notebook literal
+    # and data/eval/questions.json. Checked BEFORE any measurement, so a drifted
+    # yardstick can never silently produce a number.
+    assert_frozen10_matches_notebook()
     docs = build_corpus()
     print("corpus: %s" % {k: len(v) for k, v in docs.items()})
     verify_ground_truth(docs)
@@ -237,8 +252,10 @@ def main() -> None:
     recs = {r["id"]: r for r in json.loads(
         TRANSCRIPT.read_text(encoding="utf-8")) if r["id"].startswith("Q")}
 
+    # select_top, not [:6] -- the same merge ask() ships. A harness that slices
+    # differently from ask() is measuring a system nobody ships.
     rows = [eval_question("Q%d" % (i + 1), q, recs["Q%d" % (i + 1)],
-                          ret.query(q, k=3)[:6], ret)
+                          select_top(ret.query(q, k=3), 6), ret)
             for i, q in enumerate(questions)]
     print("\n== PER-QUESTION (retrieval live/offline; answers frozen v2) ==")
     print("  %-4s %-6s %-6s %-6s %-6s %-6s %-6s  missed-expected" % (

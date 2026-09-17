@@ -425,6 +425,108 @@ class PerDocRetriever:
         return hits, False
 
 
+# ---------------------------------------------------------------------------
+# Cross-doc merge (Phase 09 step 3 M2, added 2026-09-13).
+#
+# THE DEFECT THIS FIXES. PerDocRetriever exists because the Constitution is
+# 2,104 of 2,214 chunks and floods a joint index; the class docstring above
+# says in as many words that cross-doc cosines "are not strictly comparable"
+# (separate TF-IDF spaces, different IDFs). Both shipping call sites then did
+# exactly that comparison anyway: `retriever.query(q, k=k)[:top_n]` sorted the
+# 9 candidates (3 docs x k=3) by raw cross-doc cosine and cut to 6. THE CUT
+# RE-INTRODUCED THE FLOODING PER-DOC RETRIEVAL WAS BUILT TO PREVENT.
+#
+# WHAT IT BUYS, MEASURED: NOTHING. Say this first, because the comment that
+# shipped in the draft of this block said the opposite. `min_per_doc=1`
+# reproduces the baseline to three decimals on ALL THREE sets -- frozen-10
+# 0.925, dev 0.420, test 0.338 -- while changing WHICH six chunks are shown on
+# 7 of 60 questions. The 0.460 figure the draft quoted as "four points of
+# recall thrown away by the slice" was measured with NO CUT AT ALL, i.e. while
+# showing 9 chunks instead of 6. It was a top_n effect, not an ordering effect,
+# and attributing it to this function was the error that produced the falsified
+# Phase 09 step 3 plan (LEARNING_JOURNAL.md 2026-09-13).
+#
+# So this lands on correctness grounds only: it stops doing a comparison the
+# class docstring calls invalid, it is provably refusal-invariant, and it is
+# the merge a dense arm needs once fused ranks exist (Phase 10 D). H7 remains
+# the clearest illustration of the DEFECT -- Act cl.24 ranked second in the
+# Act's own index and never reached the user because six Constitution chunks
+# outscored it on a scale the two indexes do not share -- but fixing it did not
+# move the mean. Do not write this up as a recall win.
+#
+# REFUSAL INVARIANCE -- this is the property that keeps the MIN_SCORE
+# calibration at the top of this file valid, and it is provable rather than
+# hopeful. Callers refuse when nothing in the returned list clears the floor.
+# `hits` is score-sorted, so the old top_n slice always contained the global
+# maximum. select_top also always contains it: the quota phase takes it first
+# if it clears the floor, and if it does not clear the floor the quota phase
+# takes nothing at all and the fill phase takes it first. So in both cases
+#   "some returned hit clears the floor"  <=>  "the global max clears the floor"
+# and the refusal decision is bit-identical, question for question, on every
+# set.
+#
+# That proof WAS checked empirically -- 106 probes on 2026-09-13 (60 eval
+# questions + 12 off-corpus + 34 bare synonym keys), zero flips -- but by a
+# throwaway harness that was never committed, so today the claim rests on the
+# argument above and on a run nobody can reproduce. An earlier draft of this
+# comment pointed at `scripts/ablate_phase09.py`; no such file exists. Phase
+# 10 D needs this battery as a committed script, because it is the gate that
+# lets a dense arm widen admission without moving the refusal decision.
+#
+# WHY A QUOTA AND NOT JUST A WIDER CUT. Showing more than six excerpts changes
+# what the user reads and what the LLM is billed for. The quota keeps the
+# budget at six and changes only WHICH six -- the Act is guaranteed its best
+# candidate even when the Constitution owns the whole global top of the list.
+# ---------------------------------------------------------------------------
+def select_top(
+    hits: list[Hit],
+    top_n: int,
+    min_per_doc: int = 1,
+    floor: float = MIN_SCORE,
+) -> list[Hit]:
+    """Merge cross-doc candidates to at most `top_n`, reserving per-doc slots.
+
+    Reserves up to `min_per_doc` slots for each doc's best hits, but ONLY for
+    hits that already clear `floor` -- never spend a guaranteed slot on
+    something the caller's gate is about to drop anyway. Remaining slots are
+    filled by global score. The result is returned in global score order, so
+    every existing consumer (per_doc_top, excerpt display, the eval harnesses)
+    sees the same shape it saw before.
+
+    Deterministic: ordering is (-score, original index) throughout, so equal
+    scores never reorder run to run and an ablation is reproducible.
+
+    `floor` is threaded through rather than read from the module constant so a
+    caller passing a non-default min_score reserves slots on the same number it
+    will later filter on. This is the same latent inconsistency
+    PerDocRetriever.query() already closes for the expansion gate.
+    """
+    if top_n <= 0 or not hits:
+        return []
+    order = sorted(range(len(hits)), key=lambda i: (-hits[i].score, i))
+    chosen: list[int] = []
+    seen: set[int] = set()
+    if min_per_doc > 0:
+        quota: dict[str, int] = {}
+        for i in order:
+            if len(chosen) >= top_n:
+                break
+            if hits[i].score < floor:
+                continue
+            used = quota.get(hits[i].doc_id, 0)
+            if used < min_per_doc:
+                quota[hits[i].doc_id] = used + 1
+                chosen.append(i)
+                seen.add(i)
+    for i in order:
+        if len(chosen) >= top_n:
+            break
+        if i not in seen:
+            chosen.append(i)
+            seen.add(i)
+    return [hits[i] for i in sorted(chosen, key=lambda i: (-hits[i].score, i))]
+
+
 def cite_tag(doc_id: str, ref: str) -> str:
     """Canonical citation tag for a hit, e.g. '[Act cl. 31]'."""
     if doc_id == "act2018":

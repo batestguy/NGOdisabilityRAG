@@ -1,0 +1,897 @@
+[
+ {
+  "id": "Q1",
+  "set": "frozen10",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "What does the Act say about discrimination?",
+  "expected": {
+   "act2018": [
+    1
+   ],
+   "factsheet2020": [
+    1,
+    2
+   ]
+  },
+  "note": "Fines live in Act cl.1 (+N100k tail cl.2) and factsheet Section 1/1(2)/2. Corpus inspection (eval_phase06.py provenance block: ground truth read from data/processed/, never from an LLM answer)."
+ },
+ {
+  "id": "Q2",
+  "set": "frozen10",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "Are public buildings required to be accessible?",
+  "expected": {
+   "act2018": [
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "factsheet2020": [
+    6,
+    7
+   ]
+  },
+  "note": "Corpus inspection (eval_phase06.py provenance block: ground truth read from data/processed/, never from an LLM answer)."
+ },
+ {
+  "id": "Q3",
+  "set": "frozen10",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "What employment protections exist for persons with disabilities?",
+  "expected": {
+   "act2018": [
+    29,
+    30
+   ]
+  },
+  "note": "Corpus inspection (eval_phase06.py provenance block: ground truth read from data/processed/, never from an LLM answer)."
+ },
+ {
+  "id": "Q4",
+  "set": "frozen10",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "Is there a commission for persons with disabilities?",
+  "expected": {
+   "act2018": [
+    31
+   ],
+   "factsheet2020": [
+    30,
+    31
+   ]
+  },
+  "note": "Corpus inspection (eval_phase06.py provenance block: ground truth read from data/processed/, never from an LLM answer)."
+ },
+ {
+  "id": "Q5",
+  "set": "frozen10",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "What are the penalties for violating the Act?",
+  "expected": {
+   "act2018": [
+    1,
+    2,
+    8,
+    9,
+    10,
+    13,
+    29,
+    30
+   ]
+  },
+  "note": "Penalty clauses found by corpus hunt: cl.1/2 (N100k/N1M), cl.8(3) (approval offence), cl.9,10 (N5,000/day), cl.13 (parking), cl.29,30 (N50k). Corpus inspection (eval_phase06.py provenance block: ground truth read from data/processed/, never from an LLM answer)."
+ },
+ {
+  "id": "Q6",
+  "set": "frozen10",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "Does the Act cover access to vehicles and transport?",
+  "expected": {
+   "act2018": [
+    11
+   ],
+   "factsheet2020": [
+    10,
+    11
+   ]
+  },
+  "note": "Act cl.10 is awareness-programmes (NOT vehicles) -- expected is cl.11 only. Corpus inspection (eval_phase06.py provenance block: ground truth read from data/processed/, never from an LLM answer)."
+ },
+ {
+  "id": "Q7",
+  "set": "frozen10",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "What rights do children with disabilities have to education?",
+  "expected": {
+   "act2018": [
+    16,
+    17,
+    20
+   ],
+   "factsheet2020": [
+    17,
+    19,
+    20
+   ]
+  },
+  "note": "Corpus inspection (eval_phase06.py provenance block: ground truth read from data/processed/, never from an LLM answer)."
+ },
+ {
+  "id": "Q8",
+  "set": "frozen10",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "How long is the transitional compliance period?",
+  "expected": {
+   "act2018": [
+    6,
+    7
+   ],
+   "factsheet2020": [
+    6,
+    7
+   ]
+  },
+  "note": "Corpus inspection (eval_phase06.py provenance block: ground truth read from data/processed/, never from an LLM answer)."
+ },
+ {
+  "id": "Q9",
+  "set": "frozen10",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "Does the Constitution guarantee dignity and equality?",
+  "expected": {
+   "constitution1999": [
+    17,
+    34
+   ]
+  },
+  "note": "s.33 is a bare TOC line (\"33. Right to life. 34 Right to dignity...\") and is explicitly NOT expected for dignity; s.34 (body) + s.17 are. Corpus inspection (eval_phase06.py provenance block: ground truth read from data/processed/, never from an LLM answer)."
+ },
+ {
+  "id": "Q10",
+  "set": "frozen10",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "Where can I get legal aid for a disability rights violation?",
+  "expected": {
+   "constitution1999": [
+    46
+   ]
+  },
+  "note": "s.46 holds the legal-aid provision; factsheet S39 is commission powers. Corpus inspection (eval_phase06.py provenance block: ground truth read from data/processed/, never from an LLM answer)."
+ },
+ {
+  "id": "H1",
+  "set": "heldout",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Is there any help for somebody who wants to train as a teacher for children with disabilities?",
+  "expected": {
+   "factsheet2020": [
+    19
+   ]
+  },
+  "note": "The rule is Act cl.19, read at disability_act_2018_full.txt p.9: 'The education of special education personnel shall be highly subsidised.' act2018 is DELIBERATELY NOT expected here: the OCR heading came through as '19.1' and the sentence straddles two chunks, one labelled 'cl. 18' and the next 'cl. 20', so NO act2018 chunk ref carries 19 and expecting it would hard-fail verify_expected(). The only citable ref is factsheet row 12, 'Section 19 / Subsidised education for special education personnel ... This provides for the subsidised education for special education personnel' (disability_act_factsheet_PLAC.txt), carried by chunk ref 'Section 19,17,20'. Mismatch: user says 'train as a teacher for children with disabilities' / 'help'; the corpus says 'special education personnel' / 'highly subsidised'."
+ },
+ {
+  "id": "H2",
+  "set": "heldout",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Somebody is using my blind brother to beg on the street. Is that against the law?",
+  "expected": {
+   "act2018": [
+    16
+   ],
+   "factsheet2020": [
+    16
+   ]
+  },
+  "note": "Act cl.16(1) (disability_act_2018_full.txt p.9): a person shall not 'employ, use or involve a person with disability in begging', 'parade persons with disabilities in public with intention of soliciting for alms', or use the condition of disability as a guise for begging; cl.16(2) fine of N100,000 or six months. Factsheet row 10 'Section 16' restates both limbs and the N100,000 penalty. Mismatch: the user says 'beg on the street'; the headings and the factsheet index say 'soliciting for alms'."
+ },
+ {
+  "id": "H3",
+  "set": "heldout",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Do I have to pay hospital bills if I have a mental illness?",
+  "expected": {
+   "act2018": [
+    21
+   ],
+   "factsheet2020": [
+    21
+   ]
+  },
+  "note": "Act cl.21(2) (disability_act_2018_full.txt p.10): 'A person with mental disability shall be entitled to free medical and health service in all public institutions'; cl.21(1) guarantees unfettered access to adequate health care without discrimination. Factsheet row 14 'Section 21 / Free Healthcare' says the same. Mismatch: 'pay hospital bills' / 'mental illness' vs 'free healthcare' / 'mental disability' / 'public institutions'."
+ },
+ {
+  "id": "H4",
+  "set": "heldout",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Is there any paper I can get that proves I am disabled?",
+  "expected": {
+   "act2018": [
+    22
+   ],
+   "factsheet2020": [
+    22
+   ]
+  },
+  "note": "Act cl.22 (disability_act_2018_full.txt p.10): Permanent Certificate of Disability from the Commission; a doctor may with the Commission's approval issue a Temporary Certificate lasting not longer than 180 days; beyond 180 days a Permanent Certificate issues; cl.22(4) a holder 'is entitled to all rights and privileges under this Act'. Factsheet row 15 'Section 22 / Certificate of Disability' repeats 22(1)-(3). Mismatch: 'paper that proves I am disabled' vs 'Certificate of Disability'."
+ },
+ {
+  "id": "H5",
+  "set": "heldout",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "My boss sacked me because of my condition. Is there any money I can claim?",
+  "expected": {
+   "act2018": [
+    28
+   ],
+   "factsheet2020": [
+    28
+   ]
+  },
+  "note": "Act cl.28 (disability_act_2018_full.txt p.11): (1) equal right to work; (2) a contravening person is liable to 'nominal damages of a minimum of N250,000 payable to the affected person with disability'; (3)(a) a company N500,000 and (3)(b) a principal officer N50,000. Factsheet row 17 'Section 28 / Equal Right to Work' carries the same three figures. Mismatch: 'sacked', 'money I can claim' vs 'equal right to work', 'nominal damages'."
+ },
+ {
+  "id": "H6",
+  "set": "heldout",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Someone parked in the space with the wheelchair sign. Can anything be done to them?",
+  "expected": {
+   "act2018": [
+    12
+   ],
+   "factsheet2020": [
+    12
+   ]
+  },
+  "note": "Act cl.12 (disability_act_2018_full.txt pp.7-8): (1) suitable spaces marked and reserved at public parking lots; (4) 'A person without disability who parks a vehicle in the reserved space ... is liable on conviction to a fine of N5,000'; (5) same fine for intentionally obstructing it; (6) 4 does not apply if a person with disability is a passenger. Factsheet row 8 'Section 12 / Reserved Places' repeats 12(2)-(4). Mismatch: 'space with the wheelchair sign' vs 'reserved space' plus 'the necessary insignia'."
+ },
+ {
+  "id": "H7",
+  "set": "heldout",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "I cannot hear well. Will the hospital arrange somebody to help me talk to the doctor?",
+  "expected": {
+   "act2018": [
+    24
+   ]
+  },
+  "note": "Act cl.24 (disability_act_2018_full.txt p.10): 'A public hospital where a person with communicational disabilities is medically attended to shall make provision for special communication.' cl.57 defines 'special communication' as including sign language and augmentative/alternative communication, but a correct answer does not need the interpretation clause, so 57 is not listed. Mismatch: 'cannot hear well' / 'somebody to help me talk to the doctor' vs 'communicational disabilities' / 'special communication'."
+ },
+ {
+  "id": "H8",
+  "set": "heldout",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Nobody built a ramp at the government office near me. Who am I supposed to report it to?",
+  "expected": {
+   "act2018": [
+    8
+   ]
+  },
+  "note": "Act cl.8(1) (disability_act_2018_full.txt p.5): on a state of inaccessibility or barrier, the person 'may, without prejudice to his right to seek redress in court, notify the relevant authority in charge of the environment', and that authority 'shall take immediate and necessary steps to remove the barrier'; cl.8(2) N10,000/day against a corporate body and N5,000/day (or six months) against an individual for failing to comply. Mismatch: 'who am I supposed to report it to' vs 'notify the relevant authority in charge'."
+ },
+ {
+  "id": "H9",
+  "set": "heldout",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "Which part of the Constitution protects me from being discriminated against?",
+  "expected": {
+   "constitution1999": [
+    42
+   ]
+  },
+  "note": "Body provision is s.42, read in constitution_1999_NHRC.txt Chapter IV: '42. (1) A citizen of Nigeria of a particular community, ethnic group, place of origin, sex, religion or political opinion shall not, by reason only that he is such a person ... be subjected ... to disabilities or restrictions ...' and 42(2) on the circumstances of his birth. s. 39 IS EXPLICITLY NOT EXPECTED: the arrangement-of-sections listing near the head of the file runs '39. Right to freedom of expression and the press. 40 Right to peaceful assembly ... 41 Right to freedom of movement. 42 Right to freedom from discrimination. ...', and const_ref tags that whole listing chunk 's. 39' because \u00a739 is its first marker -- so the exact words 'freedom from discrimination' sit inside a chunk numbered 39. This is the same shape as the Phase 06 fix A bug (s.33 listing cited for s.34 dignity content)."
+ },
+ {
+  "id": "H10",
+  "set": "heldout",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "If my disability case goes to court, what does the Constitution promise me about a fair hearing?",
+  "expected": {
+   "constitution1999": [
+    36
+   ]
+  },
+  "note": "Body provision is s.36, constitution_1999_NHRC.txt Chapter IV: 36(1) fair hearing within a reasonable time by an independent and impartial court; 36(6)(c)-(e) including 'have, without payment, the assistance of an interpreter if he cannot understand the language used at the trial'. TWO listings must not be credited: (a) the Chapter IV arrangement listing '36. Right to fair hearing. 37 Right to private and family life. 38 Right to freedom of thought ...' is demoted to ref='general' and carries NO number, so ss. 37/38 are not expected; (b) the Second Schedule Exclusive Legislative List item '36. Maritime shipping and navigation, including ...' IS tagged 's. 36' although it is a legislative-list item, not a section -- a retrieval that lands there would score a spurious s.36 hit, which is a measurement artifact to read the per-question row against, not a correct citation. (It also explains why the off-corpus probe 'maritime shipping insurance law' scores 0.318.)"
+ },
+ {
+  "id": "H11",
+  "set": "heldout",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "Can somebody be locked up just because people say he is mentally ill?",
+  "expected": {
+   "constitution1999": [
+    35
+   ]
+  },
+  "note": "Body provision is s.35, constitution_1999_NHRC.txt Chapter IV: 35(1) entitles every person to personal liberty, and 35(1)(e) permits deprivation only 'in the case of persons suffering from infectious or contagious disease, persons of unsound mind, persons addicted to drugs or alcohol or vagrants, for the purpose of their care or treatment or the protection of the community'. NOT expected: ss. 33/34 from the head-of-file listing '33. Right to life. 34 Right to dignity of human persons. 35 Right to personal liberty.', which is demoted to ref='general' and carries no number at all; and the Second Schedule Exclusive Legislative List item '35. Legal proceedings between Governments of States ...', which is tagged 's. 35' despite being a legislative-list item about inter-government litigation, not the liberty section."
+ },
+ {
+  "id": "H12",
+  "set": "heldout",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "Can the disability commission accept a gift of land from a private donor?",
+  "expected": {
+   "act2018": [
+    46
+   ],
+   "factsheet2020": [
+    46
+   ]
+  },
+  "note": "Body provision is Act cl.46(1), disability_act_2018_full.txt p.16: 'The Commission may accept gift of land, money or other property on such terms and conditions ... provided such terms and conditions are not inconsistent with any prevailing law', with 46(2) barring gifts whose conditions clash with the Commission's functions. Factsheet row 25 adds 'the Commission may also accept a gift of land, money or property on terms and conditions that are not inconsistent with any law- section 46'. NOT expected: Constitution s. 46, which is the entirely unrelated 'Special jurisdiction of High Court and Legal aid' section -- a cross-scheme collision on the same integer; and the Act's own arrangement-of-sections listing, which carries the bare line '46.Power to accept gifts.' but is demoted to ref='general' and so contributes no number."
+ },
+ {
+  "id": "H13",
+  "set": "heldout",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "How long can a member of the disability commission's governing council stay in office?",
+  "expected": {
+   "act2018": [
+    34
+   ],
+   "factsheet2020": [
+    34
+   ]
+  },
+  "note": "Body provision is Act cl.34, disability_act_2018_full.txt p.13: 'The Chairman and members of the Council shall each hold office- (a) for a term of four years and may be re-appointed for a further term of four years and no more'. Factsheet row 20 restates it: 'shall hold office for a renewable term of four years ... - section 34'. NOT expected: Act cl.33, which is 'Proceedings of the Council' (the Second Schedule supplementary provisions) -- the Act's arrangement listing puts '33.Proceedings of the Council.' and '34.Tenure of office.' on adjacent lines, and the body chunk that holds the tenure text is labelled 'cl. 33,34', so cl.33 is retrievable alongside but is the wrong cite for tenure. Also NOT expected: Constitution s. 34, which is the right to dignity of the human person."
+ },
+ {
+  "id": "H14",
+  "set": "heldout",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "Can anybody stop me from registering to vote because I am disabled?",
+  "expected": {
+   "act2018": [
+    30
+   ],
+   "constitution1999": [
+    77,
+    117
+   ]
+  },
+  "note": "Act cl.30, disability_act_2018_full.txt p.11: persons with disabilities 'shall be encouraged to fully participate in politics and public life', and government 'shall actively promote an environment in which persons with disabilities can effectively and fully participate in (a) the conduct of public affairs without discrimination ... (c) activities and administration of political parties'. The franchise itself is only in the Constitution: s.77(2) (National Assembly) and its identically worded State twin s.117(2) -- 'Every citizen of Nigeria, who has attained the age of eighteen years residing in Nigeria at the time of the registration of voters ... shall be entitled to be registered as a voter for that election'; neither carries a disability exclusion. Both are listed because 'voting' spans federal and State legislative houses and the two sections are separate provisions."
+ },
+ {
+  "id": "H15",
+  "set": "heldout",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "Is treating me differently because of my disability against the Constitution as well as the 2018 Act?",
+  "expected": {
+   "act2018": [
+    1
+   ],
+   "constitution1999": [
+    42
+   ]
+  },
+  "note": "Act cl.1(1)-(2), disability_act_2018_full.txt p.4: discrimination on the ground of disability is prohibited and penalised (N1,000,000 body corporate / N100,000 or six months for an individual). The Constitution's freedom-from-discrimination section is s.42, and reading it is exactly what answering this needs: its 42(1) grounds are 'community, ethnic group, place of origin, sex, religion or political opinion' -- disability is NOT among them, and the word 'disabilities' in 42(1)(a) is used in the older sense of legal disabilities or restrictions imposed by law. So the honest answer is 'the Act yes, s.42 not on its face', which cannot be given without s.42."
+ },
+ {
+  "id": "H16",
+  "set": "heldout",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "My son is deaf and the public school says it cannot teach him. What do the Constitution and the Disability Act each require?",
+  "expected": {
+   "act2018": [
+    18,
+    20
+   ],
+   "constitution1999": [
+    18
+   ]
+  },
+  "note": "Act cl.18(1), disability_act_2018_full.txt p.9: all public schools 'whether primary, secondary or tertiary shall be run to be inclusive of and accessible to persons with disabilities', and every school shall have at least one trained personnel and special facilities; cl.18(2) puts Braille and sign language in the curricula. Act cl.20 is the deaf-specific one: government shall ensure education of persons with disabilities, 'particularly children, who are blind, deaf or with multiple disabilities', is delivered in the most appropriate language, mode and means of communication. Constitution s.18(1): 'Government shall direct its policy towards ensuring that there are equal and adequate educational opportunities at all levels.' Deliberately the same integer 18 in two different numbering schemes carrying different content."
+ },
+ {
+  "id": "H17",
+  "set": "heldout",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "The Constitution mentions welfare of the disabled. Can I actually take government to court over that, or does only the 2018 Act give me a case?",
+  "expected": {
+   "act2018": [
+    55
+   ],
+   "constitution1999": [
+    6,
+    16
+   ]
+  },
+  "note": "Constitution s.16(2)(d), Chapter II: the State shall direct its policy towards ensuring that 'suitable and adequate shelter ... old age care and pensions, and unemployment, sick benefits and welfare of the disabled are provided for all citizens' -- this is the only occurrence of the word 'disabled' in constitution_1999_NHRC.txt. Whether it is enforceable is answered by s.6(6)(c): judicial powers 'shall not ... extend to any issue or question as to whether any act of omission by any authority or person ... is in conformity with the Fundamental Objectives and Directive Principles of State Policy set out in Chapter II'. The Act side is cl.55(1), disability_act_2018_full.txt p.18: to get the damages the Act provides 'it shall be sufficient for a plaintiff or claimant ... to prove the violation of the relevant section of this Act without specific proof of damages'."
+ },
+ {
+  "id": "H18",
+  "set": "heldout",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "The court building near me has no ramp and no lift. Is there a law that says a court has to be reachable by someone in a wheelchair?",
+  "expected": {
+   "act2018": [
+    3,
+    4
+   ],
+   "constitution1999": [
+    17
+   ]
+  },
+  "note": "Act cl.3, disability_act_2018_full.txt p.5: 'A person with disability has the right to access the physical environment and buildings on an equal basis with others.' Act cl.4: 'A public building shall be constructed with the necessary accessibility aids such as lifts (where necessary), ramps and any other facility'. The court-specific hook is Constitution s.17(2)(e): 'the independence, impartiality and integrity of courts of law, and easy accessibility thereto shall be secured and maintained.' cl.5 (roads, side-walks, First Schedule) is deliberately not listed -- the question is about the building, not the street."
+ },
+ {
+  "id": "H19",
+  "set": "heldout",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "Do disabled people have a right to a job and to equal pay under Nigerian law?",
+  "expected": {
+   "act2018": [
+    28,
+    29
+   ],
+   "constitution1999": [
+    17
+   ]
+  },
+  "note": "Act cl.28(1), disability_act_2018_full.txt p.11: right to work on an equal basis with others, including 'the right to opportunity to gain a living by work freely chosen or accepted'. Act cl.29: 'All employers of labour in public organisations shall, as much as possible have persons with disabilities constituting at least 5% of their employment.' Equal pay exists only in the Constitution: s.17(3)(a) 'all citizens, without discrimination on any group whatsoever, have the opportunity for securing adequate means of livelihood as well as adequate opportunity to secure suitable employment' and s.17(3)(e) 'there is equal pay for equal work without discrimination on account of sex, or on any other ground whatsoever'."
+ },
+ {
+  "id": "H20",
+  "set": "heldout",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "If there is a flood or a state of emergency, are disabled people protected, and can government suspend rights then?",
+  "expected": {
+   "act2018": [
+    25
+   ],
+   "constitution1999": [
+    45
+   ]
+  },
+  "note": "Act cl.25, disability_act_2018_full.txt p.10: 'In all situations of risk, violence, emergencies and the occurrences of natural disasters, the Government shall take all necessary steps to ensure the safety and protection of persons with disabilities taking cognisance of their peculiar vulnerability.' The suspension half is Constitution s.45: 45(1) saves laws reasonably justifiable in a democratic society as against ss.37-41, and 45(2)-(3) allow an Act of the National Assembly to derogate from s.33 or s.35 'during periods of emergency', defining a period of emergency by reference to s.305. ss.33/35/305 are not listed: they are the sections derogated FROM, and s.45 is the provision that answers 'can government suspend rights'."
+ },
+ {
+  "id": "H21",
+  "set": "heldout",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "How much notice must a landlord give a tenant before eviction under Nigerian tenancy law?",
+  "expected": {},
+  "note": "Hard case: shares vocabulary with the corpus without being in it. constitution_1999_NHRC.txt s.44(2)(c) saves general law 'relating to leases, tenancies, mortgages, charges, bills of sale', and 'premises' is a defined term in Act cl.57 -- so 'tenancy', 'landlord'-adjacent and 'premises' vocabulary is present, but no notice period, no recovery-of-premises procedure and no tenancy statute appears anywhere in the three documents. Fresh probe: not in ablate_phase08.OFF_CORPUS (checked against all 12 entries) and not one of test_phase02's two refusal demos."
+ },
+ {
+  "id": "H22",
+  "set": "heldout",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "What is the penalty for driving under the influence of alcohol on a Nigerian highway?",
+  "expected": {},
+  "note": "Hard case: 'penalty', 'fine ... on conviction', 'vehicle', 'driver', 'road' and even 'alcohol' all occur in the corpus -- Act cl.12 penalises parking offences, Act cl.11(4) imposes a duty on a driver, and Constitution s.35(1)(e) mentions 'persons addicted to drugs or alcohol' -- but no road-traffic offence, no drink-driving limit and no highway code is anywhere in the three documents. Fresh probe: not in ablate_phase08.OFF_CORPUS, not a test_phase02 demo."
+ },
+ {
+  "id": "H23",
+  "set": "heldout",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "How many years does a registered trade mark last in Nigeria before it has to be renewed?",
+  "expected": {},
+  "note": "Hard case, legal-sounding and same-vocabulary: the Second Schedule Exclusive Legislative List item 43 in constitution_1999_NHRC.txt reads 'Patents, trade marks, trade or business names, industrial designs and merchandise marks', and that chunk is even tagged 's. 43' -- so the exact phrase 'trade marks' is retrievable. What is absent is any registration term, renewal period or trade marks statute: the list allocates legislative competence and says nothing substantive. Fresh probe: not in ablate_phase08.OFF_CORPUS, not a test_phase02 demo."
+ },
+ {
+  "id": "H24",
+  "set": "heldout",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "What is the best fertiliser for growing tomatoes in Kano?",
+  "expected": {},
+  "note": "Plainly unrelated. The nearest corpus text is Constitution s.20 (protect and improve the environment, water, air, land, forest and wild life) and Second Schedule / Concurrent List agricultural headings; nothing about fertiliser, crops or horticulture. Fresh probe: not in ablate_phase08.OFF_CORPUS, not a test_phase02 demo."
+ },
+ {
+  "id": "H25",
+  "set": "heldout",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "How do I reset the password on my Android phone?",
+  "expected": {},
+  "note": "Plainly unrelated. 'telephone conversations' appear in Constitution s.37 (privacy) and 'Posts, telegraphs and telephones' is Exclusive Legislative List item 46, but there is no consumer-device, software or account-recovery content in any of the three documents. Fresh probe: not in ablate_phase08.OFF_CORPUS, not a test_phase02 demo."
+ },
+ {
+  "id": "H26",
+  "set": "heldout",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "Abeg, if person wey dey use wheelchair wan enter bus, wetin the law talk say the driver suppose do?",
+  "expected": {
+   "act2018": [
+    11
+   ],
+   "factsheet2020": [
+    11
+   ]
+  },
+  "note": "Pidgin phrasing of an in-corpus question. Act cl.11, disability_act_2018_full.txt p.7: (4) 'Before a person with disability boards or alights from a vehicle, the driver shall ensure that the vehicle comes to a stop'; (5) 'When a person with disability intends to board a vehicle, all other intending passengers shall wait for him to board before them'; (1)-(3) require lifts, ramps and other accessibility aids in vehicles and at bus stops, maintained in operational condition. Factsheet row 7 restates 11(4) and 11(5) explicitly. Note a chunking quirk worth reading the result against: 11(3)-(5) fall in a chunk labelled 'cl. 12', while the chunk labelled 'cl. 11' holds 11(1)-(2); 11 is still the correct citation and is carried by a real ref."
+ },
+ {
+  "id": "H27",
+  "set": "heldout",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "i went to the bank yesterday and they told me i must stand on the queue like everybody else even though i am on wheelchair pls is that what the law say",
+  "expected": {
+   "act2018": [
+    26
+   ]
+  },
+  "note": "Run-on, lower-case, unpunctuated phrasing of an in-corpus question. Act cl.26, disability_act_2018_full.txt p.10: '(1) In queues, persons with disabilities shall be given first consideration and, as much as possible, be attended to outside the queue. (2) A person who contravenes this section commits an offence and is liable on conviction to a fine of N50,000.00 or a term of six months imprisonment or both.' cl.9 (refusing to provide goods or services) is deliberately not listed -- the bank did attend, it refused priority, which is cl.26. No factsheet number is listed: the factsheet mentions queues only inside its row 16 prose ('sections 26 and 27'), and no factsheet chunk ref carries 26 or 27."
+ },
+ {
+  "id": "H28",
+  "set": "heldout",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "fine for fake disability certificate?",
+  "expected": {
+   "act2018": [
+    23
+   ],
+   "factsheet2020": [
+    23
+   ]
+  },
+  "note": "Over-terse fragment, no verb, in-corpus. Act cl.23, disability_act_2018_full.txt p.10: 'A person who unlawfully issues or obtains a Certificate of Disability, commits an offence and is liable on conviction to a fine of N200,000 or imprisonment for a term of one year or both.' Factsheet row 15 continuation: 'Persons who unlawfully issue or obtain a certificate of Disability are liable on conviction to a fine of N200,000, an imprisonment term of one year or both - section 23'."
+ },
+ {
+  "id": "H29",
+  "set": "heldout",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "Please, I would be most grateful if you could kindly advise whether an airline operating in Nigeria has any obligation towards a passenger who uses a wheelchair.",
+  "expected": {
+   "act2018": [
+    14
+   ],
+   "factsheet2020": [
+    14
+   ]
+  },
+  "note": "Indirect, over-polite framing that buries the question. Act cl.14, disability_act_2018_full.txt p.8: all airlines operating in Nigeria shall (a) ensure accessibility of their aircraft, (b) 'make available presentable and functional wheelchairs for the conveyance of persons with disabilities', (c) ensure they are assisted on and off board in safety and reasonable comfort; 14(2) requires airports to make assistive and protective devices available. Factsheet row 9 covers the same ground (its heading is mislabelled 'Seaports and Railways' but its text is section 14, and its chunk ref carries 14)."
+ },
+ {
+  "id": "H30",
+  "set": "heldout",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "Please, is it true that government has somebody whose job is to tell the public about the rights of persons with disability?",
+  "expected": {
+   "act2018": [
+    2
+   ],
+   "factsheet2020": [
+    2
+   ]
+  },
+  "note": "Indirect Nigerian-English framing of an in-corpus question. Act cl.2, disability_act_2018_full.txt p.4: 'The Federal Ministry of Information shall make provisions for promotion of awareness regarding the- (a) rights, respect and dignity of persons with disabilities; and (b) capabilities, achievements and contributions of persons with disabilities to the society.' Factsheet row 2 'Section 2 / Awareness Programmes': 'This places the responsibility of promoting the rights, dignity of persons with disabilities and their contributions with the Federal Ministry of Information.'"
+ },
+ {
+  "id": "T1",
+  "set": "test",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "I went into a shop with my white cane and the owner told me to get out, he said he does not sell to people like me. Can he do that?",
+  "expected": {
+   "act2018": [
+    9
+   ],
+   "factsheet2020": [
+    9
+   ]
+  },
+  "note": "Act cl.9(1) (disability_act_2018_full.txt p.7): 'A person, who whether for payment or not, provides goods or services, or makes facilities available, shall not discriminate against another person with disability by- (a) refusing to provide those goods or services or make those facilities available to him; (b) the terms or conditions on which the provider provides those goods or services or makes those facilities available to him; or (c) the manner in which the provider provides those goods or services'. Factsheet row 6 'Section 9 / Goods, services and facilities': 'This prevents a person who provides goods and services from discriminating against a person with disability either in the terms and conditions for providing the said goods and services or by refusing to avail its facilities to him/her.' Mismatch: the user says 'shop', 'the owner', 'does not sell to people like me'; the corpus says 'a person who ... provides goods or services' and 'refusing to provide those goods or services'. NOT expected: cl.1, the general prohibition of discrimination already owned by Q1 -- cl.9 is the goods-and-services-specific rule this question turns on, and cl.9 as OCR'd carries no penalty of its own."
+ },
+ {
+  "id": "T2",
+  "set": "test",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Is there any rule about boats and ferries? The jetty near me has nothing for somebody who cannot climb.",
+  "expected": {
+   "act2018": [
+    13
+   ],
+   "factsheet2020": [
+    13
+   ]
+  },
+  "note": "Act cl.13 (disability_act_2018_full.txt p.8): '(1) Seaports facilities and vessels shall be made accessible to persons with disabilities. (2) Railway stations, trains and facilities in the trains shall be made accessible to persons with disabilities. (3) The transitory provision contained in section 6 shall apply to the provisions of this section.' Factsheet row 9 tail: 'Section 13 of the Act also mandates seaport facilities and vessels, railway stations and trains to be accessible to persons with disabilities. However, unlike airline operations there is a proviso of five years to modify their operations.' That row is HEADED 'Section 14 / Seaports and Railways' -- the same mislabel H29 records -- but its chunk ref is 'Section 14,13,15,16', so 13 is carried by a real ref. Mismatch: the user says 'boats', 'ferries', 'jetty', 'cannot climb'; the corpus says 'vessels' and 'seaports facilities'. cl.6 is not expected even though 13(3) points at it: the question asks whether the duty exists, not when it bites."
+ },
+ {
+  "id": "T3",
+  "set": "test",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "I am blind. When they read out announcements at a public place, does anybody have to give me the message in a form I can actually use?",
+  "expected": {
+   "act2018": [
+    15
+   ],
+   "factsheet2020": [
+    15
+   ]
+  },
+  "note": "Act cl.15 (disability_act_2018_full.txt p.8), marginal heading 'Special safety briefing of persons with disabilities': 'Any general information shall be translated into the accessible format appropriate to the person with disability present.' Factsheet row 9 tail: 'There is a provision for all general information to be translated into an accessible format appropriate to the person with a disability present- section 15' (chunk ref 'Section 14,13,15,16'). Mismatch: the user says 'read out announcements', 'a form I can actually use'; the corpus says 'general information' and 'translated into the accessible format'. NOT expected: cl.24 (special communication at hospitals, H7's target) -- this is not a hospital, and cl.57's definition of 'special communication' is an interpretation clause a correct answer does not need."
+ },
+ {
+  "id": "T4",
+  "set": "test",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "The school hostel is sharing rooms next week and I walk with crutches. Do they have to consider me first or do I take my chances like everybody else?",
+  "expected": {
+   "act2018": [
+    27
+   ]
+  },
+  "note": "Act cl.27 (disability_act_2018_full.txt p.10), marginal heading 'Accommodation.': 'If accommodation is being provided by schools for their students, employers for their employees, service providers for their customers, organisations for their members, [persons with] disabilities shall be given first consideration.' (The OCR drops the words 'persons with' from the tail of that sentence; the heading and the factsheet both make the subject unambiguous.) NO factsheet number is expected: the factsheet mentions accommodation only inside row 16's prose -- 'Persons with disabilities are also expected to be accorded with first priority in queues and consideration when free accommodation is provided by schools, service providers, government and organisations - sections 26 and 27' -- and no factsheet chunk ref carries 26 or 27, the same gap H27 records for queues. Mismatch: the user says 'hostel', 'sharing rooms', 'consider me first'; the corpus says 'accommodation ... provided by schools for their students' and 'first consideration'."
+ },
+ {
+  "id": "T5",
+  "set": "test",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Who does this law actually count as a disabled person? Is it only people in wheelchairs?",
+  "expected": {
+   "act2018": [
+    57
+   ],
+   "factsheet2020": [
+    1
+   ]
+  },
+  "note": "Act cl.57 (Interpretation, disability_act_2018_full.txt pp.18-19): '\"disability\" includes long term physical, mental, intellectual or sensory impairment which in interaction with various barriers may hinder full and effective participation in society on equal basis with others', and '\"person with disabilities\" means- (a) a person who has received Temporary or Permanent Certificate of Disability to have condition which is expected to continue permanently or for a considerable length of time ... but not limited to seeing, hearing, thinking, ambulating, climbing, descending, lifting, grasping, rising ... and (b) a person with long term physical, mental, intellectual or sensory impairment'. The plain-language twin is factsheet row 1 'Section 1': 'The Act describes a person with disabilities as one who has a long term physical, mental or sensory impairment that may hinder full and effective participation in society on an equal basis with others.' factsheet2020:[57] is NOT expected -- the factsheet has no row for the interpretation section and no factsheet chunk ref carries 57, so row 1 is the only citable factsheet ref. Mismatch: the user says 'count as a disabled person' and 'people in wheelchairs'; the corpus says 'long term physical, mental, intellectual or sensory impairment' and 'interaction with various barriers'."
+ },
+ {
+  "id": "T6",
+  "set": "test",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Is there anything that helps a person with disability pay for university?",
+  "expected": {
+   "factsheet2020": [
+    38
+   ]
+  },
+  "note": "The rule is section 38 of the Act (Functions of the Commission), and the only place it survives citably in this corpus is factsheet row 22 'Section 38 / Functions of the Commission' (disability_act_factsheet_PLAC.txt): the functions 'include making available not less than 5 percent of the work force to persons with disabilities, collecting data and records on the special education of persons with disabilities, facilitating the procurement of scholarships awards for persons with disabilities up to university level ...'. act2018 is DELIBERATELY NOT expected: the word 'scholarship' occurs zero times in disability_act_2018_full.txt (checked), because the OCR lost the '38.' heading together with the opening of the functions list -- the surviving items run on inside the chunk labelled 'cl. 36,37', so NO act2018 chunk ref carries 38 and expecting it would hard-fail verify_expected(). Citing '[Act cl. 37]' for a Commission function would also be wrong: cl.37 is Powers of the Council. Same shape as the '19.1' trap H1 documents. Mismatch: the user says 'helps ... pay for university'; the corpus says 'procurement of scholarships awards ... up to university level', buried in a list of Commission functions."
+ },
+ {
+  "id": "T7",
+  "set": "test",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Can a member of the disability commission's council be thrown out if he is caught stealing?",
+  "expected": {
+   "factsheet2020": [
+    35
+   ]
+  },
+  "note": "The rule is section 35 of the Act (Cessation of office). The body text IS in disability_act_2018_full.txt p.13 -- '35.(1) A person ceases to hold office as a member of the Council if he- (a) becomes bankrupt, or compounds with his creditors; (b) is convicted of a felony or any offence involving dishonesty or fraud; (c) is disqualified of his professional qualification; (d) is guilty of a serious misconduct in relation to his duties; or (e) resigns his appointment by a letter addressed to the President' -- but act2018 is DELIBERATELY NOT expected: that heading came through as '35.(1)' on one line rather than as a bare number, so the section-aware splitter never opened a chunk there and NO act2018 chunk ref carries 35 (the neighbouring refs are 'cl. 33,34' and 'cl. 36,37'). Expecting act2018:[35] would hard-fail verify_expected(). The citable ref is factsheet row 20's continuation: 'they will cease to hold office as a Member of the Council for various grounds such as becoming bankrupt, being guilty of a gross misconduct in relation to his duty or by resigning his/her appointment - section 35(1)', carried by chunk refs 'Section 35' and 'Section 35,37,38'. Mismatch: the user says 'thrown out' and 'caught stealing'; the corpus says 'ceases to hold office' and 'convicted of a felony or any offence involving dishonesty or fraud'."
+ },
+ {
+  "id": "T8",
+  "set": "test",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Who are the people that sit on the board of the disability commission, and is any of them disabled themselves?",
+  "expected": {
+   "act2018": [
+    32
+   ],
+   "factsheet2020": [
+    32
+   ]
+  },
+  "note": "Act cl.32 (disability_act_2018_full.txt p.12): '(1) There is established a Governing Council for the Commission ... which shall conduct the affairs of the Commission. (2) The Council shall consist of- (a) a part time chairman; (b) one person with disability from each geopolitical zone; (c) a representative each from the Federal Ministry of - Education, Health, Sports, Women Affairs, Housing, Transport, Environment, Labour and Productivity, Justice, and Finance; and (d) a representative each from the National Human Rights Commission and the National Planning Commission', with 32(3) requiring Senate confirmation of the Chairman and the six zonal representatives. Factsheet row 20 'Section 32 / Establishment and Membership of the Governing Council' restates it and totals the body at 'a part-time Chairman and eighteen other persons'. Mismatch: the user says 'board', 'sit on', 'any of them disabled themselves'; the corpus says 'Governing Council', 'shall consist of', 'one person with disability from each geopolitical zone'. NOT expected: cl.31 (establishment of the Commission, Q4) and cl.34 (tenure, H13) -- different questions about the same institution."
+ },
+ {
+  "id": "T9",
+  "set": "test",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "I use a wheelchair and I want to contest for the Senate. Does the Constitution allow somebody like me to stand for election, and does the Disability Act say anything about it?",
+  "expected": {
+   "act2018": [
+    30
+   ],
+   "constitution1999": [
+    65,
+    66
+   ]
+  },
+  "note": "The Act side is cl.30 (disability_act_2018_full.txt p.11): persons with disabilities 'shall be encouraged to fully participate in politics and public life', and Government 'shall actively promote an environment in which persons with disabilities can effectively and fully participate in (a) the conduct of public affairs without discrimination ... (c) activities and administration of political parties'. Eligibility itself exists ONLY in the Constitution, so both docs are genuinely needed: s.65(1)-(2) (citizen of Nigeria, 35 years for the Senate / 30 for the House of Representatives, 'educated up to at least School Certificate level or its equivalent', and 'a member of a political party and ... sponsored by that party') and s.66(1), the exhaustive disqualification list, whose only disability-adjacent ground is 66(1)(b), 'under any law in force in any part of Nigeria, he is adjudged to be a lunatic or otherwise declared to be of unsound mind'. The honest answer is 'yes, and nothing in s.66 bars a wheelchair user', which needs 65 for the positive test and 66 for the bar. Measurement artifact to read the row against, CORRECTED in review 2026-09-13 against the live chunk refs (the first draft of this note over-claimed it): the collision is on 66 ONLY. ref 's. 66' is carried by 10 chunks, 9 of them the genuine Chapter V disqualification text and 1 the Second Schedule Exclusive Legislative List item '66. Wireless, broadcasting and television ...' -- the same integer collision H10 records for s.36 -- so a hit on 66 is not by itself proof the right text was retrieved. There is NO s.65 collision: ref 's. 65' is carried by exactly 2 chunks, both Chapter V election-qualification text; the list item '65. Weights and measures.' was absorbed into a chunk the splitter tagged 'general' (a '63,64,65' run), so it never produces the ref. ss.106/107 (the State House of Assembly twins) are not expected: the question names the Senate. cl.30 is shared with H14, but H14 asks about registering to vote, not about standing."
+ },
+ {
+  "id": "T10",
+  "set": "test",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "Who is supposed to check the disability commission's accounts and does it have to report to anybody? Does the Constitution even let the Auditor-General audit a commission like that?",
+  "expected": {
+   "act2018": [
+    49,
+    50
+   ],
+   "constitution1999": [
+    85
+   ],
+   "factsheet2020": [
+    48
+   ]
+  },
+  "note": "Act cl.49 (disability_act_2018_full.txt p.17): 'The Auditor-General for the Federation shall- (a) inspect and audit the account and records of financial transactions of the Commission; (b) inspect records relating to assets of the Commission; and (c) draw the attention of the Secretary to the Government of the Federation to any irregularities disclosed by the inspection and audit.' Act cl.50: the Commission shall submit 'an annual report of its activities to the office of the Secretary to the Government of the Federation not later than 30th June of each financial year' and 'a copy of its audited accounts and a copy of the annual report to the National Assembly'. The Constitution is genuinely needed because it cuts the other way: s.85(3) says nothing in s.85(2) authorises the Auditor-General 'to audit the accounts of or appoint auditors for government statutory corporations, commissions, authorities, agencies, including all persons and bodies established by an Act of the National Assembly', and instead has him supply 'a list of auditors qualified to be appointed by them as external auditors' and 'comment on their annual accounts and auditor's reports thereon', while s.85(4) keeps his power to 'conduct checks' of those same bodies. Factsheet row 26 'Section 48 / Annual Estimate and Expenditure' is the third leg: it restates ss.48, 49 and 50 and adds 'The Governing Council must ensure that the Commission's accounts are audited quarterly and externally audited once a year- section 45(3)'; its chunk ref is 'Section 48,49'. Act cl.45(3) is not listed separately -- audit frequency corroborates, it does not answer the question asked."
+ },
+ {
+  "id": "T11",
+  "set": "test",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "The commission itself refused to give me my certificate. Can I take the commission to court, and which court would hear a case like that?",
+  "expected": {
+   "act2018": [
+    31
+   ],
+   "constitution1999": [
+    251
+   ]
+  },
+  "note": "Act cl.31 (disability_act_2018_full.txt pp.11-12) supplies the capacity half: (1) the Commission is established 'to be placed under the Presidency', and (2) it '(a) is a body corporate with- (i) perpetual succession, (ii) a common seal; and (b) may sue and be sued in its corporate name; and (c) may acquire, hold and dispose of property'. WHICH court is only in the Constitution: s.251(1) gives the Federal High Court jurisdiction 'to the exclusion of any other court in civil causes and matters' relating to, inter alia, '(p) the administration or the management and control of the Federal Government or any of its agencies' and '(r) any action or proceeding for a declaration or injunction affecting the validity of any executive or administrative action or decision by the Federal Government or any of its agencies', with the proviso that nothing in (p), (q) and (r) 'shall prevent a person from seeking redress against the Federal Government or any of its agencies in an action for damages, injunction or specific performance where the action is based on any enactment, law or equity'. cl.31(1) placing the Commission under the Presidency is what makes it a federal agency for s.251 purposes, so neither doc answers this alone. NOT expected: Constitution s.46 (Q10's legal-aid / fundamental-rights-application section) -- this is an administrative claim against an agency, not a Chapter IV application; and Act cl.22 (the certificate rule itself, H4) -- the question is about the forum, not the entitlement."
+ },
+ {
+  "id": "T12",
+  "set": "test",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "Where does the disability commission get its money from? Can it take money from outside Nigeria?",
+  "expected": {
+   "act2018": [
+    45
+   ],
+   "factsheet2020": [
+    45
+   ]
+  },
+  "note": "Act cl.45(1) (disability_act_2018_full.txt p.16): the Commission 'shall establish and maintain a fund into which shall be paid and credited (a) all subventions and budgetary allocations from the Federal Government of Nigeria; and (b) such money as may be granted to the Commission by any body or institution within or outside Nigeria'; 45(2) lists what the Fund defrays (administration, salaries, pensions and gratuities, 'anything done in connection with any of its functions') and 45(3) requires quarterly and annual external audit. The second doc required by the cross-document class is factsheet row 25 'Section 45 / Funds of the Commission', which carries the 'outside Nigeria' limb in plain language: 'Budgetary allocations from the Federal Government or monies granted by anybody or institution within or outside Nigeria shall be credited to the Fund - section 45(1)'. NOT expected: cl.46 (power to accept gifts of land, money or property -- H12's target) and cl.47 (power to borrow), which are separate powers sitting outside the Fund provision even though the same factsheet row mentions both."
+ },
+ {
+  "id": "T13",
+  "set": "test",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "There is no dropped kerb at the crossing by my house so I cannot get my wheelchair up onto the pavement. Does the law only cover buildings, or the street too?",
+  "expected": {
+   "act2018": [
+    5
+   ],
+   "factsheet2020": [
+    3
+   ]
+  },
+  "note": "Act cl.5 (disability_act_2018_full.txt p.5): 'Road side-walks, pedestrian crossings and all other special facilities as set out in the First Schedule made for public use shall be made accessible to and usable by persons with disabilities including those on wheelchairs and the visually impaired.' The First Schedule it points to is headed 'Section 5' and lists 'Curb ramps', 'Ramps', 'Handrails, grab bars' and 'Accessible routes including walk ways, halls, windows, aisles and spaces'; it is carried by the chunk ref 'cl. 5'. The second doc is factsheet row 3 'Section 3 / Right of access to public premises', which is where the street is spelled out for a lay reader: 'This provision is further complemented by sections 4 and 5 of the Bill that require public facilities to be accessible and usable by persons with disabilities. The public facilities include road-side walks, pedestrian crossings and special facilities such as elevators, crutches, guide canes, toilet facilities, door protective and re-opening devices.' This row is the deliberate complement of H18: H18 expects cl.3/cl.4 and explicitly excludes cl.5 because that question was about a building, so here cl.3 and cl.4 are excluded for the mirror reason -- the question is about the street."
+ },
+ {
+  "id": "T14",
+  "set": "test",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "Some of us want to form an association for people with disabilities in our town. Does the Constitution allow that, and does the Disability Act back it up?",
+  "expected": {
+   "act2018": [
+    30
+   ],
+   "constitution1999": [
+    40
+   ]
+  },
+  "note": "Constitution s.40, Chapter IV: 'Every person shall be entitled to assemble freely and associate with other persons, and in particular he may form or belong to any political party, trade union or any other association for the protection of his interests', subject only to the proviso preserving INEC's powers over unrecognised political parties. Act cl.30(2)(b) (disability_act_2018_full.txt p.11) is the positive-duty half: Government 'shall actively promote an environment in which persons with disabilities can effectively and fully participate in ... (b) non-governmental organisations and associations concerned with the public and political life of the country'. Both are needed: s.40 is the enforceable Chapter IV right, cl.30 is the disability-specific obligation, and neither states the other. NOT expected: Constitution s.45(1), which saves laws reasonably justifiable in a democratic society as against ss.37-41 -- H20 already owns s.45 and this question does not ask about limits. cl.30 is shared with H14 (registering to vote) and T9 (standing for election); the three are separate subjects under one clause."
+ },
+ {
+  "id": "T15",
+  "set": "test",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "good afternoon i am totally blind and i take public bus every day to my shop and nobody ever tells me which bus is going where so i keep asking strangers and sometimes they laugh at me pls is there any law in nigeria that says the bus must announce where it is going",
+  "expected": {
+   "act2018": [
+    10
+   ],
+   "factsheet2020": [
+    10
+   ]
+  },
+  "note": "Run-on, lower-case, unpunctuated and distressed phrasing of an in-corpus question -- a false-refusal probe of exactly the kind CLAUDE.md says matters most. Act cl.10 (disability_act_2018_full.txt p.7): '(1) Government transport services providers shall make provisions for lifts, ramps and other accessibility aids to enhance the accessibility of their vehicles, parks and bus stop to persons with disabilities including those on wheel chairs. (2) Every public vehicle shall have functional audible and visual display of their destination within five years from the commencement of this Act.' Factsheet row 7 'Section 10 / Accessibility of vehicles': 'Also mandates every public vehicle to have functional audible and visual display of their destination within five years of commencement of this Act- section 10(2)'. cl.11 is NOT expected: it is the transport-service-provider twin (maintenance, the driver's duty to stop, other passengers waiting) already owned by Q6 and H26, and nothing in cl.11 mentions announcing a destination. Note act2018 ref 10 is carried by the chunk labelled 'cl. 9,10'."
+ },
+ {
+  "id": "T16",
+  "set": "test",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "penalty for approving building plan with no ramp?",
+  "expected": {
+   "act2018": [
+    7
+   ],
+   "factsheet2020": [
+    7
+   ]
+  },
+  "note": "Over-terse fragment, no verb, in-corpus -- the H28 shape applied to a different provision. Act cl.7 (disability_act_2018_full.txt p.5): '(1) Before erecting any public structure, its plan shall be scrutinised by the relevant authority to ensure that the plan conforms with the building code. (2) A government or government agency, body or individual responsible for the approval of building plans shall not approve the plan of a public building if the plan does not make provision for accessibility facilities in line with the building code. (3) An officer who approves or directs the approval of a building plan that contravenes the building code, commits an offence and is liable on conviction to a fine of at least N1,00o,000 or a term of imprisonment of two years or both.' (The Act's OCR really does print 'N1,00o,000' with a letter o; it is quoted, not cleaned.) Factsheet row 5 'Section 7 / Building Plan' gives the figure straight: 'Officers who do this are liable on conviction to a fine of at least N1,000,000 (One Million Naira), an imprisonment term of two years or both.' cl.7 is shared with Q2 (are public buildings required to be accessible) and Q8 (transitory period), but neither targets the 7(3) offence and neither would be answered by naming a fine on an approving officer. NOT expected: cl.8, whose penalties are the N10,000/N5,000-per-day default damages against an authority that ignores a complaint (H8) -- a different offence by a different actor."
+ },
+ {
+  "id": "T17",
+  "set": "test",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "Court don talk say the commission suppose pay me money but dem never pay me. Which money dem go take pay am?",
+  "expected": {
+   "act2018": [
+    53
+   ],
+   "factsheet2020": [
+    53
+   ]
+  },
+  "note": "Pidgin phrasing of an in-corpus question. Act cl.53 (disability_act_2018_full.txt p.17) carries the marginal heading 'Payment of judgment debt.' and the surviving sentence 'shall be paid from the Fund of the Commission.' -- the OCR has lost the opening words of the clause, which is why the factsheet leg matters: factsheet row 25 tail states it whole, 'Court judgments made against the Commission shall be paid from the Fund of the Commission section 53' (chunk ref 'Section 53,48'). act2018 ref 53 is carried by the chunk labelled 'cl. 53'. cl.45 (Funds of the Commission, T12) is not expected: it says what goes into the Fund and what it defrays generally, not that a judgment debt is paid from it; cl.55 (waiver of proof of special damages, H17) is about proving a claim, not about satisfying a judgment."
+ },
+ {
+  "id": "T18",
+  "set": "test",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "How many weeks of maternity leave is a working woman entitled to in Nigeria?",
+  "expected": {},
+  "note": "Hard case: shares employment vocabulary with the corpus without being in it. disability_act_2018_full.txt has an entire Part VI on employment (cl.28-30) and cl.57 defines 'employee' and 'employer'; constitution_1999_NHRC.txt s.17(3)(b)-(c) directs policy at 'conditions of work are just and humane' and 'the health, safety and welfare of all persons in employment are safeguarded', and s.42 makes sex a prohibited ground of discrimination. What is absent is any leave entitlement, any labour statute and any period of maternity leave. The only occurrence of 'Maternity' in the three documents is 'Nursing and Maternity Homes' inside an FCT health-establishment registration regulation appended to the Constitution file, which is about licensing clinics, not about leave. Fresh probe: not in ablate_phase08.OFF_CORPUS (checked against all 12 entries), not one of test_phase02's two refusal demos, and not one of H21-H25."
+ },
+ {
+  "id": "T19",
+  "set": "test",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "How do I apply for a National Identification Number (NIN) in Nigeria?",
+  "expected": {},
+  "note": "Hard case, deliberately adjacent to a real corpus topic: the Act runs a whole registration-and-certification regime (cl.22 Certificate of Disability, cl.23 the offence of unlawfully issuing or obtaining one, and the FORM 2 certificate templates at the back of the file), the Commission's functions include 'issue insignia of identification with persons with disabilities', and the Constitution's Third Schedule creates a National Population Commission with census duties -- so 'national', 'registration', 'certificate' and 'identification' vocabulary is all retrievable. What is absent is any national identity number, identity card, enrolment procedure or identity-management statute: the string 'National Identification' occurs nowhere in the three documents (checked). Fresh probe: not in ablate_phase08.OFF_CORPUS, not a test_phase02 demo, not one of H21-H25."
+ },
+ {
+  "id": "T20",
+  "set": "test",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "Is there any tax exemption or tax relief for a person with a disability in Nigeria?",
+  "expected": {},
+  "note": "Hard case and a realistic near-miss for exactly this user base: the question names the corpus's core subject ('a person with a disability') and half its vocabulary is present -- Constitution s.24(f) makes it a citizen's duty to 'declare his income honestly to appropriate and lawful agencies and pay his tax promptly', Second Schedule Exclusive Legislative List item 59 is 'Taxation of incomes, profits and capital gains', and s.251(1)(b) gives the Federal High Court jurisdiction over 'the taxation of companies and other bodies'. But the string 'tax' occurs zero times in disability_act_2018_full.txt and zero times in disability_act_factsheet_PLAC.txt (both checked), and nothing anywhere in the three documents grants, mentions or even contemplates a personal tax relief or exemption on the ground of disability. Answering it would need an income-tax statute the corpus does not contain. Fresh probe: not in ablate_phase08.OFF_CORPUS, not a test_phase02 demo, not one of H21-H25."
+ }
+]
