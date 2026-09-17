@@ -140,27 +140,65 @@ in the repo root awaiting a move into `data/raw/` (first task of D1).
 
 ### Finding 1 — the Act gap is a SOURCING failure, not an OCR failure. cl.38 and cl.40 are recoverable.
 
+> **⚠ CORRECTED 2026-09-17 — the cl.38 row published in `4bcc763` was WRONG.** It claimed cl.38's
+> body was in the v1 text at **L614**. **L614 is clause 48.** L612 reads `48.`; the Arrangement at
+> **L74** says `48.Annual estimate and expenditure.`, which is exactly the marginal note wrapped
+> around L614 at L613/L615; v1 continues `(a) cause tobekept accounts and records` (cl.48) where
+> the gazette continues `(a) formulate and implement policies` (cl.38). `grep "formulate and
+> implement"` returns **nothing** in v1. The match was made on string similarity to
+> `38.TheCommissionshall-` **without reading the next line**.
+>
+> **cl.40's row is correct** — body at L545, bounded by `39.` (L524) and `41.` (L555), marginal
+> note at L544/546/547/549/551 matching Arrangement L66.
+>
+> **The conclusion survives.** `ACT_KNOWN_ABSENT = {38, 40}` still retires — **cl.40 because it was
+> never absent, cl.38 because the *gazette* recovers it (A109–A110)**, not because v1 had it. All
+> 58 clauses still reachable in v2. 2026-09-13 was **right about cl.38's absence**, wrong only
+> about its **irrecoverability**. Full detail + three new findings: `docs/phases/12_corpus_v2.md`.
+
 The download is *Federal Republic of Nigeria Official Gazette No. **10**, Vol. 106, 21 January
 2019, Act No. 2, pages **A97–A122*** — the authoritative gazette. 27 pages, 0 embedded text chars
 (a scan, like the existing copy), but **no duplicate adjacent page pair**. Targeted OCR
 (`rapidocr_onnxruntime`, dpi 200) of gazette pages **13, 14, 15** recovered both clauses in full.
 
-**Then the sharper correction: both bodies were in the v1 processed text all along.**
+**State of the v1 text, corrected 2026-09-17:**
 
-| clause | gazette | `data/processed/disability_act_2018_full.txt` | why `act_ref()` missed it |
+| clause | gazette | `data/processed/disability_act_2018_full.txt` | verdict |
 |---|---|---|---|
-| 38 | `38.TheCommissionshall-` (A109) | `(1)TheCommissionshall--` (**L614**) | OCR read `38.` as `(1)` |
-| 40 | `40.—(1) There shall be an Executive Secretary…` (A111) | `(1) There shall be an Executive Secretary for the Commission who shall-` (**L545**) | OCR dropped the numeral |
+| 38 | `38.TheCommissionshall-` (A109) | opening + (a)–(i) **ABSENT**; its (j)–(r) tail is present at L501–522, misfiled | **absent from v1, recovered from the gazette** |
+| 40 | `40.—(1) There shall be an Executive Secretary…` (A111) | `(1) There shall be an Executive Secretary for the Commission who shall-` (**L545**) | **never absent** — OCR dropped the numeral |
 
 The duplicate page **is** real (adjacent-page cosine **0.978 p5–p6** vs a 0.794 runner-up, dpi 100,
-16×16 mean-pooled, **mean-centred**) — it just did not cost cl.38 or cl.40.
+16×16 mean-pooled, **mean-centred**) — and it **did** cost cl.38's opening. It did **not** cost cl.40.
+
+**Three findings from the 2026-09-17 re-check, all strengthening the case for v2:**
+
+1. **v1's clause 37 is silently corrupted.** A physical page is missing at the `===== PAGE 14 =====`
+   boundary (**L500**): raw OCR p13 ends at cl.37(b), p14 opens mid-list at cl.38(j).
+2. **A LIVE citation-integrity defect.** Act chunk 33 is reffed **`cl. 39`** and opens with cl.38's
+   `(o)`–`(r)`, including *"procure assistive devices for all disability types"*. **The app can
+   today serve cl.38's text under an `[Act cl. 39]` tag** — a wrong citation that passes
+   `verify_citations()` mechanically. (Chunk 31 `cl. 36,37` is clean; chunk 32 is `general`.)
+3. **v1 L542 reads `PARTVII`** where the Arrangement (L64) and the gazette say **PART VIII**; and
+   **v1's Arrangement truncates at L77, `51.Power to acquire land.`** — so `audit_corpus.py:64-66`
+   cites it as the source of `ACT_CLAUSES = range(1, 59)` when it does not contain 52–58. Right
+   number, wrong source. **D2's Arrangement gate must therefore run on the gazette, whose
+   Arrangement pages have not been OCRed yet.**
 
 **Retires by name:** `ACT_KNOWN_ABSENT = {38, 40}` at **`scripts/audit_corpus.py:80`** (deleted,
-**not emptied**) · `audit_corpus.py`'s *"the pixels do not exist"* line · the 2026-09-13
+**not emptied** — in **D6**, once the v2 corpus that recovers cl.38 exists) · `audit_corpus.py`'s
+*"the pixels do not exist"* line · the **irrecoverability half** of the 2026-09-13
 `LEARNING_JOURNAL.md` claim · the old standing fact below.
 
-**All 58 clauses are reachable and the gap manifest may end up empty.** *Scope limit: only pages
-1, 13, 14, 15 of 27 were OCRed. "All 58 clauses present" is a D2 verification task, not a finding.*
+**All 58 clauses are reachable in v2 and the gap manifest may end up empty.** *Scope limit: only
+pages 1, 13, 14, 15 of 27 were OCRed. "All 58 clauses present" is a D2 verification task, not a
+finding.*
+
+**D1 and D2 are designed, not just listed.** `docs/phases/12_corpus_v2.md` now carries
+*"Implementation notes"* under both — the `Chunk`-field sweep, the three-tier caller policy, the
+two prose-claims-become-gates, the three-layer OCR/parse/runtime split, the marginal-note geometry
+measurements, the monotonic-cursor locator and the pre-written cross-check predictions. **Read
+them before writing code; they exist so the next session executes rather than re-derives.**
 
 ### Finding 2 — the Constitution needs only the cheap fix to clear the gate
 
@@ -273,15 +311,27 @@ Order (owner-confirmed 2026-09-11, all four, under a **runtime-shippable-only** 
 ## Standing facts (don't re-derive)
 
 - ~~**Act cl.38 and cl.40 are absent from the source PDF; no OCR or VLM can recover them.**~~
-  **FALSIFIED 2026-09-16 — this was wrong for three days and the project acted on it.** Both
-  clause bodies are in `data/processed/disability_act_2018_full.txt` **right now**, at **L614**
-  (`(1)TheCommissionshall--`, whose `38.` OCR'd as `(1)`) and **L545** (`(1) There shall be an
-  Executive Secretary for the Commission who shall-`, whose `40.—` OCR'd away entirely). The
-  gazette copy has both numerals clean. The duplicate page 5–6 **is** real (adjacent-page cosine
-  0.978 vs a 0.794 runner-up) — it simply did not cost these two clauses. The error was inferring
-  *what* the duplicate cost without checking the text for the bodies. `ACT_KNOWN_ABSENT = {38, 40}`
-  at `scripts/audit_corpus.py:80` is a **false constant**, deleted in Phase D. **The no-stub /
-  no-paraphrase / no-model-knowledge rule stands regardless** — it governs real gaps.
+  ~~**FALSIFIED 2026-09-16** — both clause bodies are in the v1 text right now, at L614 and L545.~~
+  **RE-CORRECTED 2026-09-17 — the 2026-09-16 correction was itself half wrong. Read this version.**
+  - **cl.40: never absent.** Body at **L545** (`(1) There shall be an Executive Secretary for the
+    Commission who shall-`), numeral `40.—` OCR'd away. Bounded by `39.` (L524) and `41.` (L555).
+  - **cl.38: genuinely absent from v1**, opening and (a)–(i). **L614 is clause 48, not 38** — L612
+    reads `48.`, the Arrangement at L74 says `48.Annual estimate and expenditure.` (the marginal
+    note wrapped at L613/L615), and v1 continues `(a) cause tobekept accounts and records` where
+    the gazette continues `(a) formulate and implement policies`. `grep "formulate and implement"`
+    → **nothing** in v1. cl.38 is recovered from the **gazette** (A109–A110), not from v1.
+  - **cl.38's (j)–(r) tail IS in v1** (L501–522), and chunk 33 carries `(o)`–`(r)` under the ref
+    **`cl. 39`** — so the app can serve cl.38's text with an `[Act cl. 39]` tag **today**.
+  - The duplicate page 5–6 **is** real (adjacent-page cosine 0.978 vs a 0.794 runner-up) and it
+    **did** cost a physical page — the one carrying cl.37's tail and cl.38's opening. It did not
+    cost cl.40.
+  - **`ACT_KNOWN_ABSENT = {38, 40}` at `scripts/audit_corpus.py:80` is still a false constant** and
+    is deleted (not emptied) in **D6** — after the gazette re-OCR that recovers cl.38, not before.
+  - **The no-stub / no-paraphrase / no-model-knowledge rule stands regardless** — it governs real
+    gaps, and cl.38 was one until the gazette arrived.
+  - **The lesson, twice over:** 2026-09-13 inferred *what* a measured duplicate cost without
+    grepping the text. 2026-09-16 grepped the text but matched a line on string similarity
+    **without reading the next one**. Both published. Check the neighbours, not just the match.
 - ~~Q5 penalties = correct refusal ×4 runs~~ **SUPERSEDED 2026-09-11.** The synonym map
   closed the vocabulary gap (corpus says *offence/fine/imprisonment*, query says
   *penalties*): Q5 recall **0.000 → 0.250**, live-verified returning `[Act cl. 2]` /

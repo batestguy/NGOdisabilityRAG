@@ -20,7 +20,12 @@ root (`D:\NGORAG`), not via `conda activate`:
 C:\conda-envs\drlca-rag\python.exe scripts\bench_phase01.py        # Phase 01 retrieval bench (PASS)
 C:\conda-envs\drlca-rag\python.exe scripts\test_phase03.py         # NGO connector, 16/16 matrix + 7/7 statics
 C:\conda-envs\drlca-rag\python.exe scripts\test_phase04.py         # Intent router, 10/10
-C:\conda-envs\drlca-rag\python.exe scripts\test_phase05.py         # UI script-level asserts, 104/104
+C:\conda-envs\drlca-rag\python.exe scripts\test_phase05.py         # UI script-level asserts, 137/137
+C:\conda-envs\drlca-rag\python.exe scripts\test_phase09_ops.py     # ops/chat invariants, 51/51, zero network
+C:\conda-envs\drlca-rag\python.exe scripts\audit_corpus.py         # corpus shape gate + v1 regression tripwire
+C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py         # held-out retrieval baseline (+ recall_strict)
+C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn set, 22 conv / 62 turns
+C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase08.py       # retrieval ablations
 C:\conda-envs\drlca-rag\python.exe scripts\eval_phase06.py --out=scripts\eval_tmp.json
 C:\conda-envs\drlca-rag\python.exe -c "import app"                 # boot-import smoke (must not start a server)
 C:\conda-envs\drlca-rag\python.exe -m streamlit run app.py         # local UI → http://localhost:8501
@@ -40,16 +45,34 @@ never be added to it; the corpus ships prebuilt as TXT and is never re-OCRed at 
 
 ## Architecture
 
+**DRLCA is a multi-turn chatbot** (Phase 10 C, 2026-09-16) — `st.chat_input`, persisted
+conversation history, per-turn read-aloud. Not a single-turn form.
+
 ```
-app.py (Streamlit UI)  ──► resolve_mode()  ──► greeting | legal | help | clarify
-  │ helplines banner (top + above every answer), a11y CSS, voice, read-aloud
+app.py (Streamlit chat UI)
+  │ run()            sidebar → title → banner → render_history() → voice draft → st.chat_input
+  │                  a submitted question goes to session_state["pending"] and reruns,
+  │                  so the new turn paints in position at the end of the thread
+  │ render_turn()    computes AND renders ONE NEW turn -> TurnPayload
+  │                  fused on purpose: test_phase05.py asserts the banner invariant on the
+  │                  LITERAL source adjacency of render_helpline_banner() inside this body
+  │ replay_turn()    renders a STORED TurnPayload — no retrieval, no router, no network
+  │                  (asserted; Streamlit reruns the whole script on every interaction)
+  │ render_history() · render_excerpts / render_ai_expander / render_defects /
+  │                  render_help_records / render_plain_caption  (shared by both paths)
+  │ helplines banner (page top + leading every assistant turn), a11y CSS, voice, read-aloud
+  │ history lives in st.session_state ONLY — never written to disk
   │ theme colors live ONLY in .streamlit/config.toml
   ▼
+src/chat.py     contextualise() resolves ellipsis / unbound pronouns against prior turns,
+                merge_help_slots() carries help slots, TurnPayload, cross_turn_drift()
+  ▼
 src/router.py   keyword scorer (legal vs help cues), is_greeting(), clarify policy,
-                extract_help_slots(), route() = wired offline dispatch
-  ├─ legal ─► src/rag.py  ask() → build_corpus() → PerDocRetriever → MIN_SCORE gate
-  │             → optional Gemini (cite-strict-v2 prompt) → refusal layer → cite check
-  │             corpus built from src/load.py (OCR repair) + src/chunk.py (splitters)
+                extract_help_slots(), route() = wired offline dispatch. STATELESS —
+                accumulated slots arrive as an argument, never stored
+  ├─ legal ─► src/rag.py  ask(history=) → build_corpus() → PerDocRetriever → MIN_SCORE gate
+  │             → optional Gemini (cite-strict-v2 / chat-cite-strict-v1) → refusal layer
+  │             → cite check.  corpus built from src/load.py (OCR repair) + src/chunk.py
   └─ help ──► src/ngo.py  load_ngo() → find_ngo_with_meta() → with_helplines()
 ```
 
@@ -61,8 +84,9 @@ src/router.py   keyword scorer (legal vs help cues), is_greeting(), clarify poli
 render helper, and the bottom guard only boots under `streamlit run`/`__main__`.
 `scripts/test_phase05.py` imports `app` directly and also asserts on the *source text* of
 `app.py` (e.g. that `render_helpline_banner()` appears before the legal/help/greeting
-branches) — renaming those functions or reordering `run()` will break the suite by
-design.
+branches **inside `render_turn`'s body**, and that every call site sits at 4-space top
+level, never inside a `with col:`) — renaming those functions or reordering `run()` /
+`render_turn()` will break the suite by design.
 
 ### Three-doc corpus, three numbering schemes
 
@@ -74,7 +98,19 @@ Constitution chapter-aware 400, Factsheet recursive 500/50.
 
 `PerDocRetriever` merges top-k from *each* doc rather than one joint index, because the
 Constitution is ~95% of the joint index and floods Act-specific queries. Consequence:
-context **precision 0.333 is by design** — never gate or "fix" it.
+context **precision 0.333 is by design** — never gate or "fix" it. Its `docs` dict is
+iterated in **insertion order** and hits are sorted by score alone
+(`src/retrieve.py:331-338`), so **insertion order breaks ties** — reordering the dict in
+`build_corpus()` silently moves published numbers.
+
+> **"Act section-aware 800" is misleading — recorded 2026-09-17.** `chunk.SECTION_RE`
+> (`Section \d+.*`) matches only **4 times** in the entire cleaned Act text, and all four
+> sit at 89.8%+ of the document (Second Schedule + Forms). So `section_aware_split` yields
+> one unit for the whole operative body and v1's Act split is effectively
+> **`recursive_split(text, 800)`** for clauses 1–58. This is **not a bug to fix** — it is
+> part of the byte-identical v1 path every published baseline depends on. It does mean
+> Phase D's clause-aligned chunking is a **total replacement** of the Act splitter, not a
+> refinement.
 
 ## Invariants (violating these is a spec break, not a style choice)
 
@@ -130,8 +166,17 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
 ## Working conventions
 
 - Work the active playbook in `docs/phases/` in order; each defines its own exit criteria.
-  Next up: `docs/phases/08_retrieval_upgrades.md` (synonyms → cite-constrain → judge →
-  rerank → hybrid, in that order, each ablated on the frozen 10Q set).
+  **Next up: Phase D — `docs/phases/12_corpus_v2.md`** (corpus v2: Act re-OCR from the
+  authoritative gazette + manifest-anchored parse, Factsheet S/N table, Constitution
+  Arrangement exclusion, refusal re-calibration, re-baseline). Zero Gemini quota.
+  Then **E** (width/pool depth + dense retrieval, `10_corpus_rebuild_and_dense.md` M1/M2)
+  → **F** (free-GPU fine-tune, M4) → **G** (fresh transcripts + judge + cross-turn
+  citation drift, M5 + `11_chat.md`). **D before E is load-bearing:** M2's embedding
+  artifact is per-chunk and keyed on a corpus sha256, so embedding before the rebuild
+  throws all of it away.
+  **M3 of `10_corpus_rebuild_and_dense.md` is SUPERSEDED — do not execute it**; two of its
+  premises were falsified. `docs/phases/08_retrieval_upgrades.md` steps 4/5 are superseded
+  too (both need a model at query time, which `requirements.txt` forbids).
 - **Doc hygiene is mandatory**: every build session ends by updating `STATUS.md`, the
   active playbook's results section, and a dated `LEARNING_JOURNAL.md` entry. Progress
   must survive the session.

@@ -11,23 +11,37 @@
 > replacement is smaller, in a different order, and drops M3's riskiest change.
 >
 > **2. M3's cl.38/40 premise is FALSIFIED.** M3 says clauses 38 and 40 are *"not in the source at
-> all"* and *"no OCR can recover"* them. Both are **recoverable**, and in fact both bodies were
-> already present in the v1 processed text the whole time:
+> all"* and *"no OCR can recover"* them. Both are **recoverable**:
 >
-> | clause | authoritative gazette | `data/processed/disability_act_2018_full.txt` | why `act_ref()` missed it |
+> | clause | authoritative gazette | `data/processed/disability_act_2018_full.txt` | verdict |
 > |---|---|---|---|
-> | 38 | `38.TheCommissionshall-` (page A109) | `(1)TheCommissionshall--` (**L614**) | OCR read the numeral `38.` as `(1)` |
-> | 40 | `40.—(1) There shall be an Executive Secretary…` (A111) | `(1) There shall be an Executive Secretary for the Commission who shall-` (**L545**) | OCR dropped the numeral entirely |
+> | 38 | `38.TheCommissionshall-` (page A109) | opening + (a)–(i) **ABSENT**; the (j)–(r) tail is present at L501–522 but misfiled | **absent from v1, recovered from the gazette** |
+> | 40 | `40.—(1) There shall be an Executive Secretary…` (A111) | `(1) There shall be an Executive Secretary for the Commission who shall-` (**L545**) | **never absent** — OCR dropped the numeral |
+>
+> > **⚠ The cl.38 row was corrected 2026-09-17.** The version published in `4bcc763` claimed
+> > cl.38's body was in the v1 text at **L614**. **L614 is clause 48** — L612 reads `48.`, the
+> > Arrangement at L74 says `48.Annual estimate and expenditure.` (that is the marginal note
+> > wrapped at L613/L615), and `grep "formulate and implement"` — the gazette's cl.38(a) — returns
+> > **nothing** in v1. So M3 was **right that cl.38 is absent from this scan** and wrong only that
+> > it is unrecoverable. cl.40's row was correct as published.
 >
 > The duplicate page **is** real — measured again 2026-09-16, adjacent-page cosine **0.978 for
 > p5–p6** against a 0.794 runner-up, on a dpi-100, 16×16 mean-pooled, **mean-centred** grayscale
-> signature. It just did not cost cl.38 or cl.40. The owner's untested lead turned out to be
+> signature. **It did cost a physical page** (corrected 2026-09-17): raw OCR p13 ends at cl.37(b)
+> and p14 opens mid-list at cl.38(j), so the lost page carried cl.37's tail and cl.38's opening.
+> It did **not** cost cl.40. The owner's untested lead turned out to be
 > *Federal Republic of Nigeria Official Gazette No. **10**, Vol. 106, 21 January 2019, Act No. 2,
 > pages A97–A122* (M3 guessed "No. 11"), and it has **no duplicate page at all**.
 >
 > Therefore `ACT_KNOWN_ABSENT = {38, 40}` at `scripts/audit_corpus.py:80` is a **false constant**
-> and is deleted in Phase D. The "no stub / no paraphrase / no model knowledge" rule in M3 stays
-> — it is about what to do *if* a gap is ever real.
+> and is deleted in Phase D — **cl.40 because it was never absent, cl.38 because the gazette
+> recovers it**, and in **D6**, after the re-OCR, not before. The "no stub / no paraphrase / no
+> model knowledge" rule in M3 stays — it is about what to do *if* a gap is ever real, **and cl.38
+> was one until the gazette arrived.**
+>
+> **Also found 2026-09-17, and it is not cosmetic:** Act chunk 33 is reffed **`cl. 39`** and opens
+> with cl.38's `(o)`–`(r)`, so the shipped app can serve cl.38's text under an `[Act cl. 39]` tag.
+> A live citation-integrity defect. See `12_corpus_v2.md` Finding 1b.
 >
 > **3. M1 and M2 are REORDERED to AFTER corpus v2.** M2 ships `data/embed/chunks_gemini.f16.npy`,
 > a **per-chunk** artifact keyed on a corpus sha256. Running it before the corpus rebuild
@@ -111,13 +125,14 @@ Act clause numbers **19, 35, 38, 40** produce no `ref` anywhere. Each was traced
   invisible only because `act_ref()` infers refs from heading *shape*, and the gazette's
   marginal-note column is spliced into the body: `"37.The Council shall have power
   to-\nPower of the\nCouncil.\n(a) manage and superintend..."`. **Recoverable by parsing, free.**
-- ~~**38 and 40 are not in the source at all.**~~ **FALSIFIED 2026-09-16 — see the amendment box
-  at the top of this file.** What stands: the PDF is a pure scan (27 pages, **0** embedded text
-  chars) and pages 5–6 *are* the same physical page twice. What does **not** stand: the inference
-  that this cost cl.38 and cl.40. Both bodies are present in the v1 processed text at **L614** and
-  **L545**, unreffed only because OCR mangled their numerals — and both are clean in the gazette
-  copy, which has no duplicate page. **OCR recovered them.** Details in
-  [`12_corpus_v2.md`](12_corpus_v2.md), Finding 1.
+- ~~**38 and 40 are not in the source at all.**~~ **FALSIFIED 2026-09-16, RE-SCOPED 2026-09-17 —
+  see the amendment box at the top of this file.** What stands: the PDF is a pure scan (27 pages,
+  **0** embedded text chars), pages 5–6 *are* the same physical page twice, **and cl.38 really is
+  absent from this scan** — the lost page sits at the raw-OCR p13/p14 boundary and carried cl.37's
+  tail plus cl.38's opening. What does **not** stand: (a) that this cost **cl.40** — its body is at
+  **L545**, unreffed only because OCR ate the numeral; and (b) that the gap is **unrecoverable** —
+  the gazette copy has cl.38 clean at A109–A110 and no duplicate page. **OCR recovered it.**
+  Details in [`12_corpus_v2.md`](12_corpus_v2.md), Finding 1.
 
 This matters more than ranking. The project's central invariant is *every legal claim carries a
 citation tag copied verbatim from the chunk header*. With 40% of Act chunks uncitable, that
@@ -360,7 +375,8 @@ fixed; per-doc imbalance falls from 95% to ~75%.
 `Section N`. That is the source of its 19/48 packed refs.
 
 **Clauses 38 and 40.** ⛔ **RESOLVED 2026-09-16 — the hunt succeeded and this whole paragraph is
-moot.** Both clauses are recoverable, from the v1 text *and* from the gazette. Do not implement
+moot.** Both clauses are recoverable: **cl.40 from the v1 text** (L545), **cl.38 from the gazette**
+(A109–A110; it is genuinely absent from v1 — corrected 2026-09-17). Do not implement
 the `body_present: false` manifest, the corpus exclusion, or the *"My copy of the Act is missing
 clauses 38 and 40"* caption. The original text follows for provenance only.
 Owner hunts for a born-digital Act first (PLAC/`placng.org`, National
@@ -522,7 +538,8 @@ LinkedIn) · the stray `D:NGORAG_review_judge.diff` (owner removes by hand).
   number is the finding. `test2` is authored from v2 before v2 retrieval is measured.
 - **Never select a checkpoint or a fusion weight on dev or test.** Synthetic val split, by chunk.
 - **No stub chunk, no paraphrase, no model knowledge** for any clause that turns out to be
-  missing. (cl.38/40 specifically are **not** missing — 2026-09-16. The rule stands anyway.)
+  missing. (cl.40 was never missing; **cl.38 genuinely was**, from the v1 scan, until the gazette
+  supplied it — corrected 2026-09-17. The rule stands, and it had a real subject.)
 - **Retire questions, never edit them. Never merge new questions into an existing set.**
 - Every harness uses `select_top`, never its own `[:TOP_N]`.
 - `verify_expected` hard-crashes before printing if an expected number is missing — verify each

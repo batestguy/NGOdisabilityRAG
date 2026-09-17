@@ -1208,6 +1208,19 @@ raised by someone reading only the code is worth answering in the docs once.
 
 ## 2026-09-16 — Phase D planning: a published claim, three days old, falsified by one download and one grep
 
+> ## ⚠ CORRECTED 2026-09-17 — this entry's headline is itself half wrong, by the mechanism it warns about
+>
+> Read the **2026-09-17** entry at the end of this file before trusting anything below. In short:
+> **cl.40's row is right; cl.38's row is wrong.** `(1)TheCommissionshall--` at **L614 is clause
+> 48**, not clause 38. The correction below was reached by matching that line to the gazette's
+> `38.TheCommissionshall-` on string similarity **without reading the next line** — a textbook
+> instance of *"a correct measurement next to a plausible story"*, which is the exact lesson this
+> entry was written to record. It stays unedited: an entry about publishing a wrong inference is
+> worth more with its own wrong inference left in it.
+>
+> **What survives:** the conclusion (`ACT_KNOWN_ABSENT` retires, all 58 clauses reachable in v2),
+> the mean-centring methodology note, and Findings 2 and 3 in full.
+
 This session wrote no code. It went to write the Phase D playbook, started by checking the
 premises it was about to build on, and found that **two of the three were false**. The
 headline is not the playbook. It is this:
@@ -1344,3 +1357,162 @@ What it bought: all 58 clauses reachable, the gap manifest probably empty, the r
 in the plan deferred, and a verification recipe — page count, text-layer check, mean-centred
 duplicate detection, targeted OCR, **then grep the extracted text** — written down with the
 last step no longer optional.
+
+*(Caveat added 2026-09-17: the recipe's last step is right and was the step that was skipped on
+2026-09-13. But it is not sufficient — see the next entry. Grepping found the right *string*
+and the wrong *clause*.)*
+
+
+---
+
+## 2026-09-17 — the correction to the correction: I warned about a failure and then committed it one day later
+
+This session wrote no code either. It set out to document Phase D's implementation design so the
+next session could execute rather than re-derive, and started — per the lesson of the previous
+entry — by re-checking the finding it was about to build on. **The finding was wrong.**
+
+> Yesterday's entry says: *"a correct measurement next to a plausible story is how a wrong
+> conclusion gets published."* It then published a wrong conclusion, from a correct measurement,
+> next to a plausible story. The commit is `4bcc763`. It stood for one day.
+
+### What was claimed, and what is actually there
+
+`4bcc763` claimed both cl.38 and cl.40 were in the v1 text all along:
+
+| clause | `4bcc763` claim | verified 2026-09-17 |
+|---|---|---|
+| 38 | present at **L614**, numeral OCR'd as `(1)` | **ABSENT from v1** |
+| 40 | present at **L545**, numeral dropped | **CORRECT** |
+
+L614 reads `(1)TheCommissionshall--`. The gazette's cl.38 opens `38.TheCommissionshall-`. The
+strings are nearly identical, and that is the whole of the evidence that was gathered. One line
+further down settles it:
+
+```
+612  48.
+613  Annual estimate
+614  (1)TheCommissionshall--
+615  and expenditure.
+616  (a) cause tobekept accounts and records of transaction and affairs
+```
+
+**L612 is the clause number: 48.** L613 and L615 are the marginal note *Annual estimate and
+expenditure.* wrapped around the body line — the Arrangement at L74 reads
+`48.Annual estimate and expenditure.`, verbatim. And the body continues `(a) cause to be kept
+accounts and records`, where the gazette's cl.38 continues `(a) formulate and implement policies`.
+
+`grep "formulate and implement" data/processed/disability_act_2018_full.txt` returns **nothing**.
+Four seconds, again. The check that would have caught it was, again, cheaper than the measurement
+that produced the error.
+
+### Why the same mechanism fired twice, in opposite directions
+
+2026-09-13: measured a duplicate page correctly, then inferred *what it cost* without checking
+the text. 2026-09-16: checked the text, found a matching string, then inferred *what clause it
+belonged to* without checking its neighbours.
+
+Both are the same shape — **a local match treated as a global identification.** The Act has 58
+clauses that all begin `(1)The Commission shall`-ish; "this string looks like clause 38" was never
+evidence, because the string is not unique. The discriminator was always going to be the
+surrounding structure: the preceding numeral, the marginal note, the next paragraph. Yesterday's
+lesson was *"check the text"*. The actual lesson is one level up: **a match is a hypothesis; the
+neighbourhood is the test.** String similarity that ignores context is exactly the failure
+`act_ref()` has — inferring a ref from local shape — reproduced by hand, in a document explaining
+why `act_ref()` fails.
+
+There is a mild irony worth recording: the fix designed for this in D2 — a **monotonic cursor**
+that will only accept clause `n` after clause `n-1`'s anchor — would have rejected the L614 match
+instantly, because L614 comes *after* clause 47 at L609. The design that prevents the machine from
+making this error was written in the same session that made it by hand.
+
+### What the re-check found, which is the actual return on doing it
+
+Three findings, none of which were being looked for, all of which strengthen the case for v2:
+
+**1. v1's clause 37 is silently corrupted, and a physical page really is missing.** Raw OCR page 13
+ends at cl.37(b) `…make rules and regulations for the effective running of the / Commission;`, and
+page 14 opens mid-list at cl.38(j) `()establish and promote inclusive schools`. So 2026-09-13's
+inference was **half right after all**: the lost page does carry cl.38's opening (and cl.37's
+tail). It just never carried cl.40. A claim can be wrong in its reasoning, wrong in half its
+conclusion, and right in the other half — which is why "FALSIFIED" was too coarse a verdict and
+the standing fact is now itemised per clause.
+
+**2. A live citation-integrity defect, in `main`, today.** Chunk boundaries do not respect the
+damage:
+
+| chunk | ref | carries |
+|---|---|---|
+| 31 | `cl. 36,37` | cl.36 + cl.37 through `(b)` — clean |
+| 32 | `general` | cl.38 `(j)`–`(o)` — uncitable |
+| **33** | **`cl. 39`** | **cl.38 `(o)`–`(r)`** then `39.` and cl.39's body |
+
+Ask DRLCA about assistive devices and it can quote *"procure assistive devices for all disability
+types"* — cl.38(r) — under the tag **`[Act cl. 39]`**. And `verify_citations()` passes it, because
+the number in the tag genuinely is that chunk's `ref`. This is the project's central invariant
+failing in production, and it was found by re-checking a finding rather than by any test. Worth
+sitting with: the mechanical citation check cannot detect a citation that is wrong about *which
+provision the text is*. It only checks that the tag matches the chunk. **The chunk was the lie.**
+
+*(Also worth recording: the session plan for this documentation pass predicted this misattribution
+would be under `cl. 37`. It is under `cl. 39`. Predicted wrong, checked, corrected before writing
+— which is the loop working.)*
+
+**3. Two smaller v1 defects.** L542 reads `PARTVII` where the Arrangement (L64) and the gazette
+both say **PART VIII**. And v1's Arrangement **truncates at L77, `51.Power to acquire land.`** —
+`scripts/audit_corpus.py:64-66` cites the Arrangement as the source of `ACT_CLAUSES = range(1, 59)`
+and it does not contain 52–58. The number is right; the cited source is wrong. This one has teeth:
+D2's manifest-anchored parse is built on the Arrangement yielding a clean `1..58`, so the go/no-go
+gate has to run against the **gazette's** Arrangement pages — **which have not been OCRed yet.**
+That is now the first task of D2 rather than an assumption underneath it.
+
+### What this cost, and the policy change
+
+Cost: one day, one commit, and a load-bearing false fact in the file every session reads first.
+Cheap only because the re-check happened. It happened because yesterday's entry made re-checking
+the habit — so the process caught its own error at a one-day latency instead of the three-day
+latency before it. That is the one genuinely good number here.
+
+Policy, written into the playbook rather than just noted:
+
+- **Findings are itemised per entity, never per batch.** "cl.38 and cl.40 are absent" bundled two
+  claims with different truth values, and both corrections inherited the bundle. The standing fact
+  in `HANDOFF.md` is now one bullet per clause.
+- **A string match is not an identification.** Record the discriminator — the preceding numeral,
+  the marginal note, the following paragraph — or record the claim as unverified.
+- **D2's cross-check predictions are written before the first run** (they are, now, in the
+  playbook), so the output is falsifiable rather than interpretable.
+- **`ACT_KNOWN_ABSENT` is deleted in D6, not D2.** The reason changed with the facts: cl.38's
+  retirement now depends on the gazette re-OCR actually landing, not on a re-parse of v1. Deleting
+  the constant before the corpus that justifies it exists would be the same error a third time.
+
+### Postscript: the review caught me doing it a third time, in the same document
+
+The fresh-eyes review of this session's diff re-derived all six corrections independently — every
+one reproduces — and then found **two wrong line references in the new D1 implementation notes**:
+
+- the `bench_phase01.py` "known near-miss" was cited as `:159,251,253`. Those lines are two
+  `sum(...)` comprehensions and an `assert`. The actual three-tuple unpacks are at
+  **`:244,246,250`**.
+- the caller-policy table claimed **13** `build_corpus()` call sites and omitted **`src/rag.py:642`**
+  — `ask()`'s own fallback `PerDocRetriever(build_corpus())`. Of the fourteen callers, the one
+  left out was the **user path's default corpus build**: precisely the caller a policy table about
+  not letting a corpus version reach users exists to cover. Two more entries cited the
+  `from rag import …` line instead of the call line.
+
+The `grep` output containing `src/rag.py:642` was in my own terminal, minutes earlier. I
+transcribed a table from it and dropped a row.
+
+So: the same failure, a third time in two days, at a third level of zoom — **a claim written from
+a source that was open, without re-reading the source.** 09-13 inferred from a measurement without
+checking the text. 09-16 matched a string without checking its neighbours. 09-17 built a table
+without re-checking its rows. The content of the error changes; the shape does not. It is always
+**"I already looked at this"** standing in for looking at it.
+
+Two things follow, and only the second is a lesson:
+
+1. The corrections are noted **in place, dated, not silently fixed** — including this one, and
+   including the fact that a note about verifying line references had a wrong line reference in it.
+2. **The review is not optional, and it is not a formality.** Every substantive finding in this
+   session survived it; every *citation* did not. Self-checking caught the 09-16 error only
+   because a different session looked at it with fresh eyes. Within a session, the thing that
+   caught it was a second reader. Budget for one.
