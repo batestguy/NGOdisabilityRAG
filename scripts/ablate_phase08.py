@@ -105,10 +105,15 @@ def measure(ret, questions, expand: bool) -> list[dict]:
         retrieve.expand_query = real
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    argv = sys.argv[1:] if argv is None else argv
+    # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
+    corpus = next((a.split("=", 1)[1] for a in argv
+                   if a.startswith("--corpus=")), None)
+
     questions = load_questions()
     assert len(questions) == 10
-    docs = build_corpus()
+    docs = build_corpus(corpus)
     print("corpus: %s" % {k: len(v) for k, v in docs.items()})
     # ONE retriever for both arms: the index is identical by construction, so
     # any delta below is attributable to the query side and nothing else.

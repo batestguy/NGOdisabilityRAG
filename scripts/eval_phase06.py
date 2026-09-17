@@ -1,7 +1,8 @@
 """Phase 06 custom eval -- zero-LLM proxies for the three RAGAS spec metrics.
 
-Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\eval_phase06.py [--out FILE]
+Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\eval_phase06.py [--out=FILE]
   (from D:\\NGORAG; default out scripts/eval_phase06_results_<date>.json)
+  ... --corpus=<ver>  evaluate a specific corpus version. EQUALS FORM ONLY.
 
 Why custom first: RAGAS itself calls LLMs (~30+ calls for 10Q x 3 metrics),
 which exceeds the Gemini free-tier daily budget, and `ragas` is NOT installed
@@ -56,6 +57,7 @@ TRADE-OFFS (custom vs RAGAS -- spec research deliverable):
     variance compounds), and drags heavy deps into the env.
 """
 
+import hashlib
 import json
 import re
 import sys
@@ -74,7 +76,7 @@ from evalset import (  # noqa: E402
     expected_map,
     load_eval_set,
 )
-from rag import CITE_TAG_RE, build_corpus  # noqa: E402
+from rag import CITE_TAG_RE, CORPUS_VERSION, build_corpus  # noqa: E402
 from retrieve import PerDocRetriever, select_top, stem  # noqa: E402
 
 TRANSCRIPT = (ROOT / "scripts"
@@ -238,14 +240,30 @@ def eval_question(qid, question, rec, hits, ret) -> dict:
     return out
 
 
+# Digest of the results JSON this script writes on the v1 corpus. Phase 10 C
+# claimed byte-identical eval output in prose; this makes the claim a gate.
+#
+# WINDOWS-SPECIFIC, deliberately. Path.write_text() opens in TEXT mode, so every
+# "\n" json.dumps produced lands on disk as "\r\n" (594 CRLF pairs). The pinned
+# digest is of THOSE BYTES. Hashing the in-memory string, or running on a
+# platform that does not translate, gives a different and equally correct
+# answer -- which is why the failure below explains itself instead of raising a
+# bare AssertionError. Re-pin it only with a recorded reason.
+V1_RESULTS_SHA256 = ("CE716FB3C1EA139B5E3A6885D732C5EBBD3F1B57981635F7D97DA591"
+                     "1EDF5F19").lower()
+
+
 def main() -> None:
+    # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
+    corpus = next((a.split("=", 1)[1] for a in sys.argv[1:]
+                   if a.startswith("--corpus=")), None)
     questions = load_questions()
     assert len(questions) == 10
     # Two independent sources of the frozen 10 must agree: the notebook literal
     # and data/eval/questions.json. Checked BEFORE any measurement, so a drifted
     # yardstick can never silently produce a number.
     assert_frozen10_matches_notebook()
-    docs = build_corpus()
+    docs = build_corpus(corpus)
     print("corpus: %s" % {k: len(v) for k, v in docs.items()})
     verify_ground_truth(docs)
     ret = PerDocRetriever(docs)
@@ -298,7 +316,21 @@ def main() -> None:
             if not out.is_absolute():
                 out = ROOT / out
     out.write_text(json.dumps(rows, indent=1), encoding="utf-8")
-    print("wrote %s (%d records)" % (out, len(rows)))
+    # Read BACK FROM DISK as bytes -- see V1_RESULTS_SHA256. The digest is of
+    # the CRLF-translated file, not of the string we just serialised.
+    got = hashlib.sha256(out.read_bytes()).hexdigest()
+    print("wrote %s (%d records) sha256=%s" % (out, len(rows), got))
+    if (corpus or CORPUS_VERSION) == "v1" and got != V1_RESULTS_SHA256:
+        raise SystemExit(
+            "eval_phase06 results digest DRIFT on corpus v1\n"
+            "  recorded %s\n  measured %s\n"
+            "Every Phase 06 number published in this repo came from the "
+            "recorded file. If you changed retrieval, this is a real "
+            "regression -- do not re-pin to silence it.\n"
+            "NOTE: this digest is WINDOWS-SPECIFIC. Path.write_text() writes "
+            "CRLF here and the digest covers those bytes, so a Linux/macOS run "
+            "will differ for that reason alone and is not evidence of drift."
+            % (V1_RESULTS_SHA256, got))
 
 
 if __name__ == "__main__":

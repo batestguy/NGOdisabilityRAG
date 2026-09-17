@@ -48,7 +48,16 @@ DOC_IDS = ("act2018", "constitution1999", "factsheet2020")
 
 # A chunk of citable text. ref examples: Act "cl. 31", Constitution "s. 17",
 # Factsheet "Section 19" (or "general" when no section marker was found).
-Chunk = namedtuple("Chunk", ["doc_id", "ref", "text"])
+#
+# `path` (Phase 10 D1) records HOW the ref was obtained -- "" for v1, where refs
+# are INFERRED from heading shape, and a provenance label under v2's
+# manifest-anchored parse (e.g. "manifest", "marginal_note"). It is defaulted so
+# every existing 3-arg construction site keeps working untouched; what it does
+# change is arity, so `len(chunk)` is 4 and `a, b, c = chunk` now raises. Both
+# were swept for at D1 and neither pattern occurs on a Chunk (the near-miss,
+# scripts/bench_phase01.py:244-250, unpacks chunk_stats()'s (n, avg, max)
+# numbers from a list[str] -- not a Chunk).
+Chunk = namedtuple("Chunk", ["doc_id", "ref", "text", "path"], defaults=("",))
 
 # A retrieved hit: (doc_id, ref, text, score). Score is cosine similarity
 # in [0, 1] within that doc's TF-IDF space.

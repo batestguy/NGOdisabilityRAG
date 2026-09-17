@@ -329,13 +329,16 @@ def curve_table(curves: dict) -> None:
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     reveal_test = "--reveal-test" in argv
+    # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
+    corpus = next((a.split("=", 1)[1] for a in argv
+                   if a.startswith("--corpus=")), None)
 
     assert_frozen10_matches_notebook()
     rows = load_eval_set()
     by_set = {s: [r for r in rows if r["set"] == s] for s in LABELS}
 
-    docs = build_corpus()
-    print("CORPUS_VERSION=%s" % CORPUS_VERSION)
+    docs = build_corpus(corpus)
+    print("CORPUS_VERSION=%s" % (corpus or CORPUS_VERSION))
     print("corpus: %s" % {k: len(v) for k, v in docs.items()})
     n_refs = verify_expected(rows, docs)
     print("ground truth verified against corpus: %d questions, %d expected refs"

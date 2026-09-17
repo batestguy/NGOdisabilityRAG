@@ -2,6 +2,8 @@
 
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\audit_corpus.py  (from D:\\NGORAG)
      ... --json=<path>    also write the table as JSON for diffing
+     ... --corpus=<ver>   audit a specific corpus version instead of the
+                          rag.CORPUS_VERSION default. EQUALS FORM ONLY.
 
 WHY THIS EXISTS
 ---------------
@@ -38,6 +40,7 @@ evalset.assert_frozen10_matches_notebook(). Until then the ACT MANIFEST section
 says plainly that it is single-source.
 """
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -77,6 +80,13 @@ ACT_CLAUSES = range(1, 59)
 # WRITING A STUB CHUNK. A citation tag in front of a generation model is
 # precisely how a gap becomes a hallucinated provision that passes
 # verify_citations() mechanically.
+#
+# 2026-09-17 (Phase 10 D0): the gazette scan is now filed at
+# data/raw/disability_act_2018_gazette_FGP.pdf and is the authoritative source
+# corpus v2 is rebuilt from. If the D2 re-OCR recovers cl.38's body, this set is
+# DELETED by D6 -- not emptied, not left as `set()`. An empty set here would
+# read as "we checked and nothing is absent", which is a different claim from
+# "this exclusion no longer exists". Until D6 lands, it stays exactly as is.
 ACT_KNOWN_ABSENT = {38, 40}
 
 # ---- v1 recorded shape. A tripwire, not an aspiration. ------------------
@@ -87,6 +97,28 @@ V1_EXPECTED = {
     "constitution1999": {"n": 2104, "general": 99, "packed": 0},
     "factsheet2020": {"n": 48, "general": 9, "packed": 19},
 }
+
+# Content digest of the whole corpus. The nine integers above are a SHAPE check:
+# they cannot see text MOVING BETWEEN CHUNKS at constant count -- which is
+# exactly what a splitter change does. This closes that hole. Pinned 2026-09-17
+# at D1, against the same build the published baselines were measured on.
+V1_CORPUS_SHA256 = "25650238c3f2daf0523297680b41b3bd2318425c9690d9fa8a1e1caf1b42e89a"
+
+
+def corpus_sha256(docs: dict[str, list]) -> str:
+    """sha256 over (doc_id, ref, text) of every chunk, in iteration order.
+
+    Order is part of the digest on purpose: PerDocRetriever breaks score ties by
+    the insertion order of this dict (src/retrieve.py:331-338), so a reordering
+    that leaves all nine shape numbers identical can still move published
+    rankings. NUL separators cannot occur in the corpus text, so no (ref, text)
+    boundary is ambiguous.
+    """
+    h = hashlib.sha256()
+    for doc_id, chunks in docs.items():
+        for c in chunks:
+            h.update(("%s\0%s\0%s\0" % (doc_id, c.ref, c.text)).encode("utf-8"))
+    return h.hexdigest()
 
 # ---- v2 gate (Phase 10 C exit criteria). --------------------------------
 V2_MAX_GENERAL_PCT = 1.0   # uncitable chunks, per doc
@@ -161,12 +193,18 @@ def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     json_out = next((a.split("=", 1)[1] for a in argv
                      if a.startswith("--json=")), None)
+    # EQUALS FORM ONLY, matching --json= above. The space form is silently
+    # ignored repo-wide; a "--corpus v2" that quietly measured v1 and published
+    # the number as v2 is the exact failure this stamp exists to prevent.
+    corpus = next((a.split("=", 1)[1] for a in argv
+                   if a.startswith("--corpus=")), None)
 
-    docs = build_corpus()
-    print("== CORPUS AUDIT (CORPUS_VERSION=%s) ==" % CORPUS_VERSION)
+    docs = build_corpus(corpus)
+    version = corpus or CORPUS_VERSION
+    print("== CORPUS AUDIT (CORPUS_VERSION=%s) ==" % version)
     print("  mode: %s" % ("v1 regression tripwire -- pinned to the recorded "
                           "shape, does NOT fail for being bad"
-                          if CORPUS_VERSION == "v1"
+                          if version == "v1"
                           else "v2 quality gate"))
 
     stats = {d: audit_doc(d, c) for d, c in docs.items()}
@@ -215,7 +253,7 @@ def main(argv: list[str] | None = None) -> int:
     print("    ^ the pixels do not exist. No stub, no paraphrase, no model")
     print("      knowledge -- record the gap and tell the user to call DRAC.")
 
-    report = {"corpus_version": CORPUS_VERSION, "docs": stats,
+    report = {"corpus_version": version, "docs": stats,
               "act_manifest": cov}
     if json_out:
         Path(json_out).write_text(json.dumps(report, indent=2) + "\n",
@@ -224,7 +262,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # ---- the gate -------------------------------------------------------
     fails: list[str] = []
-    if CORPUS_VERSION == "v1":
+    if version == "v1":
         print("\n== V1 REGRESSION TRIPWIRE ==")
         for d, exp in V1_EXPECTED.items():
             got = stats[d]
@@ -237,6 +275,19 @@ def main(argv: list[str] | None = None) -> int:
                         "%s.%s: recorded %d, measured %d -- corpus v1 moved "
                         "under every published baseline in the repo"
                         % (d, key, exp[key], got[key]))
+        got_sha = corpus_sha256(docs)
+        ok = got_sha == V1_CORPUS_SHA256
+        print("  %-18s %-8s recorded %s" % ("CORPUS", "sha256",
+                                            V1_CORPUS_SHA256))
+        print("  %-18s %-8s measured %s %s" % ("", "", got_sha,
+                                               "ok" if ok else "DRIFT"))
+        if not ok:
+            fails.append(
+                "corpus sha256: recorded %s, measured %s -- chunk CONTENT "
+                "moved even though the nine shape numbers above may still "
+                "match. A splitter change that shifts text between chunks at "
+                "constant count looks exactly like this."
+                % (V1_CORPUS_SHA256, got_sha))
     else:
         print("\n== V2 QUALITY GATE ==")
         for d in stats:

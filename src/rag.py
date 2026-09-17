@@ -217,31 +217,66 @@ def fact_ref(chunk: str) -> str:
     return "Section %s" % ",".join(str(n) for n in nums)
 
 
-def build_corpus() -> dict[str, list[Chunk]]:
-    """Load + chunk all three docs. Raw files are never modified."""
-    docs: dict[str, list[Chunk]] = {}
+def _act_chunks_v1() -> list[Chunk]:
+    """v1 Act chunks. Relocated verbatim from build_corpus() at D1.
 
+    NB "section-aware 800" is misleading: chunk.SECTION_RE matches only 4 times
+    in the cleaned Act text and all four sit past 89.8% of the document, so for
+    clauses 1-58 this is effectively recursive_split(text, 800). That is part of
+    the byte-identical v1 path, not a bug to fix -- D's clause-aligned chunking
+    is a total replacement of this splitter, not a refinement.
+    """
     raw_act = ACT_PATH.read_text(encoding="utf-8", errors="replace")
     act_text, _, _ = build_clean_text(raw_act, repair=True, dedupe=True)
     act_text = clean_text(act_text)
-    docs["act2018"] = [
+    return [
         Chunk("act2018", act_ref(c), c)
         for c in section_aware_split(act_text, size=ACT_SIZE)
     ]
 
+
+def _const_chunks_v1() -> list[Chunk]:
+    """v1 Constitution chunks. Relocated verbatim from build_corpus() at D1."""
     raw_const = CONST_PATH.read_text(encoding="utf-8", errors="replace")
     const_text = clean_text(repair_joins(raw_const))
-    docs["constitution1999"] = [
+    return [
         Chunk("constitution1999", const_ref(c), c)
         for c in constitution_aware_split(const_text, size=CONST_SIZE)
     ]
 
+
+def _fact_chunks_v1() -> list[Chunk]:
+    """v1 Factsheet chunks. Relocated verbatim from build_corpus() at D1."""
     raw_fact = FACT_PATH.read_text(encoding="utf-8", errors="replace")
     fact_text = clean_text(repair_joins(raw_fact))
-    docs["factsheet2020"] = [
+    return [
         Chunk("factsheet2020", fact_ref(c), c)
         for c in recursive_split(fact_text, size=FACT_SIZE, overlap=FACT_OVERLAP)
     ]
+
+
+def build_corpus(version: str | None = None) -> dict[str, list[Chunk]]:
+    """Load + chunk all three docs. Raw files are never modified.
+
+    version defaults to CORPUS_VERSION ("v1" until D6), so every existing
+    no-arg caller is unchanged. D1 is scaffolding only: there is exactly one
+    version and it is the byte-identical v1 path.
+
+    Deliberately NOT memoized. Insertion order of the returned dict is load-
+    bearing -- PerDocRetriever iterates it in order and sorts hits by score
+    alone (src/retrieve.py:331-338), so insertion order breaks ties and
+    reordering these three blocks silently moves published numbers.
+    """
+    version = version or CORPUS_VERSION
+    if version != "v1":
+        raise ValueError(
+            "unknown corpus version %r (only 'v1' exists until D6)" % version
+        )
+
+    docs: dict[str, list[Chunk]] = {}
+    docs["act2018"] = _act_chunks_v1()
+    docs["constitution1999"] = _const_chunks_v1()
+    docs["factsheet2020"] = _fact_chunks_v1()
     return docs
 
 

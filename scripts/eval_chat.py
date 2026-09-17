@@ -362,10 +362,13 @@ def turn_table(label: str, by_arm: dict, show_missed: bool) -> None:
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     reveal_test = "--reveal-test" in argv
+    # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
+    corpus = next((a.split("=", 1)[1] for a in argv
+                   if a.startswith("--corpus=")), None)
 
     convs = load_chat_set()
-    docs = build_corpus()
-    print("CORPUS_VERSION=%s" % CORPUS_VERSION)
+    docs = build_corpus(corpus)
+    print("CORPUS_VERSION=%s" % (corpus or CORPUS_VERSION))
     print("corpus: %s" % {k: len(v) for k, v in docs.items()})
     n_refs = verify_expected(convs, docs)   # HARD failure on a ground-truth bug
     print("chat ground truth verified against corpus: %d expected refs" % n_refs)
