@@ -1,6 +1,50 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-16)
+# HANDOFF — start here (60 seconds, updated 2026-09-17)
 
-> **Latest (2026-09-16): Phase 10 C (chat UI) DONE. Zero Gemini calls spent.**
+> **LATEST (2026-09-17): the chat work SHIPPED, and Phase D's gate answers GO.**
+> Zero Gemini calls spent. Branch **`phase10/corpus-v2`**, off a merged `main`.
+>
+> **Both open owner decisions below are now CLOSED.** Push+PR happened first: PR #12
+> (Phase 10 A+B+C + D-planning) merged, `main` `bb6f931` → **`6b10f62`**, and Render
+> auto-deployed — **users now get the multi-turn chatbot, not the single-turn form.**
+> The branch stack is unwound; `phase10/chat-core` and `phase10/chat-ui` are pushed.
+> The orphaned 740-line doc pass was committed before anything else.
+>
+> **D2's GO/NO-GO GATE: GO.** The gazette's Arrangement yields a clean **`1..58`** — no
+> holes, no duplicates, nothing out of range. The manifest-anchored parser is unblocked;
+> the marginal-note fallback was **not needed and not used**; **no title was authored.**
+> Manifest is on disk at **`data/processed/gazette_arrangement.json`** (58 entries,
+> `"title_source": "arrangement"`) — **do not re-derive it.**
+>
+> **Read this before writing an OCR parser.** The first parse returned **23 of 58** and
+> looked exactly like the truncated source Finding 1c predicted. It was not. RapidOCR emits
+> the clause number and its title as **separate boxes**, and their vertical centres differ
+> enough that the title often sorts *before its own number* — so a line-at-a-time regex
+> anchored on `^\d+\.` can never match. Group boxes into **visual rows by vertical overlap**,
+> then order left-to-right. Same failure class as v1's 25/62 uncitable Act chunks. The tell
+> that it was a parser bug and not a finding: OCR confidence was **0.978–0.984**.
+>
+> **`scripts/ocr_local.py` was a live hazard and is now fixed.** It had a bare `main()` at
+> module scope with no `__main__` guard, and `main()` unconditionally overwrites
+> `data/processed/disability_act_2018_full.txt` — the v1 Act corpus every published baseline
+> is measured against. Guard + `--force` added, both verified. Shared helpers now live in
+> **`scripts/ocrlib.py`** (keeps box geometry; pymupdf/rapidocr imports are function-local).
+> Keep running the `git diff main -- data/processed/disability_act_2018_full.txt` guard.
+>
+> **D1 landed:** `Chunk.path` defaulted · `build_corpus(version=)` as **pure relocation** ·
+> `--corpus=` (equals form only) on 6 harnesses. Two prose claims are now **negative-tested**
+> gates: `corpus_sha256()` (`25650238…e89a`) catches text moving *between* chunks at constant
+> count, which the nine shape integers cannot see; `eval_phase06` asserts `ce716fb3…5f19` and
+> is **Windows/CRLF-specific on purpose**, reading the file back from disk as bytes.
+> Stdout gained 2 lines in `audit_corpus` + one ` sha256=…` in `eval_phase06` — **re-baselined
+> here, not broken silently.** Everything else reproduces byte-identically.
+>
+> **NEXT: D2's clause locator + the 27-page body OCR**, then `_act_chunks_v2()` / `ACT_V2_SIZE`.
+> `ACT_KNOWN_ABSENT = {38, 40}` **stays** — cl.38's *title* being in the Arrangement says
+> nothing about its *body*. D6 deletes that constant, after the re-OCR.
+>
+> ---
+>
+> **Previous (2026-09-16): Phase 10 C (chat UI) DONE. Zero Gemini calls spent.**
 > Branch `phase10/chat-ui`, off `phase10/chat-core`. Playbook: `docs/phases/11_chat.md`
 > (Step C results). **DRLCA is a chatbot now** — `streamlit run app.py` gives you a
 > multi-turn conversation, not the single-turn form.

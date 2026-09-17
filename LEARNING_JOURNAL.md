@@ -1516,3 +1516,105 @@ Two things follow, and only the second is a lesson:
    session survived it; every *citation* did not. Self-checking caught the 09-16 error only
    because a different session looked at it with fresh eyes. Within a session, the thing that
    caught it was a second reader. Budget for one.
+
+## 2026-09-17 (later) — the source was never truncated; the parser could not see
+
+Session scope: land the chat work, then open Phase D as far as D2's go/no-go gate. Zero Gemini
+quota. The headline is that **the gate answers GO — the gazette's Arrangement of Sections yields a
+clean `1..58`, no holes, no duplicates.** But the route to that answer is the part worth keeping.
+
+### The near-miss: 23 of 58, and it looked exactly like a truncated source
+
+The first parse of the OCRed Arrangement returned **23 entries**. Missing: 3–8, 16–21, 23–25,
+28–29, 32–36, 42–50, 53–56. It is hard to overstate how much that looks like a real finding. The
+whole reason the gate exists is Finding 1c: v1's Arrangement **truncates at L77** (`51.Power to
+acquire land.`), so "the Arrangement is incomplete" was the *expected* failure, already written up,
+with a fallback designed in advance. Every prior about this document pointed at NO-GO.
+
+It was wrong, and one number said so: OCR confidence averaged **0.978–0.984**. A truncated scan does
+not produce near-perfect confidence on the lines it *does* have and then silently omit two-thirds of
+a numbered list. High confidence plus massive loss is not a source problem, it is a *reading*
+problem. So I dumped the raw boxes instead of the assembled text.
+
+```
+x= 433.2- 481.3  '3.'
+x= 474.3- 915.7  'Right of access to public premises.'
+```
+
+RapidOCR emits the clause number and its title as **separate boxes**. Worse, their vertical centres
+differ by a few pixels, and often enough the *title sorts before its own number*:
+
+```
+y= 969.7  'Equal right to work.'
+y= 972.0  '28.'
+```
+
+`ocrlib.ocr_pdf()` sorts each page's lines by box centre — correct, and still not enough. A
+line-at-a-time regex anchored on `^\d+\.` can never match, because the number and the title are
+never on the same "line" to begin with. Grouping boxes into **visual rows by vertical overlap**,
+then ordering left-to-right within the row, recovers all 58 immediately.
+
+**This is the same failure class that left 25/62 v1 Act chunks uncitable.** v1's assembler
+(`ocr_local.py:57`) joins `l["text"]` and throws the boxes away; the gazette's marginal-note column
+then splices into the body and `act_ref()` cannot infer a ref from the wreckage. The plan's
+instruction to keep the `box` coordinates while extracting `ocrlib.py` was written to serve D2's
+marginal-note problem. It paid off one step earlier than intended, on the gate itself.
+
+**The lesson is not "keep geometry".** It is: *when a measurement confirms the failure you already
+expected, that is the moment to distrust it.* The 09-16 and 09-17 entries above are both about
+matching on partial evidence without reading the next line. This is the same error wearing better
+clothes — I had a documented prior, got a result that matched it, and the only thing standing
+between that and a published NO-GO was a confidence score that did not fit the story.
+
+### A gate that cannot fail is not a gate
+
+D1 turned two prose claims into asserts, and I made a point of **negative-testing both** rather than
+observing that they pass. The `corpus_sha256()` one earns its place concretely: shifting **one
+character between two adjacent Act chunks** leaves the count at 62 and all nine `V1_EXPECTED`
+integers identical — the shape gate is blind to it — and the digest catches it. Reordering the docs
+dict, which silently moves published rankings through `PerDocRetriever`'s insertion-order tie-break,
+is caught too. Neither is hypothetical; both are what D2's splitter replacement will do.
+
+The `eval_phase06` digest carries a wrinkle worth recording: `Path.write_text()` opens in **text
+mode**, so `json.dumps`'s `\n` lands on disk as `\r\n` (594 pairs) and the published
+`CE716FB3…5F19` is a digest of the **CRLF bytes**. Hashing the in-memory string gives a different,
+equally "correct" answer. It reads the file back as bytes, and when it fails it *says* it is
+Windows-specific rather than raising a bare `AssertionError` at someone on Linux.
+
+### The hazard was real, and it was one import away
+
+`scripts/ocr_local.py` had a bare `main()` at module scope, no `__main__` guard, and a `main()` that
+unconditionally overwrites `data/processed/disability_act_2018_full.txt` — the v1 Act corpus **every
+published baseline in this repo is measured against**. `import ocr_local` destroyed it, silently,
+and this was the first session with any reason to go near that file. The playbook's
+`git diff main -- data/processed/disability_act_2018_full.txt` guard exists precisely for this, and
+it stayed empty all session.
+
+Two defences, both verified rather than assumed: the guard makes import inert, and `--force` makes
+the destructive path opt-in. The durable fix is structural — shared OCR code now lives in
+`ocrlib.py` and `ocr_local.py` is demoted to the v1 reproduction path.
+
+Related discipline held: **`dedupe_pages()` was not run.** Its salvage branch
+(`src/load.py:347-363`) appends unmatched lines of the dropped twin onto the kept twin. On v1's
+genuinely duplicated scan that recovered cropped text; on a clean source it is a corruption
+mechanism that interleaves unrelated lines. `detect_duplicate_pages() == []` is asserted instead,
+and the script states its scope is the 3 front-matter pages rather than implying it cleared all 27.
+
+### What I did not do
+
+Clause 26 parses as `"S Service at queues."` — OCR doubled the title's first letter into the
+number's box. I know what it should say. I flagged it and left it, because "never author a title" is
+not a rule about hard cases, it is a rule about easy ones; the easy ones are how the habit forms.
+
+Same reasoning kept `ACT_KNOWN_ABSENT = {38, 40}` in place. Clause 38's **title** is in the
+Arrangement. That says nothing about whether its **body** is in this scan, and the temptation to
+read one as evidence of the other is exactly the L614 error from this morning's entry. D6 deletes
+that constant, after the re-OCR that actually recovers the body.
+
+### Housekeeping that was overdue
+
+740 lines of correction and design sat uncommitted — a `git checkout` away from gone, in a project
+whose own rule is "progress must survive the session." Committed first, before anything else.
+The chat stack then shipped: PR #12 merged, `main` `bb6f931` → `6b10f62`, and Render auto-deployed
+the multi-turn chatbot to real users for the first time. That one I did not decide alone; it is
+outward-facing and hard to unwind, so it went to the owner at the merge button.

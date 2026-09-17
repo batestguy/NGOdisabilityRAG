@@ -649,4 +649,99 @@ git diff main -- data/processed/disability_act_2018_full.txt    # must stay EMPT
 
 ## Results
 
-*(none yet — planned 2026-09-16, no step started)*
+### Session 2026-09-17 — D0 filed, D1 landed, D2's gate answered **GO**
+
+Scope was deliberately D0 + D1 + D2's go/no-go gate, stopping before the parser. Zero Gemini
+quota spent. No new packages. `requirements.txt` and the v1 Act TXT both ended the session with
+an **empty** diff vs `main`.
+
+Preceded by two housekeeping commits: the orphaned 2026-09-17 doc pass (740 lines, including the
+Finding 1 correction that **v1 L614 is clause 48, not clause 38**) was committed rather than left
+to die on a `git checkout`, and the Phase 10 A/B/C stack shipped as PR #12 → merged to `main` →
+auto-deployed to Render. That deploy is the first time users get the chatbot instead of the
+single-turn form.
+
+**D0 — gazette filed.** `data/raw/disability_act_2018_gazette_FGP.pdf`, verified from its cover
+page before filing: *Official Gazette No. 10, Vol. 106, Lagos, 21 January 2019, Act No. 2, pages
+A97–A122*, Federal Government Printer (FGP 007/12019/700). 27 pages, **no text layer**. Recorded
+in `data/raw/SOURCES.md` as the authoritative source: where the free web transcriptions v1 was
+built from disagree with the gazette, the gazette wins. Its own commit, per plan.
+
+**D1 — versioned scaffolding.** Exactly one corpus version still exists and it is the
+byte-identical v1 path.
+
+| Item | Outcome |
+|---|---|
+| `Chunk` gains defaulted `path` | Done. All three 3-arg construction sites untouched, as predicted. |
+| Arity sweep | Clean. No `len(chunk)`, `[*chunk]`, `zip(*)`, `Chunk(*)` or 3-way unpack on a `Chunk`. |
+| Known near-miss | Confirmed harmless: `bench_phase01.py:244-250` unpacks `chunk_stats()`'s `(n, avg, max)` from a `list[str]`. Left alone. |
+| `build_corpus(version=None)` | Pure relocation — the three loading bodies do not appear in `git diff -w` at all. No memoization, no dict reordering, no `version=` on `ask()`. |
+| Caller policy, 14 sites | 6 got `--corpus=` (**equals form only**), 5 left bare, 3 quota-bound files not opened. `router._retriever` left unkeyed. |
+
+**Two prose claims became real gates, and both were negative-tested** — a gate that cannot fail is
+worthless:
+
+- `corpus_sha256()` pinned at `25650238…e89a`. Shifting **one character between two adjacent Act
+  chunks** leaves the count at 62 and all nine shape integers identical; the digest catches it.
+  Reordering the docs dict — which silently moves published rankings via `PerDocRetriever`'s
+  insertion-order tie-break — is also caught.
+- `eval_phase06.py` asserts its results digest `ce716fb3…5f19`. **Windows-specific by
+  construction**: `Path.write_text()` writes CRLF (594 pairs) and the published digest is of those
+  bytes, so it reads the file back from disk as bytes. It fails with that explanation rather than a
+  bare `AssertionError`.
+
+**Stdout re-baselined, not broken silently:** `audit_corpus.py` gains two sha256 lines,
+`eval_phase06.py` appends ` sha256=…`. Both pure additions; every other line of all five harnesses
+reproduces byte-identically against baselines captured *before* the first edit.
+
+### D2 GO/NO-GO GATE — **GO**
+
+> **The gazette's Arrangement of Sections yields a clean `1..58` — no holes, no duplicates, nothing
+> out of range.** D2's manifest-anchored parser is unblocked and titles come from the Arrangement.
+> The written-in-advance **marginal-note fallback is not needed and was not used. No title was
+> authored.**
+
+Pages 2–4 (A97–A99) OCRed at dpi 200, ~12 s/page, average confidence 0.978–0.984. Finding 1c was
+right that this could not be settled against v1: v1's Arrangement truncates at L77 because it lost
+the page carrying 52–58. That page is present and legible in the gazette.
+
+**The near-miss worth recording.** The first parse read **23 of 58** and looked exactly like a
+truncated source. It was not. RapidOCR emits the clause number and its title as **separate boxes**
+(`"3."` | `"Right of access to public premises."`) whose vertical centres differ by a few pixels —
+often enough that the title sorts *before its own number*. A text-only, line-at-a-time parse cannot
+see this. Grouping boxes into visual rows by vertical overlap, then ordering left-to-right, recovers
+all 58. **This is the same class of failure that left 25/62 v1 Act chunks uncitable**, and it is the
+concrete vindication of keeping the geometry `ocr_local.py`'s assembler threw away.
+
+Reported, not patched: clause 26 parses as `"S Service at queues."` — OCR duplicated the title's
+first letter into the number's box. Flagged for D2's parser to decide.
+
+One clause-38 caution: its **title** is present in the Arrangement, which says **nothing** about
+whether its **body** is in this scan. `ACT_KNOWN_ABSENT = {38, 40}` is untouched and **D6 still
+owns deleting it** — after the re-OCR that actually recovers the body.
+
+### A live hazard found and fixed
+
+`scripts/ocr_local.py` had a bare `main()` at module scope with no `__main__` guard, and `main()`
+unconditionally overwrites `data/processed/disability_act_2018_full.txt` — the v1 Act corpus every
+published baseline is measured against. **`import ocr_local` destroyed it, silently.** Added the
+guard plus a `--force` gate and verified both: importing is now inert, `main()` without `--force`
+refuses, and the file's sha256 was unchanged across the test. Reusable helpers now live in
+`scripts/ocrlib.py` (geometry preserved; `pymupdf`/`rapidocr` imports are function-local, so
+importing it pulls in no ONNX). `assemble_v1()` is preserved verbatim so v1 stays reproducible.
+
+`dedupe_pages()` was **not** run. `detect_duplicate_pages()` is asserted `== []` instead — scope is
+the 3 front-matter pages, and the script says so; the full 27-page check belongs with D2's body OCR.
+
+### Verification at session end
+
+`audit_corpus` 9/9 + digest ok · `eval_heldout` · `eval_chat` · `ablate_phase08` all byte-identical ·
+`eval_phase06` digest assert passes with its recorded FAILs (reverse_rel 0.630) **preserved untuned**
+· `bench_phase01` PASS · phase03 16/16+7/7 · phase04 10/10 · phase05 137 · phase09_ops 51 ·
+`import app` clean · both git guards empty.
+
+### Next session starts here
+
+D2's clause locator and the 27-page body OCR, then `_act_chunks_v2()` / `ACT_V2_SIZE`. The
+Arrangement manifest is already on disk at `data/processed/gazette_arrangement.json` — 58 entries,
+`"title_source": "arrangement"`. Do not re-derive it.
