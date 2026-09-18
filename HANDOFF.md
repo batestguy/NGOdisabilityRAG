@@ -1,6 +1,51 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-18)
 
-> **LATEST (2026-09-18): D2 is DONE — the Act half of corpus v2 exists and clears its gate.**
+> **LATEST (2026-09-18, later): D3 is DONE — the Factsheet is row-aligned, and its gate was
+> RE-SCOPED on measurement rather than tuned.** Zero Gemini calls spent. Branch
+> **`phase10/corpus-v2`** (still unmerged on purpose).
+>
+> **`audit_corpus.py --corpus=v2` on the Factsheet: 32 chunks · `general` 0 (0.0%) ·
+> `row_spanning` 0 · 0 over cap (900) · 27 rows, S/N 1–27, zero flags.** v1 carried **48 chunks,
+> 9 uncitable (18.8%), 19 packed and 26 of 48 cut across table rows.**
+>
+> **READ THIS BEFORE WRITING D6's GATE. `packed 0` was UNREACHABLE and measurement said so.**
+> Eight sections — **11, 13, 15, 23, 34, 35, 46, 53** — are never row anchors; they exist only as
+> cross-references inside another row's provisions (*"…may also accept a gift of land, money or
+> property… - section 46"*). `evalset.verify_expected()` is a **hard assert**, and **frozen10/Q6
+> expects 11**, so an anchor-only ref would delete those eight from the corpus and crash
+> `eval_heldout` / `eval_phase06` / `audit_corpus`. The only escapes were editing frozen10
+> (forbidden) or deleting held-out/test expectations. So the ref carries the **anchor first,
+> cross-references ascending**, and `packed` reads **16** — a **declared non-defect**, because it is
+> the table's own content.
+>
+> **`V2_MAX_PACKED` was NOT touched.** `--corpus=v2` still prints
+> `factsheet2020 packed refs 16 <= 0: FAIL` with the reason printed underneath, so the collision
+> stays visible in stdout until **D6 makes the factsheet's gate `row_spanning == 0`** — see the
+> boxed warnings under **D3** and **D6** in `docs/phases/12_corpus_v2.md`.
+>
+> **The replacement metric has DEMONSTRATED discriminating power, not assumed.** `row_spanning`
+> re-scans each emitted chunk's **text** for the S/N row-start line — never "we emit one row per
+> chunk, therefore 0", which would restate the code. **v1 scores 26/48, v2 scores 0/32.** It is
+> printed for **both** corpus versions, which is why `audit_corpus.py`'s v1 stdout is
+> **re-baselined by 13 lines** (the new `row-span` column + legend). **Every pre-existing v1 number
+> is unchanged**, `corpus_sha256` still `25650238…e89a`, `eval_phase06` still `ce716fb3…5f19`.
+>
+> **No manifest, on purpose.** D2's JSON seam exists because OCR must stay out of the slim Render
+> runtime. The factsheet's source is already a clean TXT the repo parses at boot with stdlib, so
+> `fact_v2_rows()` / `_fact_chunks_v2()` are in-process, stdlib `re` only. Symmetry is not a reason
+> to add an artifact that must be kept in sync.
+>
+> **`fact_ref()` is NOT a v2 validator and must not be promoted to one** (unlike `act_ref()`): every
+> sub-chunk carries the whole row's ref, so it legitimately names sections its own text does not
+> contain, and disagreement is the design.
+>
+> **NEXT: D4 — exclude the Constitution's Arrangement pages.** Keep `CONST_SIZE = 400`, keep
+> `_is_toc_fragment` as a **lint assertion** (do not delete it). Then D5 (refusal floor —
+> mandatory) → D6 (re-baseline, and the factsheet gate re-scope above).
+>
+> ---
+>
+> **Previous (2026-09-18): D2 is DONE — the Act half of corpus v2 exists and clears its gate.**
 > Zero Gemini calls spent. Branch **`phase10/corpus-v2`** (still unmerged on purpose).
 >
 > **`audit_corpus.py --corpus=v2` on the Act: 65 chunks · `general` 0 (0.0%) · `packed` 0 ·

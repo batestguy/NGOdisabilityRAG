@@ -519,7 +519,45 @@ ACT_KNOWN_ABSENT = {38, 40}
 One table row = one `Section N`. Exclude the cover page, the Arrangement block and the PLAC
 boilerplate/footer from retrieval.
 
-**Target:** `general` ≤1% · `packed` 0.
+**Target (amended 2026-09-18, before implementation, on measurement):**
+`general` ≤1% · **`row_spanning` 0** · `packed` **re-scoped, not gated**.
+
+> ## ⚠ THE ORIGINAL `packed 0` TARGET IS UNREACHABLE, AND MEASUREMENT SAYS SO
+>
+> This step was written as *"`general` ≤1% · `packed` 0"*, by analogy with D2's Act gate.
+> Measuring the factsheet **before writing anything** showed that **`packed 0` and
+> `evalset.verify_expected()` cannot both hold.**
+>
+> Eight sections are **never row anchors**. They exist only as cross-references inside another
+> row's provisions — *"…may also accept a gift of land, money or property… - section 46"*:
+>
+> | section | lives in row | expected by |
+> |---|---|---|
+> | 11 | 7 (Section 10) | **frozen10/Q6**, heldout/H26 |
+> | 13, 15 | 9 (Section 14) | test/T2, test/T3 |
+> | 23 | 15 (Section 22) | heldout/H28 |
+> | 34, 35 | 20 (Section 32) | heldout/H13, test/T7 |
+> | 46, 53 | 25 (Section 45) | heldout/H12, test/T17 |
+>
+> `scripts/evalset.py:161` `verify_expected()` is a **hard assert, not a metric** — *"an expected
+> number that no chunk carries is a ground-truth bug"*. An anchor-only ref would drop those eight
+> numbers out of the corpus and crash `eval_heldout.py`, `eval_phase06.py` and `audit_corpus.py`.
+> The only escapes are editing **frozen10**, which this repo forbids outright, or deleting
+> held-out/test expectations — i.e. moving the yardstick to make the number pass.
+>
+> **So the ref carries the row's anchor PLUS the sections that row genuinely discusses.** Measured
+> both ways against frozen10 ∪ heldout ∪ test: anchor-only leaves a coverage gap of exactly
+> `[11,13,15,23,34,35,46,53]`; anchor+cross-reference leaves `[]`.
+>
+> **A multi-number factsheet ref is therefore a declared NON-DEFECT** — it is the table's own
+> content, not damage. `packed` stays reported, unchanged and unhidden, and is **not** tuned away
+> (`V2_MAX_PACKED` is untouched). The real defect — a chunk cut **across** rows — gets its own
+> metric, `row_spanning`, measured from the chunk TEXT so it can actually fail: **v1 scores 26 of
+> 48, v2 scores 0 of 32.**
+>
+> This is the same lesson D2 learned about the `act_ref` validator, applied before the fact instead
+> of after: a target written before measurement, which measurement shows was aimed at the wrong
+> thing.
 
 ### D4 — Constitution: exclude the Arrangement pages, and nothing else
 
@@ -561,6 +599,23 @@ In order:
   validator agrees — **and `ACT_KNOWN_ABSENT` is DELETED, not emptied**, so nobody can re-add a
   clause to it. Its "SINGLE-SOURCE for now" caveat (`:202-205`) and the "the pixels do not exist"
   line (`:215`) go with it.
+
+> **⚠ D6 MUST GATE THE FACTSHEET ON `row_spanning == 0`, NOT ON `packed == 0` — D3 finding,
+> 2026-09-18.** `V2_MAX_PACKED = 0` is correct for the Act and the Constitution and **wrong for the
+> factsheet**, where a multi-number ref is the table's own content rather than damage. Eight
+> sections (11, 13, 15, 23, 34, 35, 46, 53) are never row anchors and exist only as cross-references
+> inside another row's provisions; `evalset.verify_expected()` — a **hard assert** — needs every one
+> of them, and **frozen10/Q6 expects 11**, so an anchor-only ref is not available at any price. See
+> the boxed evidence under **D3**.
+>
+> D3 left the threshold alone deliberately, so `audit_corpus.py --corpus=v2` prints
+> `factsheet2020 packed refs 16 <= 0: FAIL` with the explanation next to it and the collision stays
+> **visible in stdout** until D6 resolves it. D6 must make `V2_MAX_PACKED` per-doc (or exempt the
+> factsheet by name, with this reasoning in the code) **and** assert
+> `stats["factsheet2020"]["row_spanning"] == 0`. Do NOT close the gate by deleting or weakening the
+> `packed` column — it is still the right metric for the other two docs, and the factsheet's real
+> defect count is `row_spanning`, which is measured from chunk TEXT and has demonstrated
+> discriminating power (**v1 26/48, v2 0/32**).
 
 > **⚠ D6 MUST RE-SCOPE THE `act_ref` VALIDATOR BEFORE ASSERTING ON IT — review finding 2026-09-18.**
 > D2 measured **65/65 = 100% agreement**, and that number is worth much less than it looks.
@@ -916,18 +971,139 @@ corpus and checked all 65 chunks against the manifest by hand, confirmed the ins
 both `build_corpus` branches, and confirmed v2 is unreachable from the user path. Its one
 substantive finding — the validator circularity — was taken and is recorded above and in D6.
 
+### Session 2026-09-18 (later) — `_fact_chunks_v2()`: **D3's Factsheet gate is MET, on a re-scoped metric**
+
+Zero Gemini quota. No new packages. `requirements.txt`, the v1 Act TXT and the v1 factsheet TXT all
+diff **empty** against `main`.
+
+**The factsheet is now row-aligned.** `audit_corpus.py --corpus=v2`:
+
+| doc | chunks | uncitable | packed | row-span | len min/med/max |
+|---|---|---|---|---|---|
+| act2018 (v2) | 65 | 0 (0.0%) | 0 | 0 | 117 / 410 / 1100 (cap 1100, 0 over) |
+| constitution1999 (still v1) | 2104 | 99 (4.7%) | 0 | 0 | 52/400/400 |
+| **factsheet2020 (v2)** | **32** | **0 (0.0%)** | 16 (declared non-defect) | **0** | 130 / 473 / **900** (cap 900, **0 over**) |
+
+v1's factsheet was **48 chunks, 9 uncitable (18.8%), 19 packed, row-span 26 of 48**. The uncitable
+class is closed on this document too, and the 9 `general` chunks split two ways — checked
+individually, not assumed:
+
+- **7 excluded by region**: the cover page (chunk 0), the intro prose (1), the *Arrangement of
+  Sections* block (2, 3) and the PLAC address/About/Supported-by boilerplate (45, 46, 47). v2 drops
+  these by **where they are**, not by classifying them after the fact.
+- **2 absorbed and made citable**: chunk 28 is row 17's tail (*"…at least 5% of persons with
+  disabilities in their employment- section"*, its number lost to the page cut) and chunk 36 is
+  page furniture welded onto row 22's continuation. v2 puts both back inside their own row, under
+  `Section 28` and `Section 38`.
+
+**27 rows parse, S/N 1–27, contiguous, zero degradation flags.** Titles read correctly against the
+source on all 27 (`Section 45 | Funds of the Commission`).
+
+#### The metric was re-scoped, and the old one was left visible rather than tuned
+
+The playbook's target was `packed 0`. **Measuring first showed `packed 0` and
+`evalset.verify_expected()` cannot both hold** — see the boxed evidence under **D3** above and the
+warning under **D6**. Eight sections (11, 13, 15, 23, 34, 35, 46, 53) are never row anchors, and
+**frozen10/Q6 expects 11**, so the only ways to reach `packed 0` were editing frozen10 (forbidden)
+or deleting held-out/test expectations (moving the yardstick).
+
+So the ref carries the row's **anchor first, cross-references ascending**, and `packed` reads **16**
+(11 of 27 rows carry a multi-number ref; 5 of those 11 exceed the cap and emit two chunks each).
+`V2_MAX_PACKED` was **not** touched: the script still prints
+`factsheet2020 packed refs 16 <= 0: FAIL`, with the reason printed directly underneath, so the
+collision stays in stdout until D6 resolves it properly.
+
+**The replacement metric is anti-tautological by construction.** `row_spanning` is measured by
+re-scanning each **emitted chunk's text** for `FACT_ROW_RE`, never from "we emit one row per chunk,
+therefore 0" — which would restate the code and gate nothing. **Its discriminating power is
+demonstrated, not assumed: v1 scores 26 of 48, v2 scores 0 of 32.** Verified rather than assumed:
+a v2 header line (`Section 45 Funds of the Commission`) carries no leading S/N numeral, so
+`FACT_ROW_RE` cannot match it and the metric is not self-poisoning.
+
+**Predicted 13, measured 16 — recorded, not reconciled by a code change.** The plan's estimate
+counted rows under a slightly wider cross-reference regex. D3 reuses **exactly** the two regexes
+v1's `fact_ref()` already uses (`SECTION_RANGE_RE`, `SECTION_ANY_RE`), so v2 changes which *text* a
+number is attached to and never the vocabulary for spotting one. The cost is visible and accepted:
+*"sections 4 and 5"* (row 3) and *"sections 26 and 27"* (row 16) are plural-with-`and` forms neither
+regex matches, so 4/5/26/27 stay non-anchors — exactly as they were in v1, and no eval expects them.
+
+#### Implementation — one production file, and deliberately no manifest
+
+`src/rag.py` only. **No JSON manifest and no new script**, which is the one place D3 diverges from
+D2's idiom on purpose: the Act needed a manifest because OCR (`pymupdf`/`rapidocr`) must stay out of
+the slim Render runtime, so JSON is the wire format across that process boundary. The factsheet's
+source is already a clean TXT in the repo that v1 parses at boot with stdlib. A manifest here would
+be a second artifact to keep in sync for no benefit — **symmetry is not a reason.**
+
+- `FACT_V2_SIZE = 900`, a **new** constant. `FACT_SIZE`/`FACT_OVERLAP` untouched (byte-identical v1
+  path). Not tuned against the refusal floor — D5 owns that. Cap sweep recorded in the code
+  comment: 700→39 chunks, 900→32, 1200→28, 1800→27, **0 over cap at every one**.
+- `fact_v2_rows()` — region = `[first FACT_ROW_RE match, first FACT_TAIL_RE match)`, which excludes
+  **1,880 chars** of cover/intro/*Arrangement of Sections* at the head and **894 chars** of PLAC
+  address/About at the tail. `FACT_FURN_RE` drops page numbers, the repeated column header and the
+  PLAC running footer **inside** rows as well as between them — rows 5, 15, 22 and 25 each span a
+  page break. Per-row `flags` (`TITLE_EMPTY`, `TITLE_LONG`, `SN_OUT_OF_SEQUENCE`) follow the Act
+  manifest's discipline; the audit prints them, so a degraded parse cannot be promoted silently.
+- `_fact_chunks_v2()` — one row per chunk, sub-split only over the cap, **every** sub-chunk
+  carrying the full row ref and the row header. Per-piece cross-references were considered and
+  rejected: they make coverage depend on where `recursive_split` happens to cut, and a cut through
+  the literal string `section 46` would silently drop a frozen expectation. Header budgeted out of
+  the cap (`FACT_V2_SIZE - len(header) - 1`, floor 100), same idiom as `_act_chunks_v2()`.
+  `path == "table"`.
+- **`fact_ref()` is NOT promoted to a v2 validator**, and its docstring now says why: under the
+  full-row-ref rule a sub-chunk legitimately names sections its own 900 chars do not mention, so
+  disagreement is the designed behaviour and a "validator" would measure the split point. D2's
+  lesson applied before the fact.
+
+#### Verification
+
+**v1 did not move.** v1 `corpus_sha256` still **`25650238…e89a`**, `eval_phase06` still hashes
+**`ce716fb3…5f19`**, the 9/9 tripwire integers unchanged (48/9/19 on the factsheet row included).
+`eval_heldout` · `eval_chat` · `ablate_phase08` · `bench_phase01` · `test_phase03` ·
+`test_phase09_ops` stdout **0 diff lines** against the **pristine stashed code**; `test_phase04`
+2 lines (wall-clock latency) and `test_phase05` 4 lines (timestamped Streamlit
+`missing ScriptRunContext!`), both benign and both predicted. bench PASS · 03 16/16+7/7 ·
+04 10/10 · 05 **137** · 09 **51** · `import app` clean · both git guards **empty**.
+
+> **DISCLOSED: `audit_corpus.py`'s v1 stdout is NOT byte-identical — it is re-baselined, as at D1.**
+> The pristine-vs-modified diff is **13 lines**, and every one is the new `row-span` column: the
+> PER DOC header, its three data rows, and 5 legend lines. **Every pre-existing number is
+> unchanged** (62/25/16, 2104/99/0, 48/9/19, all caps and lengths). This is unavoidable: the
+> playbook requires `row_spanning` reported for **both** corpus versions precisely so v1's 26/48
+> demonstrates the metric can fail, and a metric printed only on v2 would have no shown
+> discriminating power. The D3 verification plan asked for 0 diff lines on this script; that and
+> the anti-tautology requirement are mutually exclusive, and the metric won.
+
+**The hard assert that drove the design passes in the real harness, not in simulation.**
+`evalset.verify_expected()` runs clean against a **v2** `docs` dict for frozen10 (39 pairs),
+heldout (48), test (34) and all-121. And the stronger check: the set of factsheet section numbers
+reachable from some `ref` is **identical in v1 and v2** — the same 43 numbers,
+`[1,2,3,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,28,30,31,32,34,35,37,38,39,40,45,46,47,48,49,50,51,52,53,54]`.
+Nothing was lost by the rebuild and nothing was invented.
+
+**Nothing dropped by the splitter.** Reconstruction check, the same one D2 ran: every 50-char
+window of every row body survives the sub-chunk split (**0 rows with a gap**), and **0** in-region
+source lines fail to appear in some row (i.e. the furniture filter deleted no provisions text).
+
+**`audit_corpus.py --corpus=v2` still exits 1, on TWO rows now, not one.** The Constitution's 99
+`general` (D4's) **and** the factsheet's `packed 16 <= 0` (re-scoped above, D6's to resolve). The
+plan predicted the Constitution alone; the factsheet `packed` FAIL is the visible, deliberate
+consequence of not tuning `V2_MAX_PACKED`. Nothing should expect exit 0 until D6.
+
 ### Next session starts here
 
-**D3 — the Factsheet S/N table.** One table row = one `Section N`; exclude the cover page, the
-Arrangement block and the PLAC boilerplate/footer from retrieval. Target: `general` ≤1%,
-`packed` **0** (from 9 uncitable / **19 packed** today). Its 19 packed refs are **disordered**
-(`Section 51,40`, `Section 50,45,54`) — that is `recursive_split(500/50)` cutting the S/N table
-mid-row, a different defect from the Act's consecutive-run packing, so the Act's fix does not
-transfer. Then **D4** (Constitution Arrangement exclusion — keep `CONST_SIZE = 400`, keep
-`_is_toc_fragment` as a **lint assertion**, do not delete it), **D5** (refusal floor — mandatory),
-**D6** (re-baseline).
+**D4 — the Constitution Arrangement exclusion.** Keep `constitution_aware_split`. Keep
+**`CONST_SIZE = 400`**. Keep `_is_toc_fragment` and demote it to a **lint assertion** — after
+exclusion it should fire ≈0 times; **assert the count, do not delete the heuristic** (it is the
+Fix-B widening that made `MANUAL_FLAGS == []`, and deleting it silently restores the Q10 s.39
+misattribution class). Finding 2 already measured the target: all 99 uncitable Constitution chunks
+are Arrangement material and **zero substantive body text is uncitable**, so exclusion takes
+`general` 4.7% → ≈0 without touching `CONST_SIZE`. Record explicitly that the 2104 → ~500
+section-unit re-extract is **deferred to Phase E**, and why. Then **D5** (refusal floor —
+mandatory) and **D6** (re-baseline).
 
 Reminders that still bind: `CORPUS_VERSION` stays `"v1"` until D6 · `ACT_KNOWN_ABSENT = {38, 40}`
 stays until D6 **deletes** it · `MIN_SCORE` may move **down** in D5, never up · do not re-derive any
-manifest in `data/processed/` and do not re-run the OCR · `ACT_V2_SIZE` is **not** re-tuned before
-D5 · `audit_corpus.py --corpus=v2` exits **1** until D3/D4 land, by design.
+manifest in `data/processed/` and do not re-run the OCR · `ACT_V2_SIZE` and `FACT_V2_SIZE` are
+**not** re-tuned before D5 · `audit_corpus.py --corpus=v2` exits **1** until D4 **and** D6's
+factsheet gate re-scope land, by design.

@@ -64,9 +64,12 @@ from rag import (  # noqa: E402
     ACT_V2_SIZE,
     CONST_SIZE,
     CORPUS_VERSION,
+    FACT_ROW_RE,
     FACT_SIZE,
+    FACT_V2_SIZE,
     act_ref,
     build_corpus,
+    fact_v2_rows,
 )
 
 
@@ -74,14 +77,15 @@ from rag import (  # noqa: E402
 # the cap was cut by length rather than by structure, which in v2 is only
 # legitimate for a subsection split.
 #
-# The Act's cap is VERSION-DEPENDENT: v1 splits at ACT_SIZE (800), v2 at
-# ACT_V2_SIZE (1100). Auditing v2 against v1's cap would report most v2 chunks
-# as OVER cap; auditing v1 against v2's cap would silently widen the tripwire.
-# The other two docs are unaffected -- D3/D4 have not happened yet.
+# The Act's and the Factsheet's caps are VERSION-DEPENDENT: v1 splits the Act at
+# ACT_SIZE (800) and the factsheet at FACT_SIZE (500); v2 splits them at
+# ACT_V2_SIZE (1100) and FACT_V2_SIZE (900). Auditing v2 against v1's cap would
+# report most v2 chunks as OVER cap; auditing v1 against v2's cap would silently
+# widen the tripwire. The Constitution is unaffected -- D4 has not happened yet.
 def size_caps(version: str) -> dict:
     return {"act2018": ACT_SIZE if version == "v1" else ACT_V2_SIZE,
             "constitution1999": CONST_SIZE,
-            "factsheet2020": FACT_SIZE}
+            "factsheet2020": FACT_SIZE if version == "v1" else FACT_V2_SIZE}
 
 
 # The Act has 58 clauses. Source: the Arrangement of Sections in
@@ -154,6 +158,26 @@ V2_MAX_GENERAL_PCT = 1.0   # uncitable chunks, per doc
 V2_MAX_PACKED = 0          # packed refs must be gone: one clause, one chunk
 
 
+# The factsheet's REAL defect metric, added at D3. `packed` cannot express it:
+# a v2 factsheet ref legitimately carries several numbers, because the table row
+# it is cut from genuinely discusses several sections and eight of those numbers
+# exist nowhere else in the document (see rag._fact_chunks_v2). So `packed`
+# stays reported and unhidden as the count it always was, and THIS is the number
+# that says whether the S/N table was cut on its own rows.
+#
+# It is measured from the chunk TEXT, never from construction. "We emit one row
+# per chunk, therefore 0" would restate the code and gate nothing; re-scanning
+# the emitted text for a row-start line can actually fail. Its discriminating
+# power is demonstrated, not assumed: v1 scores 26 of 48 factsheet chunks.
+#
+# v2's header line ("Section 45 Funds of the Commission") carries no leading S/N
+# numeral, so FACT_ROW_RE cannot match it -- verified, not assumed. If a future
+# header shape ever did match, the fix is the header, not an exemption here.
+def row_spanning(chunks: list) -> int:
+    """Chunks whose BODY still contains an S/N row-start line: cut across rows."""
+    return sum(1 for c in chunks if FACT_ROW_RE.search(c.text))
+
+
 def audit_doc(doc_id: str, chunks: list, caps: dict) -> dict:
     cap = caps[doc_id]
     lens = sorted(len(c.text) for c in chunks)
@@ -168,6 +192,7 @@ def audit_doc(doc_id: str, chunks: list, caps: dict) -> dict:
         "general_pct": 100.0 * len(general) / n if n else 0.0,
         "packed": len(packed),
         "packed_pct": 100.0 * len(packed) / n if n else 0.0,
+        "row_spanning": row_spanning(chunks),
         "len_min": lens[0] if lens else 0,
         "len_med": lens[n // 2] if lens else 0,
         "len_max": lens[-1] if lens else 0,
@@ -239,6 +264,30 @@ def act_manifest_flags() -> dict:
     }
 
 
+def fact_row_flags() -> dict:
+    """Degradation flags recorded by the D3 row parse, read from rag.
+
+    v2 only, and the exact twin of act_manifest_flags(): _fact_chunks_v2() does
+    not inspect `flags`, so a row whose title failed to parse would still be
+    promoted to a fully-citable chunk with no signal anywhere. The audit reads
+    fact_v2_rows() -- the SAME function the chunker calls -- so the report and
+    the corpus cannot drift into describing different parses.
+
+    The S/N sequence is reported for the same reason the Act's `located 58/58`
+    is: a silently truncated table would otherwise look like a clean small one.
+    """
+    rows = fact_v2_rows()
+    sns = [r["sn"] for r in rows]
+    return {
+        "n": len(rows),
+        "sn_first": sns[0] if sns else None,
+        "sn_last": sns[-1] if sns else None,
+        "sn_contiguous": sns == list(range(1, len(sns) + 1)),
+        "flagged": [(r["sn"], r["flags"]) for r in rows if r["flags"]],
+        "multi_number_refs": sum(1 for r in rows if r["xrefs"]),
+    }
+
+
 def act_ref_validator(chunks: list) -> dict:
     """Cross-check the parser's refs against act_ref()'s heading-shape inference.
 
@@ -304,19 +353,25 @@ def main(argv: list[str] | None = None) -> int:
     stats = {d: audit_doc(d, c, caps) for d, c in docs.items()}
 
     print("\n== PER DOC ==")
-    print("  %-18s %-6s %-14s %-14s %-22s" % (
-        "doc", "chunks", "uncitable", "packed refs", "length min/med/max"))
+    print("  %-18s %-6s %-14s %-14s %-9s %-22s" % (
+        "doc", "chunks", "uncitable", "packed refs", "row-span",
+        "length min/med/max"))
     for d in ("act2018", "constitution1999", "factsheet2020"):
         s = stats[d]
-        print("  %-18s %-6d %-14s %-14s %d/%d/%d (cap %d)" % (
+        print("  %-18s %-6d %-14s %-14s %-9d %d/%d/%d (cap %d)" % (
             d, s["n"], "%d (%.1f%%)" % (s["general"], s["general_pct"]),
-            "%d (%.1f%%)" % (s["packed"], s["packed_pct"]),
+            "%d (%.1f%%)" % (s["packed"], s["packed_pct"]), s["row_spanning"],
             s["len_min"], s["len_med"], s["len_max"], s["size_cap"]))
     print("  uncitable   = ref==\"general\": retrievable, but no legal claim")
     print("                may be cited from it under the project invariant.")
     print("  packed refs = one chunk answering >1 expected number (`cl. 16,17`).")
     print("                These inflate plain recall; see")
     print("                evalset.strict_covered and recall_strict.")
+    print("  row-span    = chunks whose TEXT still holds a factsheet S/N")
+    print("                row-start line, i.e. cut ACROSS table rows. Act and")
+    print("                Constitution score 0 on it; the factsheet is what it")
+    print("                measures, and on v2 it -- not `packed` -- is the")
+    print("                factsheet's real defect count. Added at D3.")
 
     print("\n== LENGTH HISTOGRAMS (vs size cap) ==")
     for d in ("act2018", "constitution1999", "factsheet2020"):
@@ -380,10 +435,39 @@ def main(argv: list[str] | None = None) -> int:
     print("    ^ the pixels do not exist. No stub, no paraphrase, no model")
     print("      knowledge -- record the gap and tell the user to call DRAC.")
 
+    rowfl = fact_row_flags() if version != "v1" else None
+    if rowfl is not None:
+        print("\n== FACTSHEET S/N TABLE (v2 row parse) ==")
+        print("  rows parsed:            %d (S/N %s-%s, contiguous: %s)"
+              % (rowfl["n"], rowfl["sn_first"], rowfl["sn_last"],
+                 "yes" if rowfl["sn_contiguous"] else "NO"))
+        print("  rows carrying a DEGRADATION flag: %s"
+              % (", ".join("%d %s" % (n, f) for n, f in rowfl["flagged"])
+                 or "none"))
+        print("    ^ _fact_chunks_v2() does not inspect flags, so a row whose")
+        print("      title failed to parse would still become a citable chunk.")
+        print("      Same discipline as the Act manifest's flags above.")
+        print("  rows with a MULTI-NUMBER ref: %d of %d"
+              % (rowfl["multi_number_refs"], rowfl["n"]))
+        print("    ^ NOT a defect, and `packed` is the wrong gate for it. Eight")
+        print("      sections (11,13,15,23,34,35,46,53) are never row anchors --")
+        print("      they exist only as cross-references inside another row's")
+        print("      provisions -- and evalset.verify_expected(), a HARD assert,")
+        print("      needs every one. An anchor-only ref would delete them from")
+        print("      the corpus and crash eval_heldout/eval_phase06/this script.")
+        print("      So the ref carries the anchor PLUS what the row discusses,")
+        print("      and `packed` cannot reach 0 on this document. The metric")
+        print("      that can is `row-span` above (v1 26/48, v2 %d/%d). D6 gates"
+              % (stats["factsheet2020"]["row_spanning"],
+                 stats["factsheet2020"]["n"]))
+        print("      the factsheet on row-span == 0, NOT on packed == 0.")
+
     report = {"corpus_version": version, "docs": stats,
               "act_manifest": cov}
     if val is not None:
         report["act_ref_validator"] = val
+    if rowfl is not None:
+        report["factsheet_rows"] = rowfl
     if json_out:
         Path(json_out).write_text(json.dumps(report, indent=2) + "\n",
                                   encoding="utf-8")
@@ -434,6 +518,16 @@ def main(argv: list[str] | None = None) -> int:
             if not ok:
                 fails.append("%s: %d packed refs, must be %d"
                              % (d, s["packed"], V2_MAX_PACKED))
+            if d == "factsheet2020" and not ok:
+                # Reported, NOT tuned away. D3 measured that packed==0 and
+                # evalset.verify_expected() cannot both hold on this document
+                # (see the FACTSHEET S/N TABLE section above). D6 re-scopes the
+                # factsheet's gate to row-span == 0; D3 leaves the threshold
+                # alone so the collision stays visible in stdout until it does.
+                print("    ^ EXPECTED at D3 and re-scoped, not tuned: see the")
+                print("      FACTSHEET S/N TABLE section above. D6 gates this")
+                print("      doc on row-span == %d, which it already meets."
+                      % s["row_spanning"])
         unreached = cov["missing_recoverable"]
         print("  act clauses citable or in the gap manifest: %s"
               % ("PASS" if not unreached else

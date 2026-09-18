@@ -64,6 +64,17 @@ FACT_OVERLAP = 50
 # nothing. D5 measures; D2 uses the number as given.
 ACT_V2_SIZE = 1100
 
+# v2 Factsheet only. Same discipline as ACT_V2_SIZE: FACT_SIZE/FACT_OVERLAP are
+# the byte-identical v1 path and must not move. 900 is a CAP, not a target --
+# v2 cuts on the S/N table's rows, so 22 of 27 rows emit one chunk each and the
+# number only decides how the five long rows sub-split. Chosen from the measured
+# sweep (700 -> 39 chunks, 900 -> 32, 1200 -> 28, 1800 -> 27, all with 0 over
+# cap): 900 keeps the longest rows (row 20 / Section 32 is 1,491 chars) from
+# dominating an index of 27 mostly-short ones without cutting the median row at
+# all. Like ACT_V2_SIZE it is NOT tuned against the refusal floor -- D5
+# re-derives MIN_SCORE and owns that trade.
+FACT_V2_SIZE = 900
+
 # National helplines -- ALWAYS shown on refusal (spec requirement).
 HELPLINE_TOLLFREE = "08000-3000-100"
 HELPLINE_WHATSAPP = "08000-3000-10"
@@ -107,6 +118,29 @@ SECTION_RANGE_RE = re.compile(
     r"[Ss]ections?\s+(\d{1,2})\s*[-–]\s*(\d{1,2})"
 )
 SECTION_ANY_RE = re.compile(r"[Ss]ection\s+(\d{1,2})")
+
+# ---- Factsheet S/N table (v2 only; see fact_v2_rows). --------------------
+# The PLAC factsheet is one three-column table -- S/N | Highlighted Sections |
+# Provisions -- and these three regexes are the only structure it has.
+#
+# FACT_ROW_RE is the S/N anchor line, on its own line by itself. BOTH the
+# dotted and undotted forms occur in the source ("1. Section 1" at L34, "2
+# Section 2" at L52), which is why the dot is optional. It doubles as the
+# row_spanning defect metric in scripts/audit_corpus.py: a chunk whose BODY
+# still contains one of these lines was cut across a row boundary.
+FACT_ROW_RE = re.compile(r"(?m)^\s*(\d{1,2})\.?\s+Section\s+(\d{1,2})\s*$")
+# Page furniture: the "| 4 |" page number, the repeated column header, and the
+# PLAC running footer. Dropped INSIDE rows as well as between them -- rows 5,
+# 15, 22 and 25 each span a page break, so their provisions column is
+# interrupted mid-sentence by all three.
+FACT_FURN_RE = re.compile(
+    r"^\s*(\|\s*\d+\s*\||S/N\s+Highlighted|Policy and Legal Advocacy Centre)")
+# End of the table: the PLAC address block and the About/Supported-by matter.
+FACT_TAIL_RE = re.compile(
+    r"(?m)^\s*(Plot\s+\d|Website:|About PLAC|Supported by:)")
+# The title column is physically narrower than the provisions column, so a
+# title line is short and is not a sentence. Verified correct on all 27 rows.
+FACT_TITLE_MAX = 40
 
 
 def _dedup(nums: list[int]) -> list[int]:
@@ -214,7 +248,18 @@ def _is_toc_fragment(body: str, sec: int | None = None) -> bool:
 
 def fact_ref(chunk: str) -> str:
     """Section ref(s) for a factsheet chunk. Arrangement chunks span
-    sections ('Sections 28-30', S/N rows) -> member-list label."""
+    sections ('Sections 28-30', S/N rows) -> member-list label.
+
+    v1 ONLY, and it stays that way. Do NOT promote this to a v2 validator the
+    way act_ref() was promoted (scripts/audit_corpus.py::act_ref_validator).
+    Under v2's full-row-ref rule every sub-chunk of a row carries the WHOLE
+    row's ref, so a sub-chunk legitimately names sections its own 900 chars do
+    not mention -- disagreement is the designed behaviour, not a defect, and a
+    "validator" built on it would measure the split point and nothing else.
+    That is D2's lesson about act_ref_validator applied before the fact instead
+    of after. The real v2 defect metric is `row_spanning`, which is measured
+    from the chunk TEXT against FACT_ROW_RE and can genuinely fail.
+    """
     nums: list[int] = []
     for m in SECTION_RANGE_RE.finditer(chunk):
         a, b = int(m.group(1)), int(m.group(2))
@@ -319,6 +364,164 @@ def _act_chunks_v2() -> list[Chunk]:
     return chunks
 
 
+def fact_v2_rows() -> list[dict]:
+    """Parse the PLAC factsheet's S/N table into one struct per row.
+
+    NO MANIFEST, AND THAT IS DELIBERATE. The Act needed one because its source
+    is a scanned gazette and pymupdf/rapidocr must never reach the slim Render
+    runtime, so a JSON file is the wire format across that process boundary.
+    The factsheet has no such boundary: its source is already a clean TXT in the
+    repo that v1 parses at boot with stdlib, so a manifest here would be a
+    second artifact to keep in sync for no benefit. Symmetry is not a reason.
+    This function and _fact_chunks_v2() are therefore in-process, stdlib `re`.
+
+    The parse is a REGION plus three line classes. The region is [first
+    FACT_ROW_RE match, first FACT_TAIL_RE match after it): everything before is
+    the cover page, the intro preamble and the Arrangement of Sections block,
+    everything after is the PLAC address and About matter -- all excluded from
+    retrieval per the playbook, the factsheet twin of the Constitution TOC trap.
+    Inside the region each row is [its anchor line, the next anchor line), minus
+    FACT_FURN_RE page furniture, split into a short TITLE prefix and a BODY.
+
+    The audit reads the same rows this chunker does (scripts/audit_corpus.py),
+    so the report and the corpus can never drift into describing different
+    parses -- the failure mode act_manifest_flags() exists to prevent on the Act.
+
+    `flags` follows the Act manifest's discipline: TITLE_EMPTY, TITLE_LONG
+    (>4 title lines -- the widest genuine title is 4) and SN_OUT_OF_SEQUENCE are
+    recorded per row and printed by the audit. All 27 are clean today. The point
+    is that a future degraded parse cannot be promoted to fully-citable chunks
+    with no signal anywhere.
+
+    Text handling is v1's exactly -- clean_text(repair_joins(raw)) -- because
+    D3 replaces the SPLITTER, not the text. Measured: that pipeline changes one
+    token in the whole document ("Free Healthcare" -> "Free Health care") and
+    leaves all 430 lines and all 27 anchors intact.
+    """
+    raw = FACT_PATH.read_text(encoding="utf-8", errors="replace")
+    text = clean_text(repair_joins(raw))
+    anchors = list(FACT_ROW_RE.finditer(text))
+    if not anchors:
+        raise ValueError(
+            "factsheet S/N table not found in %s -- FACT_ROW_RE matched "
+            "nothing, so the source shape has changed" % FACT_PATH)
+    tail = FACT_TAIL_RE.search(text, anchors[-1].end())
+    region_end = tail.start() if tail else len(text)
+
+    rows: list[dict] = []
+    for i, m in enumerate(anchors):
+        stop = anchors[i + 1].start() if i + 1 < len(anchors) else region_end
+        lines = [ln for ln in text[m.end():stop].splitlines()
+                 if not FACT_FURN_RE.match(ln)]
+        title_parts: list[str] = []
+        k = 0
+        while k < len(lines):
+            s = lines[k].strip()
+            if len(s) > FACT_TITLE_MAX or s.endswith("."):
+                break
+            if s:
+                title_parts.append(s)
+            k += 1
+        title = " ".join(title_parts)
+        body = "\n".join(lines[k:]).strip()
+        sn, sec = int(m.group(1)), int(m.group(2))
+
+        # Sections this row DISCUSSES but is not anchored on. Same two regexes
+        # v1's fact_ref() uses, so v2 changes which TEXT a number is attached
+        # to, never the vocabulary for spotting one. Confining the scan to the
+        # row body is what makes it safe: row 17's provisions end on a truncated
+        # "- section" with its number lost to the page cut, and only the row
+        # boundary stops that from swallowing the next row's "18".
+        nums: list[int] = []
+        for mm in SECTION_RANGE_RE.finditer(body):
+            a, b = int(mm.group(1)), int(mm.group(2))
+            nums.extend(range(a, b + 1) if 0 < b - a <= 5 else (a, b))
+        nums.extend(int(n) for n in SECTION_ANY_RE.findall(body))
+
+        flags: list[str] = []
+        if not title:
+            flags.append("TITLE_EMPTY")
+        if len(title_parts) > 4:
+            flags.append("TITLE_LONG")
+        if sn != i + 1:
+            flags.append("SN_OUT_OF_SEQUENCE")
+
+        rows.append({
+            "sn": sn,
+            "sec": sec,
+            "title": title,
+            "text": body,
+            "xrefs": sorted(set(nums) - {sec}),
+            "flags": flags,
+        })
+    return rows
+
+
+def _fact_chunks_v2() -> list[Chunk]:
+    """v2 Factsheet chunks: one table row per chunk, ref from the table itself.
+
+    v1 ran recursive_split(fact_text, 500, 50) over the whole document, which
+    cuts a three-column table on a character budget that knows nothing about
+    rows -- hence 9 uncitable chunks and 19 packed refs, and hence those packed
+    refs being DISORDERED (`Section 51,40`, `Section 50,45,54`) rather than
+    consecutive runs like the Act's. That disorder is the tell: this was table
+    damage, not over-run, so D2's Act fix does not transfer even though its
+    idiom does.
+
+    THE REF CARRIES THE ROW'S ANCHOR PLUS THE SECTIONS THAT ROW DISCUSSES, and
+    that was forced by measurement rather than chosen. Eight sections -- 11, 13,
+    15, 23, 34, 35, 46, 53 -- are never row anchors; they exist only as
+    cross-references inside another row's provisions ("...may also accept a gift
+    of land, money or property... - section 46"). frozen10/Q6 expects 11, and
+    frozen10 may not be edited under any circumstances; heldout and test expect
+    the other seven. evalset.verify_expected() is a HARD assert, not a metric,
+    so an anchor-only ref would drop those eight numbers out of the corpus and
+    crash eval_heldout.py, eval_phase06.py and audit_corpus.py outright.
+    Measured both ways: anchor-only leaves a coverage gap of exactly those
+    eight; anchor + cross-references leaves none.
+
+    The consequence is that `packed` cannot reach 0 on this document, and D3
+    RE-SCOPES that metric rather than tuning it away. A multi-number factsheet
+    ref is a declared non-defect: it is the table's own content. The real defect
+    is a chunk cut ACROSS rows, which is measured from the chunk text as
+    `row_spanning` in scripts/audit_corpus.py -- v1 scores 26 of 48 on it, v2
+    scores 0. See the D6 warning in docs/phases/12_corpus_v2.md.
+
+    ANCHOR FIRST, cross-references ascending. v1's refs came out in whatever
+    order recursive_split's cut happened to expose the numbers, which is what
+    made `Section 51,40` possible; a v2 ref always leads with the section the
+    row is actually about.
+
+    EVERY sub-chunk carries the FULL row ref and the row header, exactly as
+    every Act v2 sub-chunk carries its clause number. The alternative --
+    per-piece cross-references -- was considered and rejected: it makes
+    coverage depend on where recursive_split happens to cut, so a cut through
+    the literal string "section 46" would silently drop a frozen expectation.
+    The header is budgeted out of the cap (FACT_V2_SIZE - len(header) - 1, floor
+    100), the same idiom as _act_chunks_v2() and constitution_aware_split._emit,
+    so no chunk exceeds FACT_V2_SIZE.
+
+    `path` records HOW the ref was obtained: "table", against v1's "" (inferred
+    from prose) and the Act's "manifest".
+    """
+    chunks: list[Chunk] = []
+    for row in fact_v2_rows():
+        ref = "Section %s" % ",".join(
+            str(n) for n in [row["sec"]] + row["xrefs"])
+        header = "Section %d %s" % (row["sec"], row["title"])
+        body = row["text"]
+        if len(header) + 1 + len(body) <= FACT_V2_SIZE:
+            pieces = [body]
+        else:
+            budget = max(FACT_V2_SIZE - len(header) - 1, 100)
+            pieces = recursive_split(body, size=budget)
+        chunks.extend(
+            Chunk("factsheet2020", ref, "%s\n%s" % (header, p), "table")
+            for p in pieces
+        )
+    return chunks
+
+
 def build_corpus(version: str | None = None) -> dict[str, list[Chunk]]:
     """Load + chunk all three docs. Raw files are never modified.
 
@@ -326,12 +529,12 @@ def build_corpus(version: str | None = None) -> dict[str, list[Chunk]]:
     no-arg caller is unchanged. The default no-arg path is v1 and is
     byte-identical to every published baseline.
 
-    "v2" is a PARTIAL-v2 state on purpose: the Act is v2, the Constitution and
-    the Factsheet are still v1, because D3 (Factsheet S/N table) and D4
-    (Constitution Arrangement exclusion) have not been done yet. It exists so
-    D2's Act gate is measurable now. Their rows in audit_corpus.py --corpus=v2
-    therefore still read v1 shape (99 general / 9 general + 19 packed) and that
-    is correct at this step. See docs/phases/12_corpus_v2.md D3/D4.
+    "v2" is a PARTIAL-v2 state on purpose: the Act (D2) and the Factsheet (D3)
+    are v2, the Constitution is still v1, because D4 (Arrangement exclusion) has
+    not been done yet. It exists so each doc's gate is measurable as it lands.
+    The Constitution's row in audit_corpus.py --corpus=v2 therefore still reads
+    v1 shape (99 general, 4.7%) and that is correct at this step, so the script
+    still exits 1. See docs/phases/12_corpus_v2.md D4.
 
     Deliberately NOT memoized. Insertion order of the returned dict is load-
     bearing -- PerDocRetriever iterates it in order and sorts hits by score
@@ -348,7 +551,8 @@ def build_corpus(version: str | None = None) -> dict[str, list[Chunk]]:
     docs: dict[str, list[Chunk]] = {}
     docs["act2018"] = _act_chunks_v1() if version == "v1" else _act_chunks_v2()
     docs["constitution1999"] = _const_chunks_v1()
-    docs["factsheet2020"] = _fact_chunks_v1()
+    docs["factsheet2020"] = (
+        _fact_chunks_v1() if version == "v1" else _fact_chunks_v2())
     return docs
 
 

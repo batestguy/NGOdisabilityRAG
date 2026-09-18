@@ -1804,3 +1804,106 @@ summary.*
 
 One thing I did myself rather than delegate: the fix. It was four small edits, and the round trip
 would have cost more than the work.
+
+## 2026-09-18 (later still) — the target and the hard assert could not both be satisfied
+
+Phase D3 was one line in the playbook: *"One table row = one `Section N`. Target: `general` ≤1% ·
+`packed` 0."* Written by analogy with D2, which had just made packed refs structurally impossible
+on the Act by taking every `ref` from the parser instead of inferring it from text. The analogy
+looked exact. It was not, and the way I found out is the entry.
+
+### Measuring before writing turned a target into a contradiction
+
+Before touching the splitter I parsed the factsheet's S/N table and asked a question the plan had
+not: which section numbers would still be reachable if a row's ref carried only its own anchor?
+
+Eight would not. Sections **11, 13, 15, 23, 34, 35, 46, 53** are never row anchors anywhere in the
+document. They exist only as cross-references inside another row's provisions — *"…the Commission
+may also accept a gift of land, money or property… - section 46"* lives inside the row headed
+`Section 45`. There is no row headed `Section 46`, and there never will be, because PLAC did not
+write one.
+
+`evalset.verify_expected()` is a **hard assert**, not a metric: *"an expected number that no chunk
+carries is a ground-truth bug."* Those eight numbers are expected by **frozen10/Q6** (section 11),
+by five held-out questions and by four test questions. An anchor-only ref would have deleted them
+from the corpus and crashed `eval_heldout.py`, `eval_phase06.py` and `audit_corpus.py` — not
+degraded a score, *crashed*.
+
+So `packed 0` and `verify_expected()` could not both hold. The only routes to `packed 0` were
+editing **frozen10**, which this repo forbids outright, or deleting held-out and test expectations.
+Both are the same act: moving the yardstick until the number passes.
+
+### The lesson is D2's, arriving one step earlier
+
+D2 ended by talking a headline number *down*: `act_ref()` agreed with the parser 65/65, and the
+review established the two shared an upstream, so the 100% was close to a tautology. The playbook
+gained a boxed instruction telling D6 to re-scope the check before asserting on it.
+
+This is the same failure one stage earlier in its life. D2's number was wrong *after* it was
+measured; D3's target was wrong *before* anything was written. **A target authored by analogy, by
+someone who had not yet looked at the document, is a hypothesis — and the first thing to do with it
+is try to falsify it.** The cost of finding out during implementation instead of during planning is
+one session's redesign. The cost of finding out during D6, when the gate is asserted and
+`CORPUS_VERSION` flips to v2, would have been either a broken gate or an edited frozen set.
+
+### Re-scoping is only honest if the old metric stays visible
+
+The tempting fix was to set `V2_MAX_PACKED` per-doc, exempt the factsheet, and ship green. I did
+not, and the reason is that a threshold quietly widened to fit a measurement reads, three commits
+later, exactly like a threshold that was always right.
+
+Instead: `packed` stays printed, unchanged and unhidden; `V2_MAX_PACKED` stays 0; the v2 gate still
+prints `factsheet2020 packed refs 16 <= 0: FAIL` — with the reason printed directly underneath, and
+the resolution assigned to D6 in the playbook. The script exits 1 on two rows now instead of one.
+**Exiting 1 for a reason that is written down beats exiting 0 for a reason that is not.**
+
+### A replacement metric has to be able to fail
+
+The real defect was never the ref shape. `recursive_split(fact_text, 500, 50)` cuts a three-column
+table on a character budget that knows nothing about rows — which is why v1's packed refs came out
+**disordered** (`Section 51,40`, `Section 50,45,54`) rather than as consecutive runs like the Act's.
+That disorder was the tell all along: table damage, not over-run.
+
+So the new metric is `row_spanning` — re-scan each **emitted chunk's text** for an S/N row-start
+line. And the design rule I made myself follow: **measure it from the text, never from
+construction.** "We emit one chunk per row, therefore 0" would have restated the code, and a metric
+that cannot fail is a comment with a number attached.
+
+Then the part that actually earns it: **v1 must score above zero**, or the metric has no shown
+discriminating power. It scores **26 of 48**. v2 scores **0 of 32**. That comparison is only
+available because the metric is printed for *both* corpus versions — which cost me the
+byte-identical v1 stdout the session plan had asked for. I took the trade and disclosed it: 13 diff
+lines, all of them the new column, every pre-existing number unchanged, `corpus_sha256` and the
+`eval_phase06` digest both still pinned. A number nobody can compare against anything is worth less
+than a re-baselined stdout.
+
+One smaller thing in the same spirit: I checked, rather than assumed, that a v2 chunk's own header
+line (`Section 45 Funds of the Commission`) does not match the row-start regex. If it had, the
+metric would have counted every chunk it emitted and reported a disaster — or, worse, someone would
+have special-cased the count and the metric would have been measuring an exemption.
+
+### Not building the manifest was a decision, not an omission
+
+D2's clause manifest exists for one architectural reason: `pymupdf` and `rapidocr` must never reach
+`requirements.txt`, so a JSON file is the wire format across that process boundary. The factsheet
+has no such boundary — its source is a clean TXT in the repo that v1 already parses at boot with
+stdlib. Building one anyway, "for symmetry with D2", would have added a second artifact that must
+be kept in sync with the parser forever, in exchange for nothing.
+
+Copying an idiom is cheap and usually right. Copying the *mechanism that made the idiom necessary*,
+after the reason for it has gone, is how a codebase accretes ceremony. The idiom I did copy — refs
+from structure, flags on a degraded parse, headers budgeted out of the cap, `path` recording how a
+ref was obtained — carried over intact.
+
+### Predicted 13, measured 16, changed nothing
+
+The plan estimated the packed count at 13. It came out 16. The gap is explainable — 13 counts
+*rows* under a slightly wider cross-reference regex; 16 counts *chunks*, because five of the eleven
+multi-number rows exceed the cap and emit two each. I reused exactly the two regexes v1's
+`fact_ref()` already uses, so v2 changes which text a number is attached to and never the vocabulary
+for spotting one.
+
+The temptation was mild and worth naming anyway: widening the regex would have made the measured
+number match the predicted one. It would also have made sections 4, 5, 26 and 27 newly citable off
+the back of a change made to hit a prediction. **Reporting 16 and explaining it costs one
+paragraph. Reporting 13 by construction costs the ability to trust any number in the file.**
