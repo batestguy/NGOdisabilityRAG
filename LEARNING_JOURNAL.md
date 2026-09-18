@@ -1618,3 +1618,126 @@ whose own rule is "progress must survive the session." Committed first, before a
 The chat stack then shipped: PR #12 merged, `main` `bb6f931` → `6b10f62`, and Render auto-deployed
 the multi-turn chatbot to real users for the first time. That one I did not decide alone; it is
 outward-facing and hard to unwind, so it went to the owner at the merge button.
+
+## 2026-09-17 (later still) — three wrong answers that looked right, and one wrong ruler
+
+D2's body OCR and clause locator. The headline is easy: **58/58 clauses located on both required
+anchors, zero `TITLE_WEAK`, zero `NUMERAL_MISSING`, no title authored**, and the gazette
+**recovers clause 38's opening** — *"formulate and implement policies"*, the string Finding 1
+proved `grep` cannot find anywhere in v1. The lesson is not the headline.
+
+### The parser was wrong three times, and every time it returned a plausible number
+
+Not one of the three failures raised an exception. Each produced a confident, well-formed,
+wrong answer:
+
+1. **16 of 58.** I split the note column from the body on the widest horizontal gap. That
+   reintroduced, by accident, the exact verso/recto asymmetry the design was written to avoid —
+   the recto gap is ~418 px and the rule fired, the verso gap is ~154 px and it did not. Verso
+   notes stayed in the body, `rows()` welded them onto the body row, and the text became
+   `"Accessibility 5. Road side-walks…"`, which no numeral regex anchored at the start can match.
+   **Clauses 5–8, 13–15, 21–27 and 32–34 were invisible for that reason alone.** The design note
+   warning about hardcoding the side was *in the file I was editing*. Avoiding a trap by name is
+   not the same as avoiding it.
+2. **Outliers.** Taking the body's extent as min/max over wide lines is fine until one OCR box
+   merges a marginal note into a body line. On p11 exactly one did, and it swallowed all 13 notes
+   on the page. On p13 the margin landed 3 px wrong and clipped `"Functions of"` and
+   `"Commission."` into the body — **clause 38's own title**, on the one page this entire phase
+   exists for.
+3. **`"Participation"`.** `FURNITURE_RE` had `PART\s*[IVX]` under a global `IGNORECASE`, so
+   `"Parti"` matched. The word was deleted as a Part heading, clause 30 was left matching on
+   `"in politics."` alone, scored 0.61, and came out `TITLE_WEAK`. A flag firing correctly on a
+   defect **I had introduced two functions upstream.**
+
+What saved all three was the same thing: flags that say *degraded* instead of silently accepting,
+and a count I refused to round off. `TITLE_WEAK: [28, 29, 30, 31, 38]` is not noise — it is four
+consecutive clauses on one page plus the one clause that matters most, which is a *shape*, and
+shapes point at causes. Had the locator simply accepted a one-anchor match, all three bugs would
+have shipped as 58/58.
+
+### Then the ruler itself was wrong
+
+The cross-check is the part of this phase designed to be falsifiable: the playbook wrote its
+expected disagreements before the parser existed. My first run reported that only **7 of 58**
+clauses agreed with v1.
+
+That is not a finding, it is a broken instrument, and the tell was that it disagreed with
+*everything* rather than with the predicted set. Both editions are OCR output with **independent**
+character noise — `Reforim` for `Reform`, `IVheel` for `Wheel` — and at a 40-character shingle a
+single bad character destroys every shingle spanning it. The measure was describing OCR noise.
+
+So I calibrated it against clauses whose answer was **already established by other means**: cl.40's
+body is known present in v1, cl.37/38 known damaged. k=10 separates them 0.90 vs 0.50/0.61; k≥18
+does not (0.81 vs 0.32/0.51). Calibrating a measure on cases with independently known answers is
+legitimate; picking the k that makes the result look best would not be, and those are separated by
+nothing but discipline about which order you do them in.
+
+I also wrote a second measure — local alignment — to adjudicate the disputed clauses, and
+**discarded it**: it scored cl.40 at 0.18 where the calibrated measure says 0.90 and Finding 1 says
+present. It was broken. Using an unvalidated yardstick to settle a validated one is how a wrong
+result gets confirmed rather than caught, and the temptation was real, because it would have let me
+declare four awkward clauses resolved.
+
+### The finding that came out of refusing to round
+
+Four clauses disagreed that the playbook had not predicted. Its rule is that these are **parser
+bugs until shown otherwise**, which is the rule that did the work. Three (20/27/44) turned out to be
+OCR divergence — distinctive probes resolve in v1 — and are **not** claimed as recoveries.
+
+The fourth is real. **Clause 53 is truncated in v1**, the same failure class as clause 38:
+*"awarded against the Commission"* is absent outright, and v1's own text reads
+`53. | judgment debt. | shall bepaidfrom theFund of theCommission.` — the marginal note spliced
+into the body, the sentence cut. Decided on **substring presence, not a similarity ratio**, because
+a ratio is exactly what was untrustworthy an hour earlier.
+
+The adjudications live in a dict kept **separate** from the predictions. A prediction written in
+advance and an explanation reached afterwards are different kinds of evidence, and a file that
+merges them is a file that will eventually be fitted to its own output.
+
+### A destructive command that was one flag away
+
+`ocr_gazette.py --pages=1-27` was the obvious next command, and it would have parsed 27 body pages
+as Arrangement entries and written the result **over the verified 58-entry manifest** — the file
+`HANDOFF.md` says in bold not to re-derive. It would not have errored. It would have produced a
+plausible manifest.
+
+Two guards now: `--ocr-only`, and a refusal to replace a **clean** manifest with a dirty parse.
+The flag is the convention; the refusal is the guarantee. This is the second live destructive path
+found in this phase after `ocr_local.py`'s unguarded `main()`, and both had the same shape — a
+dev script that writes an authoritative artifact as a side effect of doing something else.
+
+## 2026-09-18 — the doc pass had not survived the session, and a line number had moved
+
+Docs only, zero code, zero quota. The point of this entry is small and worth having anyway.
+
+**The 2026-09-17 session-close pass was never committed.** Four modified files — the `HANDOFF.md`
+banner, `12_corpus_v2.md`'s results and *"next session starts here"*, the journal entry directly
+above this one, `STATUS.md` — sat in the working tree while every line of D2's actual *code* was
+committed. This repo's own rule is that progress must survive the session, and the exact thing that
+does not survive a `git checkout` is the part explaining what the commits mean. It is the second
+time in this phase: 2026-09-17's 740-line orphaned doc pass was committed first for the same reason.
+
+**Then: verify before committing, not after.** Everything checked out — `act2018_v2_clauses.json`
+really does hold 58 clauses with 0 flagged, both git guards really do re-run empty, and
+`_act_chunks_v2()` really is still absent from `src/rag.py`, so *"next"* is next rather than
+half-done. But two references had rotted:
+
+1. **`ACT_KNOWN_ABSENT` is at `scripts/audit_corpus.py:90`, not `:80`.** D1 added a six-line comment
+   block above it — a comment *this phase wrote*, explaining why the constant must be deleted rather
+   than emptied — and every doc pointing at the constant kept citing the pre-D1 line. Four
+   forward-looking references, all wrong, all created by our own correct edit. That is the failure
+   mode the 2026-09-17 reviewer caught twice already (`bench_phase01.py:159,251,253`, the missing
+   14th call site); it does not need a wrong *reading* to occur, only a file that moved underneath a
+   pointer. Corrected with the old number kept in a dated note.
+   **The journal was deliberately left alone.** `:80` was true on the day those entries were
+   written. A journal is a log, not a pointer — back-editing it to stay accurate is how the record
+   of *what we believed when* gets destroyed. Pointers get corrected; history gets annotated.
+2. **A piece of housekeeping had resolved itself and nobody checked.** The 0-byte
+   `D:NGORAG_review_judge.diff` had been carried as an open item since Phase 06 — "deletion
+   permission-blocked, needs removing by hand" — through every handoff since. It is gone.
+   Struck through as RESOLVED rather than deleted, so the next reader can see the item existed and
+   was closed, not wonder whether it was ever real.
+
+The generalisation, if there is one: a stale *open* item and a stale *line number* are the same
+defect. Both are a claim about the present tense that was only ever verified in the past, and
+neither announces itself — the docs read perfectly fluently with both errors in place.

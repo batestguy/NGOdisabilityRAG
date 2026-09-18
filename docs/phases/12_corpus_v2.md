@@ -87,7 +87,8 @@ no VLM can recover pixels that were never captured"* — is **half right and who
 
 **This retires, by name:**
 
-- `ACT_KNOWN_ABSENT = {38, 40}` at **`scripts/audit_corpus.py:80`** — a false constant currently
+- `ACT_KNOWN_ABSENT = {38, 40}` at **`scripts/audit_corpus.py:90`** (was `:80` before D1 added the
+  explanatory comment block above it — corrected 2026-09-18) — a false constant currently
   excusing two clauses from the coverage gate. **Both entries go, for different reasons:** 40 was
   never absent; 38 is absent from v1 but present in the gazette v2 is built from.
 - The matching `LEARNING_JOURNAL.md` 2026-09-13 claim (**only its irrecoverability half** — its
@@ -740,8 +741,98 @@ the 3 front-matter pages, and the script says so; the full 27-page check belongs
 · `bench_phase01` PASS · phase03 16/16+7/7 · phase04 10/10 · phase05 137 · phase09_ops 51 ·
 `import app` clean · both git guards empty.
 
+### Session 2026-09-17 (later) — D2's body OCR + clause locator + cross-check
+
+Zero Gemini quota. No new packages. Both git guards empty at session end; the v1 Act TXT still
+hashes `940657A48C69B4E4…`.
+
+**Body OCR — 27/27 pages**, dpi 200, 340 s, confidence 0.967–0.981, **zero low-confidence lines**.
+Pages 2–4 were seeded from the front-matter checkpoint rather than re-OCRed, so the Arrangement
+bytes in `data/processed/gazette_rapidocr.json` are the exact bytes the gate answered GO on.
+
+**The deferred duplicate check is discharged at full scope.** `detect_duplicate_pages()` over all
+27 pages finds **none** — top adjacent pair **0.219**, against v1's **0.978** outlier. Finding 1's
+"the gazette has no duplicate page" now holds for the whole document, not 3 pages of it.
+`dedupe_pages()` was not run and must not be.
+
+**Two guards added to `ocr_gazette.py`, because the obvious next command was destructive.**
+`--pages=1-27` would have parsed 27 body pages as Arrangement entries and written the result over
+the verified 58-entry manifest. Now `--ocr-only` stops after the checkpoint, and the manifest write
+**refuses to replace a clean manifest with a dirty parse** — the downgrade requires deleting the
+file by hand. `rows()` moved to `ocrlib` for the second caller; the gate was re-run after the move
+and still answers 58/58 with byte-identical manifest output.
+
+#### Clause locator — **58/58, zero `TITLE_WEAK`, zero `NUMERAL_MISSING`**
+
+Every clause anchored on **both** required anchors. Titles came from the Arrangement manifest;
+**none was authored**. Clause text stops at the First Schedule — without that bound,
+`58. Citation.`, a one-sentence clause, absorbed **5,480 characters** of Schedule text.
+
+**Three geometry failures on the way, each of which produced a plausible wrong answer rather than
+an error.** They are recorded because the wrong answers were the convincing kind:
+
+| # | failure | cost |
+|---|---|---|
+| 1 | split columns on the widest horizontal **gap** | reintroduced the verso/recto asymmetry the design existed to avoid — recto gap ~418px fired, verso ~154px did not, so verso notes stayed in the body and `rows()` welded them onto the body row (`"Accessibility 5. Road side-walks…"`), which no numeral regex anchored at the start can match. **First run: 16/58.** |
+| 2 | body extent as **min/max** over wide lines | broke on single outliers. p11: one OCR box merged a note into the body line and swallowed all 13 notes. p13: the margin clipped `"Functions of"` and `"Commission."` — **clause 38's own title** — into the body. |
+| 3 | `FURNITURE_RE` under global `IGNORECASE` | `"Parti"` matches `PART` + `[IVX]`, so **`"Participation"` was deleted as a Part heading**. Clause 30 was left matching on `"in politics."` alone, scored 0.61, came out `TITLE_WEAK`. |
+
+Marginal notes are matched by a **window over consecutive note lines**, not pre-grouped by a y-gap:
+within a wrapped note the gap measures about **−2 px**, but two *different* notes on p13
+(`Allowances of members.` / `Powers of the Council.`) sit **28 px** apart, so any threshold loose
+enough to join a wrapped note also welds neighbouring clause titles together.
+
+#### Cross-check vs v1 — **all three written-in-advance predictions hold**
+
+| clause | predicted | got | coverage |
+|---|---|---|---|
+| 37 | LARGE | LARGE | 0.50 |
+| 38 | LARGE | partial | 0.61 |
+| 40 | agrees | agrees | 0.90 |
+
+**52 of 58 clauses agree.** And the decisive probe: *"formulate and implement policies"* is
+**absent from v1** (as Finding 1 measured by grep) and **present in v2's clause 38**.
+**Clause 38's opening is recovered by the gazette.**
+
+**The yardstick was wrong first, and was fixed before anything was read into it.** At k=40 only
+**7 of 58** clauses could agree at all — both editions are OCR output with *independent* character
+noise, so one bad character destroys every shingle spanning it, and the measure described OCR noise
+rather than the corpus. k=10 was **calibrated against clauses whose answer Finding 1 had already
+settled** (cl.40 known present, cl.37/38 known damaged) and separates them 0.90 vs 0.50/0.61, where
+k≥18 does not (0.81 vs 0.32/0.51). A second, uncalibrated local-alignment measure was written and
+**discarded**: it scored cl.40 at 0.18 against the calibrated 0.90 — it was simply broken, and
+adjudicating a validated measure with an unvalidated one is how a wrong result gets confirmed.
+
+**Four disagreements were not predicted.** Per this playbook they are parser bugs until shown
+otherwise, so they are adjudicated in a dict kept **separate from the predictions** — a prediction
+made in advance and an explanation reached afterwards are different kinds of evidence:
+
+- **cl.53 — a NEW v1 defect, same class as cl.38.** *"awarded against the Commission"* is absent
+  from v1 outright, and v1's own text at `53.` reads
+  `53. | judgment debt. | shall bepaidfrom theFund of theCommission.` — the marginal note spliced
+  in and the body truncated. v2 recovers the full sentence. Decided on **substring presence, not a
+  ratio**. This was not previously known and belongs alongside Findings 1a–1c.
+- **cl.20 / 27 / 44 — OCR divergence, not missing text.** Distinctive probes resolve in v1
+  (`particularlychildren`, `ifaccommodationisbeing`, `gratuity`). Coverage is depressed by dense
+  word-joining garbled independently in both scans. **Not claimed as a recovery.**
+
+#### Verification
+
+`audit_corpus` **byte-identical to baseline (0 diff lines)** · `eval_heldout` 0 · `eval_chat` 0 ·
+`ablate_phase08` 0 · `eval_phase06` still hashes `ce716fb3…5f19` · `bench_phase01` PASS ·
+phase03 16/16+7/7 · phase04 10/10 · phase05 137 · phase09_ops 51 · `import app` clean ·
+`requirements.txt` diff **empty** · v1 Act TXT diff **empty**.
+
 ### Next session starts here
 
-D2's clause locator and the 27-page body OCR, then `_act_chunks_v2()` / `ACT_V2_SIZE`. The
-Arrangement manifest is already on disk at `data/processed/gazette_arrangement.json` — 58 entries,
-`"title_source": "arrangement"`. Do not re-derive it.
+**`_act_chunks_v2()` + `ACT_V2_SIZE = 1100`** — the chunker is the only thing standing between the
+parse and D2's actual exit criteria (`general` ≤1%, `packed` 0, **58/58 citable**). The clause
+manifest is on disk at `data/processed/act2018_v2_clauses.json` (58 entries, one per clause, each
+with `header`, `text`, `flags`, `pages`). **Do not re-derive it, and do not re-run the OCR** —
+`data/processed/gazette_rapidocr.json` holds all 27 pages.
+
+Reminders that still bind: `ACT_V2_SIZE` is a **new** constant and **not tuned in D2** (longer
+chunks lower every cosine — that is D5's recalibration); `ref = "cl. %d" % n` comes from the parser,
+which makes packed refs structurally impossible; `CORPUS_VERSION` stays `"v1"` until D6; and
+`ACT_KNOWN_ABSENT = {38, 40}` stays until D6 **deletes** it — cl.38's body is now demonstrably
+recoverable, but the constant's removal is gated on the v2 corpus actually existing.

@@ -1,6 +1,52 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-17)
+# HANDOFF — start here (60 seconds, updated 2026-09-18)
 
-> **LATEST (2026-09-17): the chat work SHIPPED, and Phase D's gate answers GO.**
+> **LATEST (2026-09-17, later): D2's parser works — 58/58 clauses, and clause 38 is RECOVERED.**
+> Zero Gemini calls spent. Branch **`phase10/corpus-v2`** (unmerged on purpose; Phase D is
+> mid-flight and merging auto-deploys a half-built corpus).
+>
+> **58/58 clauses located on BOTH required anchors** — zero `TITLE_WEAK`, zero `NUMERAL_MISSING`,
+> **no title authored**. Manifest on disk at **`data/processed/act2018_v2_clauses.json`**;
+> all 27 OCRed pages at **`data/processed/gazette_rapidocr.json`**. **Do not re-derive either;
+> do not re-run the OCR.**
+>
+> **The decisive result:** *"formulate and implement policies"* is **absent from v1** (Finding 1
+> proved it by grep) and **present in v2's clause 38**. The gazette recovers clause 38's opening.
+> All three written-in-advance cross-check predictions hold (cl.37 LARGE, cl.38 LARGE, cl.40
+> agrees); 52/58 clauses agree with v1.
+>
+> **NEW: clause 53 is a second v1 truncation**, same class as cl.38 — *"awarded against the
+> Commission"* is absent from v1 and v1 reads `53. | judgment debt. | shall bepaidfrom theFund of
+> theCommission.` (marginal note spliced in, body cut). Decided on substring presence, **not** a
+> ratio. cl.20/27/44 are OCR divergence, **not** recoveries.
+>
+> **Full-scope duplicate check discharged:** all 27 pages, **none** found (top adjacent pair 0.219
+> vs v1's 0.978 outlier). `dedupe_pages()` not run and must not be.
+>
+> **READ THIS BEFORE EDITING THE PARSER.** Three geometry bugs each returned a *plausible* number
+> rather than an error: (1) splitting columns on the widest **gap** reintroduced the verso/recto
+> asymmetry — first run **16/58**; (2) body extent as **min/max** over wide lines broke on one
+> merged OCR box (p11 lost all 13 notes; p13 clipped **cl.38's own title** into the body);
+> (3) `FURNITURE_RE` under global `IGNORECASE` matched **`"Participation"`** as `PART`+`[IVX]` and
+> deleted cl.30's note. The flags are what caught all three — a one-anchor accept would have
+> shipped every one as 58/58.
+>
+> **And the ruler was wrong before the parser was.** The cross-check first said only 7/58 clauses
+> agreed; that was a 40-char shingle measuring independent OCR noise, not the corpus. k=10 is
+> **calibrated against clauses whose answer Finding 1 already settled**. A second, uncalibrated
+> alignment measure scored cl.40 at 0.18 (vs 0.90) and was **discarded, not used**.
+>
+> **`ocr_gazette.py --pages=1-27` was one flag away from destroying the verified Arrangement
+> manifest** (it would have parsed body pages as entries and overwritten it, without erroring).
+> Now guarded by `--ocr-only` **and** a refusal to replace a clean manifest with a dirty parse.
+>
+> **NEXT: `_act_chunks_v2()` + `ACT_V2_SIZE = 1100`** — the only thing between the parse and D2's
+> exit criteria (`general` ≤1%, `packed` 0, 58/58 citable). `ACT_V2_SIZE` is a **new** constant,
+> **not tuned in D2** (that is D5's recalibration). `CORPUS_VERSION` stays `"v1"` until D6, and
+> `ACT_KNOWN_ABSENT = {38, 40}` stays until **D6 deletes** it.
+>
+> ---
+>
+> **Previous (2026-09-17): the chat work SHIPPED, and Phase D's gate answers GO.**
 > Zero Gemini calls spent. Branch **`phase10/corpus-v2`**, off a merged `main`.
 >
 > **Both open owner decisions below are now CLOSED.** Push+PR happened first: PR #12
@@ -167,8 +213,10 @@ about before planning:
 - **G** needs **~42 Gemini calls across 2 days** (40/day budget, two pools). That is an owner
   decision to spend, not something to start unprompted.
 
-Working tree is clean apart from the known stray `D:NGORAG_review_judge.diff` (0 bytes,
-U+F03A in the name, in no commit, deletion permission-blocked — still needs removing by hand).
+~~Working tree is clean apart from the known stray `D:NGORAG_review_judge.diff` (0 bytes,
+U+F03A in the name, in no commit, deletion permission-blocked — still needs removing by hand).~~
+**RESOLVED — verified gone 2026-09-18**: `git status -uall` reports no untracked files and a
+filename glob for `*review_judge*` in the repo root matches nothing. Working tree is clean.
 
 ## PHASE D — START HERE (corpus v2, **`docs/phases/12_corpus_v2.md`**)
 
@@ -229,7 +277,8 @@ The duplicate page **is** real (adjacent-page cosine **0.978 p5–p6** vs a 0.79
    number, wrong source. **D2's Arrangement gate must therefore run on the gazette, whose
    Arrangement pages have not been OCRed yet.**
 
-**Retires by name:** `ACT_KNOWN_ABSENT = {38, 40}` at **`scripts/audit_corpus.py:80`** (deleted,
+**Retires by name:** `ACT_KNOWN_ABSENT = {38, 40}` at **`scripts/audit_corpus.py:90`** (was `:80`
+until D1 added the comment block above it — corrected 2026-09-18) (deleted,
 **not emptied** — in **D6**, once the v2 corpus that recovers cl.38 exists) · `audit_corpus.py`'s
 *"the pixels do not exist"* line · the **irrecoverability half** of the 2026-09-13
 `LEARNING_JOURNAL.md` claim · the old standing fact below.
@@ -369,7 +418,7 @@ Order (owner-confirmed 2026-09-11, all four, under a **runtime-shippable-only** 
   - The duplicate page 5–6 **is** real (adjacent-page cosine 0.978 vs a 0.794 runner-up) and it
     **did** cost a physical page — the one carrying cl.37's tail and cl.38's opening. It did not
     cost cl.40.
-  - **`ACT_KNOWN_ABSENT = {38, 40}` at `scripts/audit_corpus.py:80` is still a false constant** and
+  - **`ACT_KNOWN_ABSENT = {38, 40}` at `scripts/audit_corpus.py:90` is still a false constant** and
     is deleted (not emptied) in **D6** — after the gazette re-OCR that recovers cl.38, not before.
   - **The no-stub / no-paraphrase / no-model-knowledge rule stands regardless** — it governs real
     gaps, and cl.38 was one until the gazette arrived.
@@ -488,6 +537,6 @@ fix). Steps 1 and 2 are DONE (2026-09-13). Phase 08 steps 4/5 are superseded by 
 has a real target — vocab-mismatch is the weakest held-out class at 0.312 — and, for the first
 time, an uncontaminated set to be judged on. Ablate on frozen-10 **and** held-out, always both.
 Nothing is blocked.
-**Housekeeping:** a 0-byte stray file `D:NGORAG_review_judge.diff` (U+F03A in the name, from a
-bad shell redirect) sits untracked in the repo root; deletion was permission-blocked twice, so
-it needs removing by hand. It is in no commit.
+**Housekeeping:** ~~a 0-byte stray file `D:NGORAG_review_judge.diff` (U+F03A in the name, from a
+bad shell redirect) sits untracked in the repo root~~ — **RESOLVED, verified gone 2026-09-18.**
+Nothing outstanding.

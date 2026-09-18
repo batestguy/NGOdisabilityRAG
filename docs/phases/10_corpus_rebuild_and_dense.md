@@ -33,7 +33,7 @@
 > *Federal Republic of Nigeria Official Gazette No. **10**, Vol. 106, 21 January 2019, Act No. 2,
 > pages A97–A122* (M3 guessed "No. 11"), and it has **no duplicate page at all**.
 >
-> Therefore `ACT_KNOWN_ABSENT = {38, 40}` at `scripts/audit_corpus.py:80` is a **false constant**
+> Therefore `ACT_KNOWN_ABSENT = {38, 40}` at `scripts/audit_corpus.py:90` is a **false constant**
 > and is deleted in Phase D — **cl.40 because it was never absent, cl.38 because the gazette
 > recovers it**, and in **D6**, after the re-OCR, not before. The "no stub / no paraphrase / no
 > model knowledge" rule in M3 stays — it is about what to do *if* a gap is ever real, **and cl.38
