@@ -1,6 +1,43 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-18)
 
-> **LATEST (2026-09-17, later): D2's parser works — 58/58 clauses, and clause 38 is RECOVERED.**
+> **LATEST (2026-09-18): D2 is DONE — the Act half of corpus v2 exists and clears its gate.**
+> Zero Gemini calls spent. Branch **`phase10/corpus-v2`** (still unmerged on purpose).
+>
+> **`audit_corpus.py --corpus=v2` on the Act: 65 chunks · `general` 0 (0.0%) · `packed` 0 ·
+> 58/58 citable · 0 over cap.** All three D2 exit criteria met. v1 carried **25 of 62 uncitable
+> and 16 packed** — that class is now **closed on the Act**, and `ref = "cl. %d" % n` from the
+> parser makes packed refs *structurally* impossible rather than merely absent.
+>
+> **The script still exits 1, and that is correct.** The Constitution (99 general) and Factsheet
+> (9 general / 19 packed) rows are **untouched v1 numbers** — D3 and D4 own them. Do not wire
+> anything to expect exit 0 until D4 lands.
+>
+> **`CORPUS_VERSION` is still `"v1"` and the user path CANNOT reach v2.** `build_corpus("v2")` is
+> reachable only via `--corpus=`; `ask()` has no `version=`, `router._retriever` and `app.py` are
+> untouched. Every v1 number still reproduces — `audit_corpus` v1 stdout diffs **0 lines against
+> the pristine stashed code**, `eval_phase06` still hashes `ce716fb3…5f19`, `corpus_sha256` still
+> `25650238…e89a`, both git guards empty.
+>
+> **READ BEFORE TRUSTING THE 100%.** The `act_ref()` validator reports **65/65 agreement** and it
+> is **close to a tautology**: the parser writes `header = "%d. %s" % (n, title)` from the same `n`
+> it builds `ref` from, and `act_ref()` recovers the numeral from that same header. The two differ
+> in *inference*, **not in upstream** — this is NOT the `assert_frozen10_matches_notebook()`
+> discipline it was written up as. **D6 must re-scope it before asserting** (validate against the
+> Arrangement *title* text, or scope the assert to stray-`NN.` and header-drift cases). The limit
+> is now printed next to the number and the script's docstring is amended in place.
+>
+> **A degradation-flag line was added** because `_act_chunks_v2()` does not read `clause["flags"]` —
+> a regenerated manifest with `TITLE_WEAK`/`NUMERAL_MISSING` would chunk silently while D6 deletes
+> `ACT_KNOWN_ABSENT` on its word. Reads `58/58 · missing none · flags none` today.
+>
+> **NEXT: D3 — the Factsheet S/N table** (one row = one `Section N`; drop cover / Arrangement /
+> PLAC boilerplate). Its **19 packed refs are DISORDERED** (`Section 51,40`), i.e.
+> `recursive_split(500/50)` cutting the table mid-row — **a different defect from the Act's, so the
+> Act's fix does not transfer.** Then D4 → D5 → D6.
+>
+> ---
+>
+> **Previous (2026-09-17, later): D2's parser works — 58/58 clauses, and clause 38 is RECOVERED.**
 > Zero Gemini calls spent. Branch **`phase10/corpus-v2`** (unmerged on purpose; Phase D is
 > mid-flight and merging auto-deploys a half-built corpus).
 >

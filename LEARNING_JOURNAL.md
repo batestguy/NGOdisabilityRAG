@@ -1741,3 +1741,66 @@ half-done. But two references had rotted:
 The generalisation, if there is one: a stale *open* item and a stale *line number* are the same
 defect. Both are a claim about the present tense that was only ever verified in the past, and
 neither announces itself — the docs read perfectly fluently with both errors in place.
+
+## 2026-09-18 (later) — a 100% that had to be argued down
+
+D2 finished: `_act_chunks_v2()` landed, and the Act half of corpus v2 clears its gate —
+**65 chunks, 0 uncitable, 0 packed, 58/58 citable**, against v1's 25-of-62 uncitable and 16 packed.
+The uncitable-chunk class has been named in this journal three times (Act cl.19, `CT7.t2`, the
+25/62 measurement). On the Act it is now closed, and closed *structurally*: `ref = "cl. %d" % n`
+comes from the parser, so there is no code path that can emit `cl. 3,4,5`. That is a better kind of
+fix than a passing number, because it cannot regress without someone deleting the mechanism.
+
+The interesting part of the session was not that number.
+
+### The validator was measuring itself
+
+D2 was supposed to end with a cross-check: refs from the gazette Arrangement manifest on one side,
+`act_ref()`'s heading-shape inference on the other, two independent sources that must agree.
+It reported **65/65, 100%**. `audit_corpus.py`'s own docstring described this as *"the same
+discipline as `evalset.assert_frozen10_matches_notebook()`"*.
+
+It is not that discipline, and the difference is total. In the frozen-10 case the notebook and the
+JSON are **authored separately by different hands at different times**, so agreement is real
+evidence. Here: the parser writes `header = "%d. %s" % (n, title)` from the same `n` it builds the
+ref from; `_act_chunks_v2()` prefixes that header to every sub-chunk; `act_ref()` then recovers the
+leading `\d+\.` from that very string. The two sources differ in **inference** — a manifest lookup
+versus a regex — but they **share an upstream**. For a single-clause chunk the check mostly asks
+whether the parser's numeral equals the parser's own field, which is true by construction.
+
+A tautology reports 100%. So does a perfect system. The number cannot tell you which you have, and
+**100% was exactly the value that should have prompted the question** — a real cross-check across
+65 noisy OCR-derived chunks landing *precisely* on the ceiling is the shape of a measurement that
+isn't measuring. I have now written the same lesson three times in this phase: the 23-of-58 parse
+that looked like a truncated source, the 7-of-58 cross-check that was a broken shingle, and this.
+Twice the suspicious number was too *low* and I investigated. This time it was too *high* and the
+instinct was to bank it.
+
+What it can still catch is narrow and worth keeping: a stray line-start `NN.` in body text flipping
+`act_ref()` into a member list, and header/ref drift from a future chunking change. So it stays —
+measured, reported, and **not asserted**. D6 had planned to promote it to a hard gate; the playbook
+now carries a boxed instruction to re-scope it first, and the honest framing is printed to stdout
+*next to the number* rather than buried in a doc, because the number is what a future reader will
+copy.
+
+### Nothing downstream was reading the flags
+
+The parser records `TITLE_WEAK` / `NUMERAL_MISSING` per clause — the flags that caught all three
+geometry bugs on 2026-09-17 and are the reason that session's 58/58 is trustworthy. Today all 58
+are clean. But `_act_chunks_v2()` never looks at them, so a manifest regenerated with degraded
+acceptances would be promoted to fully-citable chunks **silently** — while D6 deletes
+`ACT_KNOWN_ABSENT` on that same manifest's word. A flag nobody reads is not a safeguard, it is a
+comment. `audit_corpus.py` now prints the count.
+
+### On the process
+
+I planned here, delegated the implementation with the design decisions already pinned, and sent the
+result to a reviewer before believing it. The executor disclosed both of its deviations and
+volunteered the circularity concern as a hedge; the reviewer then went and *proved* it by reading
+the manifest, which turned a hedge into a finding with a concrete D6 consequence. Neither of those
+happens if the brief rewards a green summary. The instruction that did the work was the boring one:
+*report each verification individually, and a failure reported honestly is worth more than a green
+summary.*
+
+One thing I did myself rather than delegate: the fix. It was four small edits, and the round trip
+would have cost more than the work.

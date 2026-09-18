@@ -561,6 +561,22 @@ In order:
   validator agrees — **and `ACT_KNOWN_ABSENT` is DELETED, not emptied**, so nobody can re-add a
   clause to it. Its "SINGLE-SOURCE for now" caveat (`:202-205`) and the "the pixels do not exist"
   line (`:215`) go with it.
+
+> **⚠ D6 MUST RE-SCOPE THE `act_ref` VALIDATOR BEFORE ASSERTING ON IT — review finding 2026-09-18.**
+> D2 measured **65/65 = 100% agreement**, and that number is worth much less than it looks.
+> The two "independent sources" **share an upstream**: the parser writes
+> `header = "%d. %s" % (n, title)` from the same `n` it builds `ref` from, `_act_chunks_v2()`
+> prefixes that header to every sub-chunk, and `act_ref()` then recovers the leading `\d+\.` from
+> that very string. For a single-clause chunk the comparison is therefore **close to a tautology** —
+> the sources differ in *inference* (manifest lookup vs heading-shape regex), **not in upstream**.
+> This is **not** the `evalset.assert_frozen10_matches_notebook()` discipline it was written up as;
+> there, the notebook and the JSON really are authored separately.
+>
+> It still genuinely catches two things: a stray line-start `NN.` in body text flipping `act_ref()`
+> to a multi-number member list, and header/ref drift introduced by future chunking changes.
+> **So D6 should either validate against the Arrangement TITLE text** (which does not share the
+> numeral's upstream) **or scope the assert to those two cases — never promote the raw rate as a
+> cross-source gate.** The v2 stdout now states this limit in place, next to the number.
 - **`eval_heldout.py` publishes `recall_strict`** — the only comparison legitimate across corpus
   versions, which is exactly why M0 published v1's first — plus the recall@k curve, MRR and
   false-refusal, per set.
@@ -823,16 +839,95 @@ made in advance and an explanation reached afterwards are different kinds of evi
 phase03 16/16+7/7 · phase04 10/10 · phase05 137 · phase09_ops 51 · `import app` clean ·
 `requirements.txt` diff **empty** · v1 Act TXT diff **empty**.
 
+### Session 2026-09-18 — `_act_chunks_v2()`: **D2's Act exit criteria are MET**
+
+Zero Gemini quota. No new packages. `requirements.txt` and the v1 Act TXT both still diff **empty**
+against `main`.
+
+**The Act half of corpus v2 exists and clears its gate.** `audit_corpus.py --corpus=v2`:
+
+| doc | chunks | uncitable | packed | len min/med/max |
+|---|---|---|---|---|
+| **act2018 (v2)** | **65** | **0 (0.0%)** | **0** | 117 / 410 / **1100** (cap 1100, 0 over) |
+| constitution1999 (still v1) | 2104 | 99 (4.7%) | 0 | 52/400/400 |
+| factsheet2020 (still v1) | 48 | 9 (18.8%) | 19 | 64/500/500 |
+
+**All three D2 Act criteria met: `general` 0.0% ≤ 1% · `packed` 0 · 58/58 citable.** The script
+still exits 1, on the Constitution and Factsheet rows — those are **unchanged v1 numbers** and are
+D3's and D4's to fix. Exiting 1 is correct at this step; nothing should shell out expecting 0 until
+D4 lands.
+
+**The uncitable-chunk class is closed on the Act.** v1 carried **25 of 62 uncitable** and 16 packed
+refs; v2 carries **0 and 0**. That class was named three separate times before this phase (Act
+cl.19, `CT7.t2`, the 25/62 measurement) and `ref = "cl. %d" % n` from the parser now makes packed
+refs *structurally* impossible rather than merely absent.
+
+**Implementation, as designed in D1/D2 — no deviation from the pinned decisions.**
+`ACT_V2_SIZE = 1100` is a **new** constant (`ACT_SIZE` untouched at 800) and **was not tuned**;
+`_act_chunks_v2()` reads **only** the manifest JSON via stdlib `json`, keeping the three-layer seam
+that lets `requirements.txt` stay slim; every chunk carries `path == "manifest"`;
+`CORPUS_VERSION` is still `"v1"` and `build_corpus("v2")` is reachable **only** via `--corpus=`,
+never from `ask()`, `router._retriever` or `app.py`.
+
+**Two deviations, both disclosed and both accepted:**
+
+1. **The header is budgeted out of the cap** (`ACT_V2_SIZE - len(header) - 1`, floor 100) rather
+   than added on top of it. Taken literally, "prefix the header to every sub-chunk of a 1100-char
+   split" produces chunks **over** 1100 and an `OVER cap` count > 0. Budgeting mirrors
+   `constitution_aware_split._emit()`'s handling of its own `§N` prefix (`src/chunk.py:125-132`).
+   `ACT_V2_SIZE` itself is untouched. Verified by reconstruction: every sub-chunk join contains
+   every 50-char window of the original clause body, **zero dropped text**; the surplus is exactly
+   `recursive_split`'s overlap. The floor-100 branch is currently **unreachable** (longest header 84
+   chars) — defensive, not dead-by-accident.
+2. **`SIZE_CAP` (module constant) became `size_caps(version)`**, with `audit_doc()` /
+   `length_histogram()` taking `caps` explicitly rather than reading a global that `main()` mutates.
+   Swept independently: **no external importer** of `SIZE_CAP`, `audit_doc` or `length_histogram`.
+
+**Only two clauses split at all:** cl.38 → 3 chunks, cl.57 (`Interpretation.`, 5,311 chars) → 6.
+The other 56 are one chunk each. cl.57's length is the definitions section, not Schedule bleed —
+the First Schedule bound holds, and cl.58 is a clean 103 chars.
+
+#### The headline number that was talked *down*, not up
+
+**`act_ref()` validator agreement: 65/65 = 100%** — and the review established it is **worth much
+less than it looks**. See the boxed warning in **D6** above: the parser writes the header from the
+same `n` it writes the ref from, so for single-clause chunks the check is close to a tautology.
+The number is now printed **with that limit stated next to it**, and the script's own module
+docstring — which had promised "two independent sources that must match, the same discipline as
+`evalset.assert_frozen10_matches_notebook()`" — is **amended in place**, because that comparison
+was simply wrong.
+
+**A degradation-flag report was added** (`act_manifest_flags()`): `_act_chunks_v2()` does not
+inspect `clause["flags"]`, so a manifest regenerated with `TITLE_WEAK` / `NUMERAL_MISSING`
+acceptances would be promoted to fully-citable chunks with **no signal anywhere** — while D6 deletes
+`ACT_KNOWN_ABSENT` on that manifest's word. Today it reads `located 58/58 · missing none ·
+degradation flags none`.
+
+#### Verification
+
+v1 stdout compared against the **pristine stashed code**, not a saved baseline: `audit_corpus`
+**0 diff lines**. `eval_heldout` · `eval_chat` · `ablate_phase08` all exit 0 and unchanged ·
+`eval_phase06` still hashes **`ce716fb3…5f19`** · v1 `corpus_sha256` still `25650238…e89a` ·
+9/9 v1 tripwire ok · `bench_phase01` PASS · phase03 16/16+7/7 · phase04 10/10 · phase05 **137** ·
+phase09_ops **51** · `import app` clean (no server) · both git guards **empty**.
+
+**Fresh-eyes review: verdict ship.** It independently reproduced every harness, rebuilt the v2
+corpus and checked all 65 chunks against the manifest by hand, confirmed the insertion order in
+both `build_corpus` branches, and confirmed v2 is unreachable from the user path. Its one
+substantive finding — the validator circularity — was taken and is recorded above and in D6.
+
 ### Next session starts here
 
-**`_act_chunks_v2()` + `ACT_V2_SIZE = 1100`** — the chunker is the only thing standing between the
-parse and D2's actual exit criteria (`general` ≤1%, `packed` 0, **58/58 citable**). The clause
-manifest is on disk at `data/processed/act2018_v2_clauses.json` (58 entries, one per clause, each
-with `header`, `text`, `flags`, `pages`). **Do not re-derive it, and do not re-run the OCR** —
-`data/processed/gazette_rapidocr.json` holds all 27 pages.
+**D3 — the Factsheet S/N table.** One table row = one `Section N`; exclude the cover page, the
+Arrangement block and the PLAC boilerplate/footer from retrieval. Target: `general` ≤1%,
+`packed` **0** (from 9 uncitable / **19 packed** today). Its 19 packed refs are **disordered**
+(`Section 51,40`, `Section 50,45,54`) — that is `recursive_split(500/50)` cutting the S/N table
+mid-row, a different defect from the Act's consecutive-run packing, so the Act's fix does not
+transfer. Then **D4** (Constitution Arrangement exclusion — keep `CONST_SIZE = 400`, keep
+`_is_toc_fragment` as a **lint assertion**, do not delete it), **D5** (refusal floor — mandatory),
+**D6** (re-baseline).
 
-Reminders that still bind: `ACT_V2_SIZE` is a **new** constant and **not tuned in D2** (longer
-chunks lower every cosine — that is D5's recalibration); `ref = "cl. %d" % n` comes from the parser,
-which makes packed refs structurally impossible; `CORPUS_VERSION` stays `"v1"` until D6; and
-`ACT_KNOWN_ABSENT = {38, 40}` stays until D6 **deletes** it — cl.38's body is now demonstrably
-recoverable, but the constant's removal is gated on the v2 corpus actually existing.
+Reminders that still bind: `CORPUS_VERSION` stays `"v1"` until D6 · `ACT_KNOWN_ABSENT = {38, 40}`
+stays until D6 **deletes** it · `MIN_SCORE` may move **down** in D5, never up · do not re-derive any
+manifest in `data/processed/` and do not re-run the OCR · `ACT_V2_SIZE` is **not** re-tuned before
+D5 · `audit_corpus.py --corpus=v2` exits **1** until D3/D4 land, by design.

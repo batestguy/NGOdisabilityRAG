@@ -9,6 +9,7 @@ Locked decision: answer ONLY from retrieved chunks with section cites;
 refuse when retrieval is weak. The LLM must cite chunk text VERBATIM --
 even with OCR quirks -- never "clean up" section numbers.
 """
+import json
 import os
 import re
 from pathlib import Path
@@ -55,6 +56,14 @@ CONST_SIZE = 400
 FACT_SIZE = 500
 FACT_OVERLAP = 50
 
+# v2 Act only. A NEW constant, deliberately NOT a change to ACT_SIZE: the v1
+# path must keep its 800 or every published baseline in this repo detaches.
+# 1100 is the playbook's number (docs/phases/12_corpus_v2.md, D2) and is NOT
+# tuned in D2. Longer chunks lower every cosine, so a size chosen here against
+# the refusal floor -- which D5 re-derives -- would leave both fitted to
+# nothing. D5 measures; D2 uses the number as given.
+ACT_V2_SIZE = 1100
+
 # National helplines -- ALWAYS shown on refusal (spec requirement).
 HELPLINE_TOLLFREE = "08000-3000-100"
 HELPLINE_WHATSAPP = "08000-3000-10"
@@ -76,6 +85,8 @@ ROOT = Path(__file__).resolve().parent.parent
 ACT_PATH = ROOT / "data" / "processed" / "disability_act_2018_full.txt"
 CONST_PATH = ROOT / "data" / "processed" / "constitution_1999_NHRC.txt"
 FACT_PATH = ROOT / "data" / "processed" / "disability_act_factsheet_PLAC.txt"
+# The OCR/parse -> runtime seam. See _act_chunks_v2().
+ACT_V2_PATH = ROOT / "data" / "processed" / "act2018_v2_clauses.json"
 
 SECTION_RE = re.compile(r"(Section \d+)", re.IGNORECASE)
 CONST_REF_RE = re.compile(r"\u00a7\u00a7?(\d+)")
@@ -255,26 +266,87 @@ def _fact_chunks_v1() -> list[Chunk]:
     ]
 
 
+def _act_chunks_v2() -> list[Chunk]:
+    """v2 Act chunks: one clause per chunk, refs taken from the parser.
+
+    THE SEAM. This function reads ONE artifact -- the clause manifest JSON at
+    ACT_V2_PATH -- with stdlib json and nothing else. That is deliberate and
+    architectural, not convenience: requirements.txt is the slim Render runtime
+    and forbids pymupdf / rapidocr_onnxruntime / onnxruntime / FAISS, while the
+    corpus ships prebuilt and is never re-OCRed at boot. OCR lives in
+    scripts/ocr_gazette.py, the parse in scripts/parse_act_v2.py, and the JSON
+    is the wire format between them and here. If src/ ever needs an OCR import
+    to build a chunk, the slim runtime is gone. Keep it that way.
+
+    `ref` is "cl. %d" % n straight from the manifest -- NEVER inferred from the
+    chunk text. That is what makes packed refs (`cl. 3,4,5`) structurally
+    impossible rather than merely unlikely: a chunk belongs to exactly one
+    clause by construction, so there is no path that can produce one. act_ref()
+    is demoted to a validator against this (scripts/audit_corpus.py).
+
+    EVERY sub-chunk carries the clause header, not just the first. A long clause
+    (cl.57 Interpretation., 5,311 chars; cl.38, 2,290) splits into several
+    pieces, and a headerless piece would resolve under act_ref() to "general" or
+    to a stray number from the body -- which would both break the general<=1%
+    gate and make the validator disagree with the parser for a reason that has
+    nothing to do with the parse. Repeating the header costs a few duplicated
+    characters and makes every chunk self-identifying, which is exactly the
+    property the citation invariant needs.
+
+    The header is the statutory heading ("38. Functions of the Commission."):
+    the gazette's marginal note restored to the position the printer moved it
+    out of, not deleted. `path` records HOW the ref was obtained -- "manifest",
+    against v1's "" (inferred from heading shape).
+    """
+    manifest = json.loads(ACT_V2_PATH.read_text(encoding="utf-8"))
+    chunks: list[Chunk] = []
+    for clause in manifest["clauses"]:
+        ref = "cl. %d" % clause["n"]
+        header = clause["header"]
+        body = clause["text"]
+        if len(header) + 1 + len(body) <= ACT_V2_SIZE:
+            pieces = [body]
+        else:
+            # Budget the header out of the size cap so no chunk exceeds it,
+            # the same idiom constitution_aware_split._emit() uses for its
+            # "Constitution, ... §N: " prefix.
+            budget = max(ACT_V2_SIZE - len(header) - 1, 100)
+            pieces = recursive_split(body, size=budget)
+        chunks.extend(
+            Chunk("act2018", ref, "%s\n%s" % (header, p), "manifest")
+            for p in pieces
+        )
+    return chunks
+
+
 def build_corpus(version: str | None = None) -> dict[str, list[Chunk]]:
     """Load + chunk all three docs. Raw files are never modified.
 
     version defaults to CORPUS_VERSION ("v1" until D6), so every existing
-    no-arg caller is unchanged. D1 is scaffolding only: there is exactly one
-    version and it is the byte-identical v1 path.
+    no-arg caller is unchanged. The default no-arg path is v1 and is
+    byte-identical to every published baseline.
+
+    "v2" is a PARTIAL-v2 state on purpose: the Act is v2, the Constitution and
+    the Factsheet are still v1, because D3 (Factsheet S/N table) and D4
+    (Constitution Arrangement exclusion) have not been done yet. It exists so
+    D2's Act gate is measurable now. Their rows in audit_corpus.py --corpus=v2
+    therefore still read v1 shape (99 general / 9 general + 19 packed) and that
+    is correct at this step. See docs/phases/12_corpus_v2.md D3/D4.
 
     Deliberately NOT memoized. Insertion order of the returned dict is load-
     bearing -- PerDocRetriever iterates it in order and sorts hits by score
     alone (src/retrieve.py:331-338), so insertion order breaks ties and
-    reordering these three blocks silently moves published numbers.
+    reordering these three blocks silently moves published numbers. It is the
+    same order in both versions for that reason.
     """
     version = version or CORPUS_VERSION
-    if version != "v1":
+    if version not in ("v1", "v2"):
         raise ValueError(
-            "unknown corpus version %r (only 'v1' exists until D6)" % version
+            "unknown corpus version %r (only 'v1' and 'v2' exist)" % version
         )
 
     docs: dict[str, list[Chunk]] = {}
-    docs["act2018"] = _act_chunks_v1()
+    docs["act2018"] = _act_chunks_v1() if version == "v1" else _act_chunks_v2()
     docs["constitution1999"] = _const_chunks_v1()
     docs["factsheet2020"] = _fact_chunks_v1()
     return docs

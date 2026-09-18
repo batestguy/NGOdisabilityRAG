@@ -33,11 +33,19 @@ WHAT IT CANNOT CHECK YET
 The Act clause manifest is derived here from the corpus itself (which clause
 numbers 1..58 appear in some ref), not from an independent parse of the
 Arrangement of Sections. That makes it a coverage report, not a cross-check.
-Phase 10 C builds the real manifest by parsing the Arrangement, at which point
-`act_ref()` is demoted to a validator and this script asserts the two AGREE --
-two independent sources that must match, the same discipline as
-evalset.assert_frozen10_matches_notebook(). Until then the ACT MANIFEST section
-says plainly that it is single-source.
+Phase D builds the real manifest by parsing the Arrangement, at which point
+`act_ref()` is demoted to a validator and this script reports whether the two
+AGREE. Until then the ACT MANIFEST section says plainly that it is single-source.
+
+**Amended 2026-09-18 (D2 review).** The sentence above used to promise "two
+independent sources that must match, the same discipline as
+evalset.assert_frozen10_matches_notebook()". That overstated it, and the v2
+report now says so in place: the header act_ref() reads is written by the parser
+from the same clause number the ref is built from, so for a single-clause chunk
+the comparison is close to a tautology. The two sources differ in INFERENCE, not
+in upstream -- which is not the frozen10 discipline, where the notebook and the
+JSON really are authored separately. See act_ref_validator()'s docstring for what
+it can and cannot still catch, and re-scope it before D6 asserts on it.
 """
 
 import hashlib
@@ -52,17 +60,29 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from evalset import ref_nums  # noqa: E402
 from rag import (  # noqa: E402
     ACT_SIZE,
+    ACT_V2_PATH,
+    ACT_V2_SIZE,
     CONST_SIZE,
     CORPUS_VERSION,
     FACT_SIZE,
+    act_ref,
     build_corpus,
 )
+
 
 # Size cap per doc, for the "at the cap" histogram column. A chunk sitting ON
 # the cap was cut by length rather than by structure, which in v2 is only
 # legitimate for a subsection split.
-SIZE_CAP = {"act2018": ACT_SIZE, "constitution1999": CONST_SIZE,
+#
+# The Act's cap is VERSION-DEPENDENT: v1 splits at ACT_SIZE (800), v2 at
+# ACT_V2_SIZE (1100). Auditing v2 against v1's cap would report most v2 chunks
+# as OVER cap; auditing v1 against v2's cap would silently widen the tripwire.
+# The other two docs are unaffected -- D3/D4 have not happened yet.
+def size_caps(version: str) -> dict:
+    return {"act2018": ACT_SIZE if version == "v1" else ACT_V2_SIZE,
+            "constitution1999": CONST_SIZE,
             "factsheet2020": FACT_SIZE}
+
 
 # The Act has 58 clauses. Source: the Arrangement of Sections in
 # data/processed/disability_act_2018_full.txt.
@@ -87,6 +107,15 @@ ACT_CLAUSES = range(1, 59)
 # DELETED by D6 -- not emptied, not left as `set()`. An empty set here would
 # read as "we checked and nothing is absent", which is a different claim from
 # "this exclusion no longer exists". Until D6 lands, it stays exactly as is.
+#
+# 2026-09-18 (Phase 10 D2): THAT CONDITION IS NOW SATISFIED -- recorded as fact,
+# not as a hope. The gazette re-OCR recovered cl.38's body: "formulate and
+# implement policies" is PRESENT in v2's clause 38 and ABSENT from v1 (grep,
+# Finding 1). cl.40 was never absent (body at v1 L545, numeral OCR'd away). Both
+# entries are therefore false, for different reasons. The set nonetheless STAYS
+# until D6 deletes it: removing it here would make this script's v1-tripwire
+# stdout diverge from the sealed baseline for no gain, and being comparable is
+# the tripwire's whole job. A comment costs no stdout.
 ACT_KNOWN_ABSENT = {38, 40}
 
 # ---- v1 recorded shape. A tripwire, not an aspiration. ------------------
@@ -125,8 +154,8 @@ V2_MAX_GENERAL_PCT = 1.0   # uncitable chunks, per doc
 V2_MAX_PACKED = 0          # packed refs must be gone: one clause, one chunk
 
 
-def audit_doc(doc_id: str, chunks: list) -> dict:
-    cap = SIZE_CAP[doc_id]
+def audit_doc(doc_id: str, chunks: list, caps: dict) -> dict:
+    cap = caps[doc_id]
     lens = sorted(len(c.text) for c in chunks)
     n = len(chunks)
     general = [c for c in chunks if c.ref == "general"]
@@ -148,12 +177,12 @@ def audit_doc(doc_id: str, chunks: list) -> dict:
     }
 
 
-def length_histogram(doc_id: str, chunks: list) -> None:
+def length_histogram(doc_id: str, chunks: list, caps: dict) -> None:
     """Decile buckets against the size cap. Reveals whether the splitter is
     cutting on structure or on length -- a spike in the top bucket means
     length, which is what makes chunk size (and therefore every cosine, and
     therefore MIN_SCORE) an artifact of the splitter rather than the text."""
-    cap = SIZE_CAP[doc_id]
+    cap = caps[doc_id]
     edges = [int(cap * f / 5) for f in range(1, 6)]
     buckets = [0] * (len(edges) + 1)
     for c in chunks:
@@ -189,6 +218,70 @@ def act_manifest_coverage(chunks: list) -> dict:
     }
 
 
+def act_manifest_flags() -> dict:
+    """Degradation flags recorded by the D2 parser, read from the manifest.
+
+    v2 only. The parser flags a clause TITLE_WEAK / NUMERAL_MISSING when it
+    located it on a degraded anchor, and today all 58 are clean. But nothing
+    downstream looks: _act_chunks_v2() does not inspect `flags`, so a manifest
+    regenerated with degraded acceptances would be promoted to fully-citable
+    chunks with no signal anywhere -- and D6 deletes ACT_KNOWN_ABSENT on the
+    strength of this manifest. Surfacing the count is what keeps that honest.
+    Added 2026-09-18 on a review finding, before D6 hardens the gate.
+    """
+    man = json.loads(ACT_V2_PATH.read_text(encoding="utf-8"))
+    flagged = [(c["n"], c["flags"]) for c in man["clauses"] if c.get("flags")]
+    return {
+        "located": man.get("located"),
+        "missing": man.get("missing", []),
+        "title_source": man.get("title_source"),
+        "flagged": flagged,
+    }
+
+
+def act_ref_validator(chunks: list) -> dict:
+    """Cross-check the parser's refs against act_ref()'s heading-shape inference.
+
+    v2 only. `chunk.ref` comes from the gazette Arrangement manifest
+    (src/rag.py::_act_chunks_v2, path=="manifest"); act_ref() reads the chunk
+    text and infers a ref from heading shape.
+
+    *** READ THIS BEFORE D6 PROMOTES IT TO AN ASSERT. ***
+    2026-09-18 review finding: for a SINGLE-CLAUSE chunk this is very close to a
+    TAUTOLOGY, and the 100% rate below is worth much less than it looks. The two
+    sources are not independent: the parser writes header = "%d. %s" % (n, title)
+    from the same `n` it builds the ref from, _act_chunks_v2() prefixes that
+    header to every sub-chunk, and act_ref() then recovers the leading `\\d+\\.`
+    from that very string. So it mostly checks the parser's numeral against the
+    parser's own field -- true by construction, not by two derivations meeting.
+    They are independent in their INFERENCE (manifest lookup vs heading-shape
+    regex) but share an UPSTREAM.
+
+    What it can still genuinely catch: a stray line-start "NN." in body text
+    flipping act_ref() to a multi-number member list, and a header/ref mismatch
+    introduced by future chunking changes. That is real but narrow. D6 should
+    either validate against the Arrangement TITLE text (which does not share the
+    numeral's upstream) or scope the assert to those cases -- NOT promote this
+    rate as-is and call it a cross-source gate.
+
+    D2 MEASURES AND REPORTS ONLY. No assert, and act_ref() is NOT adjusted to
+    make the numbers meet -- tuning the validator against the thing it validates
+    would destroy what value it has.
+    """
+    rows = []
+    for i, c in enumerate(chunks):
+        got = act_ref(c.text)
+        if got != c.ref:
+            rows.append((i, c.ref, got))
+    n = len(chunks)
+    return {
+        "n": n,
+        "agree": n - len(rows),
+        "rate": (n - len(rows)) / n if n else 0.0,
+        "disagree": rows,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     json_out = next((a.split("=", 1)[1] for a in argv
@@ -207,7 +300,8 @@ def main(argv: list[str] | None = None) -> int:
                           if version == "v1"
                           else "v2 quality gate"))
 
-    stats = {d: audit_doc(d, c) for d, c in docs.items()}
+    caps = size_caps(version)
+    stats = {d: audit_doc(d, c, caps) for d, c in docs.items()}
 
     print("\n== PER DOC ==")
     print("  %-18s %-6s %-14s %-14s %-22s" % (
@@ -229,18 +323,51 @@ def main(argv: list[str] | None = None) -> int:
         s = stats[d]
         print("  %s (cap %d, %d at cap, %d OVER cap):"
               % (d, s["size_cap"], s["at_cap"], s["over_cap"]))
-        length_histogram(d, docs[d])
+        length_histogram(d, docs[d], caps)
     print("  Phase 10 C reads this table before touching chunk sizes: short")
     print("  chunks concentrate term mass and INFLATE cosine, so any shift here")
     print("  silently recalibrates MIN_SCORE and can manufacture false")
     print("  refusals -- the worst failure mode this project has.")
 
     cov = act_manifest_coverage(docs["act2018"])
+    val = act_ref_validator(docs["act2018"]) if version != "v1" else None
     print("\n== ACT CLAUSE MANIFEST COVERAGE (1-58) ==")
-    print("  SINGLE-SOURCE for now: derived from the corpus's own refs, not")
-    print("  from an independent parse of the Arrangement of Sections. It is a")
-    print("  coverage report, not a cross-check. Phase 10 C parses the")
-    print("  Arrangement and asserts the two sources AGREE.")
+    if version == "v1":
+        print("  SINGLE-SOURCE for now: derived from the corpus's own refs, not")
+        print("  from an independent parse of the Arrangement of Sections. It is a")
+        print("  coverage report, not a cross-check. Phase 10 C parses the")
+        print("  Arrangement and asserts the two sources AGREE.")
+    else:
+        print("  CROSS-CHECK, AND ITS LIMIT (read before trusting the number):")
+        print("  refs come from the gazette Arrangement manifest; act_ref()")
+        print("  infers them from heading SHAPE. But the header act_ref() reads")
+        print("  is built BY THE PARSER from the same clause number the ref uses,")
+        print("  so for a single-clause chunk this is close to a TAUTOLOGY -- the")
+        print("  two differ in inference, not in upstream. It catches a stray")
+        print("  line-start \"NN.\" in body text and header/ref drift from future")
+        print("  chunking changes; it is NOT the cross-source gate the playbook")
+        print("  once described. D2 MEASURES and REPORTS only; D6 must re-scope")
+        print("  it before asserting. act_ref() is not adjusted to make them meet.")
+        print("  act_ref() agreement:    %d/%d (%.1f%%)"
+              % (val["agree"], val["n"], 100.0 * val["rate"]))
+        print("    ^ discounted per the limit above -- not a 100% correctness"
+              " claim.")
+        fl = act_manifest_flags()
+        print("  manifest: located %s/58, title_source %s, missing %s"
+              % (fl["located"], fl["title_source"],
+                 ", ".join(str(n) for n in fl["missing"]) or "none"))
+        print("  clauses carrying a DEGRADATION flag: %s"
+              % (", ".join("%d %s" % (n, f) for n, f in fl["flagged"])
+                 or "none"))
+        print("    ^ _act_chunks_v2() does not inspect flags, so a degraded")
+        print("      manifest would chunk silently. D6 deletes ACT_KNOWN_ABSENT")
+        print("      on this manifest's word -- check this line before it does.")
+        if val["disagree"]:
+            print("  DISAGREEMENTS (chunk index: manifest ref vs act_ref):")
+            for i, ref, got in val["disagree"]:
+                print("    %-5d %-12s vs %s" % (i, ref, got))
+        else:
+            print("  DISAGREEMENTS:          none")
     print("  citable now:            %d/58" % len(cov["citable"]))
     print("  NOT citable, parseable: %s" % (
         ", ".join(str(n) for n in cov["missing_recoverable"]) or "none"))
@@ -255,6 +382,8 @@ def main(argv: list[str] | None = None) -> int:
 
     report = {"corpus_version": version, "docs": stats,
               "act_manifest": cov}
+    if val is not None:
+        report["act_ref_validator"] = val
     if json_out:
         Path(json_out).write_text(json.dumps(report, indent=2) + "\n",
                                   encoding="utf-8")
