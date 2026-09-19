@@ -152,6 +152,18 @@ CURVE_DEPTHS = (3, 6, 10, 20, 60)
 # against recall_strict, and this one keeps guarding v1. Renaming it now, while
 # v1 is the only corpus, is what stops the two being silently conflated later.
 FROZEN10_RECALL_BASELINE_V1 = 0.925
+
+# The v2 arm, landed in D6 exactly as the note above prescribed: a SEPARATE
+# constant, compared against recall_strict, while the v1 constant keeps
+# guarding v1. Measured on corpus v2 in D5 and recorded here unchanged.
+#
+# NOT 0.633. That is what fmt() PRINTS (D:\d5_baseline\heldout_v2.txt:145);
+# the value is 0.63273809523809521, and 3dp display rounds it UP. Pinning the
+# printed number would have made this guard fail on the very run it was
+# derived from -- a baseline you cannot reproduce is not a baseline. Any
+# future guard pinned off a printed table has the same bug.
+FROZEN10_STRICT_BASELINE_V2 = 0.632738
+
 EPS = 1e-6
 
 
@@ -453,19 +465,53 @@ def main(argv: list[str] | None = None) -> int:
     print("      false refusals deny help to PWDs.")
 
     # ---- the only failure condition.
+    #
+    # ONE guard per corpus, each on the metric that is legitimate for it.
+    # v1 gates plain recall; v2 gates recall_strict, because corpus v2 splits
+    # packed refs and plain recall therefore moves for reasons that have
+    # nothing to do with retrieval quality. Each arm PRINTS THE OTHER METRIC
+    # BESIDE ITS OWN and gates only its own -- a re-scope that drops the
+    # superseded column is indistinguishable from tuning the yardstick.
+    #
+    # The v1 arm's wording is FROZEN, including "BEFORE v2 exists", which is
+    # now stale prose. D6's exit criterion is that a --corpus=v1 run is stdout
+    # byte-identical to D:\d5_baseline\heldout_v1.txt, and that criterion
+    # freezes the sentences as well as the numbers. Reword it only after D6
+    # has archived its own baseline to compare against instead.
+    f_strict = stricts["frozen10"]
     print("\n== FROZEN-10 REGRESSION GUARD (the only thing that can fail here) ==")
-    assert corpus_stamp() == "v1", (
-        "FROZEN10_RECALL_BASELINE_V1 is a CORPUS v1 number and this run is on "
-        "corpus %r. Plain recall is not comparable across corpus versions "
-        "(packed refs): add a v2 guard on recall_strict instead of relaxing "
-        "this one." % corpus_stamp())
-    ok = f_recall is not None and f_recall >= FROZEN10_RECALL_BASELINE_V1 - EPS
-    print("  frozen-10 recall %s vs recorded baseline %.3f (corpus %s): %s"
-          % (fmt(f_recall), FROZEN10_RECALL_BASELINE_V1, corpus_stamp(),
-             "PASS" if ok else "FAIL"))
-    print("  frozen-10 recall_strict %s -- published now, BEFORE v2 exists, so"
-          % fmt(stricts["frozen10"]))
-    print("  the v2 rebuild has an honest yardstick to be compared against.")
+    if corpus_stamp() == "v1":
+        ok = f_recall is not None and f_recall >= FROZEN10_RECALL_BASELINE_V1 - EPS
+        print("  frozen-10 recall %s vs recorded baseline %.3f (corpus %s): %s"
+              % (fmt(f_recall), FROZEN10_RECALL_BASELINE_V1, corpus_stamp(),
+                 "PASS" if ok else "FAIL"))
+        print("  frozen-10 recall_strict %s -- published now, BEFORE v2 exists, so"
+              % fmt(f_strict))
+        print("  the v2 rebuild has an honest yardstick to be compared against.")
+    elif corpus_stamp() == "v2":
+        ok = f_strict is not None and f_strict >= FROZEN10_STRICT_BASELINE_V2 - EPS
+        print("  frozen-10 recall_strict %s vs recorded baseline %.3f (corpus %s): %s"
+              % (fmt(f_strict), FROZEN10_STRICT_BASELINE_V2, corpus_stamp(),
+                 "PASS" if ok else "FAIL"))
+        print("  frozen-10 recall %s -- PRINTED, NOT GATED. Plain recall is not"
+              % fmt(f_recall))
+        print("  comparable across corpus versions (packed refs), so v1's %.3f is"
+              % FROZEN10_RECALL_BASELINE_V1)
+        print("  not a baseline this run can be measured against. D5 published")
+        print("  that comparison as a FAIL; it was mis-stamped, not a regression.")
+    else:
+        # UNREACHABLE THROUGH THE CLI TODAY, and recorded as such rather than
+        # left to look load-bearing: build_corpus() rejects anything but v1/v2
+        # first (src/rag.py:674), so --corpus=v3 dies upstream. This arm is
+        # forward defence -- the moment build_corpus learns a v3, it is what
+        # stops the frozen-10 guard silently reusing v2's baseline. Negative-
+        # tested by making corpus_stamp() disagree with the corpus built,
+        # which is precisely the state that future change would create.
+        raise AssertionError(
+            "no frozen-10 baseline exists for corpus %r. Each corpus version "
+            "gets its OWN constant on the metric legitimate for it -- do not "
+            "reuse another version's baseline, and do not relax an existing "
+            "one." % corpus_stamp())
     print("  (dev and test numbers above can never fail this script, by design)")
     if not ok:
         print("\nEVAL_HELDOUT: FAIL -- the frozen yardstick moved.")
