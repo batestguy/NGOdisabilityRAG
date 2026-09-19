@@ -95,35 +95,29 @@ def size_caps(version: str) -> dict:
 # data/processed/disability_act_2018_full.txt.
 ACT_CLAUSES = range(1, 59)
 
-# Clause bodies confirmed ABSENT FROM THE SOURCE PDF, not merely unparsed
-# (LEARNING_JOURNAL.md 2026-09-13, re-confirmed 2026-09-15). The scan is 27
-# pages with 0 embedded text chars; raw OCR pages 5 and 6 are the same physical
-# page twice, so 27 raw pages cover 26 distinct pages of a 27-page instrument.
-# The missing page carries cl.38's opening and cl.40. No OCR and no VLM can
-# recover pixels that were never captured. Phase 10 C makes one targeted
-# attempt at a second source (ncpwd.gov.ng) and then records the gap.
+# ACT_KNOWN_ABSENT = {38, 40} WAS HERE AND IS DELETED, NOT EMPTIED (D6,
+# 2026-09-19). An empty set would read as "we checked and nothing is absent",
+# which is a different claim from "this exclusion no longer exists" -- and it
+# would be an invitation to re-add a clause. A deleted name is a NameError.
 #
-# THESE ARE EXCLUDED FROM THE COVERAGE GATE AND MUST NEVER BE "FIXED" BY
-# WRITING A STUB CHUNK. A citation tag in front of a generation model is
-# precisely how a gap becomes a hallucinated provision that passes
-# verify_citations() mechanically.
+# It claimed both clauses were ABSENT FROM THE SOURCE PDF, unrecoverable by any
+# OCR, and it EXCLUDED THEM FROM THE COVERAGE GATE. Both entries were false, for
+# different reasons, and D2 established that as fact rather than hope:
+#   cl.38  absent from the v1 PROCESSED TEXT only. The v1 scan has one physical
+#          page recorded twice, so the page carrying cl.38's opening is missing.
+#          The gazette has it: "formulate and implement policies" is present in
+#          v2's clause 38 and absent from v1 (grep, D2 Finding 1).
+#   cl.40  never absent at all -- body at v1 L545, the numeral was OCR'd away.
+# v2 locates 58/58 clauses with zero degradation flags, so the exclusion covers
+# nothing and is gone. What it must NOT become is a stub: a citation tag in
+# front of a generation model is precisely how a gap becomes a hallucinated
+# provision that passes verify_citations() mechanically.
 #
-# 2026-09-17 (Phase 10 D0): the gazette scan is now filed at
-# data/raw/disability_act_2018_gazette_FGP.pdf and is the authoritative source
-# corpus v2 is rebuilt from. If the D2 re-OCR recovers cl.38's body, this set is
-# DELETED by D6 -- not emptied, not left as `set()`. An empty set here would
-# read as "we checked and nothing is absent", which is a different claim from
-# "this exclusion no longer exists". Until D6 lands, it stays exactly as is.
-#
-# 2026-09-18 (Phase 10 D2): THAT CONDITION IS NOW SATISFIED -- recorded as fact,
-# not as a hope. The gazette re-OCR recovered cl.38's body: "formulate and
-# implement policies" is PRESENT in v2's clause 38 and ABSENT from v1 (grep,
-# Finding 1). cl.40 was never absent (body at v1 L545, numeral OCR'd away). Both
-# entries are therefore false, for different reasons. The set nonetheless STAYS
-# until D6 deletes it: removing it here would make this script's v1-tripwire
-# stdout diverge from the sealed baseline for no gain, and being comparable is
-# the tripwire's whole job. A comment costs no stdout.
-ACT_KNOWN_ABSENT = {38, 40}
+# v1's report keeps ONE honest distinction, scoped to v1 and gating nothing.
+# Without it, v1 would print cl.38 as "recoverable by parsing, free", which is
+# false -- its text is not in the v1 corpus at any price. This is v1-descriptive
+# only: the v2 gate does not read it, so it cannot soften anything shipping.
+V1_ACT_ABSENT_FROM_TEXT = {38}
 
 # ---- v1 recorded shape. A tripwire, not an aspiration. ------------------
 # Measured 2026-09-13, reproduced independently 2026-09-15. Any drift here
@@ -139,6 +133,15 @@ V1_EXPECTED = {
 # exactly what a splitter change does. This closes that hole. Pinned 2026-09-17
 # at D1, against the same build the published baselines were measured on.
 V1_CORPUS_SHA256 = "25650238c3f2daf0523297680b41b3bd2318425c9690d9fa8a1e1caf1b42e89a"
+
+# The same tripwire for v2, pinned at D6 in the commit that flips the default.
+# Without it the SHIPPING corpus would be less protected than the retired one,
+# which is the exact inversion the fingerprint was introduced to prevent: the
+# per-doc integers are a SHAPE check and cannot see text moving between chunks
+# at constant count. Measured 2026-09-19 on the same build D6 re-baselines
+# against; corpus_sha256() was validated in the same run by reproducing the v1
+# digest above byte-for-byte.
+V2_CORPUS_SHA256 = "56e3e434cdfe7cf09fc28caeed337629d3fb3263d45071097929be2e76b9cef4"
 
 
 def corpus_sha256(docs: dict[str, list]) -> str:
@@ -159,6 +162,42 @@ def corpus_sha256(docs: dict[str, list]) -> str:
 # ---- v2 gate (Phase 10 C exit criteria). --------------------------------
 V2_MAX_GENERAL_PCT = 1.0   # uncitable chunks, per doc
 V2_MAX_PACKED = 0          # packed refs must be gone: one clause, one chunk
+
+# D6 RE-SCOPE, 2026-09-19. Both thresholds above are right for the Act and
+# each is wrong for exactly one other document -- measured at D3/D4, left
+# FAILing in stdout with the reason beside it rather than tuned away, and
+# resolved here:
+#
+#   constitution1999  general_pct <= 1.0 is UNREACHABLE. Arrangement exclusion
+#                     is the whole of the available fix (99 -> 34 general) and
+#                     the residual 34 is 8 structurally unnumbered chunks plus
+#                     26 Chapter VIII Schedule/Rules chunks where `general` is
+#                     the CORRECT answer -- a Schedule ITEM number is not a
+#                     SECTION number, and labelling it `s. N` re-creates the
+#                     Q10 misattribution class on purpose. Gated instead on
+#                     toc_general_out_ch8 == 0, measured from chunk TEXT, with
+#                     demonstrated discriminating power (v1 7, v2 0).
+#   factsheet2020     packed <= 0 is UNREACHABLE and wrong. A multi-number ref
+#                     is the S/N table's own content; eight of those numbers
+#                     exist nowhere else in the document and
+#                     evalset.verify_expected() -- a HARD assert -- needs every
+#                     one. Gated instead on row_spanning == 0 (v1 26/48, v2 0).
+#
+# EVERY DOC STILL PRINTS BOTH ORIGINAL COLUMNS, gated or not. A re-scope that
+# stops printing the superseded metric is indistinguishable from tuning the
+# yardstick, so the numbers stay visible and only the GATING changes.
+V2_GENERAL_PCT_GATED = frozenset({"act2018", "factsheet2020"})
+V2_PACKED_GATED = frozenset({"act2018", "constitution1999"})
+V2_MAX_TOC_GENERAL_OUT_CH8 = 0   # constitution1999
+V2_MAX_ROW_SPANNING = 0          # factsheet2020
+
+# The pinned inventory that covers the STATED Chapter VIII proxy hole (see the
+# toc_general() note): "in the Schedules" is proxied by the "Chapter VIII"
+# label, and Chapter VIII also holds operative sections 297-320, so a genuine
+# body chunk wrongly demoted would land in the in-Ch-VIII bucket and be
+# invisible to the gate above. A new demotion anywhere changes one of these
+# two integers, which is what makes the proxy safe to rely on.
+V2_CONST_GENERAL_INVENTORY = {"general_unnumbered": 8, "toc_general_in_ch8": 26}
 
 
 # The factsheet's REAL defect metric, added at D3. `packed` cannot express it:
@@ -289,12 +328,16 @@ def act_manifest_coverage(chunks: list) -> dict:
             have |= ref_nums(c.ref)
     have &= set(ACT_CLAUSES)
     missing = sorted(set(ACT_CLAUSES) - have)
+    # No exclusion set. Every missing clause counts against the gate; the v1
+    # split below is descriptive reporting, not a carve-out (see
+    # V1_ACT_ABSENT_FROM_TEXT).
     return {
         "citable": sorted(have),
         "missing": missing,
-        "missing_recoverable": [n for n in missing if n not in ACT_KNOWN_ABSENT],
-        "missing_absent_from_source": [n for n in missing
-                                       if n in ACT_KNOWN_ABSENT],
+        "missing_recoverable": [n for n in missing
+                                if n not in V1_ACT_ABSENT_FROM_TEXT],
+        "missing_absent_from_text": [n for n in missing
+                                     if n in V1_ACT_ABSENT_FROM_TEXT],
     }
 
 
@@ -479,8 +522,9 @@ def main(argv: list[str] | None = None) -> int:
               % (", ".join("%d %s" % (n, f) for n, f in fl["flagged"])
                  or "none"))
         print("    ^ _act_chunks_v2() does not inspect flags, so a degraded")
-        print("      manifest would chunk silently. D6 deletes ACT_KNOWN_ABSENT")
-        print("      on this manifest's word -- check this line before it does.")
+        print("      manifest would chunk silently. D6 DELETED ACT_KNOWN_ABSENT")
+        print("      on this manifest's word, having checked this line first;")
+        print("      it read 58/58 located, title_source arrangement, no flags.")
         if val["disagree"]:
             print("  DISAGREEMENTS (chunk index: manifest ref vs act_ref):")
             for i, ref, got in val["disagree"]:
@@ -494,10 +538,14 @@ def main(argv: list[str] | None = None) -> int:
     print("      infers refs from heading SHAPE and the gazette's marginal-note")
     print("      column is spliced into the body. Recoverable by parsing, free.")
     print("      This is the Phase 10 C target.")
-    print("  NOT citable, ABSENT from source: %s" % (
-        ", ".join(str(n) for n in cov["missing_absent_from_source"]) or "none"))
-    print("    ^ the pixels do not exist. No stub, no paraphrase, no model")
-    print("      knowledge -- record the gap and tell the user to call DRAC.")
+    print("  NOT citable, ABSENT from this corpus's text: %s" % (
+        ", ".join(str(n) for n in cov["missing_absent_from_text"]) or "none"))
+    print("    ^ v1 only, and NOT 'the pixels do not exist' -- that claim was")
+    print("      false. The v1 scan repeats one physical page, so cl.38's")
+    print("      opening is missing from the v1 TEXT; the gazette has it and v2")
+    print("      carries it. Gates nothing: ACT_KNOWN_ABSENT is deleted and the")
+    print("      v2 gate reads the raw missing list. No stub, no paraphrase, no")
+    print("      model knowledge -- a gap is recorded, never written.")
 
     # Printed for BOTH versions, deliberately: the inventory only means anything
     # next to the number it replaced (v1 99 = 66 + 33), and a metric shown on v2
@@ -599,55 +647,103 @@ def main(argv: list[str] | None = None) -> int:
         print("\n== V2 QUALITY GATE ==")
         for d in stats:
             s = stats[d]
+            # --- uncitable %. Gated on the Act and the factsheet only.
+            gated = d in V2_GENERAL_PCT_GATED
             ok = s["general_pct"] <= V2_MAX_GENERAL_PCT
             print("  %-18s uncitable %.1f%% <= %.1f%%: %s"
                   % (d, s["general_pct"], V2_MAX_GENERAL_PCT,
-                     "PASS" if ok else "FAIL"))
-            if not ok:
+                     ("PASS" if ok else "FAIL") if gated
+                     else "%s (PRINTED, NOT GATED -- see below)"
+                          % ("meets" if ok else "exceeds")))
+            if gated and not ok:
                 fails.append("%s: %.1f%% uncitable exceeds %.1f%%"
                              % (d, s["general_pct"], V2_MAX_GENERAL_PCT))
-            if d == "constitution1999" and not ok:
-                # Reported, NOT tuned away -- the same discipline D3 used on the
-                # factsheet's `packed` row directly below. D4 measured that
-                # Arrangement exclusion is the whole of the available fix (99 ->
-                # 34 general) and that the residual 34 is not a defect: see the
-                # CONSTITUTION `general` INVENTORY section above. Closing this
-                # gate by deleting the Schedules is forbidden -- the Second
-                # Schedule is operative law and the Enforcement Procedure Rules
-                # are how a PWD enforces Chapter IV. D6 re-scopes the threshold.
-                print("    ^ EXPECTED at D4 and re-scoped, not tuned: %d of the"
-                      % s["general_unnumbered"])
-                print("      %d are structurally unnumbered and %d are Chapter"
-                      % (s["general"], s["toc_general_in_ch8"]))
-                print("      VIII Schedule/Rules items where `general` is the")
-                print("      CORRECT ref -- a Schedule ITEM number is not a")
-                print("      SECTION number. See the CONSTITUTION `general`")
-                print("      INVENTORY above. D6 gates this doc on toc-gen")
-                print("      outside Ch VIII == %d, which it already meets."
-                      % s["toc_general_out_ch8"])
+            if d == "constitution1999":
+                # D4's finding, resolved at D6. The threshold is unreachable
+                # for this doc and closing the gate by deleting the Schedules
+                # is forbidden -- the Second Schedule is operative law and the
+                # Enforcement Procedure Rules are how a PWD enforces Ch IV.
+                print("      ^ %d of the %d uncitable are structurally"
+                      % (s["general_unnumbered"], s["general"]))
+                print("        unnumbered and %d are Chapter VIII Schedule/"
+                      % s["toc_general_in_ch8"])
+                print("        Rules items where `general` is the CORRECT ref")
+                print("        -- a Schedule ITEM number is not a SECTION")
+                print("        number. Gated on toc-gen outside Ch VIII below.")
+                ok = s["toc_general_out_ch8"] <= V2_MAX_TOC_GENERAL_OUT_CH8
+                print("  %-18s toc-gen outside Ch VIII %d <= %d: %s"
+                      % (d, s["toc_general_out_ch8"],
+                         V2_MAX_TOC_GENERAL_OUT_CH8, "PASS" if ok else "FAIL"))
+                if not ok:
+                    fails.append(
+                        "%s: %d TOC-demoted uncitable chunks outside Chapter "
+                        "VIII, must be %d -- a §N prefix that const_ref() then "
+                        "demoted is an Arrangement fragment that v2 excludes"
+                        % (d, s["toc_general_out_ch8"],
+                           V2_MAX_TOC_GENERAL_OUT_CH8))
+                # The proxy hole above is only covered while this holds.
+                for key, want in V2_CONST_GENERAL_INVENTORY.items():
+                    ok = s[key] == want
+                    print("  %-18s %-22s pinned %-4d measured %-4d %s"
+                          % (d, key, want, s[key], "ok" if ok else "DRIFT"))
+                    if not ok:
+                        fails.append(
+                            "%s.%s: pinned %d, measured %d -- the Chapter VIII "
+                            "gate above is a PROXY, and this inventory is what "
+                            "covers its stated hole. A demotion moving either "
+                            "integer can hide inside that proxy."
+                            % (d, key, want, s[key]))
+            # --- packed refs. Gated on the Act and the Constitution only.
+            gated = d in V2_PACKED_GATED
             ok = s["packed"] <= V2_MAX_PACKED
             print("  %-18s packed refs %d <= %d: %s"
-                  % (d, s["packed"], V2_MAX_PACKED, "PASS" if ok else "FAIL"))
-            if not ok:
+                  % (d, s["packed"], V2_MAX_PACKED,
+                     ("PASS" if ok else "FAIL") if gated
+                     else "%s (PRINTED, NOT GATED -- see below)"
+                          % ("meets" if ok else "exceeds")))
+            if gated and not ok:
                 fails.append("%s: %d packed refs, must be %d"
                              % (d, s["packed"], V2_MAX_PACKED))
-            if d == "factsheet2020" and not ok:
-                # Reported, NOT tuned away. D3 measured that packed==0 and
-                # evalset.verify_expected() cannot both hold on this document
-                # (see the FACTSHEET S/N TABLE section above). D6 re-scopes the
-                # factsheet's gate to row-span == 0; D3 leaves the threshold
-                # alone so the collision stays visible in stdout until it does.
-                print("    ^ EXPECTED at D3 and re-scoped, not tuned: see the")
-                print("      FACTSHEET S/N TABLE section above. D6 gates this")
-                print("      doc on row-span == %d, which it already meets."
-                      % s["row_spanning"])
-        unreached = cov["missing_recoverable"]
-        print("  act clauses citable or in the gap manifest: %s"
+            if d == "factsheet2020":
+                # D3's finding, resolved at D6. packed==0 and
+                # evalset.verify_expected() cannot both hold on this document.
+                print("      ^ a multi-number ref is the S/N table's own")
+                print("        content here, and 8 of those numbers exist")
+                print("        nowhere else -- verify_expected() needs them.")
+                print("        Gated on row-span below, the real defect count.")
+                ok = s["row_spanning"] <= V2_MAX_ROW_SPANNING
+                print("  %-18s row-spanning chunks %d <= %d: %s"
+                      % (d, s["row_spanning"], V2_MAX_ROW_SPANNING,
+                         "PASS" if ok else "FAIL"))
+                if not ok:
+                    fails.append(
+                        "%s: %d chunks span S/N table rows, must be %d -- a "
+                        "chunk cut across rows serves one section's text under "
+                        "another's number" % (d, s["row_spanning"],
+                                              V2_MAX_ROW_SPANNING))
+        got_sha = corpus_sha256(docs)
+        ok = got_sha == V2_CORPUS_SHA256
+        print("  %-18s %-8s recorded %s" % ("CORPUS", "sha256",
+                                            V2_CORPUS_SHA256))
+        print("  %-18s %-8s measured %s %s" % ("", "", got_sha,
+                                               "ok" if ok else "DRIFT"))
+        if not ok:
+            fails.append(
+                "corpus sha256: recorded %s, measured %s -- chunk CONTENT "
+                "moved. The per-doc numbers above are a SHAPE check and cannot "
+                "see text moving between chunks at constant count."
+                % (V2_CORPUS_SHA256, got_sha))
+        # `missing`, NOT `missing_recoverable`. The v2 gate reads the raw list
+        # so that no descriptive v1 split can ever soften what ships: every one
+        # of the 58 clauses must be citable, with no exclusion available.
+        unreached = cov["missing"]
+        print("  act clauses citable (all 58, no exclusion set): %s"
               % ("PASS" if not unreached else
                  "FAIL (%s)" % ", ".join(str(n) for n in unreached)))
         if unreached:
-            fails.append("act clauses %s are neither citable nor recorded as "
-                         "absent from the source"
+            fails.append("act clauses %s are not citable -- ACT_KNOWN_ABSENT is "
+                         "deleted, so there is no manifest to record them in "
+                         "and no exclusion to grant them"
                          % ", ".join(str(n) for n in unreached))
 
     if fails:
