@@ -1,6 +1,57 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-19)
 
-> **LATEST (2026-09-19, later still): D6 is PLANNED AND SPECIFIED — NOT STARTED. Nothing was
+> **LATEST (2026-09-19, last): PHASE E IS PLANNED AND SPECIFIED — `docs/phases/13_retrieval_quality.md`
+> is NEW and is the consolidated retrieval playbook. Nothing executed; docs only, zero quota.**
+>
+> **WHY THIS EXISTS: the legal Q&A path is the app's weak half, and the data says exactly why.**
+> Held-out `test` (clean, never tuned, n=17) on corpus v2 reads **r@6 = 0.426 shipping** against
+> **r@60 = 0.735 in the pool** — a **+0.309 gap** the user never sees. `eval_heldout.py` prints
+> the interpretation rule itself: a large @6-to-@60 gap means the miss is **RANKING**, and a
+> re-ranker can reach it. Three facts bound the work:
+> 1. **Ceiling 0.824** (test found 14/17 in pool at all). 3 questions are genuinely absent —
+>    corpus/encoder work, out of E1–E4's scope. Do not chase them by widening.
+> 2. **The floor is innocent.** `kept=0` is 0 across every answerable class; false refusals are
+>    **0/25 dev, 0/17 test**. **Phase E must not touch `MIN_SCORE`.**
+> 3. **We barely select at all** — shipping is `k=3/doc` = **9 candidates for 6 slots**. Widening
+>    the pool is a *precondition* for re-ranking, not an alternative.
+>
+> **Worst class is vocab-mismatch (dev recall 0.375, n=8) — the class the hand-written synonym
+> map exists to fix.** `ablate_v2.txt` prices that map at **+0.061 mean on frozen-10, the set it
+> was fitted to**, carried by Q9 (+0.500) and Q8 (+0.250), **harmful on Q2 (−0.143)**, inert on
+> 6/10. With D5's `SYN:car`, **"expansion off entirely" is now a legitimate third arm.**
+>
+> **THE PLAN, in order, all $0 and zero Gemini quota:** **E1** separate the three budgets and
+> widen the candidate pool to `k=20/doc`, **measure-only first** so widening is a control arm ·
+> **E2** BM25 re-rank **inside** the existing gate (never replacing the scorer — that would move
+> refusal behaviour) · **E3** replace the hand synonym map with a corpus-derived one, built
+> **without looking at the eval questions**, three-arm ablation incl. *no expansion* · **E4**
+> optional pure-numpy **static** embedding blend for the semantic gap (**not** dense retrieval —
+> no ONNX/torch/FAISS/network, or it has left the step) · **E5** re-baseline, then decide M2.
+> **One arm per commit** — a combined commit produces a number nobody can attribute, which is how
+> the synonym map shipped in the first place.
+>
+> **M2 (dense via Gemini embeddings) is GATED, NOT REJECTED.** Its premises were re-checked and
+> they hold — it already owns the query-side trade honestly (tiered fallback, privacy notice,
+> hard-offline toggle, offline invariant amended in the same commit). But
+> `scripts/probe_embed_quota.py` **has never run**, so it cannot be costed; the privacy cost is
+> specific to a population asking about abuse and coercion; and E1–E4 target the same headroom.
+> **Run the probe regardless; decide with E5's numbers.**
+>
+> **PHASE F (M4) NEEDS RE-EXAMINING BEFORE IT IS SCHEDULED.** Colab gives free *training*, not
+> free *serving* — a fine-tuned transformer still cannot embed a query at request time under
+> `requirements.txt`. The variant that survives is fine-tuning a **static** table (E4's artifact).
+>
+> **ORDER CHANGED: E → G → F.** This reverses the G-before-E call taken earlier the same day, on
+> resource grounds: **E costs zero quota and improves the system; G costs ~30 calls — most of a
+> day's free budget — and only measures it.** Judging first spends the scarce resource on a system
+> about to change. AI prose is opt-in and defaults OFF, so unmeasured drift is not reaching users.
+> The earlier decision is kept in `LEARNING_JOURNAL.md`, not erased.
+>
+> **NEXT: finish D6 first** (below), then Phase E.
+>
+> ---
+>
+> **Previous (2026-09-19, later still): D6 is PLANNED AND SPECIFIED — NOT STARTED. Nothing was
 > executed.** Docs-only session, zero Gemini calls, **no `src/`, no `scripts/`, no `data/`
 > touched.** Branch **`phase10/corpus-v2`**, still unmerged on purpose.
 >
@@ -56,6 +107,13 @@
 > **NEXT: D6** (zero quota) — see the playbook checklist. **THEN PHASE G, NOT E — decision taken
 > this session. `CLAUDE.md` is CORRECTED to `D6 → G → E → F` in the same commit** (dated in-place
 > note; the still-true "D before E is load-bearing" line kept, since D → G → E satisfies it).
+>
+> **⚠ THE G-BEFORE-E HALF OF THIS WAS REVERSED LATER THE SAME DAY — see the LATEST banner at the
+> top. The order is now `D6 → E → G → F`.** Kept here rather than edited, because the reasoning
+> is the record: G-before-E was argued on "G is the only phase that measures what a user actually
+> reads", which is true but makes *measurement* the priority; the reversal is on resource grounds
+> (E is free and improves the system, G spends most of a day's quota and only measures it).
+> **"D6 first" is unchanged and still correct.**
 > G (judge + fresh transcripts + `cross_turn_drift`) goes first because it is **the only thing
 > that measures what a user actually reads**; E tunes retrieval that no generated answer has yet
 > been scored against. `cross_turn_drift()` has been wired and unmeasured since Phase 10 B

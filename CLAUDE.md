@@ -181,14 +181,18 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   re-scope the recorded gate FAILs, delete `ACT_KNOWN_ABSENT`, triage the chat set).
   Zero Gemini quota. **Read the D6 section's premises box first** — three of its premises
   were corrected on 2026-09-19 and the stamp fix must land *before* the flip.
-  Then **G → E → F**: **G** (fresh transcripts + judge + cross-turn citation drift,
-  M5 + `11_chat.md`) → **E** (width/pool depth + dense retrieval,
-  `10_corpus_rebuild_and_dense.md` M1/M2) → **F** (free-GPU fine-tune, M4).
-  **G BEFORE E is an owner decision taken 2026-09-19**, reversing the E → F → G order this
-  file carried until then: G is the only phase that measures what a user actually *reads*,
-  whereas E tunes retrieval that no generated answer has yet been scored against, and
-  `chat.cross_turn_drift()` has been wired and unmeasured since Phase 10 B. **G needs a
-  multi-day quota plan before its first call** — see the quota section below.
+  Then **E → G → F**: **E** (retrieval quality — `docs/phases/13_retrieval_quality.md`, **NEW**
+  and the consolidated playbook; supersedes the scattered `09` step 3 and `10` M1/M2 sizing) →
+  **G** (fresh transcripts + judge + cross-turn citation drift, M5 + `11_chat.md`) →
+  **F** (free-GPU fine-tune, M4 — **re-examine before scheduling**, see the box on M4).
+  **E BEFORE G, decided 2026-09-19 on resource grounds**, which reverses the G-before-E call
+  taken earlier the same day (that one is recorded in `LEARNING_JOURNAL.md`, not erased).
+  The reason is asymmetric cost: **E costs zero quota and *improves* the system; G costs ~30
+  calls — most of a day's entire free budget — and only *measures* it.** Judging before E spends
+  the scarce resource on a system about to change, then needs re-running. The safety argument for
+  G-first is weaker than it looked: AI prose is opt-in and defaults OFF, so unmeasured
+  cross-turn drift is not reaching users by default. **G needs a multi-day quota plan before its
+  first call** — see the quota section above.
   **D before E is still load-bearing** (and still satisfied): M2's embedding
   artifact is per-chunk and keyed on a corpus sha256, so embedding before the rebuild
   throws all of it away.

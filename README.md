@@ -66,11 +66,24 @@ and contextualisation was measured *before* the UI shipped: strict recall **0.46
 **0.200 → 0.600**, false refusals *fell*. Offline suites green (`test_phase05.py`
 at **137**).
 
-**Next: Phase D — corpus v2** (`docs/phases/12_corpus_v2.md`). The Act corpus has a
-known citation-integrity defect: a page lost to a duplicate scan means **clause 38 is
-absent from the processed text**, and chunk boundaries let cl.38's tail be served
-under an `[Act cl. 39]` tag. Phase D re-OCRs the authoritative gazette and makes
-clause-aligned chunking structural. Zero Gemini quota.
+**Now: Phase D step D6 — corpus v2** (`docs/phases/12_corpus_v2.md`). D0–D5 are **done** on
+branch `phase10/corpus-v2` (unmerged); D6 flips `CORPUS_VERSION` to `"v2"` and re-baselines.
+The Act corpus has a known citation-integrity defect: a page lost to a duplicate scan means
+**clause 38 is absent from the processed text**, and chunk boundaries let cl.38's tail be
+served under an `[Act cl. 39]` tag — **still live in `main` until D6 merges**. Phase D
+re-OCRs the authoritative gazette and makes clause-aligned chunking structural. Zero Gemini
+quota. Measured result so far: held-out **test** strict recall **0.338 → 0.471**, while the
+*fitted* frozen-10 set is the only one that got worse (0.701 → 0.633) — which is the
+generalisation story, not a regression.
+
+**Then: Phase E — retrieval quality** (`docs/phases/13_retrieval_quality.md`). The legal Q&A
+path is the app's weak half and the diagnosis is measured: the misses are **ranking, not
+absence**. Clean test reads `r@6 = 0.426` shipping against `r@60 = 0.735` in the pool — a
+**+0.309 gap**, against a hard ceiling of 0.824. Plan: widen the candidate pool, BM25 re-rank
+*inside* the existing gate, replace the hand-tuned synonym map with a corpus-derived one, and
+optionally blend a pure-numpy static-embedding signal. **$0, zero Gemini quota, no new runtime
+dependency, default path stays fully offline.** Then **G** (judge + cross-turn drift, quota-paced)
+and **F** (re-examine first — free GPU gives free *training*, not free *serving*).
 
 Numbers to read with the caveats attached: frozen-10 recall **0.925** is measured on
 the same 10 questions the synonym map was tuned on; **held-out recall is 0.420**

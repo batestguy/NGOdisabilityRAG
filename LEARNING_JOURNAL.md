@@ -2266,3 +2266,69 @@ doc is known to be wrong, the cost of fixing it is now; the cost of deferring it
 trusts it in the meantime. Both of today's findings are the same shape as the session's main
 lesson, which is why they belong in one entry: *a record that is true, and uninformative or
 misleading in the way it is read.* `EVAL_CHAT: PASS`. "Fixing it is a Phase G deliverable."
+
+## 2026-09-19 (last) — the answer was already in the harness, printed next to the number
+
+The question was blunt and fair: the legal Q&A path is mediocre, can we fix it on free tier?
+
+What surprised me is that I did not need to design a diagnostic. `eval_heldout.py` has been
+printing the answer since Phase 09 step 2, in a block with its own interpretation rule written
+above it: *"A large gap between @6 and @60 means the miss is RANKING, and a re-ranker can reach
+it. A flat curve would mean the chunk is simply absent."* The clean test set reads `r@6 0.426`
+against `r@60 0.735`. The gap is **+0.309**, and it has been sitting in stdout, unread, through
+six Phase D sessions.
+
+That is a different failure from the ones in the entry above. Not a gate that could not fail, not
+a doc that was wrong — a measurement that was **correct, published, and never acted on**, because
+every session since had a corpus task in front of it. The harness was more useful than anyone was
+asking it to be.
+
+Three things fell out of actually reading it, all of which reshaped the Phase E plan:
+
+**The floor is innocent, and I would have gone after it.** `kept=0` is `0/8 · 0/7 · 0/5 · 0/5`
+across every answerable class, and false refusals are 0/25 and 0/17. Every question already
+retrieves something. "Recall is 0.47" *sounds* like a refusal problem and is not one — it is
+purely ordering. Two prior phases have had to write "do not touch `MIN_SCORE`" into the docs, and
+this is the third; the instinct to reach for the floor when a recall number disappoints is
+apparently very hard to kill.
+
+**We were barely selecting at all.** `k=3/doc` gives **9 candidates for 6 slots**. I had been
+thinking of "re-ranking" as the fix and pool width as a separate nice-to-have, when in fact a
+re-ranker over 9 candidates has almost nothing to do. Width is a *precondition*, not an
+alternative — and that inverted my sizing: M1 had specified `k=8–10/doc`, set in September before
+the recall@k curve existed. The curve is not flat past @20 (`0.559 → 0.735` on test), so M1's
+sizing would have stranded about half the available headroom outside the pool, and the re-ranker
+would then have been judged on what was left. A plausible number, sized against no data, quietly
+capping the step that follows it.
+
+**The synonym map is worse than "fitted" — it is carried by two questions.** I already knew
+0.925-vs-0.420 meant the hand map didn't generalise. What I had not looked at is the ablation's
+*interior*: +0.061 mean on frozen-10, made of Q9 +0.500, Q8 +0.250, Q2 **−0.143**, and six
+questions at exactly zero. A mean can be positive, be computed on the fitted set, and describe a
+component that helps two points and harms one. Writing "expansion off entirely" into the plan as
+a legitimate third arm felt uncomfortable and is obviously right once the row is broken out.
+
+**And one thing I nearly got wrong, which is the reason this entry exists.**
+
+I had written, in conversation, that M2's dense-retrieval premise was broken — that it needed a
+query-time model and therefore could not work on free tier. It sounded right; it matched the
+reasoning that superseded `08_retrieval_upgrades.md` steps 4/5 and M3. I went to read M2 before
+writing the amendment box, and it was **already handled**: embed at tier 1, cache on the
+normalised query, tiered fallback to the offline arm, a visible notice that the question goes to
+Google, a hard-offline toggle, and `CLAUDE.md`'s offline invariant amended in the same commit. A
+deliberate, documented trade, written months before I decided it was an oversight.
+
+So the box I wrote says *gated, not superseded* — M2's price needs paying last, because its quota
+premise is still unmeasured and the privacy cost falls on a population asking about abuse and
+coercion. That is a much weaker claim than "the premise is broken", and it is the true one.
+
+This is the third time in four days that the project's own documents already knew something I was
+about to assert from reasoning: the L614 clause misidentification, the `11_chat.md` quota note,
+and now M2. The pattern is specific enough to name. **When I am about to declare a premise
+falsified, the first move is to read the thing I am falsifying, in full, not to check whether my
+reasoning is self-consistent.** Self-consistent reasoning is exactly what produces a confident
+wrong answer, and this repo has now generated three of them and caught all three by reading.
+
+The cheapest phase in the project turns out to target its weakest measured number, and it needs
+no money, no quota, no GPU and no new dependency. That is a good position, and it was legible
+from stdout the whole time.

@@ -105,6 +105,22 @@ high-volume reading.
 
 ### 3. Retrieval that actually ships (zero quota — REPLACES Phase 08 steps 4 and 5)
 
+> **➡ MOVED 2026-09-19 to [`13_retrieval_quality.md`](13_retrieval_quality.md) (Phase E), as
+> steps E2 and E3. Still valid, still never started — execute it THERE, not here.**
+> Both halves below survive intact; what changed is the evidence around them. The held-out
+> recall@k curve did not exist when this step was written, and it adds two things this section
+> cannot know:
+> 1. **A pool-width precondition.** Shipping is `k=3/doc` = 9 candidates for 6 slots, so a
+>    re-ranker here has almost nothing to re-rank. E1 widens the pool to `k=20/doc` **first**,
+>    as a separate ablatable commit, because test recall goes `r@6 0.426 → r@60 0.735`.
+> 2. **A sharper read on (b).** `ablate_v2.txt` measures the hand map at **+0.061 mean on
+>    frozen-10 — the set it was fitted to** — carried by Q9 (+0.500) and Q8 (+0.250), **harmful
+>    on Q2 (−0.143)**, inert on 6/10. With D5's `SYN:car` finding, **"expansion off entirely" is
+>    now a legitimate third arm** and E3 measures it alongside the hand and auto maps.
+>
+> The green criteria below are superseded by E2/E3's, which add
+> `calibrate_refusal.py`-must-still-report-0-disagreements.
+
 **(a) BM25 re-rank inside the existing gate — step 4's benefit, no ONNX.**
 Keep cosine scoring and `MIN_SCORE` exactly as the admission gate, then re-order the
 already-admitted hits by BM25. Implement BM25 inline over the existing vectorizer (~30 lines,

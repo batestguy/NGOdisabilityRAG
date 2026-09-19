@@ -20,8 +20,14 @@ Phase playbooks: `docs/phases/`. Machine/env notes: `ENVIRONMENTS.md`.
 
 ## Working conventions
 - Work the active playbook in `docs/phases/` in order; each defines its exit criteria.
-  **Active: Phase D — `docs/phases/12_corpus_v2.md`.** (M3 of `10_corpus_rebuild_and_dense.md`
-  is SUPERSEDED; `08_retrieval_upgrades.md` steps 4/5 are superseded.)
+  **Active: Phase D step D6 — `docs/phases/12_corpus_v2.md`** (D0–D5 done, branch
+  `phase10/corpus-v2`, unmerged). **Then `D6 → E → G → F`**, where **E** is the new
+  consolidated retrieval playbook `docs/phases/13_retrieval_quality.md` (reversal of the
+  G-before-E call, decided 2026-09-19: E is free and improves the system, G spends most of a
+  day's quota and only measures it).
+  (M3 of `10_corpus_rebuild_and_dense.md` is SUPERSEDED; `08_retrieval_upgrades.md` steps 4/5
+  are superseded; `09_evidence_and_generation.md` step 3 and `10`'s M1 have MOVED into the
+  Phase E playbook; `10`'s M2 is GATED behind E5 and M4 needs re-examining before scheduling.)
 - Keep code rerunnable end-to-end and modular with comments.
 - Required deliverables: `README.md` (setup, usage, demo link), learning journal (what worked/didn't, benchmarks), architecture diagram, **live demo link — Render, not Spaces** (corrected 2026-09-17; HF Spaces was dropped 2026-09-10, see above).
 - Eval targets: RAGAS faithfulness >0.85, answer relevancy >0.80, context relevancy >0.75.
