@@ -157,7 +157,25 @@ def load_chat_set(which: str | None = None) -> list[dict]:
             elif "expect_slots" in t:
                 raise AssertionError(
                     "%s: expect_slots is only meaningful on a help turn" % tid)
-            turns.append({**t, "expected": exp, "index": i, "turn_id": tid})
+            # RETIRE, NEVER EDIT (D6, 2026-09-19). A turn whose ground truth
+            # was falsified by the corpus rebuild keeps its original text,
+            # class and expected refs and gains a `status`. It stays in the
+            # file for provenance and leaves the MEANS. Rewording a turn to
+            # survive a rebuild, or quietly correcting its expected refs,
+            # would destroy the one thing a blind set is for -- and retiring
+            # a turn merely because it got HARDER is how a corpus rebuild
+            # launders itself into a win. `retired_reason` is mandatory so
+            # the next reader sees the argument, not just the flag.
+            status = t.get("status")
+            assert status in (None, "retired-v2"), (
+                "%s: unknown status %r" % (tid, status))
+            if status is not None:
+                assert t.get("retired_reason", "").strip(), (
+                    "%s: status=%r needs a retired_reason saying WHY the "
+                    "ground truth is wrong -- not that the turn got harder"
+                    % (tid, status))
+            turns.append({**t, "expected": exp, "index": i, "turn_id": tid,
+                          "status": status})
         if which is None or c["set"] == which:
             convs.append({**c, "turns": turns})
     return convs
@@ -175,6 +193,16 @@ def iter_turns(convs: list[dict]):
     for c in convs:
         for t in c["turns"]:
             yield c, t, c["turns"][:t["index"]]
+
+
+def is_scored(turn: dict) -> bool:
+    """False for a turn retired by a corpus rebuild. See load_chat_set().
+
+    A retired turn is still REPLAYED -- it remains part of its conversation's
+    history, because removing it would silently change what every later turn
+    in that conversation resolves against. It is only excluded from the means.
+    """
+    return turn.get("status") is None
 
 
 def verify_expected(convs: list[dict], docs: dict) -> int:

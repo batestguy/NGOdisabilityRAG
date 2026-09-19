@@ -94,6 +94,7 @@ import chat  # noqa: E402
 import router  # noqa: E402
 from chatset import (  # noqa: E402
     SETS,
+    is_scored,
     load_chat_set,
     summary,
     verify_expected,
@@ -154,7 +155,15 @@ def measure_turn(ret, turn: dict, history: list, arm: str) -> dict:
                       min_per_doc=MIN_PER_DOC)
     kept = [h for h in hits if h.score >= MIN_SCORE]
     exp = turn["expected"]
-    exp_pairs = {(d, n) for d, ns in exp.items() for n in ns}
+    # A RETIRED turn is measured and printed but scores None, so every mean()
+    # below -- which already drops None for help/off-corpus turns -- excludes
+    # it at a single point rather than at a dozen call sites. Its expected
+    # refs are left UNTOUCHED in the file; they are simply known to be wrong,
+    # and scoring against known-wrong truth is worse than not scoring.
+    if not is_scored(turn):
+        exp, exp_pairs = {}, set()
+    else:
+        exp_pairs = {(d, n) for d, ns in exp.items() for n in ns}
     ret_pairs = {(h.doc_id, n) for h in hits for n in ref_nums(h.ref)}
 
     # recall@k from ONE wide pool read at prefixes: every depth scores the same
@@ -187,6 +196,7 @@ def measure_turn(ret, turn: dict, history: list, arm: str) -> dict:
         "missed": sorted("%s:%s" % p for p in exp_pairs - ret_pairs),
         "rank": rank,
         "rr": (1.0 / rank) if rank else (0.0 if exp_pairs else None),
+        "status": turn.get("status"),
         **curve,
     }
     if turn["expect_gate"] == "help":
@@ -360,7 +370,11 @@ def turn_table(label: str, by_arm: dict, show_missed: bool) -> None:
         why = c["reason"] if not show_missed else "%s | %s" % (
             c["reason"], ",".join(c["missed"]) or "-")
         flag = ""
-        if n["expect_gate"] == "answer":
+        if c.get("status"):
+            # Loud on every line, so a retirement can never pass as a quiet
+            # n/a. The turn still prints -- it is evidence, not deleted data.
+            flag = "  <-- RETIRED (%s), excluded from means" % c["status"]
+        elif n["expect_gate"] == "answer":
             if c["n_kept"] == 0:
                 flag = "  <-- FALSE REFUSAL"
             elif (n["recall"] is not None and c["recall"] is not None
