@@ -45,7 +45,24 @@ PROMPT_VERSION = "cite-strict-v2"
 # "v2" -- manifest-anchored Act parsing, re-extraction from the PDF text
 # layers -- alongside v1, never replacing it, so v1 numbers stay reproducible
 # from the same commit. A recall number without this stamp is unattributable.
-CORPUS_VERSION = "v1"
+#
+# FLIPPED TO "v2" AT D6, 2026-09-19. v1 is retired as the DEFAULT, not deleted:
+# every harness still takes --corpus=v1 and reproduces its published numbers
+# from this same commit, which is the whole reason the constant exists.
+#
+# This one line changes what FOUR call sites build, silently, because they call
+# build_corpus() with no argument: app.py:458 (the USER PATH),
+# scripts/test_phase05.py:73, scripts/test_phase09_ops.py:218, and ask()'s own
+# fallback build below. That is correct -- the user path should follow the
+# default -- but nothing announces it, so any assert that fails at those sites
+# is pinned to v1 chunk CONTENT and is a finding to record, never a number to
+# relax.
+#
+# What the flip actually ships: the Act's clause 38, absent from v1's text
+# entirely because the v1 scan repeats a page, and an end to cl.38's tail being
+# served under an [Act cl. 39] tag. That defect is live in main until this
+# branch merges.
+CORPUS_VERSION = "v2"
 
 # Sizes pinned from Phase 01: Act section-aware 800; Constitution
 # chapter-aware RECOMMENDED 400 (Q9 needs <=400 to pass 0.16);

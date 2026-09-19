@@ -252,6 +252,16 @@ def eval_question(qid, question, rec, hits, ret) -> dict:
 V1_RESULTS_SHA256 = ("CE716FB3C1EA139B5E3A6885D732C5EBBD3F1B57981635F7D97DA591"
                      "1EDF5F19").lower()
 
+# The same gate for v2, pinned at D6 when the default flipped. Without it the
+# check below would have gone quiet on the SHIPPING corpus the moment v2
+# became the default, leaving only the retired corpus guarded -- the same
+# inversion V2_CORPUS_SHA256 exists to prevent in audit_corpus.py. Measured
+# twice in one session and identical both times; same CRLF caveat as above.
+V2_RESULTS_SHA256 = ("10751076FAA65A300D366932B8CDC7EF2E57BD2CE862CAB950999313"
+                     "ED97E057").lower()
+
+RESULTS_SHA256 = {"v1": V1_RESULTS_SHA256, "v2": V2_RESULTS_SHA256}
+
 
 def main() -> None:
     # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
@@ -320,17 +330,23 @@ def main() -> None:
     # the CRLF-translated file, not of the string we just serialised.
     got = hashlib.sha256(out.read_bytes()).hexdigest()
     print("wrote %s (%d records) sha256=%s" % (out, len(rows), got))
-    if (corpus or CORPUS_VERSION) == "v1" and got != V1_RESULTS_SHA256:
+    stamp = corpus or CORPUS_VERSION
+    want = RESULTS_SHA256.get(stamp)
+    if want is None:
         raise SystemExit(
-            "eval_phase06 results digest DRIFT on corpus v1\n"
-            "  recorded %s\n  measured %s\n"
+            "no results digest pinned for corpus %r. Every corpus version this "
+            "script can run gets its own -- pin one, do not skip the gate."
+            % stamp)
+    if got != want:
+        raise SystemExit(
+            "eval_phase06 results digest DRIFT on corpus %s\n"
+            "  recorded %s\n  measured %s\n" % (stamp, want, got) +
             "Every Phase 06 number published in this repo came from the "
             "recorded file. If you changed retrieval, this is a real "
             "regression -- do not re-pin to silence it.\n"
             "NOTE: this digest is WINDOWS-SPECIFIC. Path.write_text() writes "
             "CRLF here and the digest covers those bytes, so a Linux/macOS run "
-            "will differ for that reason alone and is not evidence of drift."
-            % (V1_RESULTS_SHA256, got))
+            "will differ for that reason alone and is not evidence of drift.")
 
 
 if __name__ == "__main__":
