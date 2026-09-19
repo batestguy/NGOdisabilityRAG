@@ -2236,3 +2236,33 @@ that `CT7.t2` would become scoreable — both held, and could be *confirmed agai
 than re-argued. `CT1.t1` is the more useful of the two: the `<-- FALSE REFUSAL` marker is gone and
 its recall is still `0.000`. The refusal is fixed; the ranking is not. Reporting only the first
 half would have been true and misleading, which is the failure mode this journal keeps circling.
+
+**Postscript, the same session: the habit paid out immediately.**
+
+Having just written down "grep for the class, not the instance", I applied it to the one loose end
+I had flagged — that `CLAUDE.md` still carried the `E → F → G` order the owner had just reversed.
+Grepping every statement of the phase order across the docs turned up that most "Phase E" mentions
+are *content placement* ("width/dense belongs to E"), which stay correct under any ordering, and
+that only one was a genuine sequence claim. Fixing just that would have been the instance.
+
+Two lines further down the same grep sat `docs/phases/11_chat.md:32`: *"`CLAUDE.md` says 20
+calls/day. **It is stale**, and fixing it is a Phase G deliverable."* Written during Phase 10 B.
+`CLAUDE.md`'s quota section named **one** model and quoted 20/day, while the measured reality —
+recorded in that playbook, in `HANDOFF.md` and in `STATUS.md` — is 20/day/model **and**
+10/minute/model across **two separate pools**, i.e. **40/day**, which `ask(failover=True)` has
+been exploiting since Phase 09.
+
+So the root context file that every session loads first has been under-counting the available
+budget **by half**, for weeks, while three other documents recorded the correct figure and one of
+them explicitly said so. The deferral is what kept it alive: "fixing it is a Phase G deliverable"
+reads like the matter is handled, and it parks a known-wrong number in the most-read file in the
+repo until the phase that needs it arrives. It arrives now — Phase G's *first* task is a ~30-call
+judge run, and 30 does not fit in 20 but does fit in 40. The wrong number would have produced
+either a needlessly elaborate multi-day plan or, worse, an abandoned half-run.
+
+The lesson is narrower than the one above and worth having anyway: **deferring a documentation fix
+to the phase that needs it means the phase that needs it starts by reading the wrong number.** If a
+doc is known to be wrong, the cost of fixing it is now; the cost of deferring it is paid by whoever
+trusts it in the meantime. Both of today's findings are the same shape as the session's main
+lesson, which is why they belong in one entry: *a record that is true, and uninformative or
+misleading in the way it is read.* `EVAL_CHAT: PASS`. "Fixing it is a Phase G deliverable."

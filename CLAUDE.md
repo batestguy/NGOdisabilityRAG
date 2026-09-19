@@ -141,9 +141,19 @@ iterated in **insertion order** and hits are sorted by score alone
 
 ## Quota and eval discipline
 
-Gemini free tier is **20 calls/day/model** (`gemini-2.5-flash`, confirmed by 429). A full
-Phase 02 run is 12 calls; the deferred RAGAS-judge run is ~30. Check `HANDOFF.md` for the
-day's spend before starting anything LLM-backed. 503s are transients — retry with backoff.
+Gemini free tier is **20 calls/day/model AND 10/minute/model** (confirmed by 429).
+`gemini-2.5-flash` and `gemini-2.5-flash-lite` draw from **separate pools**, so the real
+budget is **40/day**, and `ask(failover=True)` already exploits it (Phase 09 step 1;
+failover is opt-in, fires once, and **never** on a per-minute 429 — those are retried with
+backoff, not dodged). *Corrected 2026-09-19: this section previously said "20 calls/day/model
+(`gemini-2.5-flash`)" and named one model, which under-counted the budget by half.
+`docs/phases/11_chat.md:31-36` had flagged it stale and assigned the fix to Phase G.*
+
+A full Phase 02 run is 12 calls. **The judge run is ~30, which does not fit in one day on one
+model** — plan the split across days and/or across both pools *before* spending the first
+call, because a half-finished judge run is wasted quota. This is Phase G's first task.
+Check `HANDOFF.md` for the day's spend before starting anything LLM-backed. 503s are
+transients — retry with backoff.
 
 `scripts/eval_phase06.py` is a custom zero-LLM proxy for the RAGAS metrics (RAGAS itself
 is not installed — its langchain/openai tree would endanger the pinned env). Its expected
@@ -166,12 +176,20 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
 ## Working conventions
 
 - Work the active playbook in `docs/phases/` in order; each defines its own exit criteria.
-  **Next up: Phase D — `docs/phases/12_corpus_v2.md`** (corpus v2: Act re-OCR from the
-  authoritative gazette + manifest-anchored parse, Factsheet S/N table, Constitution
-  Arrangement exclusion, refusal re-calibration, re-baseline). Zero Gemini quota.
-  Then **E** (width/pool depth + dense retrieval, `10_corpus_rebuild_and_dense.md` M1/M2)
-  → **F** (free-GPU fine-tune, M4) → **G** (fresh transcripts + judge + cross-turn
-  citation drift, M5 + `11_chat.md`). **D before E is load-bearing:** M2's embedding
+  **Next up: Phase D step D6 — `docs/phases/12_corpus_v2.md`** (D0–D5 are DONE on branch
+  `phase10/corpus-v2`, unmerged; D6 is the re-baseline: flip `CORPUS_VERSION` to `"v2"`,
+  re-scope the recorded gate FAILs, delete `ACT_KNOWN_ABSENT`, triage the chat set).
+  Zero Gemini quota. **Read the D6 section's premises box first** — three of its premises
+  were corrected on 2026-09-19 and the stamp fix must land *before* the flip.
+  Then **G → E → F**: **G** (fresh transcripts + judge + cross-turn citation drift,
+  M5 + `11_chat.md`) → **E** (width/pool depth + dense retrieval,
+  `10_corpus_rebuild_and_dense.md` M1/M2) → **F** (free-GPU fine-tune, M4).
+  **G BEFORE E is an owner decision taken 2026-09-19**, reversing the E → F → G order this
+  file carried until then: G is the only phase that measures what a user actually *reads*,
+  whereas E tunes retrieval that no generated answer has yet been scored against, and
+  `chat.cross_turn_drift()` has been wired and unmeasured since Phase 10 B. **G needs a
+  multi-day quota plan before its first call** — see the quota section below.
+  **D before E is still load-bearing** (and still satisfied): M2's embedding
   artifact is per-chunk and keyed on a corpus sha256, so embedding before the rebuild
   throws all of it away.
   **M3 of `10_corpus_rebuild_and_dense.md` is SUPERSEDED — do not execute it**; two of its

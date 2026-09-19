@@ -54,15 +54,23 @@
 > branch stays unmerged** — merging auto-deploys a half-built corpus to Render.
 >
 > **NEXT: D6** (zero quota) — see the playbook checklist. **THEN PHASE G, NOT E — decision taken
-> this session, and it overrides the D → E → F → G order still written in `CLAUDE.md`.**
+> this session. `CLAUDE.md` is CORRECTED to `D6 → G → E → F` in the same commit** (dated in-place
+> note; the still-true "D before E is load-bearing" line kept, since D → G → E satisfies it).
 > G (judge + fresh transcripts + `cross_turn_drift`) goes first because it is **the only thing
 > that measures what a user actually reads**; E tunes retrieval that no generated answer has yet
 > been scored against. `cross_turn_drift()` has been wired and unmeasured since Phase 10 B
 > (`chat_v2.txt:210-212`: *"STRUCTURALLY UNAVAILABLE here — it needs a generated answer"*).
-> **G NEEDS A MULTI-DAY QUOTA PLAN BEFORE IT STARTS:** free tier is **20 calls/day/model** and the
-> judge run alone is **~30**, so it cannot fit in one day on one model. Plan the split (across
-> days, and/or across `gemini-2.5-flash` + `gemini-2.5-flash-lite`'s separate pool) *before*
-> spending the first call — a half-finished judge run is wasted quota.
+> **G NEEDS A MULTI-DAY QUOTA PLAN BEFORE IT STARTS:** free tier is **20/day/model AND
+> 10/minute/model**, with `gemini-2.5-flash` and `gemini-2.5-flash-lite` on **separate pools** →
+> a real budget of **40/day**. The judge run alone is **~30**, so it does **not** fit in one day
+> on one model. Plan the split (across both pools, and/or across two days) *before* spending the
+> first call — a half-finished judge run is wasted quota.
+>
+> **`CLAUDE.md`'s quota section was wrong about this and is fixed in the same commit.** It read
+> *"20 calls/day/model (`gemini-2.5-flash`)"*, naming one model and **under-counting the budget by
+> half**. `docs/phases/11_chat.md:31-36` had flagged it stale since Phase 10 B and assigned the fix
+> to Phase G; it is discharged early because G's first task is exactly the run that cannot be
+> planned against the wrong number.
 >
 > ---
 >
