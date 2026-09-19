@@ -2158,3 +2158,81 @@ debt: a measurement that was probably right, that nobody could check. 106 probes
 their sources rather than copied, run against both corpora in one process, 212 probe-runs, zero
 disagreements — and it re-runs in about a minute. The gate that was written down is now a gate that
 executes.
+
+## 2026-09-19 (later) — the harness said PASS, and the blind set's gain class had gone to zero
+
+A planning session for D6. No code, no evals, no quota. I set out to check D6's premises against
+the D5 baselines still sitting in `D:\d5_baseline\`, expecting to confirm them and write the
+playbook. Two of the three came back wrong, and the way they came back wrong is the thing worth
+keeping.
+
+**A harness that exits PASS can still be hiding a regression.**
+
+`scripts/eval_chat.py --corpus=v2` prints `EVAL_CHAT: PASS (ground truth verified; all numbers
+reported as measured)`. Every word of that is true. All 51 conversation refs verify against the v2
+corpus. All three Phase B gates pass. Nothing in the script is broken, and nothing in it lies.
+
+Underneath, on `chat_test` — the set authored blind, never tuned against, the last uncontaminated
+set in this project — the ellipsis class went from `0.200 → 0.600 (+0.400)`, the marked gain class
+under v1, to `0.000 → 0.000 (+0.000)`, marked `<-- GAIN CLASS DID NOT IMPROVE`, under v2. Three
+turns lost their contextualised hit. The headline delta fell `+0.130 → +0.043`. The strict columns
+are identical to the plain ones throughout, so it is not the packed-ref subsidy withdrawing the way
+frozen-10's did in D5. It is a real ranking move, and the harness was green through all of it.
+
+The mechanism is worth stating precisely, because "the gates were on the wrong set" is only half of
+it. The gates are computed on `chat_dev`, the tuning set — that is the first half. The second half
+is sharper and sits *inside* the tuning set, where the gate is looking straight at the number:
+
+```
+chat_dev pronoun   v1:  0.571 → 0.714   +0.143
+chat_dev pronoun   v2:  0.143 → 0.286   +0.143
+gate: "ctx BEATS naive on pronoun"      PASS in both runs
+```
+
+The delta is byte-identical. The level fell by a factor of four. The gate is phrased on the delta,
+so it cannot see it. I had been treating "measure the delta between arms, not the absolute" as
+settled good practice — it is how Phase B isolated contextualisation's contribution from the
+retriever's, and it was right for that. What I had not noticed is that it makes the gate blind
+along the one axis a corpus swap moves. A delta gate is a gate on the *treatment effect*; swapping
+the corpus changes the *baseline*, and the treatment effect can hold perfectly while the thing it
+is an effect on collapses underneath.
+
+This is the same species of defect as D5's gate 1, three days earlier: an injection prescribed by
+the docstring that could not falsify the gate, so the gate had been passing for free. Different
+mechanism, identical shape — **a check whose green is uninformative.** D5 caught its instance only
+because the negative test was run rather than assumed. This one was caught only because two stdout
+captures were sitting side by side on disk. Neither was caught by reading the code, and I have now
+watched that fail twice in a week. The rule I am taking from it: *when a gate passes across a
+change that should have moved something, that is a signal to audit the gate, not a signal that
+nothing moved.* A PASS is only evidence if I can say what would have made it FAIL.
+
+**The second lesson is about how the finding was even available.**
+
+D5's handoff recorded one bad line: `eval_heldout.py:438` reads `CORPUS_VERSION`, the module
+constant, instead of the effective `--corpus=` value. That was written up as a bug — singular. It
+is five: `eval_heldout.py:244`, `:373`, `:438` and `eval_chat.py:344`, `:411`. Every per-set and
+headline table in both harnesses reads the constant. `chat_v2.txt` prints `CORPUS_VERSION=v2` on
+line 1, prints the v2 corpus shape on line 2, and then stamps `corpus=v1` on all three of its
+tables.
+
+I did not find the other four by re-reading the code. I found them because the baselines were kept
+as **files on disk** rather than summarised into prose. A summary of `chat_v2.txt` would have
+recorded the numbers and the PASS; it would not have preserved the line that says `CORPUS_VERSION=v2`
+sitting eight lines above a table header that says `corpus=v1`. The contradiction is only visible
+when the whole capture is there, and it is only *provable* while the constant still reads `"v1"` —
+which is why the fix has to land before the flip. Afterwards both the buggy expression and the
+correct one return the same string, and no run can distinguish them again.
+
+Two habits get promoted out of this. **Keep the raw captures, not the summary** — `D:\d5_baseline\`
+paid for itself twice in one session, and it is 18 text files. And **when a bug is recorded, grep
+for its class before writing it down as an instance.** "`eval_heldout.py:438` reads the wrong
+variable" and "every table in both harnesses reads the wrong variable" are different findings with
+different fixes, and the first one, written in a handoff as though it were complete, would have
+sent the next session to patch one line and move on.
+
+One thing did go right, and it went right for a recorded reason. Two predictions written into
+`docs/phases/12_corpus_v2.md` before v2 existed — that `CT1.t1`'s false refusal would clear, and
+that `CT7.t2` would become scoreable — both held, and could be *confirmed against a file* rather
+than re-argued. `CT1.t1` is the more useful of the two: the `<-- FALSE REFUSAL` marker is gone and
+its recall is still `0.000`. The refusal is fixed; the ranking is not. Reporting only the first
+half would have been true and misleading, which is the failure mode this journal keeps circling.

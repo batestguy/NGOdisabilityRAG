@@ -1,6 +1,72 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-19)
 
-> **LATEST (2026-09-19, later): D5 is DONE — the refusal floor was RE-DERIVED against v2 and
+> **LATEST (2026-09-19, later still): D6 is PLANNED AND SPECIFIED — NOT STARTED. Nothing was
+> executed.** Docs-only session, zero Gemini calls, **no `src/`, no `scripts/`, no `data/`
+> touched.** Branch **`phase10/corpus-v2`**, still unmerged on purpose.
+>
+> **Read `docs/phases/12_corpus_v2.md` § D6 before touching anything** — it now carries the
+> premises box, the order of operations, the blast radius, the gate checklist and the exit
+> criteria. This banner is the index, that is the spec.
+>
+> **THREE PREMISES CORRECTED, all by diffing `D:\d5_baseline\chat_v1.txt` against `chat_v2.txt`.**
+>
+> **(1) The stamp bug is FIVE sites, not one.** D5 recorded `eval_heldout.py:438`. It is also
+> **`eval_heldout.py:244`, `:373`** and **`eval_chat.py:344`, `:411`**. `chat_v2.txt` prints
+> `CORPUS_VERSION=v2` on line 1 and `(corpus=v1, …)` on **`:10`, `:110`, `:197`** of the same
+> file. The fix is the `(corpus or CORPUS_VERSION)` form already used at `eval_heldout.py:341`
+> and `eval_chat.py:371`. **It must land BEFORE the `CORPUS_VERSION` flip** — while the constant
+> is still `"v1"` the fix is provable (v2 tables flip, v1 run stays byte-identical); after the
+> flip both readings are `v2` and the proof is gone forever.
+>
+> **(2) `eval_chat --corpus=v2` exits PASS, and that is the problem — DO NOT READ THAT PASS AS
+> PERMISSION TO FLIP.** All 51 refs verify and the Phase B gates are computed on **`chat_dev`**,
+> the tuning set, which still passes. Underneath, on the **blind** set, `chat_test`'s ellipsis
+> gain class collapses **`0.200 → 0.600` (v1) to `0.000 → 0.000` (v2)** (`:146` in both files),
+> pronoun becomes the gain class instead (`:150`), and the headline delta falls
+> **`+0.130 → +0.043`** (`:200`). The `strict` columns are identical to the plain ones throughout,
+> so this is a **real ranking move, not the packed-ref subsidy**. Sharpest instance:
+> `chat_dev`'s pronoun row keeps a **byte-identical `+0.143` delta** while its level falls
+> `0.571 → 0.143` (`:55`) — **a gate phrased on a delta cannot see the level move underneath it.**
+>
+> **(3) Two playbook predictions came true** — confirm, don't re-guess. `CT1.t1`'s
+> `<-- FALSE REFUSAL` marker is at `chat_v1.txt:112` and **absent** at `chat_v2.txt:112` (recall
+> still `0.000` — refusal fixed, ranking not). `CT7.t2` goes **`0.000 → 1.000`** (`:130`): the
+> "unscoreable, not missed" turn is now scoreable.
+>
+> **PLUS ONE GAP: v2 has no content tripwire.** `V1_CORPUS_SHA256` is pinned at
+> `audit_corpus.py:141` and checked at `:586-597`; there is no v2 equivalent, so after the flip
+> the **shipping** corpus would be less protected than the retired one. **Add `V2_CORPUS_SHA256`
+> in the same commit as the flip.**
+>
+> **`D:\d5_baseline\` IS THE LIVE "BEFORE" SET — DIFF IT BEFORE THE FIRST EDIT.** 18 stdout
+> captures, v1 and v2 arms for every suite (`chat_*`, `heldout_*`, `audit_*`, `ablate_*`, `bench`,
+> `ops`, `p03`–`p06`). It is **outside the repo and not backed up by git**; all three findings
+> above exist only because it was kept on disk rather than summarised into prose. Do not delete
+> it until D6 has archived `scripts/baseline_v2_<date>.txt`.
+>
+> **BLAST RADIUS, so the flip is not silent.** `app.py:458`, `scripts/test_phase05.py:73` and
+> `scripts/test_phase09_ops.py:218` all call `build_corpus()` with **no argument**, plus
+> `src/rag.py:642` (`ask()`'s own fallback). Flipping `src/rag.py:48` changes what those suites
+> test with no announcement. **Any assert that fails there is a FINDING, not a number to relax.**
+>
+> **REPO STATE.** `f4b02d6` is HEAD of `phase10/corpus-v2`, pushed. Working tree clean except
+> **`scripts/eval_tmp.json`, untracked scratch that stays untracked**. `main` untouched; **the
+> branch stays unmerged** — merging auto-deploys a half-built corpus to Render.
+>
+> **NEXT: D6** (zero quota) — see the playbook checklist. **THEN PHASE G, NOT E — decision taken
+> this session, and it overrides the D → E → F → G order still written in `CLAUDE.md`.**
+> G (judge + fresh transcripts + `cross_turn_drift`) goes first because it is **the only thing
+> that measures what a user actually reads**; E tunes retrieval that no generated answer has yet
+> been scored against. `cross_turn_drift()` has been wired and unmeasured since Phase 10 B
+> (`chat_v2.txt:210-212`: *"STRUCTURALLY UNAVAILABLE here — it needs a generated answer"*).
+> **G NEEDS A MULTI-DAY QUOTA PLAN BEFORE IT STARTS:** free tier is **20 calls/day/model** and the
+> judge run alone is **~30**, so it cannot fit in one day on one model. Plan the split (across
+> days, and/or across `gemini-2.5-flash` + `gemini-2.5-flash-lite`'s separate pool) *before*
+> spending the first call — a half-finished judge run is wasted quota.
+>
+> ---
+>
+> **Previous (2026-09-19, later): D5 is DONE — the refusal floor was RE-DERIVED against v2 and
 > `MIN_SCORE` DID NOT MOVE.** Zero Gemini calls spent. Branch **`phase10/corpus-v2`** (still
 > unmerged on purpose).
 >

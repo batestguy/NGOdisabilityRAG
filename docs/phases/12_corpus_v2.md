@@ -762,8 +762,89 @@ the script, for the contamination reason `evalset.py` exists.
 
 ### D6 — re-baseline, zero quota
 
+> **⚠ PREMISES CORRECTED BEFORE D6 STARTS — planning pass 2026-09-19, nothing executed.**
+> Three things were found by diffing the surviving D5 baselines in `D:\d5_baseline\` rather than
+> by reading code. They are written here with their evidence paths so the next session can
+> **re-derive them rather than trust them** — every line number below is a line in those two
+> files, which are plain stdout captures and can be re-read at any time.
+>
+> **(1) The stamp bug is FIVE sites, not one.** D5's handoff recorded `eval_heldout.py:438`.
+> The same wrong read is at **`eval_heldout.py:244`, `:373`** and **`eval_chat.py:344`, `:411`** —
+> every per-set and headline table interpolates the module constant `CORPUS_VERSION` instead of
+> the effective `--corpus=` value. Only the two banner lines (`eval_heldout.py:341`,
+> `eval_chat.py:371`) get it right, and they do it with `(corpus or CORPUS_VERSION)` — which is
+> the one-token fix for the other five. **Evidence:** `chat_v2.txt:1` prints `CORPUS_VERSION=v2`
+> and `:2` prints the v2 corpus shape
+> (`act2018 65 · constitution1999 2037 · factsheet2020 32`, vs v1's `62 · 2104 · 48` at
+> `chat_v1.txt:2`), and then **`:10`, `:110` and `:197` of the SAME FILE all print
+> `(corpus=v1, …)`**. Note `eval_heldout.py:438` is not quite the same animal — it is the
+> frozen-10 `assert CORPUS_VERSION == "v1"` guard, which fails *open* rather than mislabelling —
+> but it reads the same wrong variable and is fixed by the same change.
+>
+> **(2) `eval_chat --corpus=v2` exits PASS, and THAT IS THE PROBLEM.** `chat_v2.txt:218` reads
+> `EVAL_CHAT: PASS`, identically to `chat_v1.txt:218`. All 51 refs still verify (`:3` in both).
+> The Phase B gates (`:206-208`) are computed on **`chat_dev`**, the tuning set, and all three
+> still pass. Underneath, on the blind set:
+>
+> | `chat_test`          | v1 (`chat_v1.txt`)            | v2 (`chat_v2.txt`)            |
+> |----------------------|-------------------------------|-------------------------------|
+> | ellipsis (n=5)       | `0.200 → 0.600  +0.400` **gain class** (`:146`) | `0.000 → 0.000  +0.000` **DID NOT IMPROVE** (`:146`) |
+> | pronoun (n=5)        | `0.400 → 0.400  +0.000` **DID NOT IMPROVE** (`:150`) | `0.400 → 0.600  +0.200` **gain class** (`:150`) |
+> | topic-shift (n=3)    | `0.000 → 0.333  +0.333` (`:151`) | `0.667 → 0.667  +0.000` (`:151`) |
+> | headline             | `0.435 → 0.565  +0.130` (`:200`) | `0.478 → 0.522  +0.043` (`:200`) |
+>
+> The `n-strict`/`c-strict` columns are **identical to the plain ones in every row above**, on
+> both corpora — so this is **not** the packed-ref subsidy. It is a real ranking move.
+> Per turn, three ellipsis turns lost their contextualised hit — `CT2.t2` (`1.000/1.000 →
+> 0.000/0.000`), `CT2.t3` and `CT4.t3` (both `0.000/1.000 → 0.000/0.000`) — while `CT1.t3` went
+> `0.000/0.000 → 1.000/1.000` and `CT4.t2` went `0.000/1.000 → 1.000/1.000`. The net on the blind
+> set is roughly flat; the **class structure underneath it inverted**, and the harness said PASS.
+>
+> **The sharpest instance is on the tuning set, where the gate looks straight at it.**
+> `chat_dev`'s pronoun row is `0.571 → 0.714 (+0.143)` in v1 (`chat_v1.txt:55`) and
+> `0.143 → 0.286 (+0.143)` in v2 (`chat_v2.txt:55`). **The delta is byte-identical; the level
+> fell by a factor of four.** The Phase B gate is phrased "ctx BEATS naive", so it reads the
+> delta and passes both times (`chat_v1.txt:207` `0.571 -> 0.714 PASS`; `chat_v2.txt:207`
+> `0.143 -> 0.286 PASS`). A gate on a delta cannot see the level move underneath it.
+> **D6 must not read that PASS as permission to flip.**
+>
+> **(3) Two playbook predictions already came true** — confirm them, do not re-guess them.
+> `CT1.t1` carries `<-- FALSE REFUSAL` at `chat_v1.txt:112` and **the marker is absent from
+> `chat_v2.txt:112`** (the recall is still `0.000/0.000`, so the refusal is fixed and the ranking
+> is not — both halves matter). `CT7.t2`, recorded below as "unscoreable, not missed", goes
+> `0.000 → 0.000` at `chat_v1.txt:130` and **`0.000 → 1.000` at `chat_v2.txt:130`**: now
+> scoreable, exactly as this playbook predicted.
+
+> **⚠ ORDER OF OPERATIONS — the stamp fix lands BEFORE the `CORPUS_VERSION` flip.**
+> This is invisible in a diff, so it is written down. While `src/rag.py:48` still reads
+> `CORPUS_VERSION = "v1"`, the stamp fix is **provable**: a `--corpus=v2` run's tables must flip
+> from `corpus=v1` to `corpus=v2` while the plain `--corpus=v1` run stays **stdout
+> byte-identical**. That is a two-sided check — it catches both a missed site and an
+> over-eager one.
+>
+> **After the flip, both readings are `v2` and the proof is gone**: the buggy expression and the
+> correct one return the same string, forever. Fix the five sites, demonstrate the flip in
+> stdout, commit that; then flip the constant in a separate commit.
+
+> **⚠ BLAST RADIUS OF THE ONE-LINE FLIP.** `src/rag.py:48` is one line, and three suites change
+> what they test the moment it moves, silently, because they call `build_corpus()` with **no
+> argument**: **`app.py:458`** (`return PerDocRetriever(build_corpus())` — the user path),
+> **`scripts/test_phase05.py:73`** (the 137-assert UI suite) and
+> **`scripts/test_phase09_ops.py:218`** (the 51-assert ops suite, which then feeds a frozen
+> question through real retrieval). Add `src/rag.py:642`, `ask()`'s own fallback build, from the
+> D1 caller-policy table.
+>
+> These are correct as written — the user path *should* follow the default. The hazard is that
+> nothing announces the change. **Any assert that fails there is pinned to v1 chunk content, and
+> that is a FINDING to record, not a number to relax.**
+
 - Flip `CORPUS_VERSION` to `"v2"`. **Keep the v1 tripwire runnable** so the published shape stays
   provable.
+- **Add `V2_CORPUS_SHA256`, mirroring the v1 pin.** `audit_corpus.py:141` defines
+  `V1_CORPUS_SHA256` and `:586-597` checks it; v2 has **no equivalent**. After the flip the
+  **shipping** corpus would be less protected than the retired one — the exact inversion the
+  fingerprint was introduced to prevent, since `V1_EXPECTED`'s integers cannot see text moving
+  between chunks at constant count. Pin it in the same commit as the flip.
 - **`audit_corpus.py` becomes the gate**: ≤1% general, 0 packed, 58/58 clauses citable, `act_ref`
   validator agrees — **and `ACT_KNOWN_ABSENT` is DELETED, not emptied**, so nobody can re-add a
   clause to it. Its "SINGLE-SOURCE for now" caveat (`:202-205`) and the "the pixels do not exist"
@@ -837,7 +918,90 @@ not mention them at all.
 - Clauses **19/35/37/38/40/54** become newly citable and deserve coverage.
 - Known trap from the Phase 10 B review addendum: `CT7.t2` is **unscoreable, not missed** — it
   expects `act2018:[5]` but the chunk carrying the First Schedule list is reffed `general`. v2
-  should make it scoreable; check it explicitly rather than assuming.
+  should make it scoreable; check it explicitly rather than assuming. **Now confirmed:
+  `0.000 → 1.000` at `chat_v2.txt:130`.** Record it as a prediction that held, and drop the
+  "unscoreable" caveat from the set's notes at the same time.
+
+**The mechanical half of this step is already done, and that is the trap.**
+`chat ground truth verified against corpus: 51 expected refs` prints at **`chat_v2.txt:3`** —
+`verify_expected()` passes on v2 unchanged. Every one of the 51 refs still resolves to some chunk.
+So D6's real work here is **not** re-verification; it is **triage of every turn that moved**:
+
+- **Ground truth now wrong under v2** → `"status": "retired-v2"`, stays in the file, excluded from
+  means. This is the `questions.json` discipline, applied unchanged.
+- **Ground truth still right, ranking got worse** → **record it and hand it to Phase E.** Do not
+  retire a turn because it got harder. Retiring a regression is how a corpus rebuild launders
+  itself into a win.
+- **Use the `recall_strict` columns to tell those apart.** `eval_chat` already publishes
+  `n-strict`/`c-strict` beside `naive`/`ctx` — the same separation D5 used on frozen-10. In the
+  D5 baselines the strict and plain columns are **identical on every `chat_test` class row on both
+  corpora**, which is what rules the packed-ref subsidy out and makes the ellipsis collapse a real
+  move rather than a scoring artifact. If a future row shows them diverging, the plain column is
+  the one lying.
+- **The concrete triage list**, from the baselines, so the next session starts from evidence:
+  regressions **`CT2.t2`, `CT2.t3`, `CT4.t3`** (all ellipsis, all lost the contextualised hit);
+  improvements **`CT1.t3`, `CT4.t2`** (topic-shift) and **`CT7.t2`** (now scoreable); and
+  **`CT1.t1`**, whose false-refusal marker is gone while its recall is still `0.000` — a fixed
+  refusal and an unfixed ranking, which must be reported as both.
+
+> **⚠ `chat_dev` IS THE TUNING SET. Re-tuning on v2 numbers SPENDS `chat_test`.**
+> `CARRY_WINDOW=2 / THIN_MAX=3 / MARKER_MAX=4 / QUESTION_WEIGHT=2` (`chat_v1.txt:8`, unchanged at
+> `chat_v2.txt:8`) were chosen on `chat_dev` **only**. `chat_test` is the last blind set in this
+> project — the 30 held-out single-turn questions were already spent on 2026-09-13 by reading
+> which refs they missed.
+>
+> v2 will make re-tuning look attractive, because `chat_dev`'s pronoun level fell `0.571 → 0.143`
+> while its delta held. **Resist it.** Touching those four constants in response to a v2 number
+> converts `chat_test` from a blind set into a second tuning set, and no later number from it
+> means anything. If the thresholds genuinely need to move, that is **Phase E with a newly
+> authored set**, not a D6 side-effect.
+
+#### D6's gate re-scopes, as a checklist
+
+Each of these has a ⚠ box above with the evidence; this is the executable summary, against line
+numbers already identified.
+
+- [ ] **Factsheet: assert `row_spanning == 0`**, make `V2_MAX_PACKED` per-doc (or exempt the
+      factsheet by name, with the reasoning in the code). **Keep printing `packed`** — it is still
+      the right metric for the other two docs. Gate block at `audit_corpus.py:628-643`, which
+      already names the re-scope in place.
+- [ ] **Constitution: assert `toc_general_out_ch8 == 0`** plus the **pinned 8 + 26 inventory**
+      (a new demotion anywhere changes one of those two integers — that inventory is what covers
+      the stated Chapter VIII proxy hole). Gate block at `audit_corpus.py:602-627`. **Do not close
+      it by deleting the Schedules.**
+- [ ] **`act_ref`: scope the assert to the two cases it genuinely catches** — a stray line-start
+      `NN.` in body text, and header/ref drift from future chunking changes.
+      **Never promote the raw 65/65 rate as a cross-source gate**; the sources share an upstream.
+      `act_ref_validator()` at `audit_corpus.py:346-377`.
+- [ ] **`ACT_KNOWN_ABSENT` DELETED, not emptied** — `audit_corpus.py:126`, with its readers at
+      `:295`, `:297`, `:308`, `:452`, `:482` and its caveats at `:202-205` and `:215`. An empty set
+      is an invitation to re-add a clause; a deleted name is a `NameError`.
+- [ ] **`V2_CORPUS_SHA256` pinned**, mirroring `V1_CORPUS_SHA256` (`audit_corpus.py:141`,
+      checked at `:586-597`).
+- [ ] **The five stamp sites fixed** — `eval_heldout.py:244`, `:373`, `:438`; `eval_chat.py:344`,
+      `:411` — **before** the flip, using the `(corpus or CORPUS_VERSION)` form already at
+      `eval_heldout.py:341` / `eval_chat.py:371`.
+- [ ] **`ablate_phase08`'s `recall > 0.75` gate re-scoped**, per the D5 handoff.
+
+#### D6 exit criteria
+
+So the next session can check itself rather than argue:
+
+1. **Every gate green on its re-scoped metric, with the OLD metric still printed beside it.**
+   A re-scope that deletes the superseded column is indistinguishable from tuning the yardstick.
+2. **v1 fully reproducible from the same commit via `--corpus=v1`** — `eval_heldout`,
+   `eval_chat`, `ablate_phase08`, `audit_corpus` **stdout byte-identical** to the D5 captures in
+   `D:\d5_baseline\`, and `eval_phase06.py` still hashing **`CE716FB3…5F19`** (to a
+   `--out=` path, **equals form only**).
+3. **Every new guard negative-tested by injection** — D5's standard, and D5's own gate 1 is the
+   reason it is non-negotiable: a gate whose prescribed injection could not falsify it had been
+   passing for free. A guard that has never been made to fail has not been shown to work.
+4. **`MIN_SCORE` still `0.10`.** D5 re-derived it against v2 and it did not move; D6 re-baselines
+   retrieval and must not quietly relitigate the floor. **Do not re-open the `SYN:car` question.**
+5. **Every moved chat turn triaged and dispositioned in writing** — retired-v2, or handed to E.
+   Silence on a moved turn is a failed exit.
+6. `scripts/baseline_v2_<date>.txt` archived, so D7+ has a "before" set on disk the way D5 left
+   one for D6. **That is the only reason these findings exist** — see the journal entry.
 
 ---
 
