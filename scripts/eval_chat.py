@@ -102,6 +102,18 @@ from evalset import ref_nums, strict_covered  # noqa: E402
 from rag import CORPUS_VERSION, build_corpus  # noqa: E402
 from retrieve import MIN_SCORE, PerDocRetriever, select_top  # noqa: E402
 
+# ---- the corpus stamp (D6, 2026-09-19) -----------------------------------
+# See the same block in eval_heldout.py. Two of the five mis-stamped sites are
+# here: chat_v2.txt printed "CORPUS_VERSION=v2" on line 1 and "(corpus=v1, ...)"
+# on the per-turn tables (:10, :110) and the headline (:197).
+_EFFECTIVE_CORPUS = None
+
+
+def corpus_stamp() -> str:
+    """The corpus version this run is actually measuring."""
+    return _EFFECTIVE_CORPUS or CORPUS_VERSION
+
+
 # Held identical to eval_heldout.py / ask() / eval_phase06 / ablate_phase08.
 K_PER_DOC = 3
 TOP_N = 6
@@ -341,7 +353,7 @@ def refusal_tables(label: str, by_arm: dict, show_detail: bool) -> list:
 
 def turn_table(label: str, by_arm: dict, show_missed: bool) -> None:
     print("\n== %s -- PER TURN (corpus=%s, k=%d/doc, top_n=%d, MIN_SCORE=%.2f) =="
-          % (label, CORPUS_VERSION, K_PER_DOC, TOP_N, MIN_SCORE))
+          % (label, corpus_stamp(), K_PER_DOC, TOP_N, MIN_SCORE))
     print("  %-10s %-22s %-7s %-7s %-7s %-6s %s" % (
         "turn", "class", "gate", "naive", "ctx", "carry", "why / still-missed"))
     for n, c in zip(by_arm["naive"], by_arm["contextualised"]):
@@ -365,10 +377,12 @@ def main(argv=None) -> int:
     # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
     corpus = next((a.split("=", 1)[1] for a in argv
                    if a.startswith("--corpus=")), None)
+    global _EFFECTIVE_CORPUS
+    _EFFECTIVE_CORPUS = corpus          # every stamp below reads corpus_stamp()
 
     convs = load_chat_set()
     docs = build_corpus(corpus)
-    print("CORPUS_VERSION=%s" % (corpus or CORPUS_VERSION))
+    print("CORPUS_VERSION=%s" % corpus_stamp())
     print("corpus: %s" % {k: len(v) for k, v in docs.items()})
     n_refs = verify_expected(convs, docs)   # HARD failure on a ground-truth bug
     print("chat ground truth verified against corpus: %d expected refs" % n_refs)
@@ -408,7 +422,7 @@ def main(argv=None) -> int:
 
     # ---- the headline, both sets, both arms, one block.
     print("\n== HEADLINE: ALL SETS, BOTH ARMS (corpus=%s, shipping arm k=%d/doc "
-          "-> select_top(%d)) ==" % (CORPUS_VERSION, K_PER_DOC, TOP_N))
+          "-> select_top(%d)) ==" % (corpus_stamp(), K_PER_DOC, TOP_N))
     print("  %-46s %-8s %-8s %-8s %s" % ("set", "naive", "ctx", "delta", "n"))
     for s in SETS:
         nr = mean(r["recall"] for r in measured[s]["naive"])

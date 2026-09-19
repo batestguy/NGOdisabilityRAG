@@ -68,8 +68,10 @@ FOUR METRICS, AND WHICH ONE SURVIVES A CORPUS REBUILD (Phase 10 A)
   MRR / rank     rank_of_first_expected in that pool, and 1/rank. Tells you
                  how far a re-ranker would have to lift a miss.
 
-Every table is stamped with CORPUS_VERSION. A recall number in this project's
-history that lacks that stamp is a v1 number.
+Every table is stamped with corpus_stamp() -- the corpus this run actually
+built, NOT the module constant. A recall number in this project's history that
+lacks that stamp is a v1 number; one printed before 2026-09-19 that claims
+"corpus=v1" under a --corpus=v2 run is mis-stamped, not v1 (D6, five sites).
 
 EXIT CODE POLICY (this is a deliberate design decision, not laxity)
 -------------------------------------------------------------------
@@ -98,6 +100,21 @@ from evalset import (  # noqa: E402
 )
 from rag import CORPUS_VERSION, build_corpus  # noqa: E402
 from retrieve import MIN_SCORE, PerDocRetriever, select_top  # noqa: E402
+
+# ---- the corpus stamp (D6, 2026-09-19) -----------------------------------
+# Every table stamps the corpus this run ACTUALLY built: the --corpus= override
+# when one was passed, the module default otherwise. Reading CORPUS_VERSION
+# directly is the bug D5 found at one site and D6 found at five --
+# `eval_heldout.py --corpus=v2` printed "CORPUS_VERSION=v2" on line 1 and
+# "(corpus=v1, ...)" on every table below it. Routing every stamp through
+# corpus_stamp() makes the wrong read unavailable rather than merely corrected.
+_EFFECTIVE_CORPUS = None
+
+
+def corpus_stamp() -> str:
+    """The corpus version this run is actually measuring."""
+    return _EFFECTIVE_CORPUS or CORPUS_VERSION
+
 
 K_PER_DOC = 3   # ask() / eval_phase06 / ablate_phase08 depth
 TOP_N = 6       # ask() / eval_phase06 / ablate_phase08 merge width
@@ -241,7 +258,7 @@ LABELS = {
 
 def per_question_table(label: str, rows: list[dict], show_missed: bool) -> None:
     print("\n== %s, PER QUESTION (corpus=%s, k=%d/doc, top_n=%d, MIN_SCORE=%.2f) =="
-          % (label.upper(), CORPUS_VERSION, K_PER_DOC, TOP_N, MIN_SCORE))
+          % (label.upper(), corpus_stamp(), K_PER_DOC, TOP_N, MIN_SCORE))
     print("  retrieval only -- no answers exist for this set, so faithfulness /")
     print("  coverage / reverse_rel are structurally unavailable without quota.")
     print("  %-6s %-16s %-7s %-7s %-7s %-7s %-6s %s" % (
@@ -332,13 +349,15 @@ def main(argv: list[str] | None = None) -> int:
     # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
     corpus = next((a.split("=", 1)[1] for a in argv
                    if a.startswith("--corpus=")), None)
+    global _EFFECTIVE_CORPUS
+    _EFFECTIVE_CORPUS = corpus          # every stamp below reads corpus_stamp()
 
     assert_frozen10_matches_notebook()
     rows = load_eval_set()
     by_set = {s: [r for r in rows if r["set"] == s] for s in LABELS}
 
     docs = build_corpus(corpus)
-    print("CORPUS_VERSION=%s" % (corpus or CORPUS_VERSION))
+    print("CORPUS_VERSION=%s" % corpus_stamp())
     print("corpus: %s" % {k: len(v) for k, v in docs.items()})
     n_refs = verify_expected(rows, docs)
     print("ground truth verified against corpus: %d questions, %d expected refs"
@@ -370,7 +389,7 @@ def main(argv: list[str] | None = None) -> int:
     stricts = {s: mean(r["recall_strict"] for r in measured[s]) for s in LABELS}
     print("\n== GENERALISATION: ALL SETS SIDE BY SIDE (the headline) ==")
     print("  corpus=%s, shipping arm k=%d/doc -> select_top(top_n=%d)"
-          % (CORPUS_VERSION, K_PER_DOC, TOP_N))
+          % (corpus_stamp(), K_PER_DOC, TOP_N))
     for s in LABELS:
         n_scored = sum(1 for r in measured[s] if r["recall"] is not None)
         print("  %-40s recall %s  strict %s  (n=%d)"
@@ -435,14 +454,14 @@ def main(argv: list[str] | None = None) -> int:
 
     # ---- the only failure condition.
     print("\n== FROZEN-10 REGRESSION GUARD (the only thing that can fail here) ==")
-    assert CORPUS_VERSION == "v1", (
+    assert corpus_stamp() == "v1", (
         "FROZEN10_RECALL_BASELINE_V1 is a CORPUS v1 number and this run is on "
         "corpus %r. Plain recall is not comparable across corpus versions "
         "(packed refs): add a v2 guard on recall_strict instead of relaxing "
-        "this one." % CORPUS_VERSION)
+        "this one." % corpus_stamp())
     ok = f_recall is not None and f_recall >= FROZEN10_RECALL_BASELINE_V1 - EPS
     print("  frozen-10 recall %s vs recorded baseline %.3f (corpus %s): %s"
-          % (fmt(f_recall), FROZEN10_RECALL_BASELINE_V1, CORPUS_VERSION,
+          % (fmt(f_recall), FROZEN10_RECALL_BASELINE_V1, corpus_stamp(),
              "PASS" if ok else "FAIL"))
     print("  frozen-10 recall_strict %s -- published now, BEFORE v2 exists, so"
           % fmt(stricts["frozen10"]))
