@@ -561,16 +561,88 @@ boilerplate/footer from retrieval.
 
 ### D4 — Constitution: exclude the Arrangement pages, and nothing else
 
-Keep `constitution_aware_split`. Keep **`CONST_SIZE = 400`** (`src/rag.py:54`).
+Keep `constitution_aware_split`. Keep **`CONST_SIZE = 400`** (`src/rag.py:55`).
 
-`_is_toc_fragment` (**`src/rag.py:156-203`**) is **kept and demoted to a lint assertion** — after
-exclusion it should fire ≈0 times. **Assert the count; do not delete the heuristic.** It is the
-Fix-B widening that made `MANUAL_FLAGS == []`, and deleting it would silently restore the Q10
-s.39 misattribution class.
+`_is_toc_fragment` (**`src/rag.py:201-246`**) is **kept and demoted to a lint assertion**.
+**Do not delete the heuristic.** It is the Fix-B widening that made `MANUAL_FLAGS == []`, and
+deleting it would silently restore the Q10 s.39 misattribution class.
 
 **Record explicitly, with Finding 2's measurement, that the section-unit re-extract (2104 → ~500)
 is deferred to Phase E, and why** — it is not needed for the gate, and it is the riskiest change
 in the original plan.
+
+> **MEASURED 2026-09-18, BEFORE WRITING ANY CODE — Finding 2's "`general` → ≈0" IS WRONG, AND
+> THE ≤1% GATE IS UNREACHABLE BY ARRANGEMENT EXCLUSION ALONE.** This is D3's lesson for the
+> second time: a target written before measurement, aimed at the wrong thing. **Re-scope it
+> honestly; do not tune the yardstick, and do not delete text to hit a number.**
+>
+> Arrangement exclusion takes the Constitution **2104 → 2037 chunks** and `general`
+> **99 (4.71%) → 34 (1.67%)**. `V2_MAX_GENERAL_PCT = 1.0` therefore still **FAILS**, and 1.67% is
+> the floor for this step. The residual 34 is **two classes, neither of which is a defect**:
+>
+> | class | n | what it is | why `general` is CORRECT |
+> |---|---|---|---|
+> | `general_unnumbered` (no `§` prefix) | **8** | Preamble ×2, chapter-divider headings ×6 (`Chapter III - Citizenship: Citizenship`) | has no section number at all; any label would be fabrication |
+> | `general_toc` (`§` present, `_is_toc_fragment` demoted it) | **26** | **all 26 in Chapter VIII** — Second/Third/Seventh Schedule legislative-list *items* (`8. Census`, `63. Traffic`) and the Fundamental Rights (Enforcement Procedure) Rules (`ORDER 6`, `FORM NO. 4`, dotted-rule boilerplate) | Schedule **item** N is a different numbering scheme from **section** N. Item 8 "Census" is not s.8. Labelling these `s. N` would be the Q10 misattribution class, deliberately re-created |
+>
+> **Deleting the Schedules to pass the gate is forbidden** — the Second Schedule is operative law
+> and the Enforcement Procedure Rules are the mechanism a PWD uses to enforce Chapter IV. "Exclude
+> the Arrangement pages, **and nothing else**" is the instruction.
+
+#### The cut point — keep the Preamble
+
+Chapters I–VIII appear **twice** in `constitution_1999_NHRC.txt`: the first pass (chars
+124–14,791) is the Arrangement listing, the operative body starts at the **second** `Chapter I`
+(char 18,535). The naive cut is that second heading — and it is **wrong**: the real Preamble
+(*"We the people of the Federal Republic of Nigeria … Do hereby make, enact and give to ourselves
+the following Constitution:-"*, char **17,917**) sits between the two and would be silently
+deleted. **Cut at the Preamble, not at the second chapter heading.** Measured: cut@Preamble keeps
+it (2037 chunks, `general` 34); cut@2nd-Chapter-I loses it (2035, 32).
+
+#### The re-scoped gate: `toc_general` outside the Schedules
+
+Same construction as D3's `row_spanning`, and for the same reason — **a metric measured from
+construction restates the code and is worth nothing as a gate.** Count, from each emitted chunk's
+**text**, the chunks that carry a `§` prefix *and* were demoted by `_is_toc_fragment`, split by
+whether they sit in Chapter VIII:
+
+- **Gate: `toc_general` outside Chapter VIII == 0.**
+- **Demonstrated discriminating power: v1 scores 7, D4 scores 0.** Not assumed — measured.
+- The 7 v1 chunks are the Arrangement tails, and **the 7th is the Q10 trap chunk itself**:
+  `Chapter IV - Fundamental Rights §39: "ion from fundamental human rights. 46 Special
+  jurisdiction of High Court and Legal aid."` So **D4 cures the Q10 class at source** — the
+  chunk ceases to exist — where `_is_toc_fragment` only ever *mitigated* it by relabelling.
+  The heuristic survives as the lint that proves the cure held.
+- **Also pin the inventory**: `general == 34`, decomposing as 8 unnumbered + 26 Chapter VIII, so a
+  new `general` chunk anywhere becomes visible rather than averaging away.
+- **Stated limitation, not to be papered over:** "in the Schedules" is proxied by the
+  `Chapter VIII` label that `constitution_aware_split` prepends. Chapter VIII also holds operative
+  sections 297–320, so a genuine Ch VIII *body* chunk demoted by the heuristic would be invisible
+  to this gate. The pinned inventory above is what covers that hole.
+
+#### Coverage — the D3 trap does NOT fire here, and that is measured
+
+`evalset.verify_expected()` is a hard assert and exclusion **removes** text, so this was checked
+first, exactly as D3 was: **sections reachable from a Constitution ref are 318 before and 318
+after — 0 lost, 0 gained.** The 17 numbers the evalsets expect
+(`6,16,17,18,34,35,36,40,42,45,46,65,66,77,85,117,251`) are all still reachable. No frozen10,
+held-out or test expectation is at risk. Unlike D3, **no ref-shape change is needed.**
+
+#### Deferred to Phase E, by name
+
+**Schedule/Rules chunks get no citable ref of their own in D4.** Giving them one
+(`Sch. 2 item 8`) means a **fourth numbering scheme** through `cite_tag()`, the citation
+invariant and the LLM prompt — real work, and out of scope here. It is the honest fix for the 26,
+and it is why the ≤1% gate should be re-scoped rather than chased.
+
+#### Shape of the change
+
+Mirror D2/D3: a new `_const_chunks_v2()` beside `_const_chunks_v1()`, wired only in
+`build_corpus()`'s v2 branch. **`CONST_SIZE` does not move. `CORPUS_VERSION` stays `"v1"`.
+`docs` insertion order does not change** (`src/retrieve.py:331-338` breaks score ties by it).
+`audit_corpus.py` changes are **reporting only** — `V1_EXPECTED`, `V2_MAX_GENERAL_PCT` and
+`V2_MAX_PACKED` all stay untouched, so the 1.67% FAIL stays visible in stdout until **D6**
+re-scopes it, exactly as D3 left the factsheet's `packed 16` FAIL visible.
 
 ### D5 — the refusal floor. **Mandatory, not conditional.**
 
@@ -616,6 +688,20 @@ In order:
 > `packed` column — it is still the right metric for the other two docs, and the factsheet's real
 > defect count is `row_spanning`, which is measured from chunk TEXT and has demonstrated
 > discriminating power (**v1 26/48, v2 0/32**).
+
+> **⚠ D6 MUST ALSO RE-SCOPE THE CONSTITUTION'S `general` GATE — D4 finding, 2026-09-18.**
+> `V2_MAX_GENERAL_PCT = 1.0` is **unreachable for the Constitution** and D4 left it untouched on
+> purpose, so `--corpus=v2` keeps printing `constitution1999 uncitable 1.7% <= 1.0%: FAIL` with the
+> reason beside it. Arrangement exclusion is the whole of the available fix (99 → 34 general);
+> the residual 34 is **8 structurally unnumbered** chunks (Preamble, chapter dividers) and
+> **26 Chapter VIII Schedule/Rules** chunks where `general` is the *correct* answer, because a
+> Schedule **item** number is not a **section** number and labelling it `s. N` re-creates the Q10
+> misattribution class on purpose. **Do not close this gate by deleting the Schedules** — the
+> Second Schedule is operative law and the Enforcement Procedure Rules are how a PWD enforces
+> Chapter IV. D6 should gate the Constitution on **`toc_general` outside Chapter VIII == 0**
+> (measured from chunk text; **v1 scores 7, v2 scores 0**) plus the pinned 8+26 inventory, and
+> record the `Sch. N item M` fourth-numbering-scheme fix as Phase E work. See the boxed evidence
+> under **D4**.
 
 > **⚠ D6 MUST RE-SCOPE THE `act_ref` VALIDATOR BEFORE ASSERTING ON IT — review finding 2026-09-18.**
 > D2 measured **65/65 = 100% agreement**, and that number is worth much less than it looks.
@@ -1090,20 +1176,173 @@ source lines fail to appear in some row (i.e. the furniture filter deleted no pr
 plan predicted the Constitution alone; the factsheet `packed` FAIL is the visible, deliberate
 consequence of not tuning `V2_MAX_PACKED`. Nothing should expect exit 0 until D6.
 
+### Session 2026-09-18 (later still) — `_const_chunks_v2()`: **D4's gate is MET, on a re-scoped metric**
+
+Zero Gemini quota. No new packages. `requirements.txt` and all three v1 processed TXT files diff
+**empty** against `main`. **All three docs are now v2.**
+
+**The Constitution's Arrangement of Sections is gone from the retrievable corpus.**
+`audit_corpus.py --corpus=v2`:
+
+| doc | chunks | uncitable | packed | row-span | toc-gen (out/in Ch VIII) | len min/med/max |
+|---|---|---|---|---|---|---|
+| act2018 (v2) | 65 | 0 (0.0%) | 0 | 0 | 0/0 | 117 / 410 / 1100 (cap 1100, 0 over) |
+| **constitution1999 (v2)** | **2037** | **34 (1.7%)** | 0 | 0 | **0/26** | 52 / 400 / **400** (cap 400, 0 over) |
+| factsheet2020 (v2) | 32 | 0 (0.0%) | 16 (declared non-defect) | 0 | 0/0 | 130 / 473 / 900 (cap 900, 0 over) |
+
+v1's Constitution was **2104 chunks, 99 uncitable (4.71%), `toc_general` 7 outside Chapter VIII**.
+
+#### The target was wrong for the second phase running, and measurement said so first
+
+Finding 2 promised `general` **→ ≈0**. Measured before a line was written: the floor for
+Arrangement exclusion is **34 (1.67%)**, so `V2_MAX_GENERAL_PCT = 1.0` is **unreachable** on this
+document — the boxed evidence under **D4** above and the warning under **D6**. The residual 34
+decomposes, and **neither class is a defect**:
+
+- **8 `general_unnumbered`** — the Preamble (2 chunks) and six chapter-divider headings
+  (`Constitution, Chapter III - Citizenship: Citizenship`). They carry no section number at all;
+  any `s. N` here would be invented.
+- **26 `general_toc`** — **all 26 in Chapter VIII**: Second/Third/Seventh Schedule legislative-list
+  items (`8. Census`, `63. Traffic`) and the Fundamental Rights (Enforcement Procedure) Rules
+  (`ORDER 6`, `FORM NO. 4`, dotted-rule boilerplate). A Schedule **item** number is not a
+  **section** number — item 8 "Census" is not s.8 — so labelling them `s. N` would deliberately
+  re-create the Q10 misattribution class.
+
+**`V2_MAX_GENERAL_PCT` was NOT touched.** `--corpus=v2` still prints
+`constitution1999 uncitable 1.7% <= 1.0%: FAIL` with the reason printed directly underneath, and
+the script **still exits 1** — now on the Constitution's 1.7% *and* the factsheet's `packed 16`.
+D6 owns both. Exactly the discipline D3 used, for exactly the same reason: a threshold quietly
+widened to fit a measurement reads, three commits later, like one that was always right.
+
+#### The replacement metric, and its demonstrated discriminating power
+
+`toc_general` is measured from each **emitted chunk's text** — does it carry a `§N` prefix inside
+`const_ref()`'s own 160-char window that `_is_toc_fragment` then demoted? — split by whether the
+chunk sits in Chapter VIII. Never from construction: *"we excluded the Arrangement, therefore 0"*
+would restate `_const_chunks_v2()` and gate nothing.
+
+**v1 scores 7 outside Chapter VIII; v2 scores 0.** Measured, not assumed. The 7 are Arrangement
+tails, and **the 7th is the Q10 trap chunk itself**:
+
+```
+Constitution, Chapter IV - Fundamental Rights §39: "ion from
+fundamental human rights. 46 Special jurisdiction of High Court and Legal aid."
+```
+
+**So D4 cures the Q10 class at source — that chunk ceases to exist.** `_is_toc_fragment` only ever
+*mitigated* it by relabelling. The heuristic is **kept**, its docstring now records the inversion,
+and it survives as the **instrument that proves the cure held**.
+
+#### The cut point ate the Preamble in the obvious design, and only measurement caught it
+
+The naive cut is the operative body's second `Chapter I` heading (char 18,535). The Preamble —
+*"We the people of the Federal Republic of Nigeria … Do hereby make, enact and give to ourselves
+the following Constitution:-"*, char **17,917**, 616 chars — sits **between** the two runs and
+would have been silently deleted. Cut@Preamble: **2037 / 34**. Cut@2nd-Chapter-I: **2035 / 32** —
+a *better-looking* `general` number bought by deleting the enacting words of the instrument.
+
+**The cut is at the Preamble, located by `CONST_PREAMBLE_RE` and asserted, never by an offset.**
+Two structural guards, the same flag discipline D2's manifest and D3's row parse use: the marker
+must match **exactly once**, and the cut must separate the two chapter runs (last heading before
+it `VIII`, first after it `I`). A silent fallback to chunking the whole document would produce a
+v2 corpus identical to v1 and the gate would "pass" for the wrong reason — so it raises instead.
+
+**An incidental fix worth recording:** in v1 the Preamble sat *inside* the Arrangement's Chapter
+VIII block, so its three chunks were labelled
+`Constitution, Chapter VIII - Federal Capital Territory, Abuja and General Supplementary
+Provisions:`. In v2 it precedes the first chapter heading and `constitution_aware_split` labels it
+`Constitution, Preamble:` — which is both correct and shorter, so the same 616 chars now fit in
+**2** chunks instead of 3.
+
+#### Implementation — one production file, and the narrowest possible change
+
+`src/rag.py` only, plus reporting in `audit_corpus.py`.
+
+- `_const_chunks_v2()` runs **v1's own text pipeline** — `clean_text(repair_joins(raw))` — and
+  v1's own splitter at **`CONST_SIZE`**, unchanged. **There is no `CONST_V2_SIZE`**, deliberately:
+  a new constant would imply the size moved, and it did not. D4 replaces the **region**, not the
+  text and not the cut. Refs come from `const_ref()` exactly as v1 builds them; **no ref-shape
+  change** (unlike D3).
+- **`_const_chunks_v1()` and `const_ref()` are untouched.** `build_corpus()`'s v2 branch gains one
+  line; **insertion order is unchanged** (`src/retrieve.py:331-338` breaks score ties by it).
+- **How narrow, measured:** **2035 of v2's 2037 chunks are byte-identical in `(ref, text)` to v1's
+  last 2035.** The only two that differ are the relabelled Preamble chunks above. The operative
+  body is not re-chunked at all.
+
+#### The excluded region contains no operative text, and that is measured rather than asserted
+
+The cut discards `text[:17917]` — **3.44%** of the document, **690 non-empty lines**. Its character
+is unambiguous: **zero** of those lines contain the word `shall`, the longest line carries **14**
+words, and only **one** line exceeds 12. It is a title listing end to end
+(`19. Foreign policy objectives. 20. Environmental objectives.`, `233 Appellate jurisdiction.`).
+The last 300 chars excluded are the Arrangement's Seventh-Schedule oath *titles*; the first 300
+kept are the Preamble's opening words.
+
+#### Coverage — the D3 trap did not fire, checked first rather than after
+
+`evalset.verify_expected()` is a **hard assert** and exclusion **removes** text, so this was
+measured before writing code: **sections reachable from a Constitution ref are 318 before and 318
+after — set difference empty in BOTH directions, 0 lost and 0 gained.** The 17 numbers the
+evalsets expect (`6,16,17,18,34,35,36,40,42,45,46,65,66,77,85,117,251`) all remain reachable, and
+`verify_expected()` passes against a **v2** `docs` dict in the real harness for frozen10 (39
+pairs), heldout (48), test (34) and all-121.
+
+#### Deferred to Phase E, by name
+
+The **2104 → ~500 section-unit re-extract** (old M3, Finding 2) is **not needed for this gate and
+is not attempted** — it is the riskiest change in the original plan and the dense arm is what
+actually wants it. Giving Schedule/Rules chunks a citable `Sch. N item M` ref is the honest fix for
+the 26, and it is a **fourth numbering scheme** through `cite_tag()`, the citation invariant and
+the LLM prompt: Phase E, not here.
+
+#### Verification
+
+**v1 did not move.** v1 `corpus_sha256` still **`25650238…e89a`**, `eval_phase06` still hashes
+**`ce716fb3…5f19`**, 9/9 tripwire ok. `eval_heldout` · `eval_chat` · `ablate_phase08` ·
+`bench_phase01` · `test_phase03` · `test_phase09_ops` stdout **0 diff lines** against the
+**pristine stashed code**; `test_phase04` **2** lines (wall-clock latency) and `test_phase05` **4**
+lines (timestamped Streamlit `missing ScriptRunContext!`), both benign and both predicted.
+bench PASS · 03 16/16+7/7 · 04 10/10 · 05 **137** · 09 **51** · `import app` clean (one expected
+`missing ScriptRunContext!` warning, no server) · `requirements.txt` and all three v1 TXT files
+**EMPTY** diff vs `main`.
+
+> **DISCLOSED, exactly as at D3: `audit_corpus.py`'s v1 stdout is RE-BASELINED, not byte-identical.**
+> The pristine-vs-modified diff is **37 entries — 33 `=>`, 4 `<=`**. The 4 removed and 4 of the
+> added are the same lines: the PER DOC header and its three data rows, which gain the `toc-gen`
+> column. The other 29 added are **8 legend lines** and the **21-line `CONSTITUTION general
+> INVENTORY` section** (blank separator included). **Every pre-existing number is
+> unchanged** (62/25/16, 2104/99/0, 48/9/19, row-span 0/0/26, all caps and length stats). Same
+> trade-off D3 made and for the same reason: the metric must print on **both** versions or v1's 7
+> is not available as proof that it can fail.
+
+**The Constitution's v1 `general` inventory is published alongside v2's**, because 99 = 66
+unnumbered + 33 TOC-demoted is what makes 34 = 8 + 26 legible. Note the v1 unnumbered class is
+*not* only Preamble and dividers — it also holds unprefixed Arrangement chunks, which is why it
+drops 66 → 8; the audit says so in place rather than overstating the symmetry.
+
+**Recorded, not fixed here: `--corpus=v2` on `eval_heldout` and `ablate_phase08` exits 1.**
+frozen-10 recall reads **0.666** against the pinned v1 baseline of 0.925. **This pre-dates D4** —
+verified by re-running both at HEAD (`6a5f5d9`, D3 state) with `--corpus=v2`: identical failure,
+identical 0.666. It is the corpus change the whole phase is about, and **D5 (refusal floor) and D6
+(re-baseline) own it**; `eval_heldout.py` fails on the *frozen* yardstick by design. The v2
+direction of travel is not bad — held-out **0.420 → 0.473**, test **0.338 → 0.471**, and
+`eval_chat --corpus=v2` answers **19/23** where D3's v2 answered 18/23, i.e. **one fewer refusal**.
+Nothing here was tuned against those numbers.
+
 ### Next session starts here
 
-**D4 — the Constitution Arrangement exclusion.** Keep `constitution_aware_split`. Keep
-**`CONST_SIZE = 400`**. Keep `_is_toc_fragment` and demote it to a **lint assertion** — after
-exclusion it should fire ≈0 times; **assert the count, do not delete the heuristic** (it is the
-Fix-B widening that made `MANUAL_FLAGS == []`, and deleting it silently restores the Q10 s.39
-misattribution class). Finding 2 already measured the target: all 99 uncitable Constitution chunks
-are Arrangement material and **zero substantive body text is uncitable**, so exclusion takes
-`general` 4.7% → ≈0 without touching `CONST_SIZE`. Record explicitly that the 2104 → ~500
-section-unit re-extract is **deferred to Phase E**, and why. Then **D5** (refusal floor —
-mandatory) and **D6** (re-baseline).
+**D5 — the refusal floor. Mandatory, not conditional.** All three docs are v2 now, so the cosine
+space has moved for real: the Act's chunks run to 1,100 chars, the factsheet's to 900, and the
+Constitution lost 67 chunks and 17,917 characters of high-frequency listing vocabulary from its
+IDF space. In order: (1) re-derive the calibration table at `src/retrieve.py:26-44` **against v2**
+and write the new numbers in; (2) **`MIN_SCORE` may move down, never up**; (3) gate on
+`false_refusal_v2 ≤ false_refusal_v1` (currently 0/10 frozen, 0/25 dev, 0/17 test); (4) the small
+frozen-v1-index escape hatch is the hatch, **not** the default. Then **D6** (re-baseline, flip
+`CORPUS_VERSION`, re-scope all three gates, re-verify `conversations.json`'s 51 refs).
 
 Reminders that still bind: `CORPUS_VERSION` stays `"v1"` until D6 · `ACT_KNOWN_ABSENT = {38, 40}`
 stays until D6 **deletes** it · `MIN_SCORE` may move **down** in D5, never up · do not re-derive any
 manifest in `data/processed/` and do not re-run the OCR · `ACT_V2_SIZE` and `FACT_V2_SIZE` are
-**not** re-tuned before D5 · `audit_corpus.py --corpus=v2` exits **1** until D4 **and** D6's
-factsheet gate re-scope land, by design.
+**not** re-tuned before D5 · `CONST_SIZE` does **not** move and there is no `CONST_V2_SIZE` ·
+`audit_corpus.py --corpus=v2` exits **1** until D6 re-scopes the Constitution's `general` gate
+**and** the factsheet's `packed` gate, by design.

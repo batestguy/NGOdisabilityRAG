@@ -1907,3 +1907,95 @@ The temptation was mild and worth naming anyway: widening the regex would have m
 number match the predicted one. It would also have made sections 4, 5, 26 and 27 newly citable off
 the back of a change made to hit a prediction. **Reporting 16 and explaining it costs one
 paragraph. Reporting 13 by construction costs the ability to trust any number in the file.**
+
+## 2026-09-18 (later still ×2) — the same mistake twice, and a cut that would have deleted the Preamble
+
+D4 was one line in the playbook: *"exclude the Arrangement pages, and nothing else"*, with a target
+inherited from Finding 2 — `general` **99 (4.7%) → ≈0**, comfortably inside the ≤1% gate. I measured
+it before writing the chunker, the way D3 taught me to. The floor is **34 (1.67%)**. The gate is
+unreachable on this document by the only change the step is allowed to make.
+
+### This is the second consecutive phase where the target was aimed at the wrong thing
+
+D3's `packed 0` was unreachable because eight factsheet sections exist only as cross-references, and
+a hard assert needs every one of them. D4's `general ≈0` is unreachable because 34 chunks have no
+section number that `const_ref()` can honestly give them: two Preamble chunks and six chapter
+dividers carry no number at all, and 26 Chapter VIII chunks carry a **Schedule item** number, which
+is not a **section** number. Item 8 is "Census". It is not s.8. Labelling it `s. 8` would re-create
+the Q10 misattribution class deliberately — the exact defect the rest of this phase exists to kill.
+
+Both targets were written from a reading of the corpus rather than a count of it. Finding 2 was not
+careless; it was right about the thing it actually checked (*"all 99 uncitable chunks are Arrangement
+material"* — re-verified this session, still true) and then extrapolated one step past its evidence,
+from *"the uncitable chunks are all TOC"* to *"removing the TOC removes the uncitable chunks"*. The
+missing question is whether the exclusion **creates** any. It does: a Preamble that used to sit
+inside the Arrangement's Chapter VIII block becomes its own unnumbered unit.
+
+**The pattern worth generalising: a target derived from a diagnosis is not a measurement.** Twice
+now, a correct diagnosis produced a wrong target, and both times the honest move was the same —
+re-scope the metric to something with demonstrated discriminating power, leave the old threshold
+untouched and failing in plain sight, and hand the resolution to a later step in writing. The
+alternative both times was a one-line edit that makes the script exit 0.
+
+### Deleting text is always available and is never the answer
+
+There is a version of D4 that clears ≤1%: drop the Schedules and the Enforcement Procedure Rules.
+It is 26 chunks, they are mostly lists, and the gate would go green. It is also the Second Schedule
+— operative law — and the Fundamental Rights (Enforcement Procedure) Rules, which are the mechanism
+a PWD actually uses to enforce Chapter IV. Passing a citability gate by removing the enforcement
+procedure from a disability-rights corpus would be the single worst trade in this project.
+
+The honest fix for those 26 is a citable `Sch. N item M` ref. That is a **fourth numbering scheme**
+through `cite_tag()`, the citation invariant and the LLM prompt, and it is Phase E. Naming it as
+deferred work is cheaper than pretending the number is already right.
+
+### The cut point would have silently eaten the Preamble, and only eyeballing caught it
+
+Chapters I–VIII appear **twice** in the Constitution TXT. The obvious cut is the operative body's
+second `Chapter I` heading. I nearly wrote it. Printing the 600 characters either side of the
+candidate boundary showed the real Preamble sitting **between** the two runs — *"We the people of
+the Federal Republic of Nigeria … Do hereby make, enact and give to ourselves the following
+Constitution:-"*, 616 characters, the enacting words of the instrument.
+
+The nasty part is the scoreboard. Cutting at the chapter heading gives **2035 chunks / 32 general**.
+Cutting at the Preamble gives **2037 / 34**. **The wrong cut looks better on every number the gate
+reads**, and nothing in the audit would have said a word. Deleting content is indistinguishable
+from fixing content if you only ever look at the aggregate.
+
+So the boundary is located by a regex asserted to match **exactly once**, and the cut is asserted to
+separate the two chapter runs — last heading before it `VIII`, first after it `I`. If either check
+fails the function raises rather than falling back to chunking the whole document, because a silent
+fallback would rebuild v1 under a v2 label and the gate would report PASS for the wrong reason.
+
+### The heuristic I was told not to delete became the instrument that proved the fix
+
+`_is_toc_fragment` was written in Phase 08 to *mitigate* the Q10 misattribution: a chunk reffed
+`s. 39` whose body was the Arrangement tail *"ion from fundamental human rights. 46 Special
+jurisdiction of High Court and Legal aid."* The heuristic relabelled it `general`, which stopped the
+LLM citing it, but the chunk stayed in the corpus and stayed retrievable.
+
+D4 deletes it from existence. And the measurement that shows this is the heuristic's own firing
+count, re-scoped: how many chunks carry a `§N` prefix that `_is_toc_fragment` demoted, **outside**
+Chapter VIII? **v1 scores 7 — and the 7th is that exact chunk. v2 scores 0.** The mitigation became
+the proof that the cure held. Keeping it was the right instruction for a reason the instruction did
+not state: not only does deleting it restore the class for any listing text D4 misses, it also
+destroys the only evidence that D4 worked.
+
+Same anti-tautology rule as D3's `row_spanning`, and it matters more here than anywhere: "we
+excluded the Arrangement, therefore no Arrangement chunks" restates the code. Asking each emitted
+chunk's **text** whether it still looks like a listing can actually come back with a number I did
+not want.
+
+### The change is much smaller than the diff makes it look
+
+2035 of v2's 2037 Constitution chunks are **byte-identical in `(ref, text)`** to v1's last 2035. The
+operative body is not re-chunked at all: no new constant, no `CONST_V2_SIZE`, the same splitter at
+the same size, the same `const_ref()`, the same ref grammar. The only two chunks that differ are the
+Preamble — which in v1 was labelled *Chapter VIII, Federal Capital Territory, Abuja* because it had
+been swallowed by the Arrangement's last chapter block, and is now labelled *Preamble*.
+
+I checked that number on purpose. "We only removed a region" is a claim about a diff, and the way to
+support it is to show that everything outside the region came out the same bytes, rather than to
+assert it from the shape of the code. The same instinct applied to the excluded text itself: 690
+non-empty lines, **zero** of which contain the word *shall*, longest line 14 words. A listing, end
+to end — measured, not eyeballed and declared.

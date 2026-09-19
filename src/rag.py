@@ -14,7 +14,12 @@ import os
 import re
 from pathlib import Path
 
-from chunk import constitution_aware_split, recursive_split, section_aware_split
+from chunk import (
+    CHAPTER_RE,
+    constitution_aware_split,
+    recursive_split,
+    section_aware_split,
+)
 from load import build_clean_text, clean_text, repair_joins
 from retrieve import MIN_SCORE, Chunk, PerDocRetriever, cite_tag, select_top
 
@@ -101,6 +106,14 @@ ACT_V2_PATH = ROOT / "data" / "processed" / "act2018_v2_clauses.json"
 
 SECTION_RE = re.compile(r"(Section \d+)", re.IGNORECASE)
 CONST_REF_RE = re.compile(r"\u00a7\u00a7?(\d+)")
+# v2 Constitution only: the enacting words that open the Preamble, and the cut
+# point for the Arrangement-of-Sections exclusion. The marker is the PREAMBLE,
+# not the operative body's first chapter heading -- see _const_chunks_v2() for
+# why that distinction is the whole of D4's correctness argument. Matched as a
+# regex and asserted to occur exactly once; the character offset is never
+# written down, because an offset silently rots the moment the TXT is re-cleaned.
+CONST_PREAMBLE_RE = re.compile(
+    r"We the people of the Federal Republic of Nigeria")
 # Clause headings sit at line starts ("16.\n(1)A person shall not-") or
 # mid-line glued by two-column OCR ("40.Appointment and duties...").
 # Parenthesized subsection markers ("(2)Every public vehicle...") are NOT
@@ -236,6 +249,18 @@ def _is_toc_fragment(body: str, sec: int | None = None) -> bool:
     the corpus, and s.17/s.34/s.46 keep 17/6/6 chunks respectively. Eleven of
     the twelve are Chapter VIII schedule/form boilerplate ("......." dotted
     rules); the twelfth is the Q10 trap chunk.
+
+    D4 DEMOTES THIS TO A LINT -- it is kept, not weakened. _const_chunks_v2()
+    deletes the Arrangement of Sections outright, so the listing fragments this
+    heuristic was written to catch CEASE TO EXIST: on v2 it fires 26 times and
+    all 26 are Chapter VIII Schedule/Rules items, a different and legitimate
+    class where `general` is the correct ref because a Schedule item number is
+    not a section number. The arrangement-tail firings drop from 7 (v1, the
+    seventh being the Q10 trap chunk itself) to 0, which is exactly the
+    measurement audit_corpus.py's `toc-gen` column publishes: the heuristic is
+    now the INSTRUMENT that proves D4's cure held, rather than the mitigation
+    that stood in for it. Deleting it would remove that instrument AND restore
+    the misattribution class for any listing text D4 does not reach.
     """
     heads = {int(n) for n in TOC_HEAD_RE.findall(body) if 1 <= int(n) <= 320}
     words = re.findall(r"[A-Za-z]+", body)
@@ -522,6 +547,85 @@ def _fact_chunks_v2() -> list[Chunk]:
     return chunks
 
 
+def _const_chunks_v2() -> list[Chunk]:
+    """v2 Constitution chunks: the same splitter, minus the Arrangement pages.
+
+    THE SPLITTER DOES NOT MOVE. constitution_aware_split at CONST_SIZE stays
+    exactly as v1 calls it, and so does const_ref(). D4 removes TEXT that was
+    never citable in the first place -- the Arrangement of Sections, i.e. the
+    printed table of contents -- and changes nothing about how the remainder is
+    cut. That is the narrowest change that can fix the defect, which matters
+    because the Constitution is ~95% of the joint index and every cosine in the
+    project moves when it is re-chunked.
+
+    WHY THE PREAMBLE AND NOT THE FIRST CHAPTER HEADING. Chapters I-VIII occur
+    TWICE in the source: once as the Arrangement listing, then again as the
+    operative body. The obvious cut is the body's second `Chapter I` heading --
+    and it is wrong. The real Preamble ("We the people of the Federal Republic
+    of Nigeria ... Do hereby make, enact and give to ourselves the following
+    Constitution:-") sits BETWEEN the two, so cutting at the heading silently
+    deletes the enacting words of the instrument. Measured at D4: cut@Preamble
+    keeps it (2037 chunks, 34 general); cut@2nd-Chapter-I loses it (2035, 32).
+    Losing text and calling it a smaller `general` count is the failure mode this
+    whole phase exists to avoid.
+
+    THE MARKER IS ASSERTED, NEVER ASSUMED -- the same discipline as the Act
+    manifest's flags and fact_v2_rows()'s FACT_ROW_RE guard. A missing or
+    duplicated Preamble means the source TXT changed shape, and the one thing
+    this function must never do in that case is fall back to chunking the whole
+    document: that would quietly restore the 99-general corpus under a v2 label.
+    The two structural asserts -- exactly one Preamble, and a cut that lands
+    after the Arrangement's last chapter heading and before the body's first --
+    are what make a degraded parse fail loudly instead of being consumed.
+
+    WHY THE SCHEDULES STAY, AND WHY `general` IS CORRECT FOR THEM. "Exclude the
+    Arrangement pages, and nothing else" is the instruction, so the Second and
+    Third Schedules and the Fundamental Rights (Enforcement Procedure) Rules are
+    kept: the legislative lists are operative law and the Rules are the mechanism
+    a PWD actually uses to enforce Chapter IV. Their items are numbered -- "8.
+    Census", "63. Traffic", "ORDER 6" -- but a Schedule ITEM number is not a
+    SECTION number. Item 8 is not s.8. Labelling those `s. N` would deliberately
+    re-create the Q10 misattribution class, so const_ref()/_is_toc_fragment
+    demote them to `general` and that is the right answer, not a defect. It does
+    mean `general` bottoms out at 34 (1.67%) here and the <=1% gate is
+    unreachable by exclusion alone; D4 reports that and does NOT tune it. A
+    citable `Sch. N item M` ref means a FOURTH numbering scheme through
+    cite_tag(), the citation invariant and the prompt -- Phase E work, named as
+    such in docs/phases/12_corpus_v2.md D4.
+    """
+    raw_const = CONST_PATH.read_text(encoding="utf-8", errors="replace")
+    const_text = clean_text(repair_joins(raw_const))
+
+    marks = list(CONST_PREAMBLE_RE.finditer(const_text))
+    if len(marks) != 1:
+        raise ValueError(
+            "Constitution Preamble marker matched %d times in %s (expected "
+            "exactly 1) -- the source shape has changed and the Arrangement "
+            "cut point can no longer be located" % (len(marks), CONST_PATH))
+    cut = marks[0].start()
+
+    # The listing and the body both open on chapter headings, so the cut is
+    # valid iff it separates the two runs: every Arrangement heading before it,
+    # every body heading after it. Chapter VIII is the listing's last and
+    # Chapter I is the body's first -- if either side reads otherwise, the cut
+    # has landed inside the listing or past the start of the operative text.
+    heads = list(CHAPTER_RE.finditer(const_text))
+    before = [m.group(1) for m in heads if m.start() < cut]
+    after = [m.group(1) for m in heads if m.start() >= cut]
+    if not before or not after or before[-1] != "VIII" or after[0] != "I":
+        raise ValueError(
+            "Constitution Arrangement cut at char %d is not between the two "
+            "chapter runs (last before: %s, first after: %s) -- refusing to "
+            "chunk a document whose structure is not the one D4 measured"
+            % (cut, before[-1] if before else None,
+               after[0] if after else None))
+
+    return [
+        Chunk("constitution1999", const_ref(c), c)
+        for c in constitution_aware_split(const_text[cut:], size=CONST_SIZE)
+    ]
+
+
 def build_corpus(version: str | None = None) -> dict[str, list[Chunk]]:
     """Load + chunk all three docs. Raw files are never modified.
 
@@ -529,12 +633,17 @@ def build_corpus(version: str | None = None) -> dict[str, list[Chunk]]:
     no-arg caller is unchanged. The default no-arg path is v1 and is
     byte-identical to every published baseline.
 
-    "v2" is a PARTIAL-v2 state on purpose: the Act (D2) and the Factsheet (D3)
-    are v2, the Constitution is still v1, because D4 (Arrangement exclusion) has
-    not been done yet. It exists so each doc's gate is measurable as it lands.
-    The Constitution's row in audit_corpus.py --corpus=v2 therefore still reads
-    v1 shape (99 general, 4.7%) and that is correct at this step, so the script
-    still exits 1. See docs/phases/12_corpus_v2.md D4.
+    All three docs are v2 as of D4: the Act (D2, manifest-anchored), the
+    Factsheet (D3, row-aligned) and the Constitution (D4, Arrangement excluded).
+    CORPUS_VERSION is still "v1" -- D6 flips it, after D5 re-derives MIN_SCORE
+    against the shorter, differently-weighted v2 index.
+
+    audit_corpus.py --corpus=v2 still exits 1, and both remaining FAILs are
+    RECORDED, not outstanding work: the factsheet's `packed 16` (a multi-number
+    ref is the S/N table's own content -- D3) and the Constitution's `uncitable
+    1.7%` (8 structurally unnumbered chunks plus 26 Chapter VIII Schedule/Rules
+    chunks where `general` is the correct answer -- D4). D6 re-scopes both gates;
+    neither may be closed by deleting text. See docs/phases/12_corpus_v2.md.
 
     Deliberately NOT memoized. Insertion order of the returned dict is load-
     bearing -- PerDocRetriever iterates it in order and sorts hits by score
@@ -550,7 +659,8 @@ def build_corpus(version: str | None = None) -> dict[str, list[Chunk]]:
 
     docs: dict[str, list[Chunk]] = {}
     docs["act2018"] = _act_chunks_v1() if version == "v1" else _act_chunks_v2()
-    docs["constitution1999"] = _const_chunks_v1()
+    docs["constitution1999"] = (
+        _const_chunks_v1() if version == "v1" else _const_chunks_v2())
     docs["factsheet2020"] = (
         _fact_chunks_v1() if version == "v1" else _fact_chunks_v2())
     return docs

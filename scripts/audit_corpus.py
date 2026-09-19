@@ -62,6 +62,7 @@ from rag import (  # noqa: E402
     ACT_SIZE,
     ACT_V2_PATH,
     ACT_V2_SIZE,
+    CONST_REF_RE,
     CONST_SIZE,
     CORPUS_VERSION,
     FACT_ROW_RE,
@@ -81,7 +82,9 @@ from rag import (  # noqa: E402
 # ACT_SIZE (800) and the factsheet at FACT_SIZE (500); v2 splits them at
 # ACT_V2_SIZE (1100) and FACT_V2_SIZE (900). Auditing v2 against v1's cap would
 # report most v2 chunks as OVER cap; auditing v1 against v2's cap would silently
-# widen the tripwire. The Constitution is unaffected -- D4 has not happened yet.
+# widen the tripwire. The Constitution takes CONST_SIZE in BOTH versions and
+# always will: D4 excludes the Arrangement REGION and deliberately does not touch
+# the splitter or its size, so there is no CONST_V2_SIZE to key on here.
 def size_caps(version: str) -> dict:
     return {"act2018": ACT_SIZE if version == "v1" else ACT_V2_SIZE,
             "constitution1999": CONST_SIZE,
@@ -178,18 +181,70 @@ def row_spanning(chunks: list) -> int:
     return sum(1 for c in chunks if FACT_ROW_RE.search(c.text))
 
 
+# The Constitution's REAL defect metric, added at D4, and the exact twin of
+# row_spanning above. `general` cannot express it either: after the Arrangement
+# exclusion the Constitution still carries 34 uncitable chunks and NONE of them
+# is a defect -- 8 have no section number at all (the Preamble, chapter-divider
+# headings) and 26 are Chapter VIII Schedule / Enforcement-Procedure-Rules items
+# where `general` is the CORRECT ref, because a Schedule ITEM number is not a
+# SECTION number and labelling "8. Census" as `s. 8` would deliberately re-create
+# the Q10 misattribution class. So `general` stays reported as the count it
+# always was, and THIS is the number that says whether Arrangement-of-Sections
+# listing text is still being chunked as though it were the body.
+#
+# Measured from the chunk TEXT, never from construction. "We excluded the
+# Arrangement, therefore 0" would restate rag._const_chunks_v2() and gate
+# nothing; asking each emitted chunk whether it carries a §N prefix that
+# const_ref()/_is_toc_fragment then DEMOTED can actually fail. Its discriminating
+# power is demonstrated, not assumed: **v1 scores 7 outside Chapter VIII, v2
+# scores 0** -- and the 7th v1 chunk is the Q10 trap chunk itself,
+# `Chapter IV ... §39: "ion from fundamental human rights. 46 Special
+# jurisdiction of High Court and Legal aid."`. D4 deletes it from existence
+# where _is_toc_fragment only ever relabelled it.
+#
+# STATED LIMITATION, not to be papered over: "in the Schedules" is PROXIED by the
+# "Chapter VIII" label that constitution_aware_split() prepends, because the
+# Schedules and the Rules physically sit inside that chapter's block. Chapter
+# VIII also holds OPERATIVE sections 297-320, so a genuine Chapter VIII body
+# chunk wrongly demoted by the heuristic would land in the in-Ch-VIII bucket and
+# be invisible to the gate. The pinned 8 + 26 inventory printed below is what
+# covers that hole -- a new demotion anywhere changes one of those two integers.
+#
+# The 160-char window is const_ref()'s own (src/rag.py), so this asks exactly the
+# question const_ref() asked. Act and factsheet chunks carry no §N prefix at all,
+# so they score 0/0 on it by nature rather than by exemption.
+def toc_general(chunks: list) -> tuple[int, int]:
+    """(outside Chapter VIII, inside Chapter VIII) TOC-demoted uncitable chunks."""
+    out = inside = 0
+    for c in chunks:
+        if c.ref != "general" or not CONST_REF_RE.search(c.text[:160]):
+            continue
+        if "Chapter VIII" in c.text[:160]:
+            inside += 1
+        else:
+            out += 1
+    return out, inside
+
+
 def audit_doc(doc_id: str, chunks: list, caps: dict) -> dict:
     cap = caps[doc_id]
     lens = sorted(len(c.text) for c in chunks)
     n = len(chunks)
     general = [c for c in chunks if c.ref == "general"]
     packed = [c for c in chunks if len(ref_nums(c.ref)) > 1]
+    toc_out, toc_in = toc_general(chunks)
     return {
         "doc_id": doc_id,
         "n": n,
         "size_cap": cap,
         "general": len(general),
         "general_pct": 100.0 * len(general) / n if n else 0.0,
+        # The `general` count decomposed, so a NEW uncitable chunk is visible
+        # rather than averaging away inside a percentage that is already failing.
+        "general_unnumbered": len(general) - toc_out - toc_in,
+        "general_toc": toc_out + toc_in,
+        "toc_general_out_ch8": toc_out,
+        "toc_general_in_ch8": toc_in,
         "packed": len(packed),
         "packed_pct": 100.0 * len(packed) / n if n else 0.0,
         "row_spanning": row_spanning(chunks),
@@ -353,14 +408,15 @@ def main(argv: list[str] | None = None) -> int:
     stats = {d: audit_doc(d, c, caps) for d, c in docs.items()}
 
     print("\n== PER DOC ==")
-    print("  %-18s %-6s %-14s %-14s %-9s %-22s" % (
-        "doc", "chunks", "uncitable", "packed refs", "row-span",
+    print("  %-18s %-6s %-14s %-14s %-9s %-9s %-22s" % (
+        "doc", "chunks", "uncitable", "packed refs", "row-span", "toc-gen",
         "length min/med/max"))
     for d in ("act2018", "constitution1999", "factsheet2020"):
         s = stats[d]
-        print("  %-18s %-6d %-14s %-14s %-9d %d/%d/%d (cap %d)" % (
+        print("  %-18s %-6d %-14s %-14s %-9d %-9s %d/%d/%d (cap %d)" % (
             d, s["n"], "%d (%.1f%%)" % (s["general"], s["general_pct"]),
             "%d (%.1f%%)" % (s["packed"], s["packed_pct"]), s["row_spanning"],
+            "%d/%d" % (s["toc_general_out_ch8"], s["toc_general_in_ch8"]),
             s["len_min"], s["len_med"], s["len_max"], s["size_cap"]))
     print("  uncitable   = ref==\"general\": retrievable, but no legal claim")
     print("                may be cited from it under the project invariant.")
@@ -372,6 +428,14 @@ def main(argv: list[str] | None = None) -> int:
     print("                Constitution score 0 on it; the factsheet is what it")
     print("                measures, and on v2 it -- not `packed` -- is the")
     print("                factsheet's real defect count. Added at D3.")
+    print("  toc-gen     = uncitable chunks that DO carry a Constitution")
+    print("                section marker, i.e. _is_toc_fragment demoted")
+    print("                them, shown OUTSIDE/INSIDE Chapter VIII. Outside")
+    print("                is Arrangement-of-Sections listing text and is the")
+    print("                Constitution's real defect count (v1 7, v2 0);")
+    print("                inside is Schedule / Rules items, where `general`")
+    print("                is the CORRECT ref. Act and factsheet carry no")
+    print("                section marker and score 0/0. Added at D4.")
 
     print("\n== LENGTH HISTOGRAMS (vs size cap) ==")
     for d in ("act2018", "constitution1999", "factsheet2020"):
@@ -434,6 +498,36 @@ def main(argv: list[str] | None = None) -> int:
         ", ".join(str(n) for n in cov["missing_absent_from_source"]) or "none"))
     print("    ^ the pixels do not exist. No stub, no paraphrase, no model")
     print("      knowledge -- record the gap and tell the user to call DRAC.")
+
+    # Printed for BOTH versions, deliberately: the inventory only means anything
+    # next to the number it replaced (v1 99 = 66 + 33), and a metric shown on v2
+    # alone has no demonstrated ability to fail. Same argument as D3's row-span.
+    cs = stats["constitution1999"]
+    print("\n== CONSTITUTION `general` INVENTORY (D4) ==")
+    print("  uncitable total:        %d of %d (%.2f%%)"
+          % (cs["general"], cs["n"], cs["general_pct"]))
+    print("    structurally unnumbered (no section marker at all): %d"
+          % cs["general_unnumbered"])
+    print("      ^ no section number reached const_ref() at all, so there is")
+    print("        nothing to cite by number and any `s. N` would be invented.")
+    print("        On v2 this class is exactly the Preamble (2) and the six")
+    print("        chapter-divider headings; on v1 it also holds unprefixed")
+    print("        Arrangement-listing chunks, which is why it drops 66 -> 8.")
+    print("    section marker present, _is_toc_fragment DEMOTED it: %d"
+          % cs["general_toc"])
+    print("      in Chapter VIII (Schedules + Enforcement Procedure Rules): %d"
+          % cs["toc_general_in_ch8"])
+    print("      OUTSIDE Chapter VIII (Arrangement listing text):           %d"
+          % cs["toc_general_out_ch8"])
+    print("  The OUTSIDE count is the defect one and it is D4's gate: v1 scores")
+    print("  7, v2 scores 0. The 7th v1 chunk is the Q10 trap itself -- Chapter")
+    print("  IV s.39 carrying \"46 Special jurisdiction of High Court and")
+    print("  Legal aid.\" -- which v2 deletes at source, not by relabelling.")
+    print("  The two integers above are PINNED (8 + 26 on v2), because the")
+    print("  Chapter VIII split is only a PROXY for \"in the Schedules\": that")
+    print("  chapter also holds operative sections 297-320, so a genuine body")
+    print("  chunk demoted there would hide inside the in-Ch-VIII bucket. A new")
+    print("  demotion anywhere moves one of these numbers.")
 
     rowfl = fact_row_flags() if version != "v1" else None
     if rowfl is not None:
@@ -512,6 +606,25 @@ def main(argv: list[str] | None = None) -> int:
             if not ok:
                 fails.append("%s: %.1f%% uncitable exceeds %.1f%%"
                              % (d, s["general_pct"], V2_MAX_GENERAL_PCT))
+            if d == "constitution1999" and not ok:
+                # Reported, NOT tuned away -- the same discipline D3 used on the
+                # factsheet's `packed` row directly below. D4 measured that
+                # Arrangement exclusion is the whole of the available fix (99 ->
+                # 34 general) and that the residual 34 is not a defect: see the
+                # CONSTITUTION `general` INVENTORY section above. Closing this
+                # gate by deleting the Schedules is forbidden -- the Second
+                # Schedule is operative law and the Enforcement Procedure Rules
+                # are how a PWD enforces Chapter IV. D6 re-scopes the threshold.
+                print("    ^ EXPECTED at D4 and re-scoped, not tuned: %d of the"
+                      % s["general_unnumbered"])
+                print("      %d are structurally unnumbered and %d are Chapter"
+                      % (s["general"], s["toc_general_in_ch8"]))
+                print("      VIII Schedule/Rules items where `general` is the")
+                print("      CORRECT ref -- a Schedule ITEM number is not a")
+                print("      SECTION number. See the CONSTITUTION `general`")
+                print("      INVENTORY above. D6 gates this doc on toc-gen")
+                print("      outside Ch VIII == %d, which it already meets."
+                      % s["toc_general_out_ch8"])
             ok = s["packed"] <= V2_MAX_PACKED
             print("  %-18s packed refs %d <= %d: %s"
                   % (d, s["packed"], V2_MAX_PACKED, "PASS" if ok else "FAIL"))
