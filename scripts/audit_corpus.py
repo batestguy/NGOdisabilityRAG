@@ -406,14 +406,19 @@ def act_ref_validator(chunks: list) -> dict:
 
     What it can still genuinely catch: a stray line-start "NN." in body text
     flipping act_ref() to a multi-number member list, and a header/ref mismatch
-    introduced by future chunking changes. That is real but narrow. D6 should
-    either validate against the Arrangement TITLE text (which does not share the
-    numeral's upstream) or scope the assert to those cases -- NOT promote this
-    rate as-is and call it a cross-source gate.
+    introduced by future chunking changes. That is real but narrow.
 
-    D2 MEASURES AND REPORTS ONLY. No assert, and act_ref() is NOT adjusted to
-    make the numbers meet -- tuning the validator against the thing it validates
-    would destroy what value it has.
+    D6 SCOPED IT TO EXACTLY THOSE TWO CASES (2026-09-19) and did NOT promote
+    the rate. The v2 gate asserts `disagree` is EMPTY -- a chunk whose heading
+    shape contradicts its manifest ref -- and says nothing about the 65/65
+    figure, which remains reported and explicitly discounted. The alternative
+    the review offered, validating against the Arrangement TITLE, was NOT
+    taken: the manifest's titles come from the Arrangement too, so it would
+    have swapped one shared upstream for another while looking independent.
+    A narrow gate that is honest about its reach beats a broad one that is not.
+
+    act_ref() is NOT adjusted to make the numbers meet -- tuning the validator
+    against the thing it validates would destroy what value it has.
     """
     rows = []
     for i, c in enumerate(chunks):
@@ -733,6 +738,24 @@ def main(argv: list[str] | None = None) -> int:
                 "moved. The per-doc numbers above are a SHAPE check and cannot "
                 "see text moving between chunks at constant count."
                 % (V2_CORPUS_SHA256, got_sha))
+        # act_ref cross-check, SCOPED to contradictions only. NOT a rate: the
+        # two sources share an upstream, so 65/65 is close to a tautology for a
+        # single-clause chunk and is reported discounted, never gated.
+        # Reuses the `val` computed for the report at :500 -- do NOT call
+        # act_ref_validator() again here. It was called twice in the first cut
+        # of this gate, and the duplicate silently ate an injection test.
+        print("  act_ref contradicts manifest ref: %s"
+              % ("PASS (none)" if not val["disagree"] else
+                 "FAIL (%s)" % ", ".join(
+                     "chunk %d: %s vs %s" % r for r in val["disagree"])))
+        if val["disagree"]:
+            fails.append(
+                "act_ref() and the manifest disagree on %d chunk(s): a stray "
+                "line-start 'NN.' in body text, or header/ref drift from a "
+                "chunking change. The AGREEMENT RATE is not gated and is not "
+                "evidence here -- only the contradictions are."
+                % len(val["disagree"]))
+
         # `missing`, NOT `missing_recoverable`. The v2 gate reads the raw list
         # so that no descriptive v1 split can ever soften what ships: every one
         # of the 58 clauses must be citable, with no exclusion available.
