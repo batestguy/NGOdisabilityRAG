@@ -25,22 +25,59 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 # ---------------------------------------------------------------------------
 # Refusal threshold.
-# Calibration (measured 2026-09-08, per-doc merged top-1, k=2/doc):
-#   in-corpus 10Q minima: Q8 0.1690, Q2 0.1744, Q6 0.1751 (all 10 >= 0.169).
-#   Joint-corpus Phase 01 after-table minima: Q5 0.141, Q9 0.167.
-#   generic off-corpus maxima: sourdough 0.124, quantum 0.150, visa 0.161.
-#   same-vocabulary off-corpus ("maritime shipping insurance (law)"):
-#   0.249-0.306 -- ABOVE the weakest in-corpus hit. The band is INVERTED:
-#   no single cosine value separates "shares legal words" from "on-topic".
-#   (TF-IDF scores word overlap, not meaning; "law"/"Act" carry junk high.)
-# Hence MIN_SCORE = 0.10 is a weak-overlap FLOOR, not a semantic filter:
-# below every in-corpus hit on both scales (joint min 0.141, per-doc min
-# 0.169 -- 10/10 pass with margin) while refusing zero-overlap queries.
-# Semantic refusal is the strict LLM layer (exact no-answer sentence ->
-# REFUSAL_MESSAGE in src/rag.py). False refusals deny help to PWDs, so the
-# gate errs low by design; failures are logged, not hidden. Revisit only
-# with a discriminative signal (e.g. query-term coverage), never by nudging
-# this number into the inverted band.
+#
+# RE-DERIVED AGAINST CORPUS v2 ON 2026-09-19 (Phase 10 D5). D2/D3/D4 replaced
+# all three documents, so every cosine in the system moved and this table could
+# not simply be inherited -- longer v2 chunks lower every score, and a lower
+# score can manufacture a FALSE REFUSAL. The re-derivation is a committed,
+# re-runnable script:
+#
+#     C:\conda-envs\drlca-rag\python.exe scripts\calibrate_refusal.py
+#
+# 106 probes (60 eval rows + 12 off-corpus + 34 bare synonym keys) x both
+# corpus versions, built in ONE process on the shipping arm (k=3/doc,
+# select_top(top_n=6, min_per_doc=1)). Every number below is its output; rerun
+# it rather than trusting this comment.
+#
+# CALIBRATION, v1-era (historical) and v2 (current):
+#   in-corpus minima, lowest top score over expect_gate=answer rows
+#                        v1                      v2
+#     frozen10      0.1696 (Q6)             0.2287 (Q10)
+#     dev           0.1359 (H11)            0.1369 (H11)
+#     test          0.1285 (T1)             0.1209 (T9)
+#   off-corpus maxima -- these are FALSE ANSWERS clearing the floor
+#     12 probes     0.3180 (maritime)       0.3180 (maritime)   9/12 clear both
+#     8 refuse rows 0.4193 (H23)            0.4195 (H23)        8/8 -> 7/8
+#
+# THE BAND IS STILL INVERTED, and that conclusion is re-measured, not
+# inherited: weakest in-corpus 0.1285 vs strongest off-corpus 0.4193 on v1,
+# 0.1209 vs 0.4195 on v2. No single cosine value separates "shares legal words"
+# from "on-topic" on EITHER corpus. (TF-IDF scores word overlap, not meaning;
+# "law"/"Act" carry junk high.)
+#
+# A NOTE ON THE FIGURES THIS BLOCK USED TO CARRY (measured 2026-09-08, per-doc
+# merged top-1, k=2/doc): in-corpus 10Q minima Q8 0.1690 / Q2 0.1744 /
+# Q6 0.1751; joint-corpus Phase 01 minima Q5 0.141 / Q9 0.167; off-corpus
+# maxima sourdough 0.124, quantum 0.150, visa 0.161, maritime 0.249-0.306.
+# They are kept as v1-era history, but they were measured on a DIFFERENT arm
+# (k=2/doc, no select_top) and one of them is unreproducible: no `visa` probe
+# exists anywhere in this repo -- the only "visa" in the tree is Constitution
+# item 42 ("Passports and visas"), i.e. corpus text, not a query. That is why
+# D5 replaced the anecdote with an imported, committed probe list.
+#
+# So MIN_SCORE = 0.10 is a weak-overlap FLOOR, not a semantic filter: it sits
+# below every in-corpus minimum on both corpora while still refusing
+# zero-overlap queries. Semantic refusal is the strict LLM layer (exact
+# no-answer sentence -> REFUSAL_MESSAGE in src/rag.py).
+#
+# D5's verdict: the floor HELD. False refusals stayed at 0/10, 0/25 and 0/17 on
+# frozen10/dev/test across BOTH corpora, so v2 is owed no change here and none
+# was made. THE NUMBER MAY MOVE DOWN ON EVIDENCE AND MAY NEVER MOVE UP --
+# calibrate_refusal.py gate 3 enforces exactly that. False refusals deny help
+# to PWDs, so the gate errs low by design; failures are logged, not hidden.
+# Revisit only with a discriminative signal (e.g. query-term coverage), never
+# by nudging this number into the inverted band -- the table above shows there
+# is no value up there that would work.
 # ---------------------------------------------------------------------------
 MIN_SCORE = 0.10
 
@@ -474,13 +511,26 @@ class PerDocRetriever:
 # and the refusal decision is bit-identical, question for question, on every
 # set.
 #
-# That proof WAS checked empirically -- 106 probes on 2026-09-13 (60 eval
-# questions + 12 off-corpus + 34 bare synonym keys), zero flips -- but by a
-# throwaway harness that was never committed, so today the claim rests on the
-# argument above and on a run nobody can reproduce. An earlier draft of this
-# comment pointed at `scripts/ablate_phase09.py`; no such file exists. Phase
-# 10 D needs this battery as a committed script, because it is the gate that
-# lets a dense arm widen admission without moving the refusal decision.
+# That proof is checked empirically by a COMMITTED script, as of Phase 10 D5
+# (2026-09-19): `scripts/calibrate_refusal.py`, block 1. The same 106 probes
+# the 2026-09-13 throwaway harness used (60 eval questions + 12 off-corpus + 34
+# bare synonym keys) but imported from their sources rather than copied, run
+# against BOTH corpus versions in one process: 212 probe-runs, ZERO
+# disagreements. The earlier note here -- that the claim rested on "a run
+# nobody can reproduce" -- is discharged, and so is the draft reference to a
+# `scripts/ablate_phase09.py` that never existed.
+#
+# The battery also records what CANNOT falsify this property, so the next
+# reader does not mistake a silent test for a passing one. Passing floor=0.0
+# to select_top (the "latent inconsistency" its docstring describes) leaves the
+# invariance intact, because the global maximum is in the output at EVERY
+# floor: at 0.0 the quota phase takes each doc's best hit and the global max is
+# some doc's best hit. The gate is instead proven live by a mutant selector
+# that drops the global max, which does fire. Both are in the script's
+# --negative-test path.
+#
+# This is the gate that lets a dense arm widen admission without moving the
+# refusal decision, so re-run it after any change to select_top.
 #
 # WHY A QUOTA AND NOT JUST A WIDER CUT. Showing more than six excerpts changes
 # what the user reads and what the LLM is billed for. The quota keeps the

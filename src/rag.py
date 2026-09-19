@@ -54,8 +54,15 @@ CORPUS_VERSION = "v1"
 # Phase 10 C hazard, recorded here because this is where the numbers live:
 # these sizes were measured with TF-IDF only, against the CORRUPTED Act text,
 # and short chunks concentrate term mass and inflate cosine. Longer v2 chunks
-# lower every cosine and can therefore manufacture false refusals. The
-# MIN_SCORE calibration must be RE-DERIVED against v2, not inherited.
+# lower every cosine and can therefore manufacture false refusals, so the
+# MIN_SCORE calibration had to be RE-DERIVED against v2 rather than inherited.
+#
+# D5 DID re-derive it (2026-09-19, scripts/calibrate_refusal.py) and the hazard
+# did NOT materialise: false refusals stayed 0/10, 0/25 and 0/17 on
+# frozen10/dev/test under v2, identical to v1, and MIN_SCORE stayed at 0.10.
+# These sizes are therefore owed no adjustment on refusal grounds. They are the
+# v1 path and must not move regardless -- every published baseline in this repo
+# is measured on them.
 ACT_SIZE = 800
 CONST_SIZE = 400
 FACT_SIZE = 500
@@ -63,10 +70,16 @@ FACT_OVERLAP = 50
 
 # v2 Act only. A NEW constant, deliberately NOT a change to ACT_SIZE: the v1
 # path must keep its 800 or every published baseline in this repo detaches.
-# 1100 is the playbook's number (docs/phases/12_corpus_v2.md, D2) and is NOT
-# tuned in D2. Longer chunks lower every cosine, so a size chosen here against
-# the refusal floor -- which D5 re-derives -- would leave both fitted to
-# nothing. D5 measures; D2 uses the number as given.
+# 1100 is the playbook's number (docs/phases/12_corpus_v2.md, D2) and was NOT
+# tuned in D2. Longer chunks lower every cosine, so a size chosen there against
+# the refusal floor -- which D5 re-derived -- would have left both fitted to
+# nothing. D2 used the number as given; D5 then measured.
+#
+# D5's outcome (2026-09-19): the floor held at 0.10 with zero false refusals on
+# all three sets, so 1100 is owed no change. It stands unturned, and the Act's
+# in-corpus minima did not sag under it -- frozen-10's weakest top score ROSE,
+# 0.1696 (Q6) on v1 to 0.2287 (Q10) on v2. Re-run scripts/calibrate_refusal.py
+# before moving this number.
 ACT_V2_SIZE = 1100
 
 # v2 Factsheet only. Same discipline as ACT_V2_SIZE: FACT_SIZE/FACT_OVERLAP are
@@ -76,8 +89,13 @@ ACT_V2_SIZE = 1100
 # sweep (700 -> 39 chunks, 900 -> 32, 1200 -> 28, 1800 -> 27, all with 0 over
 # cap): 900 keeps the longest rows (row 20 / Section 32 is 1,491 chars) from
 # dominating an index of 27 mostly-short ones without cutting the median row at
-# all. Like ACT_V2_SIZE it is NOT tuned against the refusal floor -- D5
-# re-derives MIN_SCORE and owns that trade.
+# all. Like ACT_V2_SIZE it was NOT tuned against the refusal floor -- D5
+# re-derived MIN_SCORE and owned that trade.
+#
+# D5's outcome (2026-09-19): no change owed here either. The floor held at 0.10
+# and the one measured v2 movement on a factsheet-led query went the RIGHT way
+# -- H25, an off-corpus dev row, stopped clearing the floor (0.1032 -> refused),
+# one fewer false answer. Re-run scripts/calibrate_refusal.py before moving it.
 FACT_V2_SIZE = 900
 
 # National helplines -- ALWAYS shown on refusal (spec requirement).
