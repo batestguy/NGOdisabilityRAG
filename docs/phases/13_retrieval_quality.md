@@ -1,8 +1,41 @@
 # Phase E — retrieval quality: close the ranking gap, spend nothing
 
 **Status:** PLANNED 2026-09-19, not started. Zero Gemini quota for E1–E4.
-**Runs after:** Phase D step D6 (`12_corpus_v2.md`).
-**Branch:** `phase10/retrieval-quality`.
+**Runs after:** Phase D step D6 (`12_corpus_v2.md`) — **D6 EXECUTED 2026-09-19, Phase D COMPLETE,
+so this playbook is UNBLOCKED.** `CORPUS_VERSION = "v2"` is now the default.
+**Branch:** `phase10/retrieval-quality`, cut from `phase10/corpus-v2` (which is **unmerged** — the
+merge/deploy call is the user's, and Phase E does not need it to have happened).
+
+---
+
+> ## ⚠ AMENDED 2026-09-19, AFTER D6 RAN — two findings bind on the steps below
+>
+> Both come from the D6 chat-set triage (`12_corpus_v2.md` D6 results;
+> `scripts/baseline_v2_2026-09-19.txt`). Neither was known when this playbook was written, and
+> **each one contradicts something stated below.** Read them before judging E1 or E2.
+>
+> **1. `CT4.t3`'s correct chunk is OUTSIDE the 60-candidate pool entirely.** Act cl. 25 sits at
+> **rank 104 at k=200** for that contextualised query. **E1's `k=20/doc` widening does not reach
+> it.** The diagnosis section below is still right that *most* of the loss is ranking — but "found
+> in pool" is measured on the held-out sets at k=60, and the chat sets have misses past that
+> depth too. Do not read an E1 arm that fails to move `CT4.t3` as E1 having failed; it is out of
+> E1's reach by construction, exactly like the 3 test questions named under "Ceiling" below.
+>
+> **2. The mechanism is chunk LENGTH, and that is direct evidence for E2.** `CT4.t3` scored on v1
+> only because a **packed** `cl. 25,26,27` chunk carried its *neighbours'* words ("queue",
+> "accommodation") that contextualisation had introduced. v2's clause-aligned cl. 25 chunk is
+> **305 chars** and contains neither. The naive-arm rank barely moved (v1 40 → v2 41), so the
+> rebuild did not damage retrieval — what changed is that short, correctly-scoped chunks lose to
+> long ones under TF-IDF's length handling. E2's stated `1100` vs `400` spread **understates** it:
+> real v2 chunks run down to ~300 chars. **This is the strongest single piece of evidence in the
+> playbook for doing E2 at all.**
+>
+> **3. `recall_strict` does NOT neutralise the packed-ref subsidy in the `ctx` arm.** It corrects
+> **scoring** — one chunk cannot satisfy two expected refs. It cannot see a chunk *retrieved*
+> because of text belonging to a different clause. E2 green below says "held-out `recall_strict`
+> **is the real result**"; that stays true for the *naive* arm, but **a contextualised `strict`
+> number is not by itself proof that a gain is real.** D5's "strict == plain, therefore not the
+> packed subsidy" inference was wrong on the retrieval side.
 
 ---
 
@@ -123,6 +156,9 @@ measured together in one commit.
 0/25, 0/17) · `MIN_SCORE` untouched · display still 3 inline + expander · suites 03/04/05 green ·
 `import app` clean · `requirements.txt` byte-identical.
 
+> **Not in E1's reach:** `CT4.t3` (rank 104 at k=200) — see the amendment box at the top. A
+> widened pool is not expected to recover it, and E1 is not failing if it does not.
+
 > **⚠ `scripts/test_phase05.py` ASSERTS ON `app.py`'s SOURCE TEXT and will break by design.**
 > Update those assertions in the same commit, never by relaxing them. Same for any
 > `k=3`/`top_n=6` constant pinned in `test_phase09_ops.py`.
@@ -150,7 +186,9 @@ times more relevant) and **length normalisation**. After Phase D the chunk-lengt
 `ACT_V2_SIZE = 1100` against `CONST_SIZE = 400` — a **2.75×** spread. BM25's `k1`/`b` parameters
 exist precisely for those two effects. This is the highest-confidence item in the playbook.
 
-**E2 green:** held-out `recall_strict` **is the real result** · frozen-10 `recall_strict` not
+**E2 green:** held-out `recall_strict` **is the real result** (on the *naive* arm — see amendment
+box point 3: a contextualised `strict` gain can still be a packed-chunk artifact) ·
+frozen-10 `recall_strict` not
 worse · precision still never gated (0.333 is by design — see `CLAUDE.md`) ·
 `calibrate_refusal.py` still 0 disagreements · ablated **separately from E1** so the two gains
 are attributable.

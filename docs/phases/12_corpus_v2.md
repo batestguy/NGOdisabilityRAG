@@ -9,6 +9,16 @@
 **Branch (next session):** `phase10/corpus-v2`, off `phase10/chat-ui`.
 **Quota: zero.** No Gemini call anywhere in this phase. No new packages.
 
+> **STATUS: COMPLETE — D0–D6 all DONE 2026-09-19.** `CORPUS_VERSION = "v2"` is the default
+> (`src/rag.py:48`); v1 is retired as the default but **not deleted** — every harness takes
+> `--corpus=v1` and reproduces its published numbers. Baseline:
+> `scripts/baseline_v2_2026-09-19.txt`, all five harnesses green. **Zero Gemini calls across the
+> whole phase, as scoped.** The branch is **UNMERGED** — merging auto-deploys to Render and that
+> decision is the user's. Per-step results are in the D0–D6 sections below; **read D6's results
+> first**, because it corrected premises the earlier steps were written under.
+> **Next: Phase E — `docs/phases/13_retrieval_quality.md`** (two D6 findings are carried into its
+> amendment box).
+
 ## Goal
 
 Make the project's central invariant — *every legal claim carries a citation tag copied verbatim
