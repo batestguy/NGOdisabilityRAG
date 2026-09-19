@@ -94,6 +94,7 @@ import chat  # noqa: E402
 import router  # noqa: E402
 from chatset import (  # noqa: E402
     SETS,
+    is_scored,
     load_chat_set,
     summary,
     verify_expected,
@@ -101,6 +102,18 @@ from chatset import (  # noqa: E402
 from evalset import ref_nums, strict_covered  # noqa: E402
 from rag import CORPUS_VERSION, build_corpus  # noqa: E402
 from retrieve import MIN_SCORE, PerDocRetriever, select_top  # noqa: E402
+
+# ---- the corpus stamp (D6, 2026-09-19) -----------------------------------
+# See the same block in eval_heldout.py. Two of the five mis-stamped sites are
+# here: chat_v2.txt printed "CORPUS_VERSION=v2" on line 1 and "(corpus=v1, ...)"
+# on the per-turn tables (:10, :110) and the headline (:197).
+_EFFECTIVE_CORPUS = None
+
+
+def corpus_stamp() -> str:
+    """The corpus version this run is actually measuring."""
+    return _EFFECTIVE_CORPUS or CORPUS_VERSION
+
 
 # Held identical to eval_heldout.py / ask() / eval_phase06 / ablate_phase08.
 K_PER_DOC = 3
@@ -142,7 +155,15 @@ def measure_turn(ret, turn: dict, history: list, arm: str) -> dict:
                       min_per_doc=MIN_PER_DOC)
     kept = [h for h in hits if h.score >= MIN_SCORE]
     exp = turn["expected"]
-    exp_pairs = {(d, n) for d, ns in exp.items() for n in ns}
+    # A RETIRED turn is measured and printed but scores None, so every mean()
+    # below -- which already drops None for help/off-corpus turns -- excludes
+    # it at a single point rather than at a dozen call sites. Its expected
+    # refs are left UNTOUCHED in the file; they are simply known to be wrong,
+    # and scoring against known-wrong truth is worse than not scoring.
+    if not is_scored(turn):
+        exp, exp_pairs = {}, set()
+    else:
+        exp_pairs = {(d, n) for d, ns in exp.items() for n in ns}
     ret_pairs = {(h.doc_id, n) for h in hits for n in ref_nums(h.ref)}
 
     # recall@k from ONE wide pool read at prefixes: every depth scores the same
@@ -175,6 +196,7 @@ def measure_turn(ret, turn: dict, history: list, arm: str) -> dict:
         "missed": sorted("%s:%s" % p for p in exp_pairs - ret_pairs),
         "rank": rank,
         "rr": (1.0 / rank) if rank else (0.0 if exp_pairs else None),
+        "status": turn.get("status"),
         **curve,
     }
     if turn["expect_gate"] == "help":
@@ -341,14 +363,18 @@ def refusal_tables(label: str, by_arm: dict, show_detail: bool) -> list:
 
 def turn_table(label: str, by_arm: dict, show_missed: bool) -> None:
     print("\n== %s -- PER TURN (corpus=%s, k=%d/doc, top_n=%d, MIN_SCORE=%.2f) =="
-          % (label, CORPUS_VERSION, K_PER_DOC, TOP_N, MIN_SCORE))
+          % (label, corpus_stamp(), K_PER_DOC, TOP_N, MIN_SCORE))
     print("  %-10s %-22s %-7s %-7s %-7s %-6s %s" % (
         "turn", "class", "gate", "naive", "ctx", "carry", "why / still-missed"))
     for n, c in zip(by_arm["naive"], by_arm["contextualised"]):
         why = c["reason"] if not show_missed else "%s | %s" % (
             c["reason"], ",".join(c["missed"]) or "-")
         flag = ""
-        if n["expect_gate"] == "answer":
+        if c.get("status"):
+            # Loud on every line, so a retirement can never pass as a quiet
+            # n/a. The turn still prints -- it is evidence, not deleted data.
+            flag = "  <-- RETIRED (%s), excluded from means" % c["status"]
+        elif n["expect_gate"] == "answer":
             if c["n_kept"] == 0:
                 flag = "  <-- FALSE REFUSAL"
             elif (n["recall"] is not None and c["recall"] is not None
@@ -362,10 +388,15 @@ def turn_table(label: str, by_arm: dict, show_missed: bool) -> None:
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     reveal_test = "--reveal-test" in argv
+    # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
+    corpus = next((a.split("=", 1)[1] for a in argv
+                   if a.startswith("--corpus=")), None)
+    global _EFFECTIVE_CORPUS
+    _EFFECTIVE_CORPUS = corpus          # every stamp below reads corpus_stamp()
 
     convs = load_chat_set()
-    docs = build_corpus()
-    print("CORPUS_VERSION=%s" % CORPUS_VERSION)
+    docs = build_corpus(corpus)
+    print("CORPUS_VERSION=%s" % corpus_stamp())
     print("corpus: %s" % {k: len(v) for k, v in docs.items()})
     n_refs = verify_expected(convs, docs)   # HARD failure on a ground-truth bug
     print("chat ground truth verified against corpus: %d expected refs" % n_refs)
@@ -405,7 +436,7 @@ def main(argv=None) -> int:
 
     # ---- the headline, both sets, both arms, one block.
     print("\n== HEADLINE: ALL SETS, BOTH ARMS (corpus=%s, shipping arm k=%d/doc "
-          "-> select_top(%d)) ==" % (CORPUS_VERSION, K_PER_DOC, TOP_N))
+          "-> select_top(%d)) ==" % (corpus_stamp(), K_PER_DOC, TOP_N))
     print("  %-46s %-8s %-8s %-8s %s" % ("set", "naive", "ctx", "delta", "n"))
     for s in SETS:
         nr = mean(r["recall"] for r in measured[s]["naive"])

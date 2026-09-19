@@ -35,6 +35,13 @@ project's own style.
 **separate pools** — so the real budget is **40/day**, and `ask(failover=True)` already
 exploits it.
 
+> **RESOLVED 2026-09-19 — `CLAUDE.md`'s "Quota and eval discipline" section now carries these
+> figures, with a dated in-place note recording what it used to say.** The paragraph above stays
+> as the provenance of the correction. The deliverable was discharged early on purpose: the
+> ~30-call judge run is **Phase G's own first task**, and it cannot be planned against a number
+> that under-counts the budget by half — 30 does not fit in 20, but it does fit in 40 across two
+> pools, or across two days on one.
+
 At 40/day a chat session of 5 AI-generated turns costs 5 calls → ~8 conversations/day
 site-wide. That is acceptable for a prototype **only because the default path is offline**:
 every turn returns cited excerpts with zero network calls, unlimited. AI prose stays opt-in,

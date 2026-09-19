@@ -99,15 +99,18 @@ def fmt(v) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
+    corpus = next((a.split("=", 1)[1] for a in argv
+                   if a.startswith("--corpus=")), None)
 
     rows = load_eval_set()
     by_set = {s: [r for r in rows if r["set"] == s] for s in LABELS}
-    docs = build_corpus()
+    docs = build_corpus(corpus)
     verify_expected(rows, docs)
     ret = PerDocRetriever(docs)
 
     print("== PHASE 10 WIDTH ABLATION (CORPUS_VERSION=%s, MIN_SCORE=%.2f) =="
-          % (CORPUS_VERSION, MIN_SCORE))
+          % (corpus or CORPUS_VERSION, MIN_SCORE))
     print("  Every arm declares how many chunks it SHOWS. Two arms showing")
     print("  different counts are NOT comparable -- omitting that is exactly")
     print("  what produced the falsified Phase 09 step 3 plan.")

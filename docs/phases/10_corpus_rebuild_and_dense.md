@@ -33,7 +33,7 @@
 > *Federal Republic of Nigeria Official Gazette No. **10**, Vol. 106, 21 January 2019, Act No. 2,
 > pages A97–A122* (M3 guessed "No. 11"), and it has **no duplicate page at all**.
 >
-> Therefore `ACT_KNOWN_ABSENT = {38, 40}` at `scripts/audit_corpus.py:80` is a **false constant**
+> Therefore `ACT_KNOWN_ABSENT = {38, 40}` at `scripts/audit_corpus.py:90` is a **false constant**
 > and is deleted in Phase D — **cl.40 because it was never absent, cl.38 because the gazette
 > recovers it**, and in **D6**, after the re-OCR, not before. The "no stub / no paraphrase / no
 > model knowledge" rule in M3 stays — it is about what to do *if* a gap is ever real, **and cl.38
@@ -220,6 +220,19 @@ still byte-identical.
 > just not next. Note also that the **display** half (3 inline excerpts + one expander) already
 > landed in Phase 10 C — what remains here is the pool/prompt width, which Phase 10 B measured at
 > **test +0.000**, and it must move in the same commit as the harnesses.
+>
+> **➡ ABSORBED 2026-09-19 into [`13_retrieval_quality.md`](13_retrieval_quality.md) as step E1,
+> WITH ONE SIZING CORRECTION. Execute it there.** The budget-separation argument below is right
+> and is carried over verbatim. The **candidate-pool number is not**: this table says
+> `k=8–10/doc`, sized on 2026-09-13 before the held-out recall@k curve existed. The curve is now
+> measured and is **not flat past @20** — test goes `r@20 0.559 → r@60 0.735`, dev
+> `0.607 → 0.733`. Pooling at 8–10/doc would strand roughly **half the available headroom
+> outside the pool**, where no re-ranker can reach it. **E1 pools at `k=20/doc` (60 candidates)**,
+> the depth `eval_heldout.py` already proves contains the answers.
+>
+> Also corrected: "the free, immediate win" oversells it. E1 ships **measure-only first** — the
+> widened pool with today's ordering is a control arm, so that widening and re-ranking (E2) are
+> never attributable to one commit.
 
 Branch `phase10/prompt-width`. Zero quota. The free, immediate win.
 
@@ -251,6 +264,22 @@ on screen · suites 03/04/05 green · `import app` clean.
 > keyed on a corpus sha256; building it before the corpus rebuild invalidates every vector and
 > forces a full re-embed. Phase E also gets the Constitution section-unit re-extract that Phase D
 > deliberately defers (see `12_corpus_v2.md` D4) — the dense arm is what actually wants it.
+>
+> **➡ GATED 2026-09-19 behind [`13_retrieval_quality.md`](13_retrieval_quality.md) step E5.
+> M2 is NOT superseded and this is NOT a rejection.** Its premises were re-checked and they
+> hold — M2 already handles the query side honestly (embed at tier 1, cache on the normalised
+> query, tiered fallback, a visible notice that the question is sent to Google, a hard-offline
+> toggle, and `CLAUDE.md`'s offline invariant amended in the same commit). That is a deliberate,
+> documented trade.
+>
+> **What changed is that we can now price it, and the price should be paid last.** Three facts
+> go on the table before M2 is scheduled: (1) **its quota premise is still unmeasured** —
+> `scripts/probe_embed_quota.py` has never run and free-tier embedding limits are unpublished, so
+> **run the probe regardless of the decision**; (2) the **privacy cost is specific to this
+> population** — M2's own text notes the questions describe disability, abuse and begging
+> coercion; (3) the **residual gain may be small**, because E1–E4 aim at the same in-pool
+> headroom, and the 3/17 test refs that are *absent* from the pool may be out of dense
+> retrieval's reach too. Decide with E5's numbers in hand and record the decision either way.
 
 Branch `phase10/dense-gemini`. This is the quality step.
 
@@ -411,6 +440,21 @@ every clause 1–58 citable or in the gap manifest · no chunk at the size cap u
 subsection split · false-refusal not worse than v1 · `act_ref` validator agrees with the parser.
 
 ### M4 — Fine-tune on free GPU, and distil the offline tier
+
+> **⚠ RE-EXAMINE BEFORE SCHEDULING — recorded 2026-09-19, not yet resolved.**
+> M4 (= Phase F) is standing on the same wall that superseded `08_retrieval_upgrades.md` steps
+> 4/5: **Colab gives free *training*; it does not give free *serving*.** A fine-tuned transformer
+> still has to embed the incoming query at request time, which needs ONNX/torch in
+> `requirements.txt` — forbidden, and Render free instances are 512 MB. "Distil the offline tier"
+> is the half of M4 that may survive, but it is written here assuming a dense arm exists to
+> distil *from*, which depends on M2, which is itself gated behind
+> [`13_retrieval_quality.md`](13_retrieval_quality.md) E5.
+>
+> **The one variant that clearly survives the constraint is fine-tuning a STATIC embedding
+> table** — a matrix lookup plus mean-pool is pure numpy at serving time, needs no new package,
+> and is exactly the artifact `13_retrieval_quality.md` E4 introduces. **If Phase F is kept, that
+> is probably what it should become.** Do not schedule M4 as written until E5 has answered the
+> M2 question; the deliverable "a better dense arm" is not obviously reachable on free tier.
 
 Branch `phase10/finetune`. 0–20 calls. Two deliverables: a better dense arm, and tier 2 of the
 ladder so the offline path stops being a downgrade.

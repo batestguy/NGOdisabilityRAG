@@ -32,12 +32,39 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import retrieve  # noqa: E402
 from bench_phase01 import load_questions  # noqa: E402 (SAME 10Q set)
 from eval_phase06 import EXPECTED, ref_nums  # noqa: E402 (SAME ground truth)
-from rag import build_corpus  # noqa: E402
+from evalset import strict_covered  # noqa: E402
+from rag import CORPUS_VERSION, build_corpus  # noqa: E402
 from retrieve import MIN_SCORE, PerDocRetriever, select_top  # noqa: E402
 
 K_PER_DOC = 3   # ask() / eval_phase06 depth
 TOP_N = 6       # ask() / eval_phase06 merge width
 MIN_PER_DOC = 1  # ask() default -- the doc-quota merge, Phase 09 step 3 M2
+
+# ---- the absolute recall gate, re-scoped per corpus at D6 (2026-09-19).
+# 0.75 was a corpus v1 PLAIN-recall threshold on the frozen 10, and it kept
+# that meaning silently when --corpus=v2 was added: ablate_v2.txt:28 reads
+# "gate recall>0.75: before FAIL, after FAIL" and the run exits FAIL, on a
+# comparison that is not legitimate. Corpus v2 splits packed refs, so plain
+# recall falls for reasons that have nothing to do with expansion -- which is
+# the ONLY thing this harness varies. Exactly the defect eval_heldout.py's
+# frozen-10 guard had, on the same 10 questions.
+#
+# So: v1 keeps gating plain recall at 0.75; v2 gates recall_strict, the only
+# recall comparison legitimate across corpus versions. Each arm PRINTS the
+# metric it does not gate.
+#
+# The v2 floor is NOT a quality target -- it is the D5-measured value recorded
+# as a tripwire, so a future expansion change that degrades the shipping arm
+# cannot pass unnoticed. Raising it is a Phase E result, never a D6 edit.
+ABLATE_MIN_RECALL_V1 = 0.75
+ABLATE_MIN_STRICT_V2 = 0.632738   # NOT 0.633: see eval_heldout.py's note
+ABLATE_EPS = 1e-6
+
+# The v2 arm compares with >= and a tolerance, NOT the bare > the v1 arm uses.
+# The constant is the true value 0.63273809... TRUNCATED to six places, so a
+# bare > passed only because truncation happened to fall below the measured
+# number. Rounding to 0.632738 the other way would have failed the run it was
+# derived from. The tolerance makes that independent of which way it rounds.
 
 # Off-corpus battery. The first version of this harness only asked "does
 # expansion starve a GOOD question below the floor?" and never asked the
@@ -93,6 +120,10 @@ def measure(ret, questions, expand: bool) -> list[dict]:
             rows.append({
                 "id": qid,
                 "recall": len(exp_pairs & ret_pairs) / len(exp_pairs),
+                # Each chunk counts at most ONCE, so a packed `cl. 16,17` ref
+                # cannot satisfy two expected refs from one slot. The only
+                # recall comparison legitimate across corpus versions.
+                "recall_strict": strict_covered(hits, exp) / len(exp_pairs),
                 "top": hits[0].score if hits else 0.0,
                 # The floor is a REFUSAL gate: if nothing clears it the user is
                 # declined. Expansion must never push a good question under it.
@@ -105,10 +136,21 @@ def measure(ret, questions, expand: bool) -> list[dict]:
         retrieve.expand_query = real
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    argv = sys.argv[1:] if argv is None else argv
+    # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
+    corpus = next((a.split("=", 1)[1] for a in argv
+                   if a.startswith("--corpus=")), None)
+
+    # D6 found this harness had NO corpus stamp at all -- worse than the five
+    # wrong ones, since the shape dict below is the only thing that identified
+    # the corpus and nothing named the version. Sixth site, same class.
+    stamp = corpus or CORPUS_VERSION
+
     questions = load_questions()
     assert len(questions) == 10
-    docs = build_corpus()
+    docs = build_corpus(corpus)
+    print("CORPUS_VERSION=%s" % stamp)
     print("corpus: %s" % {k: len(v) for k, v in docs.items()})
     # ONE retriever for both arms: the index is identical by construction, so
     # any delta below is attributable to the query side and nothing else.
@@ -136,9 +178,30 @@ def main() -> None:
 
     mb = sum(r["recall"] for r in before.values()) / len(before)
     ma = sum(r["recall"] for r in after.values()) / len(after)
+    sb = sum(r["recall_strict"] for r in before.values()) / len(before)
+    sa = sum(r["recall_strict"] for r in after.values()) / len(after)
     print("  %-4s %-16.3f %-16.3f %-+7.3f" % ("MEAN", mb, ma, ma - mb))
-    print("  gate recall>0.75: before %s, after %s"
-          % ("PASS" if mb > 0.75 else "FAIL", "PASS" if ma > 0.75 else "FAIL"))
+    if stamp == "v1":
+        gate_ok = ma > ABLATE_MIN_RECALL_V1
+        print("  gate recall>0.75: before %s, after %s"
+              % ("PASS" if mb > ABLATE_MIN_RECALL_V1 else "FAIL",
+                 "PASS" if gate_ok else "FAIL"))
+        print("  strict %.3f -> %.3f (%+.3f) -- printed, not gated on v1"
+              % (sb, sa, sa - sb))
+    else:
+        # v2 gates the strict column. Plain recall stays PRINTED above,
+        # ungated: it is not comparable across corpus versions.
+        gate_ok = sa >= ABLATE_MIN_STRICT_V2 - ABLATE_EPS
+        print("  %-4s %-16.3f %-16.3f %-+7.3f  (strict)"
+              % ("MEAN", sb, sa, sa - sb))
+        print("  gate strict>=%.3f: before %s, after %s"
+              % (ABLATE_MIN_STRICT_V2,
+                 "PASS" if sb >= ABLATE_MIN_STRICT_V2 - ABLATE_EPS else "FAIL",
+                 "PASS" if gate_ok else "FAIL"))
+        print("    ^ plain recall above is PRINTED, NOT GATED: v2 splits")
+        print("      packed refs, so it falls for reasons unrelated to the")
+        print("      one thing this harness varies. v1's 0.75 is not a")
+        print("      threshold a v2 run can be measured against.")
 
     print("\n== REFUSAL-FLOOR SAFETY (hits surviving MIN_SCORE) ==")
     print("  Expansion must not starve a good question below the floor.")
@@ -191,7 +254,7 @@ def main() -> None:
     print("  probed %d keys; answered -> refused flips: %s"
           % (len(retrieve.SYNONYMS), ", ".join(false_ref) if false_ref else "none"))
 
-    ok = not bad and not flips and not false_ref and ma > 0.75
+    ok = not bad and not flips and not false_ref and gate_ok
     print("\nABLATION: %s" % ("PASS" if ok else "FAIL"))
     if not ok:
         raise SystemExit(1)

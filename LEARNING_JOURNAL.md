@@ -1516,3 +1516,913 @@ Two things follow, and only the second is a lesson:
    session survived it; every *citation* did not. Self-checking caught the 09-16 error only
    because a different session looked at it with fresh eyes. Within a session, the thing that
    caught it was a second reader. Budget for one.
+
+## 2026-09-17 (later) — the source was never truncated; the parser could not see
+
+Session scope: land the chat work, then open Phase D as far as D2's go/no-go gate. Zero Gemini
+quota. The headline is that **the gate answers GO — the gazette's Arrangement of Sections yields a
+clean `1..58`, no holes, no duplicates.** But the route to that answer is the part worth keeping.
+
+### The near-miss: 23 of 58, and it looked exactly like a truncated source
+
+The first parse of the OCRed Arrangement returned **23 entries**. Missing: 3–8, 16–21, 23–25,
+28–29, 32–36, 42–50, 53–56. It is hard to overstate how much that looks like a real finding. The
+whole reason the gate exists is Finding 1c: v1's Arrangement **truncates at L77** (`51.Power to
+acquire land.`), so "the Arrangement is incomplete" was the *expected* failure, already written up,
+with a fallback designed in advance. Every prior about this document pointed at NO-GO.
+
+It was wrong, and one number said so: OCR confidence averaged **0.978–0.984**. A truncated scan does
+not produce near-perfect confidence on the lines it *does* have and then silently omit two-thirds of
+a numbered list. High confidence plus massive loss is not a source problem, it is a *reading*
+problem. So I dumped the raw boxes instead of the assembled text.
+
+```
+x= 433.2- 481.3  '3.'
+x= 474.3- 915.7  'Right of access to public premises.'
+```
+
+RapidOCR emits the clause number and its title as **separate boxes**. Worse, their vertical centres
+differ by a few pixels, and often enough the *title sorts before its own number*:
+
+```
+y= 969.7  'Equal right to work.'
+y= 972.0  '28.'
+```
+
+`ocrlib.ocr_pdf()` sorts each page's lines by box centre — correct, and still not enough. A
+line-at-a-time regex anchored on `^\d+\.` can never match, because the number and the title are
+never on the same "line" to begin with. Grouping boxes into **visual rows by vertical overlap**,
+then ordering left-to-right within the row, recovers all 58 immediately.
+
+**This is the same failure class that left 25/62 v1 Act chunks uncitable.** v1's assembler
+(`ocr_local.py:57`) joins `l["text"]` and throws the boxes away; the gazette's marginal-note column
+then splices into the body and `act_ref()` cannot infer a ref from the wreckage. The plan's
+instruction to keep the `box` coordinates while extracting `ocrlib.py` was written to serve D2's
+marginal-note problem. It paid off one step earlier than intended, on the gate itself.
+
+**The lesson is not "keep geometry".** It is: *when a measurement confirms the failure you already
+expected, that is the moment to distrust it.* The 09-16 and 09-17 entries above are both about
+matching on partial evidence without reading the next line. This is the same error wearing better
+clothes — I had a documented prior, got a result that matched it, and the only thing standing
+between that and a published NO-GO was a confidence score that did not fit the story.
+
+### A gate that cannot fail is not a gate
+
+D1 turned two prose claims into asserts, and I made a point of **negative-testing both** rather than
+observing that they pass. The `corpus_sha256()` one earns its place concretely: shifting **one
+character between two adjacent Act chunks** leaves the count at 62 and all nine `V1_EXPECTED`
+integers identical — the shape gate is blind to it — and the digest catches it. Reordering the docs
+dict, which silently moves published rankings through `PerDocRetriever`'s insertion-order tie-break,
+is caught too. Neither is hypothetical; both are what D2's splitter replacement will do.
+
+The `eval_phase06` digest carries a wrinkle worth recording: `Path.write_text()` opens in **text
+mode**, so `json.dumps`'s `\n` lands on disk as `\r\n` (594 pairs) and the published
+`CE716FB3…5F19` is a digest of the **CRLF bytes**. Hashing the in-memory string gives a different,
+equally "correct" answer. It reads the file back as bytes, and when it fails it *says* it is
+Windows-specific rather than raising a bare `AssertionError` at someone on Linux.
+
+### The hazard was real, and it was one import away
+
+`scripts/ocr_local.py` had a bare `main()` at module scope, no `__main__` guard, and a `main()` that
+unconditionally overwrites `data/processed/disability_act_2018_full.txt` — the v1 Act corpus **every
+published baseline in this repo is measured against**. `import ocr_local` destroyed it, silently,
+and this was the first session with any reason to go near that file. The playbook's
+`git diff main -- data/processed/disability_act_2018_full.txt` guard exists precisely for this, and
+it stayed empty all session.
+
+Two defences, both verified rather than assumed: the guard makes import inert, and `--force` makes
+the destructive path opt-in. The durable fix is structural — shared OCR code now lives in
+`ocrlib.py` and `ocr_local.py` is demoted to the v1 reproduction path.
+
+Related discipline held: **`dedupe_pages()` was not run.** Its salvage branch
+(`src/load.py:347-363`) appends unmatched lines of the dropped twin onto the kept twin. On v1's
+genuinely duplicated scan that recovered cropped text; on a clean source it is a corruption
+mechanism that interleaves unrelated lines. `detect_duplicate_pages() == []` is asserted instead,
+and the script states its scope is the 3 front-matter pages rather than implying it cleared all 27.
+
+### What I did not do
+
+Clause 26 parses as `"S Service at queues."` — OCR doubled the title's first letter into the
+number's box. I know what it should say. I flagged it and left it, because "never author a title" is
+not a rule about hard cases, it is a rule about easy ones; the easy ones are how the habit forms.
+
+Same reasoning kept `ACT_KNOWN_ABSENT = {38, 40}` in place. Clause 38's **title** is in the
+Arrangement. That says nothing about whether its **body** is in this scan, and the temptation to
+read one as evidence of the other is exactly the L614 error from this morning's entry. D6 deletes
+that constant, after the re-OCR that actually recovers the body.
+
+### Housekeeping that was overdue
+
+740 lines of correction and design sat uncommitted — a `git checkout` away from gone, in a project
+whose own rule is "progress must survive the session." Committed first, before anything else.
+The chat stack then shipped: PR #12 merged, `main` `bb6f931` → `6b10f62`, and Render auto-deployed
+the multi-turn chatbot to real users for the first time. That one I did not decide alone; it is
+outward-facing and hard to unwind, so it went to the owner at the merge button.
+
+## 2026-09-17 (later still) — three wrong answers that looked right, and one wrong ruler
+
+D2's body OCR and clause locator. The headline is easy: **58/58 clauses located on both required
+anchors, zero `TITLE_WEAK`, zero `NUMERAL_MISSING`, no title authored**, and the gazette
+**recovers clause 38's opening** — *"formulate and implement policies"*, the string Finding 1
+proved `grep` cannot find anywhere in v1. The lesson is not the headline.
+
+### The parser was wrong three times, and every time it returned a plausible number
+
+Not one of the three failures raised an exception. Each produced a confident, well-formed,
+wrong answer:
+
+1. **16 of 58.** I split the note column from the body on the widest horizontal gap. That
+   reintroduced, by accident, the exact verso/recto asymmetry the design was written to avoid —
+   the recto gap is ~418 px and the rule fired, the verso gap is ~154 px and it did not. Verso
+   notes stayed in the body, `rows()` welded them onto the body row, and the text became
+   `"Accessibility 5. Road side-walks…"`, which no numeral regex anchored at the start can match.
+   **Clauses 5–8, 13–15, 21–27 and 32–34 were invisible for that reason alone.** The design note
+   warning about hardcoding the side was *in the file I was editing*. Avoiding a trap by name is
+   not the same as avoiding it.
+2. **Outliers.** Taking the body's extent as min/max over wide lines is fine until one OCR box
+   merges a marginal note into a body line. On p11 exactly one did, and it swallowed all 13 notes
+   on the page. On p13 the margin landed 3 px wrong and clipped `"Functions of"` and
+   `"Commission."` into the body — **clause 38's own title**, on the one page this entire phase
+   exists for.
+3. **`"Participation"`.** `FURNITURE_RE` had `PART\s*[IVX]` under a global `IGNORECASE`, so
+   `"Parti"` matched. The word was deleted as a Part heading, clause 30 was left matching on
+   `"in politics."` alone, scored 0.61, and came out `TITLE_WEAK`. A flag firing correctly on a
+   defect **I had introduced two functions upstream.**
+
+What saved all three was the same thing: flags that say *degraded* instead of silently accepting,
+and a count I refused to round off. `TITLE_WEAK: [28, 29, 30, 31, 38]` is not noise — it is four
+consecutive clauses on one page plus the one clause that matters most, which is a *shape*, and
+shapes point at causes. Had the locator simply accepted a one-anchor match, all three bugs would
+have shipped as 58/58.
+
+### Then the ruler itself was wrong
+
+The cross-check is the part of this phase designed to be falsifiable: the playbook wrote its
+expected disagreements before the parser existed. My first run reported that only **7 of 58**
+clauses agreed with v1.
+
+That is not a finding, it is a broken instrument, and the tell was that it disagreed with
+*everything* rather than with the predicted set. Both editions are OCR output with **independent**
+character noise — `Reforim` for `Reform`, `IVheel` for `Wheel` — and at a 40-character shingle a
+single bad character destroys every shingle spanning it. The measure was describing OCR noise.
+
+So I calibrated it against clauses whose answer was **already established by other means**: cl.40's
+body is known present in v1, cl.37/38 known damaged. k=10 separates them 0.90 vs 0.50/0.61; k≥18
+does not (0.81 vs 0.32/0.51). Calibrating a measure on cases with independently known answers is
+legitimate; picking the k that makes the result look best would not be, and those are separated by
+nothing but discipline about which order you do them in.
+
+I also wrote a second measure — local alignment — to adjudicate the disputed clauses, and
+**discarded it**: it scored cl.40 at 0.18 where the calibrated measure says 0.90 and Finding 1 says
+present. It was broken. Using an unvalidated yardstick to settle a validated one is how a wrong
+result gets confirmed rather than caught, and the temptation was real, because it would have let me
+declare four awkward clauses resolved.
+
+### The finding that came out of refusing to round
+
+Four clauses disagreed that the playbook had not predicted. Its rule is that these are **parser
+bugs until shown otherwise**, which is the rule that did the work. Three (20/27/44) turned out to be
+OCR divergence — distinctive probes resolve in v1 — and are **not** claimed as recoveries.
+
+The fourth is real. **Clause 53 is truncated in v1**, the same failure class as clause 38:
+*"awarded against the Commission"* is absent outright, and v1's own text reads
+`53. | judgment debt. | shall bepaidfrom theFund of theCommission.` — the marginal note spliced
+into the body, the sentence cut. Decided on **substring presence, not a similarity ratio**, because
+a ratio is exactly what was untrustworthy an hour earlier.
+
+The adjudications live in a dict kept **separate** from the predictions. A prediction written in
+advance and an explanation reached afterwards are different kinds of evidence, and a file that
+merges them is a file that will eventually be fitted to its own output.
+
+### A destructive command that was one flag away
+
+`ocr_gazette.py --pages=1-27` was the obvious next command, and it would have parsed 27 body pages
+as Arrangement entries and written the result **over the verified 58-entry manifest** — the file
+`HANDOFF.md` says in bold not to re-derive. It would not have errored. It would have produced a
+plausible manifest.
+
+Two guards now: `--ocr-only`, and a refusal to replace a **clean** manifest with a dirty parse.
+The flag is the convention; the refusal is the guarantee. This is the second live destructive path
+found in this phase after `ocr_local.py`'s unguarded `main()`, and both had the same shape — a
+dev script that writes an authoritative artifact as a side effect of doing something else.
+
+## 2026-09-18 — the doc pass had not survived the session, and a line number had moved
+
+Docs only, zero code, zero quota. The point of this entry is small and worth having anyway.
+
+**The 2026-09-17 session-close pass was never committed.** Four modified files — the `HANDOFF.md`
+banner, `12_corpus_v2.md`'s results and *"next session starts here"*, the journal entry directly
+above this one, `STATUS.md` — sat in the working tree while every line of D2's actual *code* was
+committed. This repo's own rule is that progress must survive the session, and the exact thing that
+does not survive a `git checkout` is the part explaining what the commits mean. It is the second
+time in this phase: 2026-09-17's 740-line orphaned doc pass was committed first for the same reason.
+
+**Then: verify before committing, not after.** Everything checked out — `act2018_v2_clauses.json`
+really does hold 58 clauses with 0 flagged, both git guards really do re-run empty, and
+`_act_chunks_v2()` really is still absent from `src/rag.py`, so *"next"* is next rather than
+half-done. But two references had rotted:
+
+1. **`ACT_KNOWN_ABSENT` is at `scripts/audit_corpus.py:90`, not `:80`.** D1 added a six-line comment
+   block above it — a comment *this phase wrote*, explaining why the constant must be deleted rather
+   than emptied — and every doc pointing at the constant kept citing the pre-D1 line. Four
+   forward-looking references, all wrong, all created by our own correct edit. That is the failure
+   mode the 2026-09-17 reviewer caught twice already (`bench_phase01.py:159,251,253`, the missing
+   14th call site); it does not need a wrong *reading* to occur, only a file that moved underneath a
+   pointer. Corrected with the old number kept in a dated note.
+   **The journal was deliberately left alone.** `:80` was true on the day those entries were
+   written. A journal is a log, not a pointer — back-editing it to stay accurate is how the record
+   of *what we believed when* gets destroyed. Pointers get corrected; history gets annotated.
+2. **A piece of housekeeping had resolved itself and nobody checked.** The 0-byte
+   `D:NGORAG_review_judge.diff` had been carried as an open item since Phase 06 — "deletion
+   permission-blocked, needs removing by hand" — through every handoff since. It is gone.
+   Struck through as RESOLVED rather than deleted, so the next reader can see the item existed and
+   was closed, not wonder whether it was ever real.
+
+The generalisation, if there is one: a stale *open* item and a stale *line number* are the same
+defect. Both are a claim about the present tense that was only ever verified in the past, and
+neither announces itself — the docs read perfectly fluently with both errors in place.
+
+## 2026-09-18 (later) — a 100% that had to be argued down
+
+D2 finished: `_act_chunks_v2()` landed, and the Act half of corpus v2 clears its gate —
+**65 chunks, 0 uncitable, 0 packed, 58/58 citable**, against v1's 25-of-62 uncitable and 16 packed.
+The uncitable-chunk class has been named in this journal three times (Act cl.19, `CT7.t2`, the
+25/62 measurement). On the Act it is now closed, and closed *structurally*: `ref = "cl. %d" % n`
+comes from the parser, so there is no code path that can emit `cl. 3,4,5`. That is a better kind of
+fix than a passing number, because it cannot regress without someone deleting the mechanism.
+
+The interesting part of the session was not that number.
+
+### The validator was measuring itself
+
+D2 was supposed to end with a cross-check: refs from the gazette Arrangement manifest on one side,
+`act_ref()`'s heading-shape inference on the other, two independent sources that must agree.
+It reported **65/65, 100%**. `audit_corpus.py`'s own docstring described this as *"the same
+discipline as `evalset.assert_frozen10_matches_notebook()`"*.
+
+It is not that discipline, and the difference is total. In the frozen-10 case the notebook and the
+JSON are **authored separately by different hands at different times**, so agreement is real
+evidence. Here: the parser writes `header = "%d. %s" % (n, title)` from the same `n` it builds the
+ref from; `_act_chunks_v2()` prefixes that header to every sub-chunk; `act_ref()` then recovers the
+leading `\d+\.` from that very string. The two sources differ in **inference** — a manifest lookup
+versus a regex — but they **share an upstream**. For a single-clause chunk the check mostly asks
+whether the parser's numeral equals the parser's own field, which is true by construction.
+
+A tautology reports 100%. So does a perfect system. The number cannot tell you which you have, and
+**100% was exactly the value that should have prompted the question** — a real cross-check across
+65 noisy OCR-derived chunks landing *precisely* on the ceiling is the shape of a measurement that
+isn't measuring. I have now written the same lesson three times in this phase: the 23-of-58 parse
+that looked like a truncated source, the 7-of-58 cross-check that was a broken shingle, and this.
+Twice the suspicious number was too *low* and I investigated. This time it was too *high* and the
+instinct was to bank it.
+
+What it can still catch is narrow and worth keeping: a stray line-start `NN.` in body text flipping
+`act_ref()` into a member list, and header/ref drift from a future chunking change. So it stays —
+measured, reported, and **not asserted**. D6 had planned to promote it to a hard gate; the playbook
+now carries a boxed instruction to re-scope it first, and the honest framing is printed to stdout
+*next to the number* rather than buried in a doc, because the number is what a future reader will
+copy.
+
+### Nothing downstream was reading the flags
+
+The parser records `TITLE_WEAK` / `NUMERAL_MISSING` per clause — the flags that caught all three
+geometry bugs on 2026-09-17 and are the reason that session's 58/58 is trustworthy. Today all 58
+are clean. But `_act_chunks_v2()` never looks at them, so a manifest regenerated with degraded
+acceptances would be promoted to fully-citable chunks **silently** — while D6 deletes
+`ACT_KNOWN_ABSENT` on that same manifest's word. A flag nobody reads is not a safeguard, it is a
+comment. `audit_corpus.py` now prints the count.
+
+### On the process
+
+I planned here, delegated the implementation with the design decisions already pinned, and sent the
+result to a reviewer before believing it. The executor disclosed both of its deviations and
+volunteered the circularity concern as a hedge; the reviewer then went and *proved* it by reading
+the manifest, which turned a hedge into a finding with a concrete D6 consequence. Neither of those
+happens if the brief rewards a green summary. The instruction that did the work was the boring one:
+*report each verification individually, and a failure reported honestly is worth more than a green
+summary.*
+
+One thing I did myself rather than delegate: the fix. It was four small edits, and the round trip
+would have cost more than the work.
+
+## 2026-09-18 (later still) — the target and the hard assert could not both be satisfied
+
+Phase D3 was one line in the playbook: *"One table row = one `Section N`. Target: `general` ≤1% ·
+`packed` 0."* Written by analogy with D2, which had just made packed refs structurally impossible
+on the Act by taking every `ref` from the parser instead of inferring it from text. The analogy
+looked exact. It was not, and the way I found out is the entry.
+
+### Measuring before writing turned a target into a contradiction
+
+Before touching the splitter I parsed the factsheet's S/N table and asked a question the plan had
+not: which section numbers would still be reachable if a row's ref carried only its own anchor?
+
+Eight would not. Sections **11, 13, 15, 23, 34, 35, 46, 53** are never row anchors anywhere in the
+document. They exist only as cross-references inside another row's provisions — *"…the Commission
+may also accept a gift of land, money or property… - section 46"* lives inside the row headed
+`Section 45`. There is no row headed `Section 46`, and there never will be, because PLAC did not
+write one.
+
+`evalset.verify_expected()` is a **hard assert**, not a metric: *"an expected number that no chunk
+carries is a ground-truth bug."* Those eight numbers are expected by **frozen10/Q6** (section 11),
+by five held-out questions and by four test questions. An anchor-only ref would have deleted them
+from the corpus and crashed `eval_heldout.py`, `eval_phase06.py` and `audit_corpus.py` — not
+degraded a score, *crashed*.
+
+So `packed 0` and `verify_expected()` could not both hold. The only routes to `packed 0` were
+editing **frozen10**, which this repo forbids outright, or deleting held-out and test expectations.
+Both are the same act: moving the yardstick until the number passes.
+
+### The lesson is D2's, arriving one step earlier
+
+D2 ended by talking a headline number *down*: `act_ref()` agreed with the parser 65/65, and the
+review established the two shared an upstream, so the 100% was close to a tautology. The playbook
+gained a boxed instruction telling D6 to re-scope the check before asserting on it.
+
+This is the same failure one stage earlier in its life. D2's number was wrong *after* it was
+measured; D3's target was wrong *before* anything was written. **A target authored by analogy, by
+someone who had not yet looked at the document, is a hypothesis — and the first thing to do with it
+is try to falsify it.** The cost of finding out during implementation instead of during planning is
+one session's redesign. The cost of finding out during D6, when the gate is asserted and
+`CORPUS_VERSION` flips to v2, would have been either a broken gate or an edited frozen set.
+
+### Re-scoping is only honest if the old metric stays visible
+
+The tempting fix was to set `V2_MAX_PACKED` per-doc, exempt the factsheet, and ship green. I did
+not, and the reason is that a threshold quietly widened to fit a measurement reads, three commits
+later, exactly like a threshold that was always right.
+
+Instead: `packed` stays printed, unchanged and unhidden; `V2_MAX_PACKED` stays 0; the v2 gate still
+prints `factsheet2020 packed refs 16 <= 0: FAIL` — with the reason printed directly underneath, and
+the resolution assigned to D6 in the playbook. The script exits 1 on two rows now instead of one.
+**Exiting 1 for a reason that is written down beats exiting 0 for a reason that is not.**
+
+### A replacement metric has to be able to fail
+
+The real defect was never the ref shape. `recursive_split(fact_text, 500, 50)` cuts a three-column
+table on a character budget that knows nothing about rows — which is why v1's packed refs came out
+**disordered** (`Section 51,40`, `Section 50,45,54`) rather than as consecutive runs like the Act's.
+That disorder was the tell all along: table damage, not over-run.
+
+So the new metric is `row_spanning` — re-scan each **emitted chunk's text** for an S/N row-start
+line. And the design rule I made myself follow: **measure it from the text, never from
+construction.** "We emit one chunk per row, therefore 0" would have restated the code, and a metric
+that cannot fail is a comment with a number attached.
+
+Then the part that actually earns it: **v1 must score above zero**, or the metric has no shown
+discriminating power. It scores **26 of 48**. v2 scores **0 of 32**. That comparison is only
+available because the metric is printed for *both* corpus versions — which cost me the
+byte-identical v1 stdout the session plan had asked for. I took the trade and disclosed it: 13 diff
+lines, all of them the new column, every pre-existing number unchanged, `corpus_sha256` and the
+`eval_phase06` digest both still pinned. A number nobody can compare against anything is worth less
+than a re-baselined stdout.
+
+One smaller thing in the same spirit: I checked, rather than assumed, that a v2 chunk's own header
+line (`Section 45 Funds of the Commission`) does not match the row-start regex. If it had, the
+metric would have counted every chunk it emitted and reported a disaster — or, worse, someone would
+have special-cased the count and the metric would have been measuring an exemption.
+
+### Not building the manifest was a decision, not an omission
+
+D2's clause manifest exists for one architectural reason: `pymupdf` and `rapidocr` must never reach
+`requirements.txt`, so a JSON file is the wire format across that process boundary. The factsheet
+has no such boundary — its source is a clean TXT in the repo that v1 already parses at boot with
+stdlib. Building one anyway, "for symmetry with D2", would have added a second artifact that must
+be kept in sync with the parser forever, in exchange for nothing.
+
+Copying an idiom is cheap and usually right. Copying the *mechanism that made the idiom necessary*,
+after the reason for it has gone, is how a codebase accretes ceremony. The idiom I did copy — refs
+from structure, flags on a degraded parse, headers budgeted out of the cap, `path` recording how a
+ref was obtained — carried over intact.
+
+### Predicted 13, measured 16, changed nothing
+
+The plan estimated the packed count at 13. It came out 16. The gap is explainable — 13 counts
+*rows* under a slightly wider cross-reference regex; 16 counts *chunks*, because five of the eleven
+multi-number rows exceed the cap and emit two each. I reused exactly the two regexes v1's
+`fact_ref()` already uses, so v2 changes which text a number is attached to and never the vocabulary
+for spotting one.
+
+The temptation was mild and worth naming anyway: widening the regex would have made the measured
+number match the predicted one. It would also have made sections 4, 5, 26 and 27 newly citable off
+the back of a change made to hit a prediction. **Reporting 16 and explaining it costs one
+paragraph. Reporting 13 by construction costs the ability to trust any number in the file.**
+
+## 2026-09-18 (later still ×2) — the same mistake twice, and a cut that would have deleted the Preamble
+
+D4 was one line in the playbook: *"exclude the Arrangement pages, and nothing else"*, with a target
+inherited from Finding 2 — `general` **99 (4.7%) → ≈0**, comfortably inside the ≤1% gate. I measured
+it before writing the chunker, the way D3 taught me to. The floor is **34 (1.67%)**. The gate is
+unreachable on this document by the only change the step is allowed to make.
+
+### This is the second consecutive phase where the target was aimed at the wrong thing
+
+D3's `packed 0` was unreachable because eight factsheet sections exist only as cross-references, and
+a hard assert needs every one of them. D4's `general ≈0` is unreachable because 34 chunks have no
+section number that `const_ref()` can honestly give them: two Preamble chunks and six chapter
+dividers carry no number at all, and 26 Chapter VIII chunks carry a **Schedule item** number, which
+is not a **section** number. Item 8 is "Census". It is not s.8. Labelling it `s. 8` would re-create
+the Q10 misattribution class deliberately — the exact defect the rest of this phase exists to kill.
+
+Both targets were written from a reading of the corpus rather than a count of it. Finding 2 was not
+careless; it was right about the thing it actually checked (*"all 99 uncitable chunks are Arrangement
+material"* — re-verified this session, still true) and then extrapolated one step past its evidence,
+from *"the uncitable chunks are all TOC"* to *"removing the TOC removes the uncitable chunks"*. The
+missing question is whether the exclusion **creates** any. It does: a Preamble that used to sit
+inside the Arrangement's Chapter VIII block becomes its own unnumbered unit.
+
+**The pattern worth generalising: a target derived from a diagnosis is not a measurement.** Twice
+now, a correct diagnosis produced a wrong target, and both times the honest move was the same —
+re-scope the metric to something with demonstrated discriminating power, leave the old threshold
+untouched and failing in plain sight, and hand the resolution to a later step in writing. The
+alternative both times was a one-line edit that makes the script exit 0.
+
+### Deleting text is always available and is never the answer
+
+There is a version of D4 that clears ≤1%: drop the Schedules and the Enforcement Procedure Rules.
+It is 26 chunks, they are mostly lists, and the gate would go green. It is also the Second Schedule
+— operative law — and the Fundamental Rights (Enforcement Procedure) Rules, which are the mechanism
+a PWD actually uses to enforce Chapter IV. Passing a citability gate by removing the enforcement
+procedure from a disability-rights corpus would be the single worst trade in this project.
+
+The honest fix for those 26 is a citable `Sch. N item M` ref. That is a **fourth numbering scheme**
+through `cite_tag()`, the citation invariant and the LLM prompt, and it is Phase E. Naming it as
+deferred work is cheaper than pretending the number is already right.
+
+### The cut point would have silently eaten the Preamble, and only eyeballing caught it
+
+Chapters I–VIII appear **twice** in the Constitution TXT. The obvious cut is the operative body's
+second `Chapter I` heading. I nearly wrote it. Printing the 600 characters either side of the
+candidate boundary showed the real Preamble sitting **between** the two runs — *"We the people of
+the Federal Republic of Nigeria … Do hereby make, enact and give to ourselves the following
+Constitution:-"*, 616 characters, the enacting words of the instrument.
+
+The nasty part is the scoreboard. Cutting at the chapter heading gives **2035 chunks / 32 general**.
+Cutting at the Preamble gives **2037 / 34**. **The wrong cut looks better on every number the gate
+reads**, and nothing in the audit would have said a word. Deleting content is indistinguishable
+from fixing content if you only ever look at the aggregate.
+
+So the boundary is located by a regex asserted to match **exactly once**, and the cut is asserted to
+separate the two chapter runs — last heading before it `VIII`, first after it `I`. If either check
+fails the function raises rather than falling back to chunking the whole document, because a silent
+fallback would rebuild v1 under a v2 label and the gate would report PASS for the wrong reason.
+
+### The heuristic I was told not to delete became the instrument that proved the fix
+
+`_is_toc_fragment` was written in Phase 08 to *mitigate* the Q10 misattribution: a chunk reffed
+`s. 39` whose body was the Arrangement tail *"ion from fundamental human rights. 46 Special
+jurisdiction of High Court and Legal aid."* The heuristic relabelled it `general`, which stopped the
+LLM citing it, but the chunk stayed in the corpus and stayed retrievable.
+
+D4 deletes it from existence. And the measurement that shows this is the heuristic's own firing
+count, re-scoped: how many chunks carry a `§N` prefix that `_is_toc_fragment` demoted, **outside**
+Chapter VIII? **v1 scores 7 — and the 7th is that exact chunk. v2 scores 0.** The mitigation became
+the proof that the cure held. Keeping it was the right instruction for a reason the instruction did
+not state: not only does deleting it restore the class for any listing text D4 misses, it also
+destroys the only evidence that D4 worked.
+
+Same anti-tautology rule as D3's `row_spanning`, and it matters more here than anywhere: "we
+excluded the Arrangement, therefore no Arrangement chunks" restates the code. Asking each emitted
+chunk's **text** whether it still looks like a listing can actually come back with a number I did
+not want.
+
+### The change is much smaller than the diff makes it look
+
+2035 of v2's 2037 Constitution chunks are **byte-identical in `(ref, text)`** to v1's last 2035. The
+operative body is not re-chunked at all: no new constant, no `CONST_V2_SIZE`, the same splitter at
+the same size, the same `const_ref()`, the same ref grammar. The only two chunks that differ are the
+Preamble — which in v1 was labelled *Chapter VIII, Federal Capital Territory, Abuja* because it had
+been swallowed by the Arrangement's last chapter block, and is now labelled *Preamble*.
+
+I checked that number on purpose. "We only removed a region" is a claim about a diff, and the way to
+support it is to show that everything outside the region came out the same bytes, rather than to
+assert it from the shape of the code. The same instinct applied to the excluded text itself: 690
+non-empty lines, **zero** of which contain the word *shall*, longest line 14 words. A listing, end
+to end — measured, not eyeballed and declared.
+
+## 2026-09-19 — the fitted set was the only set that got worse, and a mandatory step that changed nothing
+
+D5 was the first step in this phase that was **mandatory and not conditional**. D2, D3 and D4
+replaced all three documents, so every cosine in the system moved; the `MIN_SCORE` calibration
+table at the top of `src/retrieve.py` was measured on 2026-09-08 against corpus v1 and had been
+*inherited* ever since. The stated hazard was specific: longer v2 chunks lower every score, and a
+lower score can manufacture a **false refusal**, which `CLAUDE.md` names as the worst failure this
+system has because it denies help to a PWD.
+
+I re-derived it. The answer was that nothing needed to change.
+
+**`MIN_SCORE` stays `0.10`.** False refusals: 0/10, 0/25, 0/17 on frozen10 / dev / test — under
+*both* corpora, identical. The playbook's escape hatch (a second frozen v1 index used only for the
+answer/refuse decision, while ranking and display use v2) is declined, because its trigger never
+fired. v2 is in fact marginally *better* on the false-answer side: H25, an off-corpus dev row that
+cleared the floor at 0.1032 under v1, now scores below it and is refused. One fewer wrong answer.
+
+It is worth writing down that **this is a result**, not a wasted session. A mandatory calibration
+step that measures carefully and concludes "no change is owed" has bought something real: the
+number is no longer inherited. Before today, `0.10` was a figure from a run against a corpus that
+no longer exists. After today it is a figure with a committed script behind it, and a machine gate
+that stops it drifting in the dangerous direction.
+
+### The finding: the fitted set is the only set that got worse
+
+This is the part I did not expect to be so clean.
+
+| `recall_strict` | v1 | v2 | move |
+|---|---|---|---|
+| frozen10 (fitted on) | 0.701 | 0.633 | **−0.068** |
+| dev (spent, inspected) | 0.407 | 0.473 | **+0.066** |
+| test (clean, never tuned against) | 0.338 | 0.471 | **+0.133** |
+
+The set the synonym map was fitted to is the only one that went **down**. The clean set moved up
+the most. That ordering is exactly what you would predict if 0.925 was substantially *fitting*
+rather than quality — the claim made on 2026-09-13, when `evalset.py` was written to stop the
+frozen 10 being tuned on any further. It was an argument then. Changing the corpus underneath the
+fit turned it into evidence, because the fit had nothing to hold onto any more.
+
+I want to be careful about what this does and does not show. It does not show the synonym map is
+worthless; dev and test both improved, so the retrieval is genuinely better on questions nobody
+tuned against. It shows that the *margin* between 0.925 and the held-out numbers was mostly an
+artifact of measuring on the thing you optimised. The gap closing from (0.925 vs 0.338) to (0.666
+vs 0.471) is the contamination draining out.
+
+### Attributing the frozen-10 drop, without being allowed to act on it
+
+`eval_heldout.py` prints per-question tables for dev and test only — the frozen set gets a mean and
+nothing else — so until today a move in that number was **unattributable**. I added a block that
+prints it, and the attribution is the packed-ref subsidy being withdrawn:
+
+- packed chunks retrieved across the ten questions: **14 → 5**
+- all **12** lost expected refs sit in the 7 questions that had packed chunks; **zero** gained
+- Q2 alone loses `act 5,6,7` + `fact 6,7` — five expected refs that v1 satisfied out of three
+  chunks, because one chunk reffed `cl. 3,4,5` counts for three
+- `recall_strict`, which never granted that subsidy, drops only 0.701 → 0.633 and is flat or
+  better on **6 of 10** (Q8 improves 0.500 → 0.750)
+- top scores largely **rise**: Q6 0.1696 → 0.2459, Q8 0.3049 → 0.5416
+
+So the plain-recall collapse is arithmetic, not a ranking regression. This is precisely what the
+`recall_strict` column was published for, back before v2 existed, so that correct v2 work could not
+read as a regression. It worked.
+
+The block is marked **report only** in the script, in the docstring and in the playbook. Nothing
+about chunk sizes, the synonym map, `k`, `top_n` or `MIN_SCORE` may be changed on what it shows.
+Tuning on an attribution of the fitted set's own failures is the same contamination one level down
+— I would be spending the frozen 10 the way the dev set was spent, and the whole reason I can write
+the table above is that nobody did.
+
+### An injection that cannot fail is not a negative test
+
+D4 established that guards get proven by injection rather than by reading. I applied that to all
+three of D5's gates, and one of them refused to break.
+
+The plan called for testing the refusal-invariance gate by passing `floor=0.0` to `select_top`
+while still filtering at `MIN_SCORE` — the "latent inconsistency" `select_top`'s own docstring
+describes. It produced **zero** disagreements, and the reason is structural rather than lucky: the
+global maximum is in `select_top`'s output at *every* floor. At 0.0 the quota phase takes each
+doc's best hit, and the global max is by definition some doc's best hit. At `MIN_SCORE` it is
+either taken by the quota phase, or — if it does not clear the floor — taken first by the fill
+phase. Either way it is there, so "some shown hit clears the floor" and "the global max clears the
+floor" cannot come apart. The inconsistency is real, but it changes *which six chunks are shown*,
+not the refusal decision.
+
+The tempting move was to report "gate 1 negative-tested ✓" and move on. That would have been an
+overclaim of exactly the kind the D4 review caught: a gate reported as proven by a test that could
+never have failed. So the script says so, in its own output, and then proves the gate is live a
+different way — a mutant selector that drops the global max, violating the premise the proof
+actually rests on. That fires, 2 disagreements. Gate 1 is tested; it is just not tested by the
+thing I was told to test it with.
+
+The same instinct improved gate 2. The obvious injection — raise the floor to 0.30 — raises it for
+*both* arms, which can push them under together and still satisfy `v2 ≤ v1`. A symmetric injection
+of an asymmetric gate proves nothing. Raising **v2's floor only** is what a real one-sided
+regression looks like, and that fires with 38 named offenders.
+
+### Two things the measurement found that I was not looking for
+
+**`eval_heldout.py:438` reads the wrong variable.** `assert CORPUS_VERSION == "v1"` tests the
+module constant imported from `rag.py` — not the effective version from `--corpus=`, which `main()`
+already parses into a local and uses correctly two lines earlier. So under `--corpus=v2` the
+constant is still `"v1"`, the assert never fires, and the run trips the frozen-10 recall guard it
+was written to *pre-empt*. The same bug prints `(corpus v1)` on a v2 run, mislabelling a v2 number
+as v1 in direct contradiction of the file's own docstring ("a recall number that lacks that stamp
+is a v1 number"). The guard was well designed and wired to the wrong wire. Recorded for D6, not
+fixed — D5's scope is the floor, and a session that widens its scope because it found something
+adjacent is how a clean diff stops being clean.
+
+**`SYN:car` was the one refusal flip, and it is not what it looks like.** Bare `car` goes
+0.1141 → 0.0794 and is refused under v2. Since v2's Act cl. 12 is literally *"Reserved spaces … at
+public parking lots"*, the first reading is that v2 manufactured a false refusal on an on-corpus
+query — the exact thing D5 exists to catch. I nearly wrote it up that way.
+
+What v1 actually did: 0.1141 *just* cleared the floor, which let the entry gate in
+`PerDocRetriever.query` admit the query to expansion, and the expanded query
+(`car vehicle transport parking road`) top-1'd **Constitution s. 40** — peaceful assembly and
+association — at 0.2126. v1 was not answering "car" correctly. It was answering it with an
+irrelevant constitutional section reached by expansion manufacturing word overlap, which is the
+precise defect that entry gate is documented to prevent. v2 refuses, and its best *bare* hit is the
+**right** chunk. Real sentences never go near this: "is there accessible parking for people with
+disabilities" improves 0.2157 → 0.2802.
+
+The lesson is about the sign of a metric. I had written a gate that scored "v1 answered, v2
+refused" as a regression across all 106 probes, because the plan said so and it sounds obviously
+right. On two populations it is obviously **wrong** — for off-corpus probes, answered → refused is
+the *goal*, and H25 would have been scored as a failure for improving. For bare synonym keys it is
+wrong more subtly, in the way `car` shows. Those 34 keys exist in `ablate_phase08` to prove one
+narrow thing, that *expansion* does not flip a key answered → refused within a single corpus; they
+were never a claim that every bare trigger word is an answerable question. Reusing a probe set for
+a purpose it was not built for is cheap and it silently changes what the number means.
+
+So the script gates the 52 corpus-verified answerable rows, and **reports** the other two
+populations with every flip named and attributed. Not gating something is only honest if you print
+it; the alternative — quietly dropping probes until the run is green — is the failure mode this
+whole phase has been trying to avoid. And the actual open question `car` raises is not the floor at
+all. Lowering `MIN_SCORE` by 25% to rescue one bare word, while the in-corpus/off-corpus bands are
+measured **inverted on both corpora** (v2: weakest in-corpus 0.1209 against strongest off-corpus
+0.4195), would admit a great deal of junk to fix a ranking problem. It goes to D6 as a ranking
+problem.
+
+### A small correction, made because the number was checked
+
+The calibration block cited four off-corpus probes from 2026-09-08. Three of them — `sourdough`,
+`quantum`, `maritime shipping insurance law` — are in the committed `OFF_CORPUS` list and reproduce.
+The fourth, `visa`, **exists nowhere in this repo as a query**; the only "visa" in the tree is
+Constitution item 42, *"Passports and visas"*, which is corpus text. The figure `0.161` cannot be
+reproduced by anyone, including me. The old numbers are kept, labelled as v1-era and flagged as
+having been measured on a different arm (k=2/doc, no `select_top`), with the unreproducible one
+called out — rather than deleted, which would erase the evidence that the block was ever anecdotal,
+or left standing, which would keep implying it is checkable.
+
+That is the through-line of the session. `src/retrieve.py` had carried, since 2026-09-13, an honest
+admission that its refusal-invariance proof rested on "a run nobody can reproduce", and a request
+that Phase 10 D commit the battery. Both the caveat and the `visa` figure were the same species of
+debt: a measurement that was probably right, that nobody could check. 106 probes, imported from
+their sources rather than copied, run against both corpora in one process, 212 probe-runs, zero
+disagreements — and it re-runs in about a minute. The gate that was written down is now a gate that
+executes.
+
+## 2026-09-19 (later) — the harness said PASS, and the blind set's gain class had gone to zero
+
+A planning session for D6. No code, no evals, no quota. I set out to check D6's premises against
+the D5 baselines still sitting in `D:\d5_baseline\`, expecting to confirm them and write the
+playbook. Two of the three came back wrong, and the way they came back wrong is the thing worth
+keeping.
+
+**A harness that exits PASS can still be hiding a regression.**
+
+`scripts/eval_chat.py --corpus=v2` prints `EVAL_CHAT: PASS (ground truth verified; all numbers
+reported as measured)`. Every word of that is true. All 51 conversation refs verify against the v2
+corpus. All three Phase B gates pass. Nothing in the script is broken, and nothing in it lies.
+
+Underneath, on `chat_test` — the set authored blind, never tuned against, the last uncontaminated
+set in this project — the ellipsis class went from `0.200 → 0.600 (+0.400)`, the marked gain class
+under v1, to `0.000 → 0.000 (+0.000)`, marked `<-- GAIN CLASS DID NOT IMPROVE`, under v2. Three
+turns lost their contextualised hit. The headline delta fell `+0.130 → +0.043`. The strict columns
+are identical to the plain ones throughout, so it is not the packed-ref subsidy withdrawing the way
+frozen-10's did in D5. It is a real ranking move, and the harness was green through all of it.
+
+The mechanism is worth stating precisely, because "the gates were on the wrong set" is only half of
+it. The gates are computed on `chat_dev`, the tuning set — that is the first half. The second half
+is sharper and sits *inside* the tuning set, where the gate is looking straight at the number:
+
+```
+chat_dev pronoun   v1:  0.571 → 0.714   +0.143
+chat_dev pronoun   v2:  0.143 → 0.286   +0.143
+gate: "ctx BEATS naive on pronoun"      PASS in both runs
+```
+
+The delta is byte-identical. The level fell by a factor of four. The gate is phrased on the delta,
+so it cannot see it. I had been treating "measure the delta between arms, not the absolute" as
+settled good practice — it is how Phase B isolated contextualisation's contribution from the
+retriever's, and it was right for that. What I had not noticed is that it makes the gate blind
+along the one axis a corpus swap moves. A delta gate is a gate on the *treatment effect*; swapping
+the corpus changes the *baseline*, and the treatment effect can hold perfectly while the thing it
+is an effect on collapses underneath.
+
+This is the same species of defect as D5's gate 1, three days earlier: an injection prescribed by
+the docstring that could not falsify the gate, so the gate had been passing for free. Different
+mechanism, identical shape — **a check whose green is uninformative.** D5 caught its instance only
+because the negative test was run rather than assumed. This one was caught only because two stdout
+captures were sitting side by side on disk. Neither was caught by reading the code, and I have now
+watched that fail twice in a week. The rule I am taking from it: *when a gate passes across a
+change that should have moved something, that is a signal to audit the gate, not a signal that
+nothing moved.* A PASS is only evidence if I can say what would have made it FAIL.
+
+**The second lesson is about how the finding was even available.**
+
+D5's handoff recorded one bad line: `eval_heldout.py:438` reads `CORPUS_VERSION`, the module
+constant, instead of the effective `--corpus=` value. That was written up as a bug — singular. It
+is five: `eval_heldout.py:244`, `:373`, `:438` and `eval_chat.py:344`, `:411`. Every per-set and
+headline table in both harnesses reads the constant. `chat_v2.txt` prints `CORPUS_VERSION=v2` on
+line 1, prints the v2 corpus shape on line 2, and then stamps `corpus=v1` on all three of its
+tables.
+
+I did not find the other four by re-reading the code. I found them because the baselines were kept
+as **files on disk** rather than summarised into prose. A summary of `chat_v2.txt` would have
+recorded the numbers and the PASS; it would not have preserved the line that says `CORPUS_VERSION=v2`
+sitting eight lines above a table header that says `corpus=v1`. The contradiction is only visible
+when the whole capture is there, and it is only *provable* while the constant still reads `"v1"` —
+which is why the fix has to land before the flip. Afterwards both the buggy expression and the
+correct one return the same string, and no run can distinguish them again.
+
+Two habits get promoted out of this. **Keep the raw captures, not the summary** — `D:\d5_baseline\`
+paid for itself twice in one session, and it is 18 text files. And **when a bug is recorded, grep
+for its class before writing it down as an instance.** "`eval_heldout.py:438` reads the wrong
+variable" and "every table in both harnesses reads the wrong variable" are different findings with
+different fixes, and the first one, written in a handoff as though it were complete, would have
+sent the next session to patch one line and move on.
+
+One thing did go right, and it went right for a recorded reason. Two predictions written into
+`docs/phases/12_corpus_v2.md` before v2 existed — that `CT1.t1`'s false refusal would clear, and
+that `CT7.t2` would become scoreable — both held, and could be *confirmed against a file* rather
+than re-argued. `CT1.t1` is the more useful of the two: the `<-- FALSE REFUSAL` marker is gone and
+its recall is still `0.000`. The refusal is fixed; the ranking is not. Reporting only the first
+half would have been true and misleading, which is the failure mode this journal keeps circling.
+
+**Postscript, the same session: the habit paid out immediately.**
+
+Having just written down "grep for the class, not the instance", I applied it to the one loose end
+I had flagged — that `CLAUDE.md` still carried the `E → F → G` order the owner had just reversed.
+Grepping every statement of the phase order across the docs turned up that most "Phase E" mentions
+are *content placement* ("width/dense belongs to E"), which stay correct under any ordering, and
+that only one was a genuine sequence claim. Fixing just that would have been the instance.
+
+Two lines further down the same grep sat `docs/phases/11_chat.md:32`: *"`CLAUDE.md` says 20
+calls/day. **It is stale**, and fixing it is a Phase G deliverable."* Written during Phase 10 B.
+`CLAUDE.md`'s quota section named **one** model and quoted 20/day, while the measured reality —
+recorded in that playbook, in `HANDOFF.md` and in `STATUS.md` — is 20/day/model **and**
+10/minute/model across **two separate pools**, i.e. **40/day**, which `ask(failover=True)` has
+been exploiting since Phase 09.
+
+So the root context file that every session loads first has been under-counting the available
+budget **by half**, for weeks, while three other documents recorded the correct figure and one of
+them explicitly said so. The deferral is what kept it alive: "fixing it is a Phase G deliverable"
+reads like the matter is handled, and it parks a known-wrong number in the most-read file in the
+repo until the phase that needs it arrives. It arrives now — Phase G's *first* task is a ~30-call
+judge run, and 30 does not fit in 20 but does fit in 40. The wrong number would have produced
+either a needlessly elaborate multi-day plan or, worse, an abandoned half-run.
+
+The lesson is narrower than the one above and worth having anyway: **deferring a documentation fix
+to the phase that needs it means the phase that needs it starts by reading the wrong number.** If a
+doc is known to be wrong, the cost of fixing it is now; the cost of deferring it is paid by whoever
+trusts it in the meantime. Both of today's findings are the same shape as the session's main
+lesson, which is why they belong in one entry: *a record that is true, and uninformative or
+misleading in the way it is read.* `EVAL_CHAT: PASS`. "Fixing it is a Phase G deliverable."
+
+## 2026-09-19 (last) — the answer was already in the harness, printed next to the number
+
+The question was blunt and fair: the legal Q&A path is mediocre, can we fix it on free tier?
+
+What surprised me is that I did not need to design a diagnostic. `eval_heldout.py` has been
+printing the answer since Phase 09 step 2, in a block with its own interpretation rule written
+above it: *"A large gap between @6 and @60 means the miss is RANKING, and a re-ranker can reach
+it. A flat curve would mean the chunk is simply absent."* The clean test set reads `r@6 0.426`
+against `r@60 0.735`. The gap is **+0.309**, and it has been sitting in stdout, unread, through
+six Phase D sessions.
+
+That is a different failure from the ones in the entry above. Not a gate that could not fail, not
+a doc that was wrong — a measurement that was **correct, published, and never acted on**, because
+every session since had a corpus task in front of it. The harness was more useful than anyone was
+asking it to be.
+
+Three things fell out of actually reading it, all of which reshaped the Phase E plan:
+
+**The floor is innocent, and I would have gone after it.** `kept=0` is `0/8 · 0/7 · 0/5 · 0/5`
+across every answerable class, and false refusals are 0/25 and 0/17. Every question already
+retrieves something. "Recall is 0.47" *sounds* like a refusal problem and is not one — it is
+purely ordering. Two prior phases have had to write "do not touch `MIN_SCORE`" into the docs, and
+this is the third; the instinct to reach for the floor when a recall number disappoints is
+apparently very hard to kill.
+
+**We were barely selecting at all.** `k=3/doc` gives **9 candidates for 6 slots**. I had been
+thinking of "re-ranking" as the fix and pool width as a separate nice-to-have, when in fact a
+re-ranker over 9 candidates has almost nothing to do. Width is a *precondition*, not an
+alternative — and that inverted my sizing: M1 had specified `k=8–10/doc`, set in September before
+the recall@k curve existed. The curve is not flat past @20 (`0.559 → 0.735` on test), so M1's
+sizing would have stranded about half the available headroom outside the pool, and the re-ranker
+would then have been judged on what was left. A plausible number, sized against no data, quietly
+capping the step that follows it.
+
+**The synonym map is worse than "fitted" — it is carried by two questions.** I already knew
+0.925-vs-0.420 meant the hand map didn't generalise. What I had not looked at is the ablation's
+*interior*: +0.061 mean on frozen-10, made of Q9 +0.500, Q8 +0.250, Q2 **−0.143**, and six
+questions at exactly zero. A mean can be positive, be computed on the fitted set, and describe a
+component that helps two points and harms one. Writing "expansion off entirely" into the plan as
+a legitimate third arm felt uncomfortable and is obviously right once the row is broken out.
+
+**And one thing I nearly got wrong, which is the reason this entry exists.**
+
+I had written, in conversation, that M2's dense-retrieval premise was broken — that it needed a
+query-time model and therefore could not work on free tier. It sounded right; it matched the
+reasoning that superseded `08_retrieval_upgrades.md` steps 4/5 and M3. I went to read M2 before
+writing the amendment box, and it was **already handled**: embed at tier 1, cache on the
+normalised query, tiered fallback to the offline arm, a visible notice that the question goes to
+Google, a hard-offline toggle, and `CLAUDE.md`'s offline invariant amended in the same commit. A
+deliberate, documented trade, written months before I decided it was an oversight.
+
+So the box I wrote says *gated, not superseded* — M2's price needs paying last, because its quota
+premise is still unmeasured and the privacy cost falls on a population asking about abuse and
+coercion. That is a much weaker claim than "the premise is broken", and it is the true one.
+
+This is the third time in four days that the project's own documents already knew something I was
+about to assert from reasoning: the L614 clause misidentification, the `11_chat.md` quota note,
+and now M2. The pattern is specific enough to name. **When I am about to declare a premise
+falsified, the first move is to read the thing I am falsifying, in full, not to check whether my
+reasoning is self-consistent.** Self-consistent reasoning is exactly what produces a confident
+wrong answer, and this repo has now generated three of them and caught all three by reading.
+
+The cheapest phase in the project turns out to target its weakest measured number, and it needs
+no money, no quota, no GPU and no new dependency. That is a good position, and it was legible
+from stdout the whole time.
+
+## 2026-09-19 (D6 executed) — the regression was the baseline, and the eval set was citing the wrong clause
+
+D6 flipped `CORPUS_VERSION` to `"v2"`. Seven commits, zero quota, five harnesses green. The
+mechanical part went as written. What is worth keeping is that **the session's central premise was
+wrong, and the thing that disproved it was already in the corpus**.
+
+### The premise I was handed, and inverted
+
+The previous session wrote: *"`eval_chat --corpus=v2` exits PASS, and that is the problem"* —
+`chat_test`'s ellipsis gain class had collapsed from `+0.400` to `0.000` while the gates, computed
+on the tuning set, stayed green. I recorded it as a green harness hiding a real regression. It is
+a good critique of the harness. It was the wrong diagnosis of the number.
+
+Three turns carried that entire `+0.400`. All three of v1's hits were artifacts:
+
+- **`CT2.t2` and `CT2.t3` expect `act2018:[8]`, and clause 8 is not what they ask about.** They
+  were authored by reading v1's `[Act cl. 8]` chunk — the conversation's own note says so: *"Act
+  cl.7/8 read from [Act cl. 8]"*. That chunk **carried clause SEVEN's subsection (3)**, the
+  officer-approval offence. v2 files it under `[Act cl. 7]`, where it belongs; v2's clause 8 is
+  *Complaint of inaccessibility*, and its liability falls on *"a relevant authority in charge"*,
+  not on an approving officer.
+
+  **This is the `[Act cl. 39]` bug — the defect the entire phase exists to fix — sitting inside
+  the eval set.** Since 2026-09-15 those turns had been scoring *correct* against mis-attributed
+  law, and every published `chat_test` ellipsis number inherited it.
+
+- **`CT4.t3` scored on v1 because of words belonging to other clauses.** Clause 25 lived in an
+  800-char `cl. 25,26,27` chunk containing *"queue"* and *"accommodation"* — clause 26's and 27's
+  vocabulary, which contextualisation dutifully carried in from turns 1 and 2. The chunk was
+  retrieved for its neighbours and credited to clause 25. v2's 305-char clause-25 chunk contains
+  neither word. The naive-query rank barely moved (40 → 41); the contextualised rank went 5 → 104.
+
+So the blind set's gain class did not degrade. **v1's was never earned.** On the three surviving
+turns, v1 reads `0.000 → 0.333` — and that 0.333 *is* `CT4.t3`, the artifact.
+
+### The lesson that generalises
+
+**`recall_strict` does not neutralise the packed-ref subsidy in the `ctx` arm.** D5 checked that
+`strict == plain` on every `chat_test` class row and concluded the packed subsidy was ruled out.
+That inference is sound for *scoring*: `strict_covered` stops one chunk satisfying two expected
+refs. It is **wrong for retrieval**. Nothing in it can see that a chunk was *retrieved* because of
+text belonging to a different clause. The metric built to catch the packed subsidy was blind to
+the half of it that lived on the query side.
+
+The general shape: **a metric that corrects for a bias in how you score cannot be assumed to
+correct for the same bias in how you retrieve.** Those are different stages and they need
+different evidence.
+
+### A guard that had been failing open, and the number it let through
+
+D5's handoff recorded one mis-stamped site. There were five, and the fifth was not a label — it
+was `eval_heldout.py:438`, a guard that asserts the run is on v1 *because plain recall is not
+comparable across corpus versions*. It read the module constant, so under `--corpus=v2` it saw
+`"v1"` and let the comparison through. Which means D5's published line
+
+```
+frozen-10 recall 0.666 vs recorded baseline 0.925 (corpus v1): FAIL
+```
+
+is a v2 number measured against a v1 baseline, labelled v1, **by the guard written to refuse
+exactly that comparison**. The strict figure D5 also published (0.701 → 0.633) was the real one
+all along.
+
+Fixing the stamp *before* the flip is what surfaced it. After the flip both readings return `"v2"`
+and the buggy expression is indistinguishable from the correct one, forever. **Some bugs are only
+visible during the window you are about to close** — which is an argument for doing the cheap
+ordering thing even when it looks like ceremony.
+
+### An injection that passed, which was my bug
+
+Every new guard was negative-tested. One passed: the `act_ref` contradiction injection did not
+fail the run. The test was fine. **I had added a second `act_ref_validator()` call in the gate
+while the report already made one**, so the validator ran twice across 65 chunks and the first
+pass absorbed the injected contradiction before the gate ever saw it.
+
+D5's standing lesson was *a gate whose prescribed injection cannot falsify it has been passing for
+free*. The corollary, learned here: **an injection that passes is a result to investigate, not a
+box to tick.** I nearly wrote "5/5 negative-tested" and moved on.
+
+Related, same session: `FROZEN10_STRICT_BASELINE_V2` is `0.632738`, not the `0.633` the table
+prints. The true value is `0.63273809523809521` and 3dp display rounds it **up**, so pinning what
+stdout showed would have failed the very run it was derived from. **A baseline you cannot
+reproduce is not a baseline**, and any constant pinned off a printed table has this bug.
+
+### On retiring turns
+
+Two turns retired, zero retired for being hard. The distinction is the whole discipline:
+ground truth *falsified* leaves the means; ground truth *correct but now harder* stays and goes to
+Phase E. Retiring a regression is how a corpus rebuild launders itself into a win, and `CT4.t3` —
+which looks exactly like a regression and is one — is the case that tests whether the rule is real.
+
+The mechanism required `retired_reason` to be non-empty, enforced at load. A flag without an
+argument is a flag someone sets to make a number go green.

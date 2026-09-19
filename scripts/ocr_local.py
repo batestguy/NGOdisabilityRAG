@@ -1,10 +1,28 @@
 """Local OCR of the scanned Disability Act with RapidOCR (ONNX, CPU).
 
-Run with the isolated env:  C:\\conda-envs\\drlca-rag\\python.exe scripts/ocr_local.py
+Run with the isolated env:
+  C:\\conda-envs\\drlca-rag\\python.exe scripts/ocr_local.py --force
 Resumable: pages already in the JSON checkpoint are skipped.
 Outputs:
   data/processed/disability_act_2018_rapidocr.json  (per-line text + confidence)
   data/processed/disability_act_2018_full.txt       (assembled, cleaned)
+
+!! THIS SCRIPT REWRITES THE v1 CORPUS !!
+----------------------------------------
+TXT_OUT is data/processed/disability_act_2018_full.txt -- the Act text that
+EVERY published baseline in this repo was measured against. Running this
+regenerates it.
+
+Until Phase 10 D2 this file had a bare `main()` at module scope and no
+`__main__` guard, so merely importing it (to reuse an OCR helper, say) silently
+destroyed that artifact. Two defences were added and neither should be removed:
+
+  1. the `if __name__ == "__main__"` guard below -- importing is now inert;
+  2. `--force`, without which the run refuses once TXT_OUT already exists.
+
+Reusable OCR helpers now live in scripts/ocrlib.py. Import THAT. This file is
+kept as the v1 reproduction path and nothing else; its assembler deliberately
+still drops line geometry, exactly as it did when v1 was built.
 """
 import json
 import sys
@@ -21,7 +39,16 @@ TXT_OUT = ROOT / "data" / "processed" / "disability_act_2018_full.txt"
 CONF_THRESHOLD = 0.6  # lines below this are candidates for Gemini spot-correction
 
 
-def main():
+def main(argv: list[str] | None = None):
+    argv = sys.argv[1:] if argv is None else argv
+    if TXT_OUT.exists() and "--force" not in argv:
+        raise SystemExit(
+            "refusing to run: %s already exists.\n"
+            "That file is the v1 Act corpus every published baseline in this "
+            "repo was measured against, and this script overwrites it.\n"
+            "Pass --force if regenerating it is genuinely what you want."
+            % TXT_OUT)
+
     import numpy as np
     import pymupdf
     from rapidocr_onnxruntime import RapidOCR
@@ -60,4 +87,5 @@ def main():
     print(f"saved {TXT_OUT} ({TXT_OUT.stat().st_size} bytes)", flush=True)
 
 
-main()
+if __name__ == "__main__":
+    main()

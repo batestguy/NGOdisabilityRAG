@@ -9,6 +9,13 @@
 | 2 | Constitution of the FRN 1999 incl. 1st–5th Alterations (FREE PDF) | PLAC | https://placng.org/i/wp-content/uploads/2023/05/Constitution-of-the-Federal-Republic-of-Nigeria-2023.pdf — most up-to-date single copy |
 | 2 alt | Constitution 1999 Cap. C23 (FREE PDF) | NHRC | https://nigeriarights.gov.ng/files/publications/1999%20CONSTITUTION%20OF%20THE%20FRN.pdf |
 | 3 | Disability Act Easy-to-Read Version | JONAPWD | https://jonapwdng.org/easy-to-read-version-of-the-disability-act-2018/ (also announced on JONAPWD LinkedIn, Apr 2023) |
+| 1 **authoritative** | Same Act as published — **Official Gazette No. 10, Vol. 106, Lagos, 21 January 2019, Act No. 2, pages A97–A122** | Federal Government Printer, Lagos (FGP 007/12019/700) | `data/raw/disability_act_2018_gazette_FGP.pdf` — 27 scanned pages, **no text layer**, filed Phase 10 D0 (2026-09-17) |
+
+> **The gazette copy is the authoritative source for corpus v2** (Phase D). Rows 1 / 1 alt
+> above are the free web transcriptions v1 was built from; where they and the gazette
+> disagree, the gazette wins. It is a scan, so it must be OCRed — see
+> `docs/phases/12_corpus_v2.md`. Nothing in `data/raw/` is read at boot; the corpus ships
+> prebuilt as TXT.
 
 > NOTE: lawnigeria.com sells its PDF copy for ₦2,000 — do NOT pay; the JONAPWD / Qualitative Magazine / PLAC copies above are free and sufficient for this project.
 

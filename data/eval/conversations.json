@@ -379,7 +379,7 @@
   "id": "CT2",
   "set": "chat_test",
   "topic": "building plans and offences",
-  "note": "AUTHORED BLIND. Act cl.7/8 read from [Act cl. 8].",
+  "note": "AUTHORED BLIND. Act cl.7/8 read from [Act cl. 8]. D6 2026-09-19: that chunk was mis-reffed under corpus v1 -- it carried cl.7(3)'s officer-approval offence under a cl.8 tag -- so t2 and t3 are RETIRED on v2. t1 (cl.7) is unaffected and still scores.",
   "turns": [
    {
     "text": "Does a new building plan have to include accessibility?",
@@ -393,14 +393,18 @@
     "class": "ellipsis",
     "expect_gate": "answer",
     "expected": {"act2018": [8]},
-    "note": "Act cl.8(3): 'An officer who approves or directs the approval of a building plan that contravenes the building code, commits an offence'."
+    "note": "Act cl.8(3): 'An officer who approves or directs the approval of a building plan that contravenes the building code, commits an offence'.",
+    "status": "retired-v2",
+    "retired_reason": "GROUND TRUTH FALSIFIED BY CORPUS v2 -- not a difficulty regression. Authored from v1's [Act cl. 8] chunk (see this conversation's note), which was MIS-REFFED: it carried clause SEVEN's subsection (3), 'An officer who approves or directs the approval of a building plan that contravenes the building code, commits an offence and is liable on conviction...'. In v2's clause-aligned corpus that text sits under [Act cl. 7] where it belongs, and cl.8 is 'Complaint of inaccessibility', whose liability falls on 'a relevant authority in charge' that fails to remove a barrier -- not on an approving officer. So expected act2018:[8] names the wrong clause, and v1's hit on this turn was scored against mis-attributed text. Same defect class as cl.38's tail being served under [Act cl. 39]: exactly what Phase D exists to fix, found here inside the eval set itself. RETIRED, NOT EDITED -- correcting [8] to [7] would silently convert a blind turn into one authored against v2."
    },
    {
     "text": "so is he personally liable?",
     "class": "ellipsis",
     "expect_gate": "answer",
     "expected": {"act2018": [8]},
-    "note": "Same clause -- liable on conviction. Leading 'so', one content stem, unbound 'he'/'it': the maximal-ellipsis case in this set."
+    "note": "Same clause -- liable on conviction. Leading 'so', one content stem, unbound 'he'/'it': the maximal-ellipsis case in this set.",
+    "status": "retired-v2",
+    "retired_reason": "Same falsification as the preceding turn, and it inherits it directly: 'he' is the officer from t2, so the liability asked about is cl.7(3)'s ('liable on conviction to a fine of at least N1,000,000 or a term of imprisonment of two years'), not cl.8's. Expected act2018:[8] names the wrong clause. RETIRED, NOT EDITED."
    }
   ]
  },
@@ -533,7 +537,7 @@
     "class": "pronoun",
     "expect_gate": "answer",
     "expected": {"act2018": [5]},
-    "note": "First Schedule item 2, 'Crutches, guide canes etc'. 'that list' is unbound. ADDENDUM 2026-09-15 (post-hoc, after the blind authoring, review-found -- the expectation is deliberately NOT edited): this turn is UNSCOREABLE on corpus v1. The chunk that actually carries the First Schedule list is reffed 'general', and evalset.ref_nums('general') is empty, so no retrieval can ever satisfy expected act2018:[5] here -- both arms do retrieve that exact chunk, at ranks 5-6, and still score 0.000. Same uncitable-chunk class as the recorded 'Act cl.19 is uncitable' gap; corpus v2 is what fixes it. Recall 0.000 on this turn is a corpus-ref artifact, NOT a contextualisation failure."
+    "note": "First Schedule item 2, 'Crutches, guide canes etc'. 'that list' is unbound. ADDENDUM 2026-09-15 (post-hoc, after the blind authoring, review-found -- the expectation is deliberately NOT edited): this turn is UNSCOREABLE on corpus v1. The chunk that actually carries the First Schedule list is reffed 'general', and evalset.ref_nums('general') is empty, so no retrieval can ever satisfy expected act2018:[5] here -- both arms do retrieve that exact chunk, at ranks 5-6, and still score 0.000. Same uncitable-chunk class as the recorded 'Act cl.19 is uncitable' gap; corpus v2 is what fixes it. Recall 0.000 on this turn is a corpus-ref artifact, NOT a contextualisation failure. RESOLVED at D6 2026-09-19, exactly as predicted: on corpus v2 the turn is SCOREABLE and scores 1.000 contextualised (0.000 naive), with the correct chunk at pool rank 2 where v1 had it at 9. The 'UNSCOREABLE on corpus v1' caveat above is history, not a live caveat -- it is kept because a prediction that held is evidence, and deleting it would erase the only record that this was called in advance."
    }
   ]
  },

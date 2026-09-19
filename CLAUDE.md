@@ -141,9 +141,19 @@ iterated in **insertion order** and hits are sorted by score alone
 
 ## Quota and eval discipline
 
-Gemini free tier is **20 calls/day/model** (`gemini-2.5-flash`, confirmed by 429). A full
-Phase 02 run is 12 calls; the deferred RAGAS-judge run is ~30. Check `HANDOFF.md` for the
-day's spend before starting anything LLM-backed. 503s are transients — retry with backoff.
+Gemini free tier is **20 calls/day/model AND 10/minute/model** (confirmed by 429).
+`gemini-2.5-flash` and `gemini-2.5-flash-lite` draw from **separate pools**, so the real
+budget is **40/day**, and `ask(failover=True)` already exploits it (Phase 09 step 1;
+failover is opt-in, fires once, and **never** on a per-minute 429 — those are retried with
+backoff, not dodged). *Corrected 2026-09-19: this section previously said "20 calls/day/model
+(`gemini-2.5-flash`)" and named one model, which under-counted the budget by half.
+`docs/phases/11_chat.md:31-36` had flagged it stale and assigned the fix to Phase G.*
+
+A full Phase 02 run is 12 calls. **The judge run is ~30, which does not fit in one day on one
+model** — plan the split across days and/or across both pools *before* spending the first
+call, because a half-finished judge run is wasted quota. This is Phase G's first task.
+Check `HANDOFF.md` for the day's spend before starting anything LLM-backed. 503s are
+transients — retry with backoff.
 
 `scripts/eval_phase06.py` is a custom zero-LLM proxy for the RAGAS metrics (RAGAS itself
 is not installed — its langchain/openai tree would endanger the pinned env). Its expected
@@ -166,12 +176,29 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
 ## Working conventions
 
 - Work the active playbook in `docs/phases/` in order; each defines its own exit criteria.
-  **Next up: Phase D — `docs/phases/12_corpus_v2.md`** (corpus v2: Act re-OCR from the
-  authoritative gazette + manifest-anchored parse, Factsheet S/N table, Constitution
-  Arrangement exclusion, refusal re-calibration, re-baseline). Zero Gemini quota.
-  Then **E** (width/pool depth + dense retrieval, `10_corpus_rebuild_and_dense.md` M1/M2)
-  → **F** (free-GPU fine-tune, M4) → **G** (fresh transcripts + judge + cross-turn
-  citation drift, M5 + `11_chat.md`). **D before E is load-bearing:** M2's embedding
+  **Phase D is COMPLETE — D0–D6 DONE 2026-09-19, branch `phase10/corpus-v2`, UNMERGED.**
+  `CORPUS_VERSION = "v2"` is the default (`src/rag.py:48`); v1 is retired as the default but
+  **not deleted** — every harness takes `--corpus=v1` and reproduces its published numbers from
+  the same commit. Baseline `scripts/baseline_v2_2026-09-19.txt`, all five harnesses green.
+  **Merging auto-deploys to Render — that decision is the user's, never yours.**
+  **Next up: Phase E — `docs/phases/13_retrieval_quality.md`.** Two D6 findings bind on it:
+  **`CT4.t3`'s correct chunk sits outside the 60-candidate pool entirely** (rank 104 at k=200),
+  so **E1's `k=20/doc` widening does not reach it** — know that before judging E1; and
+  **`recall_strict` does NOT neutralise the packed-ref subsidy in the `ctx` arm** — it corrects
+  scoring, not retrieval, and cannot see a chunk retrieved because of another clause's words.
+  Order is **E → G → F**: **E** (retrieval quality — `docs/phases/13_retrieval_quality.md`, **NEW**
+  and the consolidated playbook; supersedes the scattered `09` step 3 and `10` M1/M2 sizing) →
+  **G** (fresh transcripts + judge + cross-turn citation drift, M5 + `11_chat.md`) →
+  **F** (free-GPU fine-tune, M4 — **re-examine before scheduling**, see the box on M4).
+  **E BEFORE G, decided 2026-09-19 on resource grounds**, which reverses the G-before-E call
+  taken earlier the same day (that one is recorded in `LEARNING_JOURNAL.md`, not erased).
+  The reason is asymmetric cost: **E costs zero quota and *improves* the system; G costs ~30
+  calls — most of a day's entire free budget — and only *measures* it.** Judging before E spends
+  the scarce resource on a system about to change, then needs re-running. The safety argument for
+  G-first is weaker than it looked: AI prose is opt-in and defaults OFF, so unmeasured
+  cross-turn drift is not reaching users by default. **G needs a multi-day quota plan before its
+  first call** — see the quota section above.
+  **D before E is still load-bearing** (and still satisfied): M2's embedding
   artifact is per-chunk and keyed on a corpus sha256, so embedding before the rebuild
   throws all of it away.
   **M3 of `10_corpus_rebuild_and_dense.md` is SUPERSEDED — do not execute it**; two of its
