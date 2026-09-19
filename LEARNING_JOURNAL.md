@@ -1999,3 +1999,162 @@ support it is to show that everything outside the region came out the same bytes
 assert it from the shape of the code. The same instinct applied to the excluded text itself: 690
 non-empty lines, **zero** of which contain the word *shall*, longest line 14 words. A listing, end
 to end — measured, not eyeballed and declared.
+
+## 2026-09-19 — the fitted set was the only set that got worse, and a mandatory step that changed nothing
+
+D5 was the first step in this phase that was **mandatory and not conditional**. D2, D3 and D4
+replaced all three documents, so every cosine in the system moved; the `MIN_SCORE` calibration
+table at the top of `src/retrieve.py` was measured on 2026-09-08 against corpus v1 and had been
+*inherited* ever since. The stated hazard was specific: longer v2 chunks lower every score, and a
+lower score can manufacture a **false refusal**, which `CLAUDE.md` names as the worst failure this
+system has because it denies help to a PWD.
+
+I re-derived it. The answer was that nothing needed to change.
+
+**`MIN_SCORE` stays `0.10`.** False refusals: 0/10, 0/25, 0/17 on frozen10 / dev / test — under
+*both* corpora, identical. The playbook's escape hatch (a second frozen v1 index used only for the
+answer/refuse decision, while ranking and display use v2) is declined, because its trigger never
+fired. v2 is in fact marginally *better* on the false-answer side: H25, an off-corpus dev row that
+cleared the floor at 0.1032 under v1, now scores below it and is refused. One fewer wrong answer.
+
+It is worth writing down that **this is a result**, not a wasted session. A mandatory calibration
+step that measures carefully and concludes "no change is owed" has bought something real: the
+number is no longer inherited. Before today, `0.10` was a figure from a run against a corpus that
+no longer exists. After today it is a figure with a committed script behind it, and a machine gate
+that stops it drifting in the dangerous direction.
+
+### The finding: the fitted set is the only set that got worse
+
+This is the part I did not expect to be so clean.
+
+| `recall_strict` | v1 | v2 | move |
+|---|---|---|---|
+| frozen10 (fitted on) | 0.701 | 0.633 | **−0.068** |
+| dev (spent, inspected) | 0.407 | 0.473 | **+0.066** |
+| test (clean, never tuned against) | 0.338 | 0.471 | **+0.133** |
+
+The set the synonym map was fitted to is the only one that went **down**. The clean set moved up
+the most. That ordering is exactly what you would predict if 0.925 was substantially *fitting*
+rather than quality — the claim made on 2026-09-13, when `evalset.py` was written to stop the
+frozen 10 being tuned on any further. It was an argument then. Changing the corpus underneath the
+fit turned it into evidence, because the fit had nothing to hold onto any more.
+
+I want to be careful about what this does and does not show. It does not show the synonym map is
+worthless; dev and test both improved, so the retrieval is genuinely better on questions nobody
+tuned against. It shows that the *margin* between 0.925 and the held-out numbers was mostly an
+artifact of measuring on the thing you optimised. The gap closing from (0.925 vs 0.338) to (0.666
+vs 0.471) is the contamination draining out.
+
+### Attributing the frozen-10 drop, without being allowed to act on it
+
+`eval_heldout.py` prints per-question tables for dev and test only — the frozen set gets a mean and
+nothing else — so until today a move in that number was **unattributable**. I added a block that
+prints it, and the attribution is the packed-ref subsidy being withdrawn:
+
+- packed chunks retrieved across the ten questions: **14 → 5**
+- all **12** lost expected refs sit in the 7 questions that had packed chunks; **zero** gained
+- Q2 alone loses `act 5,6,7` + `fact 6,7` — five expected refs that v1 satisfied out of three
+  chunks, because one chunk reffed `cl. 3,4,5` counts for three
+- `recall_strict`, which never granted that subsidy, drops only 0.701 → 0.633 and is flat or
+  better on **6 of 10** (Q8 improves 0.500 → 0.750)
+- top scores largely **rise**: Q6 0.1696 → 0.2459, Q8 0.3049 → 0.5416
+
+So the plain-recall collapse is arithmetic, not a ranking regression. This is precisely what the
+`recall_strict` column was published for, back before v2 existed, so that correct v2 work could not
+read as a regression. It worked.
+
+The block is marked **report only** in the script, in the docstring and in the playbook. Nothing
+about chunk sizes, the synonym map, `k`, `top_n` or `MIN_SCORE` may be changed on what it shows.
+Tuning on an attribution of the fitted set's own failures is the same contamination one level down
+— I would be spending the frozen 10 the way the dev set was spent, and the whole reason I can write
+the table above is that nobody did.
+
+### An injection that cannot fail is not a negative test
+
+D4 established that guards get proven by injection rather than by reading. I applied that to all
+three of D5's gates, and one of them refused to break.
+
+The plan called for testing the refusal-invariance gate by passing `floor=0.0` to `select_top`
+while still filtering at `MIN_SCORE` — the "latent inconsistency" `select_top`'s own docstring
+describes. It produced **zero** disagreements, and the reason is structural rather than lucky: the
+global maximum is in `select_top`'s output at *every* floor. At 0.0 the quota phase takes each
+doc's best hit, and the global max is by definition some doc's best hit. At `MIN_SCORE` it is
+either taken by the quota phase, or — if it does not clear the floor — taken first by the fill
+phase. Either way it is there, so "some shown hit clears the floor" and "the global max clears the
+floor" cannot come apart. The inconsistency is real, but it changes *which six chunks are shown*,
+not the refusal decision.
+
+The tempting move was to report "gate 1 negative-tested ✓" and move on. That would have been an
+overclaim of exactly the kind the D4 review caught: a gate reported as proven by a test that could
+never have failed. So the script says so, in its own output, and then proves the gate is live a
+different way — a mutant selector that drops the global max, violating the premise the proof
+actually rests on. That fires, 2 disagreements. Gate 1 is tested; it is just not tested by the
+thing I was told to test it with.
+
+The same instinct improved gate 2. The obvious injection — raise the floor to 0.30 — raises it for
+*both* arms, which can push them under together and still satisfy `v2 ≤ v1`. A symmetric injection
+of an asymmetric gate proves nothing. Raising **v2's floor only** is what a real one-sided
+regression looks like, and that fires with 38 named offenders.
+
+### Two things the measurement found that I was not looking for
+
+**`eval_heldout.py:438` reads the wrong variable.** `assert CORPUS_VERSION == "v1"` tests the
+module constant imported from `rag.py` — not the effective version from `--corpus=`, which `main()`
+already parses into a local and uses correctly two lines earlier. So under `--corpus=v2` the
+constant is still `"v1"`, the assert never fires, and the run trips the frozen-10 recall guard it
+was written to *pre-empt*. The same bug prints `(corpus v1)` on a v2 run, mislabelling a v2 number
+as v1 in direct contradiction of the file's own docstring ("a recall number that lacks that stamp
+is a v1 number"). The guard was well designed and wired to the wrong wire. Recorded for D6, not
+fixed — D5's scope is the floor, and a session that widens its scope because it found something
+adjacent is how a clean diff stops being clean.
+
+**`SYN:car` was the one refusal flip, and it is not what it looks like.** Bare `car` goes
+0.1141 → 0.0794 and is refused under v2. Since v2's Act cl. 12 is literally *"Reserved spaces … at
+public parking lots"*, the first reading is that v2 manufactured a false refusal on an on-corpus
+query — the exact thing D5 exists to catch. I nearly wrote it up that way.
+
+What v1 actually did: 0.1141 *just* cleared the floor, which let the entry gate in
+`PerDocRetriever.query` admit the query to expansion, and the expanded query
+(`car vehicle transport parking road`) top-1'd **Constitution s. 40** — peaceful assembly and
+association — at 0.2126. v1 was not answering "car" correctly. It was answering it with an
+irrelevant constitutional section reached by expansion manufacturing word overlap, which is the
+precise defect that entry gate is documented to prevent. v2 refuses, and its best *bare* hit is the
+**right** chunk. Real sentences never go near this: "is there accessible parking for people with
+disabilities" improves 0.2157 → 0.2802.
+
+The lesson is about the sign of a metric. I had written a gate that scored "v1 answered, v2
+refused" as a regression across all 106 probes, because the plan said so and it sounds obviously
+right. On two populations it is obviously **wrong** — for off-corpus probes, answered → refused is
+the *goal*, and H25 would have been scored as a failure for improving. For bare synonym keys it is
+wrong more subtly, in the way `car` shows. Those 34 keys exist in `ablate_phase08` to prove one
+narrow thing, that *expansion* does not flip a key answered → refused within a single corpus; they
+were never a claim that every bare trigger word is an answerable question. Reusing a probe set for
+a purpose it was not built for is cheap and it silently changes what the number means.
+
+So the script gates the 52 corpus-verified answerable rows, and **reports** the other two
+populations with every flip named and attributed. Not gating something is only honest if you print
+it; the alternative — quietly dropping probes until the run is green — is the failure mode this
+whole phase has been trying to avoid. And the actual open question `car` raises is not the floor at
+all. Lowering `MIN_SCORE` by 25% to rescue one bare word, while the in-corpus/off-corpus bands are
+measured **inverted on both corpora** (v2: weakest in-corpus 0.1209 against strongest off-corpus
+0.4195), would admit a great deal of junk to fix a ranking problem. It goes to D6 as a ranking
+problem.
+
+### A small correction, made because the number was checked
+
+The calibration block cited four off-corpus probes from 2026-09-08. Three of them — `sourdough`,
+`quantum`, `maritime shipping insurance law` — are in the committed `OFF_CORPUS` list and reproduce.
+The fourth, `visa`, **exists nowhere in this repo as a query**; the only "visa" in the tree is
+Constitution item 42, *"Passports and visas"*, which is corpus text. The figure `0.161` cannot be
+reproduced by anyone, including me. The old numbers are kept, labelled as v1-era and flagged as
+having been measured on a different arm (k=2/doc, no `select_top`), with the unreproducible one
+called out — rather than deleted, which would erase the evidence that the block was ever anecdotal,
+or left standing, which would keep implying it is checkable.
+
+That is the through-line of the session. `src/retrieve.py` had carried, since 2026-09-13, an honest
+admission that its refusal-invariance proof rested on "a run nobody can reproduce", and a request
+that Phase 10 D commit the battery. Both the caveat and the `visa` figure were the same species of
+debt: a measurement that was probably right, that nobody could check. 106 probes, imported from
+their sources rather than copied, run against both corpora in one process, 212 probe-runs, zero
+disagreements — and it re-runs in about a minute. The gate that was written down is now a gate that
+executes.

@@ -663,6 +663,103 @@ In order:
    answer/refuse decision, while ranking and display use v2. **Present it as the hatch, not the
    default** — two indexes is real cost.
 
+#### D5 RESULTS — 2026-09-19. **`MIN_SCORE` did not move. Measurement discharged the step.**
+
+Zero Gemini calls. One new file (`scripts/calibrate_refusal.py`) plus three comment blocks
+rewritten; **no behaviour changed anywhere**, which is why the entire regression sweep reproduces
+byte-identically.
+
+| measured | v1 | v2 |
+|---|---|---|
+| false refusals, frozen10 / dev / test | 0/10 · 0/25 · 0/17 | **0/10 · 0/25 · 0/17** |
+| off-corpus clearing the floor, dev / test | 5/5 · 3/3 | **4/5 · 3/3** (H25 0.1032 → refused) |
+| in-corpus minima, frozen10 / dev / test | 0.1696 (Q6) · 0.1359 (H11) · 0.1285 (T1) | **0.2287 (Q10) · 0.1369 (H11) · 0.1209 (T9)** |
+| off-corpus maxima, 12 probes / 8 refuse rows | 0.3180 · 0.4193 (H23) | **0.3180 · 0.4195 (H23)** |
+| band | INVERTED | **INVERTED** (0.1209 vs 0.4195) |
+| `ablate_phase08` refusal regressions · floor-defeat flips · 34-key flips | none · none · none | **none · none · none** |
+| recall_strict frozen10 / dev / test | 0.701 · 0.407 · 0.338 | **0.633 · 0.473 · 0.471** |
+
+**`MIN_SCORE` stays `0.10`.** The hazard D5 exists to catch — longer v2 chunks pulling cosines
+down into false refusals — **did not materialise on any set**. v2 is marginally *better* on the
+false-answer side (one fewer off-corpus row clears the floor), and the band is still inverted on
+**both** corpora, so no value above 0.10 would buy semantic discrimination anyway. That stays the
+strict-prompt `NO_ANSWER_SENTENCE` layer's job.
+
+**The escape hatch is DECLINED, because its trigger never fired.** A second frozen v1 index for
+the answer/refuse decision is warranted only by an actual false refusal; there were **zero across
+52 answerable rows × 2 corpora**. Paying for two indexes to solve a problem measurement says does
+not exist is cost with no purchase.
+
+**The 212-probe invariance result retires a caveat in the source.** `src/retrieve.py` said the
+refusal-invariance proof rested on "a run nobody can reproduce" and asked Phase 10 D for the
+battery as a committed script. It now exists: 106 probes (60 eval rows + 12 `OFF_CORPUS` + 34 bare
+`SYNONYMS` keys, all **imported**, never copied) × both corpus versions, built in one process on
+the shipping arm — **212 probe-runs, 0 disagreements.**
+
+**All three gates are negative-tested by injection**, not by reading (`--negative-test`):
+
+- **Gate 2** — v2's floor → 0.30 **asymmetrically** (raising both arms together could push them
+  under as a pair and still satisfy `v2 ≤ v1`, proving nothing). Fires, naming 38 offenders.
+- **Gate 3** — `MIN_SCORE` → 0.11. Fires.
+- **Gate 1** — **the prescribed injection does not falsify it, and that is recorded rather than
+  glossed.** Passing `floor=0.0` to `select_top` while still filtering at `MIN_SCORE` — the
+  "latent inconsistency" its own docstring describes — leaves invariance **intact**, because the
+  global maximum is in the output at *every* floor (at 0.0 the quota phase takes each doc's best
+  hit, and the global max *is* some doc's best hit). The inconsistency is real but changes *which
+  six chunks are shown*, not the refusal decision. The gate is proven live instead by a mutant
+  selector that drops the global max: **2 disagreements, fires.**
+
+**Frozen-10 attribution (the bounded diagnosis).** The 0.925 → 0.666 plain-recall drop is the
+**packed-ref subsidy** being withdrawn, not a ranking regression. Packed chunks retrieved across
+the 10 questions fall **14 → 5**, and all 12 lost expected refs sit in the 7 questions that had
+them — Q2 alone loses `act 5,6,7` + `fact 6,7`, which v1 satisfied from three packed chunks.
+`recall_strict`, which never granted that subsidy, moves only **0.701 → 0.633**, and per question
+is *flat or better* on 6 of 10 (Q8 improves 0.500 → 0.750). Top scores largely rise (Q6 0.1696 →
+0.2459, Q8 0.3049 → 0.5416). **Nothing was tuned on this** — the block is marked report-only in
+the script, for the contamination reason `evalset.py` exists.
+
+#### Handed to D6 by D5
+
+> **⚠ `eval_heldout.py:438`'s v1 guard reads the WRONG VARIABLE — D5 finding, 2026-09-19.**
+> `assert CORPUS_VERSION == "v1"` tests the **module constant** imported from `rag.py`, not the
+> **effective** version selected by `--corpus=`. Under `--corpus=v2` the constant is still `"v1"`,
+> so the assertion **never fires**, and the run instead trips the frozen-10 recall guard it was
+> written to pre-empt (`0.666 vs 0.925: FAIL`). The symptom is the recorded v2 exit 1; the cause is
+> this. `main()` *does* parse the effective value into a local `corpus` and uses it correctly two
+> lines later (`print("CORPUS_VERSION=%s" % (corpus or CORPUS_VERSION))`) — the guard simply reads
+> the wrong one of the two.
+>
+> **Second symptom, same cause:** the guard line also *stamps* itself from the constant, so a
+> `--corpus=v2` run prints `frozen-10 recall 0.666 vs recorded baseline 0.925 (corpus v1): FAIL`
+> — **mislabelling a v2 number as v1**, which directly contradicts the file's own docstring
+> ("Every table is stamped with `CORPUS_VERSION`… a recall number that lacks that stamp is a v1
+> number"). Fix both occurrences, not just the assert. **Recorded, not fixed in D5** — D5's scope
+> is the floor. **D6's fix:** compare against the
+> *effective* version (the parsed `--corpus=` value), and gate v2 on **`recall_strict`** against a
+> **separate constant** (`FROZEN10_RECALL_STRICT_BASELINE_V2 = 0.633`), leaving
+> `FROZEN10_RECALL_BASELINE_V1 = 0.925` guarding v1 — exactly the split `eval_heldout.py:131-136`
+> already argues for and stops short of implementing.
+
+> **⚠ `SYN:car` — the one v1→v2 refusal flip, and it is NOT a false refusal. D5 finding,
+> 2026-09-19.** Bare `car` goes 0.1141 → 0.0794 and is refused under v2. It *looks* like a false
+> refusal (v2 Act cl. 12 **is** "Reserved spaces … public parking lots", so `car` is on-corpus),
+> but **v1 never answered it correctly**: 0.1141 just cleared the floor, which let
+> `PerDocRetriever.query`'s **entry gate** admit it to expansion, and the expanded query
+> (`car vehicle transport parking road`) top-1'd **Constitution s. 40** (assembly and association)
+> at 0.2126 — a junk answer produced by expansion manufacturing overlap, the exact defect that
+> entry gate is documented to prevent. v2 refuses, and its best *bare* hit is the **correct** chunk
+> (Factsheet "Section 12 Reserved Places"). **Real sentences are unaffected and improve**: "is
+> there accessible parking for people with disabilities" 0.2157 → 0.2802; "do I have a right to
+> accessible public transport" 0.3180 → 0.3174.
+>
+> **The floor is not the thing to change** — clearing 0.0794 means dropping `MIN_SCORE` by ~25%
+> while the band is inverted, admitting more off-corpus junk to rescue one bare word. The open
+> question is that **a one-word query is too thin to reach its own correct chunk**, which is a
+> *ranking* problem for D6/E, not a *floor* problem. `calibrate_refusal.py` therefore **reports
+> the 34 bare keys with every flip named, but does not gate them** — see `classify()` for the
+> argument. Note that `ablate_phase08`'s "34-key flips: none" measures a **different axis**
+> (expansion on/off *within* one corpus) and is not contradicted by this.
+
 ### D6 — re-baseline, zero quota
 
 - Flip `CORPUS_VERSION` to `"v2"`. **Keep the v1 tripwire runnable** so the published shape stays

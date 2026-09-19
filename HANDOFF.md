@@ -1,6 +1,63 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-19)
 
-> **LATEST (2026-09-19): D4 is DONE — the Constitution's Arrangement of Sections is
+> **LATEST (2026-09-19, later): D5 is DONE — the refusal floor was RE-DERIVED against v2 and
+> `MIN_SCORE` DID NOT MOVE.** Zero Gemini calls spent. Branch **`phase10/corpus-v2`** (still
+> unmerged on purpose).
+>
+> **The hazard D5 exists to catch did not materialise.** False refusals are **0/10 · 0/25 · 0/17**
+> on frozen10/dev/test under **both** corpora. v2 is marginally *better* on the false-answer side
+> (H25 0.1032 → refused, one fewer off-corpus row clearing the floor). The in-corpus/off-corpus
+> band is still **INVERTED on both** (v2: weakest in-corpus 0.1209 vs strongest off-corpus 0.4195),
+> so **`MIN_SCORE` stays `0.10`** — and no value above it would buy semantic discrimination
+> anyway; that is the strict-prompt `NO_ANSWER_SENTENCE` layer's job.
+>
+> **The playbook's escape hatch (a second frozen v1 index for the answer/refuse decision) is
+> DECLINED** — its trigger is "only if a false refusal appears", and none did across 52 answerable
+> rows × 2 corpora.
+>
+> **NEW FILE: `scripts/calibrate_refusal.py`** — the battery `src/retrieve.py` asked for by name.
+> 106 probes (60 eval rows + 12 `OFF_CORPUS` + 34 bare `SYNONYMS` keys, all **imported**, never
+> copied) × both corpus versions, built in **one process**, zero network, **writes no files**.
+> Refusal invariance: **212 probe-runs, 0 disagreements** — which retires the "a run nobody can
+> reproduce" caveat that had sat in `src/retrieve.py` since 2026-09-13.
+>
+> **All three gates are negative-tested by injection** (`--negative-test`), and one result is
+> reported honestly rather than glossed: **gate 1's prescribed injection cannot falsify it.**
+> `floor=0.0` into `select_top` leaves invariance intact, because the global max is in the output
+> at *every* floor. Gate 1 is proven live instead by a mutant selector that drops the global max
+> (2 disagreements). Gates 2 (v2 floor → 0.30, **asymmetric** on purpose) and 3 (`MIN_SCORE` →
+> 0.11) both fire. **Do not re-litigate this in D6.**
+>
+> **NO BEHAVIOUR CHANGED.** One new script + three comment blocks (`src/retrieve.py`'s calibration
+> block and merge caveat, `src/rag.py`'s three deferral notes). The v1 sweep is **stdout
+> byte-identical** — `eval_heldout`, `ablate_phase08`, `audit_corpus`, `eval_chat`, both arms —
+> `eval_phase06` still `ce716fb3…5f19`, 137/137 · 51/51 · 16/16+7/7 · 10/10 · bench PASS.
+> **The v2 arms still exit 1 for the recorded reasons; D5 made nothing pass.**
+>
+> **TWO FINDINGS HANDED TO D6** (full detail in `docs/phases/12_corpus_v2.md`, "Handed to D6"):
+> **(1) `eval_heldout.py:438` reads the WRONG VARIABLE** — `assert CORPUS_VERSION == "v1"` tests
+> the module constant, not the effective `--corpus=` value, so it **never fires** and the run trips
+> the recall guard it was written to pre-empt. Same bug mislabels the stamp: a v2 run prints
+> `(corpus v1)`. **(2) `SYN:car` is the only v1→v2 refusal flip and is NOT a false refusal** —
+> v1 "answered" it with **Constitution s. 40** via expansion manufacturing overlap; v2 refuses and
+> its best bare hit is the *correct* chunk. Real sentences improve. **Do not lower `MIN_SCORE` for
+> it.**
+>
+> **REPO STATE, so you can trust `git status` on a cold start.** D2 `06a326a` · D3 `6a5f5d9` ·
+> D4 `866db21` · **D5 `6c4a308` (feat) + this doc commit**, all **pushed** to
+> `origin/phase10/corpus-v2`. Working tree clean except **`scripts/eval_tmp.json`, which is
+> untracked scratch and should stay that way** — it is the `--out=` target of `eval_phase06.py` and
+> pre-dates these sessions. Do not commit it. `main` is untouched; **the branch stays unmerged on
+> purpose until D6** — merging auto-deploys a half-built corpus to Render.
+>
+> **NEXT: D6 — re-baseline, zero quota.** Flip `CORPUS_VERSION` to `"v2"`, keep the v1 tripwire
+> runnable, re-scope `audit_corpus.py`'s two recorded FAILs (factsheet `packed` → `row_spanning`,
+> Constitution `general` ≤1%), fix `eval_heldout.py:438` per the finding above, re-scope
+> `ablate_phase08`'s `recall>0.75` gate, and DELETE `ACT_KNOWN_ABSENT` (not empty it).
+>
+> ---
+>
+> **Previous (2026-09-19): D4 is DONE — the Constitution's Arrangement of Sections is
 > excluded, and ALL THREE DOCS ARE NOW v2.** Zero Gemini calls spent. Branch
 > **`phase10/corpus-v2`** (still unmerged on purpose).
 >
@@ -57,7 +114,10 @@
 >
 > **Recorded, not fixed: `eval_heldout --corpus=v2` and `ablate_phase08 --corpus=v2` exit 1**
 > (frozen-10 recall 0.666 vs the pinned v1 0.925). **This pre-dates D4** — re-verified identical at
-> `6a5f5d9`. D5 (refusal floor) and D6 (re-baseline) own it. Direction of travel is good: held-out
+> `6a5f5d9`. ~~D5 (refusal floor) and D6 (re-baseline) own it.~~ **D5 DIAGNOSED it and handed it to
+> D6: the cause is `eval_heldout.py:438` reading the module constant instead of the effective
+> `--corpus=` value, so its v1-only assert never fires and the recall guard trips instead. D5 did
+> not fix it — see the LATEST banner.** Direction of travel is good: held-out
 > 0.420 → 0.473, test 0.338 → 0.471, `eval_chat --corpus=v2` answers 19/23 vs D3's 18/23 (one fewer
 > refusal). **Nothing was tuned against those numbers.**
 >
@@ -77,9 +137,11 @@
 > corpus**, which was the failure that would have let the gate pass for the wrong reason. Treat
 > this as settled; do not re-litigate it in D5/D6.
 >
-> **NEXT: D5 — the refusal floor, MANDATORY.** All three docs are v2, so every cosine has moved:
-> re-derive the calibration table at `src/retrieve.py:26-44` against v2, gate on
-> `false_refusal_v2 ≤ false_refusal_v1`, and **`MIN_SCORE` may move down, never up.** Then D6.
+> ~~**NEXT: D5 — the refusal floor, MANDATORY.**~~ **DONE 2026-09-19 — see the LATEST banner.**
+> D5 re-derived the calibration table at `src/retrieve.py:26-44` against v2 and gated on
+> `false_refusal_v2 ≤ false_refusal_v1`. **Outcome: `MIN_SCORE` did NOT move — it stays `0.10`.**
+> The rule is unchanged and now machine-enforced by `calibrate_refusal.py` gate 3: **it may move
+> down on evidence, never up.** D5 needed no parameter change at all; measurement discharged it.
 >
 > ---
 >
