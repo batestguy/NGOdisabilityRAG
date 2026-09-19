@@ -1600,7 +1600,150 @@ direction of travel is not bad — held-out **0.420 → 0.473**, test **0.338 �
 `eval_chat --corpus=v2` answers **19/23** where D3's v2 answered 18/23, i.e. **one fewer refusal**.
 Nothing here was tuned against those numbers.
 
-### Next session starts here
+### Session 2026-09-19 — **D6 EXECUTED. Corpus v2 is the default.**
+
+Seven commits, `02f42f8` → `5838beb`, on `phase10/corpus-v2`. **Zero Gemini calls.** Branch
+still unmerged — the deploy decision is the user's.
+
+#### The order held, and it paid for itself immediately
+
+The stamp fix landed **first**, while `CORPUS_VERSION` still read `"v1"`, exactly as the ⚠ ORDER
+OF OPERATIONS box required. That made it a two-sided proof, and the second side is what mattered:
+
+| run | result |
+|---|---|
+| `eval_heldout.py` | **byte-identical** to `D:\d5_baseline\heldout_v1.txt` |
+| `eval_chat.py` | **byte-identical** to `chat_v1.txt` |
+| `eval_chat.py --corpus=v2` | exactly **3 lines** differ (`:10`, `:110`, `:197`), all `corpus=v1` → `corpus=v2`, **no number moved** |
+| `eval_heldout.py --corpus=v2` | 3 stamp lines flip — and then the frozen-10 guard **fires** |
+
+**That fifth site was a guard that had been failing open.** `eval_heldout.py:438` asserts the run
+is on v1 *because* `FROZEN10_RECALL_BASELINE_V1` is a v1 number and plain recall is not comparable
+across corpus versions — but it read the constant, so under `--corpus=v2` it saw `"v1"` and let
+the comparison through. So D5's published line
+
+```
+frozen-10 recall 0.666 vs recorded baseline 0.925 (corpus v1): FAIL
+```
+
+**is a v2 number compared against a v1 baseline, labelled v1, by the guard written to refuse
+exactly that.** The legitimate comparison is the strict one D5 also published (0.701 → 0.633).
+The plain-recall FAIL should never have printed. Every gate below was then given a **v2 arm on
+the metric legitimate for it**, each printing the metric it does *not* gate:
+
+| gate | v1 arm | v2 arm |
+|---|---|---|
+| `eval_heldout` frozen-10 | plain recall ≥ 0.925 | **strict ≥ 0.632738** |
+| `ablate_phase08` | plain recall > 0.75 | **strict ≥ 0.632738** |
+| `audit_corpus` constitution | `general_pct ≤ 1.0` | **`toc_general_out_ch8 == 0`** + pinned 8+26 |
+| `audit_corpus` factsheet | `packed ≤ 0` | **`row_spanning == 0`** |
+
+`0.632738`, **not** the `0.633` the table prints: the value is `0.63273809523809521` and 3dp
+display rounds it **up**, so pinning the printed number would have failed the run it was derived
+from. Any baseline pinned off a printed table has that bug.
+
+#### Everything new was negative-tested, and one injection *passed*
+
+| injection | result |
+|---|---|
+| frozen-10 v2 baseline 0.632738 → 0.700 | FAIL, rc=1 |
+| frozen-10 v1 baseline 0.925 → 0.990 | FAIL, rc=1 |
+| corpus stamp forced to `v3` | AssertionError |
+| `toc_general_out_ch8` cap → −1 · `row_spanning` cap → −1 | FAIL, rc=1 |
+| inventory pins 8→7 · 26→25 | DRIFT, rc=1 |
+| `V2_CORPUS_SHA256` one nibble flipped | DRIFT, rc=1 |
+| `V2_RESULTS_SHA256` flipped · pin removed | SystemExit, both |
+| ablate v2 floor 0.632738 → 0.800 | FAIL, rc=1 |
+| retirement: reason removed · blank · bogus status | AssertionError, all three |
+| **`act_ref` contradiction injected** | **PASSED — and that was a defect in the gate** |
+
+The `act_ref` injection not firing was **my bug, not the test's**: I had added a second
+`act_ref_validator()` call in the gate while the report already made one, so the validator ran
+twice over 65 chunks and the first pass absorbed the injected contradiction. Deduplicated — 65
+calls, not 130 — and it then fails the run. **An injection that passes is a result to
+investigate, not a box to tick.** Threshold injections only test the comparison, so both new
+metrics were also run against real defective data: `toc_general_out_ch8` **v1 7 / v2 0**,
+`row_spanning` **v1 26/48 / v2 0/32**.
+
+#### The chat-set triage inverted its own premise
+
+The premise handed to D6 was that `chat_test`'s ellipsis gain class collapsed **+0.400 → 0.000**
+and a green harness was hiding it. Three turns carried that entire gain. **All three of v1's hits
+are artifacts**, established by reading the corpus rather than reasoning about it:
+
+- **`CT2.t2` / `CT2.t3` — ground truth FALSIFIED. Retired.** Both expect `act2018:[8]`, authored
+  from v1's `[Act cl. 8]` chunk, which **carried clause SEVEN's subsection (3)** — *"An officer
+  who approves or directs the approval of a building plan … is liable on conviction"*. v2 puts
+  that text under `[Act cl. 7]`; v2's cl.8 is *Complaint of inaccessibility*, whose liability
+  falls on *"a relevant authority in charge"*, not an approving officer. **This is the same defect
+  class as cl.38's tail served under `[Act cl. 39]` — the one this whole phase exists to fix —
+  found inside the eval set, where it had been scoring turns correct against mis-attributed law
+  since 2026-09-15.**
+- **`CT4.t3` — ground truth CORRECT, v1's hit was a packed-chunk artifact. Kept.** v1 scored 1.000
+  because cl.25 sat in an 800-char `cl. 25,26,27` chunk containing *"queue"* and *"accommodation"*,
+  carried in by contextualisation from turns 1–2. **The chunk was retrieved for its neighbours'
+  words and credited to clause 25.** v2's 305-char cl.25 chunk contains neither. Naive rank **40
+  (v1) vs 41 (v2)** — the rebuild did not hurt; contextualised rank **5 vs 104**.
+
+> **⚠ STRICT RECALL DOES NOT NEUTRALISE THE PACKED SUBSIDY IN THE `ctx` ARM.** D5 read
+> `strict == plain` on every `chat_test` class row as ruling the packed-ref subsidy out. That holds
+> for **scoring** — `strict_covered` stops one chunk satisfying two expected refs — but **not for
+> retrieval**: it cannot see that a chunk was *retrieved* because of text belonging to a different
+> clause. The subsidy was in the `ctx` arm, invisible to the metric built to catch it.
+
+So the blind set's gain class **did not degrade; v1's was never earned.** On the same 3 surviving
+turns: v1 `0.000 → 0.333` (that 0.333 *is* `CT4.t3`, the artifact), v2 `0.000 → 0.000`. Once both
+artifacts are accounted for, chat_test ellipsis gain is **zero on both corpora**.
+
+**0 turns were retired for getting harder.** `CT7.t2`'s prediction held exactly — unscoreable on
+v1, now `0.000 → 1.000` with the correct chunk at pool rank **2** where v1 had it at 9.
+
+#### The v2 baseline
+
+`scripts/baseline_v2_2026-09-19.txt`, all five harnesses, **all green**:
+
+```
+audit_corpus  PASS     eval_heldout  PASS     eval_chat  PASS     ablate  PASS
+eval_phase06  sha256 10751076…ed97e057 (v2)   ·  ce716fb3…edf5f19 still holds on --corpus=v1
+heldout   frozen-10 0.666 / strict 0.633   dev 0.473   test 0.471
+chat_test 0.524 -> 0.571 (+0.048, n=21)    chat_dev 0.500 -> 0.607 (+0.107, n=28)
+test_phase05 137/137 · test_phase09_ops ALL PASS · import app clean   (all UNCHANGED under v2)
+```
+
+#### Exit criteria, checked
+
+1. ✅ Every gate green on its re-scoped metric, **old metric still printed** beside it.
+2. ⚠️ **Partially — deliberately, and enumerated.** `eval_heldout --corpus=v1` and
+   `eval_phase06 --corpus=v1` are byte-identical / hash-identical. **Three files diverge on
+   purpose**: `audit_corpus` v1 (2 hunks — cl.40 moves to *"NOT citable, parseable"* where it
+   belongs and cl.38 stops claiming *"the pixels do not exist"*, which was false);
+   `ablate_phase08` v1 (+2 lines — it had **no corpus stamp at all**, a sixth site of the stamp
+   class and worse than a wrong one, plus the ungated strict column); `eval_chat` v1 (the two
+   retired turns). **No number moved in the first two and no exit code changed.** The third is a
+   real number change and it is the honest one — the retired turns' expected refs name the wrong
+   clause **of the Act**, not merely of v2, so the retirement is global by construction.
+3. ✅ Every new guard negative-tested by injection — see the table, including the one that failed
+   to fire.
+4. ✅ `MIN_SCORE` still `0.10`, untouched. `SYN:car` not re-opened.
+5. ✅ Every moved turn dispositioned in writing: 2 retired, 2 handed to E, 1 prediction confirmed.
+6. ✅ `scripts/baseline_v2_2026-09-19.txt` archived.
+
+#### Handed to Phase E, by name
+
+- **`CT4.t3`** — cl.25 is **outside the 60-candidate pool entirely** (rank 104 at k=200).
+  **E1's `k=20/doc` widening does not reach it**, which is worth knowing *before* E1 is judged.
+  The mechanism is length: v2's clause-aligned chunks are short (305 chars here), and TF-IDF's
+  length handling now works against specific short clauses — which is precisely **E2's (BM25)
+  rationale, now with direct evidence behind it.**
+- **`CT1.t1`** — false-refusal marker gone under v2, recall still `0.000`, naive rank 20 → 22.
+  A fixed refusal and an unfixed ranking; both get reported.
+- **`chat_test`'s ellipsis class is now THIN at 3 scoreable turns.** A real limit on what it can
+  support, recorded rather than smoothed over.
+- **The Phase B gates are still computed on `chat_dev`**, so `eval_chat` exits PASS while
+  `chat_test`'s marker reads `GAIN CLASS DID NOT IMPROVE`. **That critique stands** — it is a
+  harness-design question, not a D6 edit, and D6 deliberately did not touch it.
+
+### Superseded — D5's "next session starts here"
 
 **D5 — the refusal floor. Mandatory, not conditional.** All three docs are v2 now, so the cosine
 space has moved for real: the Act's chunks run to 1,100 chars, the factsheet's to 900, and the
@@ -1617,3 +1760,9 @@ manifest in `data/processed/` and do not re-run the OCR · `ACT_V2_SIZE` and `FA
 **not** re-tuned before D5 · `CONST_SIZE` does **not** move and there is no `CONST_V2_SIZE` ·
 `audit_corpus.py --corpus=v2` exits **1** until D6 re-scopes the Constitution's `general` gate
 **and** the factsheet's `packed` gate, by design.
+
+> **✅ ALL OF THE ABOVE IS DISCHARGED — D5 and D6 are both DONE (2026-09-19).** `CORPUS_VERSION`
+> is `"v2"`, `ACT_KNOWN_ABSENT` is deleted, `MIN_SCORE` held at `0.10`, both gates are re-scoped
+> and `audit_corpus.py --corpus=v2` exits **0**. Kept unedited because the constraints explain the
+> sequencing the phase actually followed. **Phase D is complete. Next: Phase E —
+> `docs/phases/13_retrieval_quality.md`.**

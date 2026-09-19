@@ -2332,3 +2332,97 @@ wrong answer, and this repo has now generated three of them and caught all three
 The cheapest phase in the project turns out to target its weakest measured number, and it needs
 no money, no quota, no GPU and no new dependency. That is a good position, and it was legible
 from stdout the whole time.
+
+## 2026-09-19 (D6 executed) — the regression was the baseline, and the eval set was citing the wrong clause
+
+D6 flipped `CORPUS_VERSION` to `"v2"`. Seven commits, zero quota, five harnesses green. The
+mechanical part went as written. What is worth keeping is that **the session's central premise was
+wrong, and the thing that disproved it was already in the corpus**.
+
+### The premise I was handed, and inverted
+
+The previous session wrote: *"`eval_chat --corpus=v2` exits PASS, and that is the problem"* —
+`chat_test`'s ellipsis gain class had collapsed from `+0.400` to `0.000` while the gates, computed
+on the tuning set, stayed green. I recorded it as a green harness hiding a real regression. It is
+a good critique of the harness. It was the wrong diagnosis of the number.
+
+Three turns carried that entire `+0.400`. All three of v1's hits were artifacts:
+
+- **`CT2.t2` and `CT2.t3` expect `act2018:[8]`, and clause 8 is not what they ask about.** They
+  were authored by reading v1's `[Act cl. 8]` chunk — the conversation's own note says so: *"Act
+  cl.7/8 read from [Act cl. 8]"*. That chunk **carried clause SEVEN's subsection (3)**, the
+  officer-approval offence. v2 files it under `[Act cl. 7]`, where it belongs; v2's clause 8 is
+  *Complaint of inaccessibility*, and its liability falls on *"a relevant authority in charge"*,
+  not on an approving officer.
+
+  **This is the `[Act cl. 39]` bug — the defect the entire phase exists to fix — sitting inside
+  the eval set.** Since 2026-09-15 those turns had been scoring *correct* against mis-attributed
+  law, and every published `chat_test` ellipsis number inherited it.
+
+- **`CT4.t3` scored on v1 because of words belonging to other clauses.** Clause 25 lived in an
+  800-char `cl. 25,26,27` chunk containing *"queue"* and *"accommodation"* — clause 26's and 27's
+  vocabulary, which contextualisation dutifully carried in from turns 1 and 2. The chunk was
+  retrieved for its neighbours and credited to clause 25. v2's 305-char clause-25 chunk contains
+  neither word. The naive-query rank barely moved (40 → 41); the contextualised rank went 5 → 104.
+
+So the blind set's gain class did not degrade. **v1's was never earned.** On the three surviving
+turns, v1 reads `0.000 → 0.333` — and that 0.333 *is* `CT4.t3`, the artifact.
+
+### The lesson that generalises
+
+**`recall_strict` does not neutralise the packed-ref subsidy in the `ctx` arm.** D5 checked that
+`strict == plain` on every `chat_test` class row and concluded the packed subsidy was ruled out.
+That inference is sound for *scoring*: `strict_covered` stops one chunk satisfying two expected
+refs. It is **wrong for retrieval**. Nothing in it can see that a chunk was *retrieved* because of
+text belonging to a different clause. The metric built to catch the packed subsidy was blind to
+the half of it that lived on the query side.
+
+The general shape: **a metric that corrects for a bias in how you score cannot be assumed to
+correct for the same bias in how you retrieve.** Those are different stages and they need
+different evidence.
+
+### A guard that had been failing open, and the number it let through
+
+D5's handoff recorded one mis-stamped site. There were five, and the fifth was not a label — it
+was `eval_heldout.py:438`, a guard that asserts the run is on v1 *because plain recall is not
+comparable across corpus versions*. It read the module constant, so under `--corpus=v2` it saw
+`"v1"` and let the comparison through. Which means D5's published line
+
+```
+frozen-10 recall 0.666 vs recorded baseline 0.925 (corpus v1): FAIL
+```
+
+is a v2 number measured against a v1 baseline, labelled v1, **by the guard written to refuse
+exactly that comparison**. The strict figure D5 also published (0.701 → 0.633) was the real one
+all along.
+
+Fixing the stamp *before* the flip is what surfaced it. After the flip both readings return `"v2"`
+and the buggy expression is indistinguishable from the correct one, forever. **Some bugs are only
+visible during the window you are about to close** — which is an argument for doing the cheap
+ordering thing even when it looks like ceremony.
+
+### An injection that passed, which was my bug
+
+Every new guard was negative-tested. One passed: the `act_ref` contradiction injection did not
+fail the run. The test was fine. **I had added a second `act_ref_validator()` call in the gate
+while the report already made one**, so the validator ran twice across 65 chunks and the first
+pass absorbed the injected contradiction before the gate ever saw it.
+
+D5's standing lesson was *a gate whose prescribed injection cannot falsify it has been passing for
+free*. The corollary, learned here: **an injection that passes is a result to investigate, not a
+box to tick.** I nearly wrote "5/5 negative-tested" and moved on.
+
+Related, same session: `FROZEN10_STRICT_BASELINE_V2` is `0.632738`, not the `0.633` the table
+prints. The true value is `0.63273809523809521` and 3dp display rounds it **up**, so pinning what
+stdout showed would have failed the very run it was derived from. **A baseline you cannot
+reproduce is not a baseline**, and any constant pinned off a printed table has this bug.
+
+### On retiring turns
+
+Two turns retired, zero retired for being hard. The distinction is the whole discipline:
+ground truth *falsified* leaves the means; ground truth *correct but now harder* stays and goes to
+Phase E. Retiring a regression is how a corpus rebuild launders itself into a win, and `CT4.t3` —
+which looks exactly like a regression and is one — is the case that tests whether the rule is real.
+
+The mechanism required `retired_reason` to be non-empty, enforced at load. A flag without an
+argument is a flag someone sets to make a number go green.

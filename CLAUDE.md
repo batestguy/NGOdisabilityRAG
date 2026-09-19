@@ -176,12 +176,17 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
 ## Working conventions
 
 - Work the active playbook in `docs/phases/` in order; each defines its own exit criteria.
-  **Next up: Phase D step D6 — `docs/phases/12_corpus_v2.md`** (D0–D5 are DONE on branch
-  `phase10/corpus-v2`, unmerged; D6 is the re-baseline: flip `CORPUS_VERSION` to `"v2"`,
-  re-scope the recorded gate FAILs, delete `ACT_KNOWN_ABSENT`, triage the chat set).
-  Zero Gemini quota. **Read the D6 section's premises box first** — three of its premises
-  were corrected on 2026-09-19 and the stamp fix must land *before* the flip.
-  Then **E → G → F**: **E** (retrieval quality — `docs/phases/13_retrieval_quality.md`, **NEW**
+  **Phase D is COMPLETE — D0–D6 DONE 2026-09-19, branch `phase10/corpus-v2`, UNMERGED.**
+  `CORPUS_VERSION = "v2"` is the default (`src/rag.py:48`); v1 is retired as the default but
+  **not deleted** — every harness takes `--corpus=v1` and reproduces its published numbers from
+  the same commit. Baseline `scripts/baseline_v2_2026-09-19.txt`, all five harnesses green.
+  **Merging auto-deploys to Render — that decision is the user's, never yours.**
+  **Next up: Phase E — `docs/phases/13_retrieval_quality.md`.** Two D6 findings bind on it:
+  **`CT4.t3`'s correct chunk sits outside the 60-candidate pool entirely** (rank 104 at k=200),
+  so **E1's `k=20/doc` widening does not reach it** — know that before judging E1; and
+  **`recall_strict` does NOT neutralise the packed-ref subsidy in the `ctx` arm** — it corrects
+  scoring, not retrieval, and cannot see a chunk retrieved because of another clause's words.
+  Order is **E → G → F**: **E** (retrieval quality — `docs/phases/13_retrieval_quality.md`, **NEW**
   and the consolidated playbook; supersedes the scattered `09` step 3 and `10` M1/M2 sizing) →
   **G** (fresh transcripts + judge + cross-turn citation drift, M5 + `11_chat.md`) →
   **F** (free-GPU fine-tune, M4 — **re-examine before scheduling**, see the box on M4).

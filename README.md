@@ -57,7 +57,7 @@ and never leaves the process.
   PRO-only); Static can't run Python.
 - Cold starts: Render free sleeps after 15 min idle (~1 min wake) — normal, not breakage.
 
-## Status (2026-09-17)
+## Status (2026-09-19)
 
 **Live on Render since 2026-09-10** (Phase 07). Phases **01–09 done**; **Phase 10 B
 (chat-core) and 10 C (chat UI) done 2026-09-15/16** — DRLCA is a multi-turn chatbot,
@@ -66,17 +66,22 @@ and contextualisation was measured *before* the UI shipped: strict recall **0.46
 **0.200 → 0.600**, false refusals *fell*. Offline suites green (`test_phase05.py`
 at **137**).
 
-**Now: Phase D step D6 — corpus v2** (`docs/phases/12_corpus_v2.md`). D0–D5 are **done** on
-branch `phase10/corpus-v2` (unmerged); D6 flips `CORPUS_VERSION` to `"v2"` and re-baselines.
-The Act corpus has a known citation-integrity defect: a page lost to a duplicate scan means
-**clause 38 is absent from the processed text**, and chunk boundaries let cl.38's tail be
-served under an `[Act cl. 39]` tag — **still live in `main` until D6 merges**. Phase D
-re-OCRs the authoritative gazette and makes clause-aligned chunking structural. Zero Gemini
-quota. Measured result so far: held-out **test** strict recall **0.338 → 0.471**, while the
-*fitted* frozen-10 set is the only one that got worse (0.701 → 0.633) — which is the
-generalisation story, not a regression.
+**Phase D is COMPLETE — corpus v2 is the default** (`docs/phases/12_corpus_v2.md`). D0–D6 done
+2026-09-19 on branch `phase10/corpus-v2`, **unmerged**. The Act corpus had a citation-integrity
+defect: a page lost to a duplicate scan meant **clause 38 was absent from the processed text**,
+and chunk boundaries let cl.38's tail be served under an `[Act cl. 39]` tag — **still live in
+`main` until this branch merges**. Phase D re-OCRs the authoritative gazette and makes
+clause-aligned chunking structural. Zero Gemini quota throughout. Held-out **test** strict recall
+**0.338 → 0.471**, while the *fitted* frozen-10 set is the only one that got worse
+(0.701 → 0.633) — the generalisation story, not a regression.
 
-**Then: Phase E — retrieval quality** (`docs/phases/13_retrieval_quality.md`). The legal Q&A
+D6 also found the same defect **inside the eval set**: two `chat_test` turns expected `[Act cl. 8]`
+for a provision that is actually clause **7(3)**, because they were authored from a v1 chunk that
+carried clause 7's text under a cl.8 tag. Both are retired (never edited), and with them the
+apparent "ellipsis regression" on the blind set turns out to be v1's number having been unearned
+rather than v2 degrading. Baseline: `scripts/baseline_v2_2026-09-19.txt`, all five harnesses green.
+
+**Now: Phase E — retrieval quality** (`docs/phases/13_retrieval_quality.md`). The legal Q&A
 path is the app's weak half and the diagnosis is measured: the misses are **ranking, not
 absence**. Clean test reads `r@6 = 0.426` shipping against `r@60 = 0.735` in the pool — a
 **+0.309 gap**, against a hard ceiling of 0.824. Plan: widen the candidate pool, BM25 re-rank
@@ -137,14 +142,15 @@ Eval: scripts/bench_phase01.py · test_phase02.py · test_phase03/04/05.py ·
 - Legal corpus: Disability Act 2018 (local RapidOCR of a scanned PDF), 1999
   Constitution (NHRC text), PLAC factsheet. `_SAMPLE_DO_NOT_CITE.txt` is a dev
   placeholder and is never loaded or cited.
-- **Known corpus defect, being fixed in Phase D (do not describe the Act as "clauses
-  1–58 continuous" — it is not).** The source scan has one physical page recorded
-  twice, so a page is missing: **clause 38's opening is absent** from
+- **Corpus defect FIXED in Phase D — but only on `phase10/corpus-v2`, which is unmerged, so
+  it is still live in `main` and in the deployed app.** The v1 source scan has one physical
+  page recorded twice, so a page is missing: **clause 38's opening is absent** from
   `data/processed/disability_act_2018_full.txt`, its `(j)`–`(r)` tail lands in a chunk
   reffed `cl. 39`, and 25 of 62 Act chunks carry no citable ref at all.
   `scripts/audit_corpus.py` reports this rather than hiding it. Phase D re-OCRs the
   authoritative gazette (*Official Gazette No. 10, Vol. 106, 21 Jan 2019, Act No. 2,
-  pages A97–A122*), which has no duplicate page. **No clause is ever stubbed,
+  pages A97–A122*), which has no duplicate page; corpus **v2 locates 58/58 clauses with
+  zero degradation flags**, and `--corpus=v1` still reproduces every published v1 number. **No clause is ever stubbed,
   paraphrased, or reconstructed from model knowledge** — a citation tag in front of a
   generation model is how a gap becomes a hallucinated provision.
 - NGO directory (`data/ngo.csv`, 10 rows): all contacts verified against official

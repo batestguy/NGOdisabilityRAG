@@ -1,6 +1,58 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-19)
 
-> **LATEST (2026-09-19, last): PHASE E IS PLANNED AND SPECIFIED — `docs/phases/13_retrieval_quality.md`
+> **LATEST (2026-09-19, D6 EXECUTED): PHASE D IS COMPLETE. `CORPUS_VERSION = "v2"` IS THE
+> DEFAULT.** Seven commits `02f42f8` → `5838beb` on `phase10/corpus-v2`. **Zero Gemini calls.**
+> All five harnesses green on v2 (`scripts/baseline_v2_2026-09-19.txt`). **The branch is still
+> unmerged — merging auto-deploys to Render, and that call is the user's.**
+>
+> **WHAT SHIPS WITH THE FLIP:** the Act's clause 38, absent from v1's text entirely because the v1
+> scan records one physical page twice, and an end to cl.38's tail being served under an
+> `[Act cl. 39]` tag. **That citation-integrity defect is live in `main` until this branch merges.**
+>
+> **THREE FINDINGS, in descending order of how much they change what you believe:**
+>
+> **1. The eval set was scoring turns correct against mis-attributed law.** `CT2.t2` and `CT2.t3`
+> expect `act2018:[8]`, authored off v1's `[Act cl. 8]` chunk — which **carried clause SEVEN's
+> subsection (3)** (the officer-approval offence). v2 files that text under `[Act cl. 7]`, where it
+> belongs. **Same defect class as the `[Act cl. 39]` bug, found inside the eval set.** Both turns
+> are `"status": "retired-v2"` — retired, *not* edited; correcting `[8]` to `[7]` would convert a
+> blind turn into one authored against v2.
+>
+> **2. `chat_test`'s "ellipsis collapse" was v1's number being unearned, not v2 degrading.** The
+> premise D6 was handed — gain class `+0.400 → 0.000`, harness green, regression hidden — is
+> **inverted**. Three turns carried that whole gain; all three v1 hits are artifacts (two from the
+> falsified ground truth above, one from `CT4.t3` scoring because a **packed** `cl. 25,26,27` chunk
+> held its *neighbours'* words, "queue" and "accommodation", that contextualisation carried in).
+> On the 3 surviving turns: v1 `0.000 → 0.333`, v2 `0.000 → 0.000` — and that 0.333 *is* the
+> artifact. **Ellipsis gain on the blind set is zero on both corpora.**
+>
+> ⚠ **Consequence worth carrying forward: `recall_strict` does NOT neutralise the packed subsidy
+> in the `ctx` arm.** It stops one chunk satisfying two expected refs (scoring); it cannot see a
+> chunk *retrieved* because of text belonging to a different clause. D5's "strict == plain,
+> therefore not the packed subsidy" inference is wrong for the retrieval side.
+>
+> **3. A guard had been failing open, and D5 published its output.** `eval_heldout.py:438` asserts
+> the run is on v1 because plain recall is not comparable across corpus versions — but it read the
+> module constant, so `--corpus=v2` saw `"v1"` and let it through. D5's
+> `frozen-10 recall 0.666 vs recorded baseline 0.925 (corpus v1): FAIL` is **a v2 number against a
+> v1 baseline, labelled v1, by the guard written to refuse exactly that.** The strict comparison
+> (0.701 → 0.633) is the legitimate one. Every gate now has a v2 arm on a legitimate metric, each
+> printing the metric it does not gate.
+>
+> **HANDED TO PHASE E, by name:** `CT4.t3` — cl.25 is **outside the 60-candidate pool entirely**
+> (rank 104 at k=200), so **E1's `k=20/doc` widening does not reach it**; know that before judging
+> E1. The mechanism is length — v2's clause-aligned chunks are short (305 chars) and TF-IDF's
+> length handling works against them, which is **E2's BM25 rationale with direct evidence behind
+> it** · `CT1.t1` — refusal fixed, ranking not (rank 20 → 22) · `chat_test`'s ellipsis class is
+> **thin at 3 scoreable turns** · the Phase B gates are **still computed on `chat_dev`**, so
+> `eval_chat` exits PASS while `chat_test` reads `GAIN CLASS DID NOT IMPROVE` — **that critique
+> stands**, untouched by D6 on purpose.
+>
+> **NEXT: Phase E — `docs/phases/13_retrieval_quality.md`, unchanged and now unblocked.**
+
+---
+
+> **(2026-09-19, earlier): PHASE E IS PLANNED AND SPECIFIED — `docs/phases/13_retrieval_quality.md`
 > is NEW and is the consolidated retrieval playbook. Nothing executed; docs only, zero quota.**
 >
 > **WHY THIS EXISTS: the legal Q&A path is the app's weak half, and the data says exactly why.**
