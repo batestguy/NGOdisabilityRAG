@@ -1,10 +1,11 @@
 # Phase E — retrieval quality: close the ranking gap, spend nothing
 
-**Status:** PLANNED 2026-09-19, not started. Zero Gemini quota for E1–E4.
-**Runs after:** Phase D step D6 (`12_corpus_v2.md`) — **D6 EXECUTED 2026-09-19, Phase D COMPLETE,
-so this playbook is UNBLOCKED.** `CORPUS_VERSION = "v2"` is now the default.
-**Branch:** `phase10/retrieval-quality`, cut from `phase10/corpus-v2` (which is **unmerged** — the
-merge/deploy call is the user's, and Phase E does not need it to have happened).
+**Status:** **ACTIVE** as of 2026-09-19 — planned, not yet started. Zero Gemini quota for E1–E4.
+**Runs after:** Phase D (`12_corpus_v2.md`) — **COMPLETE, MERGED to `main` and DEPLOYED
+2026-09-19 (`8682869`).** `CORPUS_VERSION = "v2"` is the default **and is what users are now
+getting**, which changes one thing about this phase: it is no longer working on a side corpus.
+**Every E arm that lands on `main` reaches real users on the next push.**
+**Branch:** `phase10/retrieval-quality`, cut from `main` at `8682869`.
 
 ---
 
@@ -122,6 +123,45 @@ Means by class, dev, corpus v2:
 
 **This is the cheapest phase in the project and it targets the weakest measured number.** That
 combination is why it runs before Phase G.
+
+---
+
+## Session 0 — how to start (written 2026-09-19, right after the Phase D merge)
+
+Phase D's own first session lost time re-deriving state that nobody had written down. This
+section exists so Phase E's does not.
+
+**1. Cut the branch and establish the control.**
+
+```powershell
+git checkout main; git pull; git checkout -b phase10/retrieval-quality
+C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py  > D:\e0_baseline\heldout_v2.txt
+C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py     > D:\e0_baseline\chat_v2.txt
+C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase08.py > D:\e0_baseline\ablate_v2.txt
+C:\conda-envs\drlca-rag\python.exe scripts\audit_corpus.py  > D:\e0_baseline\audit_v2.txt
+C:\conda-envs\drlca-rag\python.exe scripts\calibrate_refusal.py > D:\e0_baseline\refusal_v2.txt
+```
+
+These must reproduce `scripts/baseline_v2_2026-09-19.txt` **before any edit**. If they do not,
+stop and find out why — that is a finding about the repo, not a nuisance.
+**Keep the files on disk, not in a summary.** D6 found a guard that had been failing open only
+because D5's raw captures still existed to diff against.
+
+**2. Know what is already false in this playbook.** The amendment box at the top is not optional
+reading. `CT4.t3` is out of E1's reach *by construction*, and a contextualised `recall_strict`
+gain is **not** self-certifying.
+
+**3. Deploy discipline changed with the merge.** `main` now serves corpus v2 to real users.
+Work on `phase10/retrieval-quality`; **never push `main`** without the user asking for that
+specific merge. Phase D's authorisation was for Phase D.
+
+**4. Budget.** E1–E4 spend **zero Gemini quota** — there is no reason to touch the API in this
+phase at all. If a step seems to need it, that step has drifted out of scope.
+
+**5. Finish each step the way Phase D did:** one arm per commit, ablated on its own, doc hygiene
+at session end (`STATUS.md` + this playbook's Results + a dated `LEARNING_JOURNAL.md` entry).
+Record declined arms as declined — a losing E4 that is quietly dropped costs the next session the
+same experiment.
 
 ---
 

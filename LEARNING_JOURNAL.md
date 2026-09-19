@@ -2426,3 +2426,66 @@ which looks exactly like a regression and is one — is the case that tests whet
 
 The mechanism required `retired_reason` to be non-empty, enforced at load. A flag without an
 argument is a flag someone sets to make a number go green.
+
+---
+
+## 2026-09-19 (later) — shipping the fix, and the one thing the merge changed about how to work
+
+Phase D merged to `main` (`8682869`) on explicit instruction and auto-deployed. Twenty-five
+commits, D0–D6, **zero Gemini calls across the entire phase**. The content of the merge is
+documented elsewhere; what belongs in the journal is what the act of merging taught.
+
+### The verification order was the whole point
+
+Everything ran **before** the push: the six offline suites, `requirements.txt` diffed against
+`main` (empty — the slim Render runtime untouched), a grep for `fitz|rapidocr|onnxruntime|faiss`
+across `src/` (no matches), and a check that the merged tree was byte-identical to the branch tip.
+
+None of that was new information — the same suites had been green at `c605b8b` the same morning.
+Running them again cost about four minutes and told me nothing I did not already believe. **That
+is what a pre-deploy check is supposed to feel like.** A verification battery that only runs when
+you are nervous is a battery that is not protecting the case you failed to anticipate. The
+specific thing I was checking for was not "did D6 break something" but "does the *deployment
+target* still hold" — a 512 MB Render instance that must not re-OCR anything at boot. Those are
+different questions, and only the second one is answered by looking at imports and dependency
+files rather than test results.
+
+### Nine days, and the number that matters is not a recall score
+
+The `[Act cl. 39]` defect reached users from 2026-09-10 to 2026-09-19. Everything this project
+measured during those nine days — every recall figure, every citation-accuracy claim — was
+measured on a corpus that served one clause's text under another clause's number. The phase that
+found it also found it **inside the eval set** (D6's two retired turns). The lesson is not "fix
+bugs faster". It is that **a citation-integrity defect is invisible to every metric that takes
+the corpus as ground truth**, because the corpus *is* the yardstick. It took an audit that
+questioned the source document, not the retrieval, to see it. `scripts/audit_corpus.py` exists
+because of that, and it should be the first thing run against any future corpus change.
+
+### Authorisation does not carry forward
+
+Before the merge, `CLAUDE.md` said *"merging auto-deploys to Render — that decision is the
+user's, never yours"*. After the merge, the honest version of that line is longer: the
+authorisation was **for this merge**. The tempting next step — "Phase E lands on
+`phase10/retrieval-quality`, and when it is green, merge it the way we merged D" — is exactly the
+inference the original rule exists to block. So the rule is now restated in three places
+(`HANDOFF.md`, `CLAUDE.md`, `AGENTS.md`) in the form *"Phase D's authorisation covered Phase D's
+merge and does not carry forward"*, because the version that can be misread is the version that
+will be.
+
+There is a second, quieter consequence. `main` now serves corpus v2, so **Phase E is no longer
+work on a side corpus** — every arm it ships reaches real users on the next push. That changes
+nothing about the engineering and everything about the tolerance for shipping an un-ablated arm.
+It is written into the Phase E playbook's status header rather than left as a mood.
+
+### Documenting the phase that is starting, not just the one that ended
+
+Doc hygiene has always meant closing the finished session properly. The gap that keeps costing
+time is the *opening*: Phase D's first session re-derived state nobody had written down. So Phase
+E's playbook now has a **Session 0** section — branch command, the five baseline captures to
+`D:\e0_baseline\`, and the instruction to confirm they reproduce
+`scripts/baseline_v2_2026-09-19.txt` before the first edit, keeping the raw files on disk.
+
+That last detail is not fussiness. **D6 found a guard that had been failing open only because
+D5's raw captures still existed to diff against** — a summary of those runs would have said
+"PASS" and preserved nothing. The generalisation: *a baseline is the artifact, not the sentence
+you wrote about it.*

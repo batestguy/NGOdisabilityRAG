@@ -13,8 +13,11 @@
 > (`src/rag.py:48`); v1 is retired as the default but **not deleted** — every harness takes
 > `--corpus=v1` and reproduces its published numbers. Baseline:
 > `scripts/baseline_v2_2026-09-19.txt`, all five harnesses green. **Zero Gemini calls across the
-> whole phase, as scoped.** The branch is **UNMERGED** — merging auto-deploys to Render and that
-> decision is the user's. Per-step results are in the D0–D6 sections below; **read D6's results
+> whole phase, as scoped.** **MERGED to `main` 2026-09-19 (`8682869`) on the user's explicit
+> authorisation, and auto-deployed to Render the same day — the `[Act cl. 39]` mis-citation had
+> been reaching users since 2026-09-10, and the merge is what ended it.** The pre-merge
+> verification battery is recorded in the merge commit message.
+> Per-step results are in the D0–D6 sections below; **read D6's results
 > first**, because it corrected premises the earlier steps were written under.
 > **Next: Phase E — `docs/phases/13_retrieval_quality.md`** (two D6 findings are carried into its
 > amendment box).

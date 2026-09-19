@@ -176,12 +176,17 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
 ## Working conventions
 
 - Work the active playbook in `docs/phases/` in order; each defines its own exit criteria.
-  **Phase D is COMPLETE — D0–D6 DONE 2026-09-19, branch `phase10/corpus-v2`, UNMERGED.**
+  **Phase D is COMPLETE and MERGED — D0–D6 DONE 2026-09-19, merged to `main` and deployed the
+  same day (`8682869`, merge of `phase10/corpus-v2`).**
   `CORPUS_VERSION = "v2"` is the default (`src/rag.py:48`); v1 is retired as the default but
   **not deleted** — every harness takes `--corpus=v1` and reproduces its published numbers from
   the same commit. Baseline `scripts/baseline_v2_2026-09-19.txt`, all five harnesses green.
-  **Merging auto-deploys to Render — that decision is the user's, never yours.**
-  **Next up: Phase E — `docs/phases/13_retrieval_quality.md`.** Two D6 findings bind on it:
+  **Pushing to `main` auto-deploys to Render and real users — that decision is ALWAYS the
+  user's, never yours.** Phase D's merge was authorised explicitly on 2026-09-19; that
+  authorisation covered that merge and does not carry forward to the next one.
+  **ACTIVE: Phase E — `docs/phases/13_retrieval_quality.md`**, branch
+  `phase10/retrieval-quality` off `main`. Two D6 findings bind on it (both are also in that
+  playbook's amendment box):
   **`CT4.t3`'s correct chunk sits outside the 60-candidate pool entirely** (rank 104 at k=200),
   so **E1's `k=20/doc` widening does not reach it** — know that before judging E1; and
   **`recall_strict` does NOT neutralise the packed-ref subsidy in the `ctx` arm** — it corrects

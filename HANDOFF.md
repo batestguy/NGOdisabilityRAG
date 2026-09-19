@@ -1,9 +1,39 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-19)
 
-> **LATEST (2026-09-19, D6 EXECUTED): PHASE D IS COMPLETE. `CORPUS_VERSION = "v2"` IS THE
+> **LATEST (2026-09-19, MERGED + DEPLOYED): PHASE D IS SHIPPED. PHASE E IS ACTIVE.**
+>
+> **`phase10/corpus-v2` merged to `main` as `8682869` on the user's explicit instruction, and
+> Render auto-deployed it.** 25 commits, D0–D6. **The `[Act cl. 39]` mis-citation — cl.38's tail
+> served to users under clause 39's number — was live in the deployed app from 2026-09-10 to
+> 2026-09-19. It is fixed in production now.** Corpus v2 is what users get.
+>
+> **Verified BEFORE the push, not after** (which is the point of doing it in that order):
+> `import app` clean · `audit_corpus` PASS · `test_phase03/04` ALL PASS · `test_phase05` 137/137 ·
+> `test_phase09_ops` ALL PASS · `requirements.txt` **byte-identical to `main`'s** · **no
+> OCR/ONNX/FAISS import anywhere in `src/`** · the v2 Act ships as committed JSON
+> (`data/processed/act2018_v2_clauses.json`), so **nothing is re-OCRed at boot** · merged tree
+> byte-identical to the branch tip. Full battery in the merge commit message.
+>
+> ⚠ **DEPLOY RULE, RESTATED BECAUSE IT JUST CHANGED IN PRACTICE:** pushing `main` ships to real
+> users. **Phase D's merge was authorised for Phase D.** That authorisation does **not** carry
+> forward — every future merge needs its own explicit go-ahead. Work Phase E on
+> `phase10/retrieval-quality`.
+>
+> **NEXT: PHASE E — `docs/phases/13_retrieval_quality.md`**, which now opens with a **Session 0**
+> section: cut the branch off `main`, re-capture the five baselines to `D:\e0_baseline\` and
+> confirm they reproduce `scripts/baseline_v2_2026-09-19.txt` *before* editing anything, then E1.
+> **Zero Gemini quota for E1–E4.** Two D6 findings bind on it and sit in that playbook's
+> amendment box — read them before judging E1: `CT4.t3` is at **rank 104 at k=200**, i.e. outside
+> the 60-candidate pool, so **E1's widening cannot reach it**; and **`recall_strict` does not
+> neutralise the packed-ref subsidy in the `ctx` arm** (it corrects scoring, not retrieval).
+> Order stays **E → G → F**; **G needs a multi-day quota plan before its first call.**
+>
+> Today's Gemini spend: **0 calls.** Phase D spent **0 across the entire phase**.
+
+> **(2026-09-19, D6 EXECUTED): PHASE D IS COMPLETE. `CORPUS_VERSION = "v2"` IS THE
 > DEFAULT.** Seven commits `02f42f8` → `5838beb` on `phase10/corpus-v2`. **Zero Gemini calls.**
-> All five harnesses green on v2 (`scripts/baseline_v2_2026-09-19.txt`). **The branch is still
-> unmerged — merging auto-deploys to Render, and that call is the user's.**
+> All five harnesses green on v2 (`scripts/baseline_v2_2026-09-19.txt`). **Superseded by the
+> banner above: the branch is now merged and deployed.**
 >
 > **WHAT SHIPS WITH THE FLIP:** the Act's clause 38, absent from v1's text entirely because the v1
 > scan records one physical page twice, and an end to cl.38's tail being served under an

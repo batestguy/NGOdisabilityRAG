@@ -66,11 +66,12 @@ and contextualisation was measured *before* the UI shipped: strict recall **0.46
 **0.200 → 0.600**, false refusals *fell*. Offline suites green (`test_phase05.py`
 at **137**).
 
-**Phase D is COMPLETE — corpus v2 is the default** (`docs/phases/12_corpus_v2.md`). D0–D6 done
-2026-09-19 on branch `phase10/corpus-v2`, **unmerged**. The Act corpus had a citation-integrity
-defect: a page lost to a duplicate scan meant **clause 38 was absent from the processed text**,
-and chunk boundaries let cl.38's tail be served under an `[Act cl. 39]` tag — **still live in
-`main` until this branch merges**. Phase D re-OCRs the authoritative gazette and makes
+**Phase D is COMPLETE and MERGED — corpus v2 is live** (`docs/phases/12_corpus_v2.md`). D0–D6 done
+2026-09-19, merged to `main` and auto-deployed the same day (`8682869`). The Act corpus had a
+citation-integrity defect: a page lost to a duplicate scan meant **clause 38 was absent from the
+processed text**, and chunk boundaries let cl.38's tail be served under an `[Act cl. 39]` tag —
+**that shipped to users from 2026-09-10 until 2026-09-19, and the merge is what ended it**.
+Phase D re-OCRs the authoritative gazette and makes
 clause-aligned chunking structural. Zero Gemini quota throughout. Held-out **test** strict recall
 **0.338 → 0.471**, while the *fitted* frozen-10 set is the only one that got worse
 (0.701 → 0.633) — the generalisation story, not a regression.
@@ -142,10 +143,12 @@ Eval: scripts/bench_phase01.py · test_phase02.py · test_phase03/04/05.py ·
 - Legal corpus: Disability Act 2018 (local RapidOCR of a scanned PDF), 1999
   Constitution (NHRC text), PLAC factsheet. `_SAMPLE_DO_NOT_CITE.txt` is a dev
   placeholder and is never loaded or cited.
-- **Corpus defect FIXED in Phase D — but only on `phase10/corpus-v2`, which is unmerged, so
-  it is still live in `main` and in the deployed app.** The v1 source scan has one physical
+- **Corpus defect FIXED in Phase D, merged and deployed 2026-09-19** (`8682869`). Described in
+  the past tense below because it is fixed, but it was **live in the deployed app for nine days**
+  (2026-09-10 → 2026-09-19). The v1 source scan has one physical
   page recorded twice, so a page is missing: **clause 38's opening is absent** from
-  `data/processed/disability_act_2018_full.txt`, its `(j)`–`(r)` tail lands in a chunk
+  `data/processed/disability_act_2018_full.txt` (the **v1** text, still reachable via
+  `--corpus=v1`), its `(j)`–`(r)` tail lands in a chunk
   reffed `cl. 39`, and 25 of 62 Act chunks carry no citable ref at all.
   `scripts/audit_corpus.py` reports this rather than hiding it. Phase D re-OCRs the
   authoritative gazette (*Official Gazette No. 10, Vol. 106, 21 Jan 2019, Act No. 2,

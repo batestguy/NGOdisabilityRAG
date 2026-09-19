@@ -20,11 +20,13 @@ Phase playbooks: `docs/phases/`. Machine/env notes: `ENVIRONMENTS.md`.
 
 ## Working conventions
 - Work the active playbook in `docs/phases/` in order; each defines its exit criteria.
-  **Phase D COMPLETE (D0–D6 done 2026-09-19, branch `phase10/corpus-v2`, UNMERGED —
-  merging auto-deploys to Render and is the user's call). `CORPUS_VERSION = "v2"` is the
+  **Phase D COMPLETE and MERGED (D0–D6 done 2026-09-19; merged to `main` + auto-deployed the
+  same day, `8682869`). `CORPUS_VERSION = "v2"` is the
   default; v1 stays reproducible via `--corpus=v1`. Baseline:
-  `scripts/baseline_v2_2026-09-19.txt`.**
-  **Active: Phase E — `docs/phases/13_retrieval_quality.md`.** **Then `E → G → F`**, where **E** is the new
+  `scripts/baseline_v2_2026-09-19.txt`. Pushing to `main` deploys to real users — that is
+  always the user's call, per-merge; Phase D's authorisation does not carry forward.**
+  **Active: Phase E — `docs/phases/13_retrieval_quality.md`, branch `phase10/retrieval-quality`
+  off `main`.** **Then `E → G → F`**, where **E** is the new
   consolidated retrieval playbook `docs/phases/13_retrieval_quality.md` (reversal of the
   G-before-E call, decided 2026-09-19: E is free and improves the system, G spends most of a
   day's quota and only measures it).
