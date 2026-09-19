@@ -1320,6 +1320,16 @@ unnumbered + 33 TOC-demoted is what makes 34 = 8 + 26 legible. Note the v1 unnum
 *not* only Preamble and dividers — it also holds unprefixed Arrangement chunks, which is why it
 drops 66 → 8; the audit says so in place rather than overstating the symmetry.
 
+**Addendum 2026-09-19 — the two guards are now EMPIRICALLY negative-tested, not just reasoned
+about.** The paragraphs above describe designed behaviour; review then injected three degradation
+modes against **mutated copies in a temp dir (the real TXT untouched)** and **all three raise**:
+duplicated Preamble marker → `ValueError` "matched 2 times"; deleted marker → "matched 0 times";
+marker relocated ahead of the first `Chapter` heading (clears guard 1, must fail guard 2) →
+"cut … is not between the two chapter runs". **None silently falls back to a v1-shaped corpus.**
+That was the one open risk D4 shipped with; it is closed. The same review re-derived the cut
+offset (byte before the cut is `\n`, byte at the cut starts *"We the people"* — no off-by-one) and
+independently reproduced the 2035/2035 byte-identical `(ref, text)` match against v1.
+
 **Recorded, not fixed here: `--corpus=v2` on `eval_heldout` and `ablate_phase08` exits 1.**
 frozen-10 recall reads **0.666** against the pinned v1 baseline of 0.925. **This pre-dates D4** —
 verified by re-running both at HEAD (`6a5f5d9`, D3 state) with `--corpus=v2`: identical failure,

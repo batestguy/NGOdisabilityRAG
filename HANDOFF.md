@@ -1,6 +1,6 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-18)
+# HANDOFF — start here (60 seconds, updated 2026-09-19)
 
-> **LATEST (2026-09-18, later still): D4 is DONE — the Constitution's Arrangement of Sections is
+> **LATEST (2026-09-19): D4 is DONE — the Constitution's Arrangement of Sections is
 > excluded, and ALL THREE DOCS ARE NOW v2.** Zero Gemini calls spent. Branch
 > **`phase10/corpus-v2`** (still unmerged on purpose).
 >
@@ -60,6 +60,22 @@
 > `6a5f5d9`. D5 (refusal floor) and D6 (re-baseline) own it. Direction of travel is good: held-out
 > 0.420 → 0.473, test 0.338 → 0.471, `eval_chat --corpus=v2` answers 19/23 vs D3's 18/23 (one fewer
 > refusal). **Nothing was tuned against those numbers.**
+>
+> **REPO STATE, so you can trust `git status` on a cold start.** D2 `06a326a` · D3 `6a5f5d9` ·
+> **D4 `866db21`**, all **pushed** to `origin/phase10/corpus-v2`. Working tree clean except
+> **`scripts/eval_tmp.json`, which is untracked scratch and should stay that way** — it is the
+> `--out=` target of `eval_phase06.py` and pre-dates these sessions. Do not commit it, and do not
+> mistake it for work-in-progress. `main` is untouched; the branch is unmerged on purpose until D6.
+>
+> **`_const_chunks_v2()`'s two guards ARE empirically negative-tested — 2026-09-19, by review,
+> not merely by reading.** This is stronger than what the D4 results section claims, which
+> deliberately described only designed behaviour. Three degradation modes were injected against
+> **mutated copies in a temp dir (the real TXT was never touched)** and **all three raise**:
+> duplicated Preamble marker → `ValueError` *"matched 2 times"*; deleted marker → *"matched 0
+> times"*; marker relocated ahead of the first `Chapter` heading (clears guard 1, must fail guard
+> 2) → *"cut … is not between the two chapter runs"*. **None silently falls back to a v1-shaped
+> corpus**, which was the failure that would have let the gate pass for the wrong reason. Treat
+> this as settled; do not re-litigate it in D5/D6.
 >
 > **NEXT: D5 — the refusal floor, MANDATORY.** All three docs are v2, so every cosine has moved:
 > re-derive the calibration table at `src/retrieve.py:26-44` against v2, gate on
