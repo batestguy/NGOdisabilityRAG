@@ -42,7 +42,8 @@ the retrieval half only, and it says so everywhere it prints a number.
 
 Reuse, not reimplementation (modelled on ablate_phase08.py, which already does
 this shape of work):
-  - k=3/doc, top_n=6              -- ask() / eval_phase06 / ablate depth
+  - k=4/doc, top_n=12             -- ask() / eval_phase06 / ablate depth
+                                     (was 3/6 until Phase E1b, 2026-09-20)
   - recall = (doc, ref-number) pairs found / expected, the SAME definition
     eval_phase06 uses, so held-out recall is directly comparable to the eval's
     recall column rather than merely similar-looking
@@ -116,8 +117,12 @@ def corpus_stamp() -> str:
     return _EFFECTIVE_CORPUS or CORPUS_VERSION
 
 
-K_PER_DOC = 3   # ask() / eval_phase06 / ablate_phase08 depth
-TOP_N = 6       # ask() / eval_phase06 / ablate_phase08 merge width
+# Phase E1b (2026-09-20): the shipping arm widened from 3/6 to 4/12. TOP_N is
+# 3*K_PER_DOC on purpose -- with three docs that is every candidate retrieved,
+# so select_top discards nothing. Held identical to ask() / eval_phase06 /
+# ablate_phase08 / eval_chat / judge_phase06.
+K_PER_DOC = 4   # ask() / eval_phase06 / ablate_phase08 depth
+TOP_N = 12      # ask() / eval_phase06 / ablate_phase08 merge width
 MIN_PER_DOC = 1  # ask() default -- the doc-quota merge, Phase 09 step 3 M2
 
 # ---- the recall@k curve (Phase 10 A) -------------------------------------
@@ -125,17 +130,23 @@ MIN_PER_DOC = 1  # ask() default -- the doc-quota merge, Phase 09 step 3 M2
 # which is the deepest arm in the Phase 09 falsification table, so the curve's
 # last point is directly comparable to the 0.765 recorded there.
 #
-# READ THIS BEFORE QUOTING recall@6 FROM THE CURVE. It is NOT the shipping
-# number. The shipping arm is k=3/doc -> select_top(6); the curve is
-# k=20/doc -> select_top(60) sliced at 6. Those differ, and the difference is
-# the whole point of Phase 09's finding: a wider pool at a fixed cut of 6 is
-# neutral-to-HARMFUL (k=10 pool + [:6] dropped frozen-10 from 0.925 to 0.867),
-# because wider retrieval floods the cut with near-misses. The headline table
-# stays on the shipping arm. The curve answers a different question -- "is the
-# right chunk in the pool at all, and how deep?" -- and its answer is what
-# makes Phase 10 D a re-ranking problem with a measured ceiling rather than a
-# hope. Not having this curve is what let the falsified plan confuse ranking
-# with width.
+# READ THIS BEFORE QUOTING A CURVE COLUMN AS THE SHIPPING NUMBER. It is not.
+# The shipping arm is k=4/doc -> select_top(12) since E1b (2026-09-20, was
+# k=3/doc -> select_top(6)); the curve is k=20/doc -> select_top(60) read at
+# prefixes. Those differ, and the difference is the whole point of Phase 09's
+# finding: a wider pool at a FIXED cut is neutral-to-HARMFUL (k=10 pool + [:6]
+# dropped frozen-10 from 0.925 to 0.867), because wider retrieval floods the cut
+# with near-misses. E1a completed that finding: widening the pool and the budget
+# TOGETHER, to top_n == 3k, is a gain precisely because there is then no cut.
+# The headline table stays on the shipping arm. The curve answers a different
+# question -- "is the right chunk in the pool at all, and how deep?" -- and its
+# answer is what makes Phase 10 D a re-ranking problem with a measured ceiling
+# rather than a hope. Not having this curve is what let the falsified plan
+# confuse ranking with width.
+#
+# K_CURVE and CURVE_DEPTHS are DELIBERATELY unchanged by E1b, so this whole
+# block's output is a control: it must be identical before and after the
+# shipping arm moved.
 K_CURVE = 20
 CURVE_DEPTHS = (3, 6, 10, 20, 60)
 
@@ -155,14 +166,23 @@ FROZEN10_RECALL_BASELINE_V1 = 0.925
 
 # The v2 arm, landed in D6 exactly as the note above prescribed: a SEPARATE
 # constant, compared against recall_strict, while the v1 constant keeps
-# guarding v1. Measured on corpus v2 in D5 and recorded here unchanged.
+# guarding v1.
 #
-# NOT 0.633. That is what fmt() PRINTS (D:\d5_baseline\heldout_v2.txt:145);
-# the value is 0.63273809523809521, and 3dp display rounds it UP. Pinning the
-# printed number would have made this guard fail on the very run it was
-# derived from -- a baseline you cannot reproduce is not a baseline. Any
-# future guard pinned off a printed table has the same bug.
-FROZEN10_STRICT_BASELINE_V2 = 0.632738
+# RE-BASELINED AT E1b, 2026-09-20. Was 0.632738 (true value 0.63273809523809521,
+# measured in D5), which is the frozen-10 recall_strict of the OLD shipping arm
+# k=3/doc -> top_n=6. E1b widened that arm to k=4/doc -> top_n=12 and the number
+# moved to 0.7339285714285714. THE CORPUS DID NOT CHANGE -- audit_corpus.py's
+# stdout is byte-identical across this commit and V2_CORPUS_SHA256 still measures
+# 56e3e434...cef4 (v1's is 25650238...e89a and is equally untouched). What moved
+# is the retrieval budget. The old value is recorded here rather than deleted so
+# a future reader can tell a budget change from a corpus change.
+#
+# NOT 0.734. That is what fmt() PRINTS; the value is 0.7339285714285714 and 3dp
+# display rounds it UP, so pinning the printed number would make this guard fail
+# on the very run it was derived from -- a baseline you cannot reproduce is not a
+# baseline. Truncated to six places, the same convention the old constant used.
+# Any future guard pinned off a printed table has the same bug.
+FROZEN10_STRICT_BASELINE_V2 = 0.733928
 
 EPS = 1e-6
 

@@ -39,6 +39,18 @@ from sklearn.metrics.pairwise import cosine_similarity
 # select_top(top_n=6, min_per_doc=1)). Every number below is its output; rerun
 # it rather than trusting this comment.
 #
+# THE SHIPPING ARM MOVED TO k=4/doc, select_top(top_n=12, min_per_doc=1) IN
+# PHASE E1b, 2026-09-20. The table above was measured at 3/6 and is NOT
+# re-measured here, because it does not need to be: the refusal decision is
+# invariant to k and top_n. select_top always keeps the global best candidate,
+# so the top score of every query -- the only input to the MIN_SCORE decision --
+# is byte-identical from k=3 through k=20 (measured over all 60 eval rows, E1a).
+# D5's conclusions therefore carry unchanged, and calibrate_refusal.py re-derives
+# the whole table at the CURRENT arm on every run because it IMPORTS
+# eval_heldout's constants rather than copying them. The in-corpus minima and
+# off-corpus maxima printed by a fresh run are the authority; this block is the
+# 3/6-era record of them.
+#
 # CALIBRATION, v1-era (historical) and v2 (current):
 #   in-corpus minima, lowest top score over expect_gate=answer rows
 #                        v1                      v2
@@ -434,8 +446,11 @@ class PerDocRetriever:
 
         It is NOT claimed that every expanded top score is higher than its
         base (Q6 drops 0.1759 -> 0.1696 and stays correct). Re-ranking that
-        lowers the top hit while improving coverage deeper in the top-6 is
-        legitimate -- recall is measured over the merged six, not the first.
+        lowers the top hit while improving coverage deeper in the merged list is
+        legitimate -- recall is measured over all of select_top's output, not
+        the first hit. (That output was six chunks when this was written and is
+        twelve since Phase E1b, 2026-09-20; the argument does not depend on the
+        number.)
 
         MIN_SCORE itself is untouched at 0.10. It is used here as a
         precondition, not renegotiated. Cost is one extra TF-IDF transform per
@@ -536,6 +551,24 @@ class PerDocRetriever:
 # what the user reads and what the LLM is billed for. The quota keeps the
 # budget at six and changes only WHICH six -- the Act is guaranteed its best
 # candidate even when the Constitution owns the whole global top of the list.
+#
+# POINTER, 2026-09-20 (Phase E1b) -- everything above is the 2026-09-13 record
+# and is kept as history, numbers and all. Two facts have since moved out from
+# under its prose:
+#   * "3 docs x k=3 = 9 candidates cut to 6" and "the budget stays six" describe
+#     the OLD shipping arm. The arm is now k=4/doc -> select_top(top_n=12), i.e.
+#     12 candidates and a budget of 12, so top_n == 3k and THERE IS NO CUT: this
+#     function returns every candidate retrieved and the quota phase decides
+#     ordering only. The invalid cross-doc comparison it exists to avoid is
+#     therefore not merely mitigated at the shipping arm, it is unreachable.
+#   * That widening was priced, not guessed: E1a's ladder
+#     (scripts/ablate_phase10.py) measured frozen-10 / dev / test recall_strict
+#     0.633/0.473/0.471 -> 0.734/0.573/0.529 on corpus v2, and the E1a finding
+#     that "pool width is inert once top_n == 3k" is exactly the corrected form
+#     of the "it was a top_n effect, not an ordering effect" note above.
+# REFUSAL INVARIANCE IS UNAFFECTED, and that is the paragraph to re-read before
+# doubting it: the proof is about the global maximum being present, which holds
+# at every k and every top_n.
 # ---------------------------------------------------------------------------
 def select_top(
     hits: list[Hit],

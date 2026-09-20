@@ -238,8 +238,8 @@ def answer_legal(question: str, retriever=None, plain: bool = False,
                history=history, retrieval_query=retrieval_query)
 
 
-def offline_legal_hits(question: str, retriever, k: int = 3,
-                       top_n: int = 6, min_per_doc: int = 1,
+def offline_legal_hits(question: str, retriever, k: int = 4,
+                       top_n: int = 12, min_per_doc: int = 1,
                        min_score: float = 0.10,
                        retrieval_query: str | None = None) -> dict:
     """Offline legal display payload: gated excerpts WITH citation tags.
@@ -249,9 +249,12 @@ def offline_legal_hits(question: str, retriever, k: int = 3,
     refusal message (+ helplines are rendered by the caller, above this).
 
     The merge to top_n is select_top(), the same call ask() makes, so the
-    offline excerpt path and the LLM path show the same six chunks. A display
-    path that sliced differently from ask() would be showing the user a system
-    nobody measures.
+    offline excerpt path and the LLM path show the same twelve chunks (k=4/doc,
+    top_n=12 since Phase E1b, 2026-09-20; was 3/6). A display path that sliced
+    differently from ask() would be showing the user a system nobody measures --
+    and it would break the user's only way to check an AI citation against a
+    visible excerpt. INLINE_EXCERPTS stays 3, so the display is 3 inline + 9
+    folded.
 
     `retrieval_query` mirrors ask()'s own parameter of the same name, for the
     same reason and with the same default: chat.contextualise() may hand
@@ -584,9 +587,11 @@ def render_clarify(clarify_text: str, live: bool = True):
 
 
 # How many excerpt cards render inline before the rest fold into one expander.
-# A DISPLAY split and nothing else: retrieval still returns the same six chunks
-# ask() sees, and a generated answer may still cite all six. Pool depth is a
-# Phase E change and moves in the same commit as the harnesses that measure it.
+# A DISPLAY split and nothing else: retrieval still returns the same twelve
+# chunks ask() sees, and a generated answer may still cite all twelve. Pool
+# depth moved 6 -> 12 in Phase E1b (2026-09-20), in the same commit as the
+# harnesses that measure it, exactly as this comment promised. INLINE_EXCERPTS
+# itself did NOT move: the display is 3 inline + 9 folded.
 INLINE_EXCERPTS = 3
 
 
@@ -601,8 +606,10 @@ def render_excerpts(excerpts, turn_index: int):
     """One turn's excerpt cards: INLINE_EXCERPTS inline, the rest behind one fold.
 
     Shared by the live path and the replay path so a turn looks the same
-    however it got on screen. In a single-turn UI six cards were the page; in a
-    conversation they are six cards between the user and their next question.
+    however it got on screen. In a single-turn UI the cards were the page; in a
+    conversation they sit between the user and their next question -- which is
+    why the fold exists, and why E1b's move from 6 to 12 retrieved chunks
+    changed what is BEHIND the fold and not what is in front of it.
     """
     st = _st()
     st.markdown("**Retrieved excerpts (offline, citations kept):**")

@@ -249,16 +249,39 @@ def eval_question(qid, question, rec, hits, ret) -> dict:
 # platform that does not translate, gives a different and equally correct
 # answer -- which is why the failure below explains itself instead of raising a
 # bare AssertionError. Re-pin it only with a recorded reason.
-V1_RESULTS_SHA256 = ("CE716FB3C1EA139B5E3A6885D732C5EBBD3F1B57981635F7D97DA591"
-                     "1EDF5F19").lower()
+#
+# BOTH DIGESTS RE-PINNED AT PHASE E1b, 2026-09-20, AND THE REASON IS ANNOUNCED
+# RATHER THAN DISCOVERED. E1b widened the shipping retrieval budget from
+# k=3/doc, top_n=6 to k=4/doc, top_n=12 (see ask() in src/rag.py). The retrieval
+# call in main() below is the one this script scores its context columns from, so
+# every row's `recall` / `precision` / `exp_missed` changed and the results file
+# necessarily hashes differently. That is the intended effect of the commit, not
+# drift, and the gate did exactly its job: it FIRED on both corpora before these
+# lines were touched.
+#
+# WHAT MOVED IS THE BUDGET, NOT THE CORPUS. audit_corpus.py's stdout is
+# byte-identical across this commit; V2_CORPUS_SHA256 still measures
+# 56e3e434...cef4 and v1's 25650238...e89a is equally untouched.
+# The v1 arm's PUBLISHED numbers still reproduce exactly -- at the old budget.
+# Its digest moved only because v1 and v2 share this one code path and the path
+# changed; re-running this file at k=3/top_n=6 on --corpus=v1 returns
+# ce716fb3...df5f19. So the v1 digest is not a v1 regression, it is v1 measured
+# on the new instrument, and the old value is kept below so that distinction
+# stays readable.
+#
+# Old values, superseded 2026-09-20 (both measured at k=3/doc, top_n=6):
+#   v1  ce716fb3c1ea139b5e3a6885d732c5ebbd3f1b57981635f7d97da5911edf5f19
+#   v2  10751076faa65a300d366932b8cdc7ef2e57bd2ce862cab950999313ed97e057
+V1_RESULTS_SHA256 = ("12BDEBA001D21E838A3747281A108BCB8C77A165EFA8932A4500D573"
+                     "516E444D").lower()
 
 # The same gate for v2, pinned at D6 when the default flipped. Without it the
 # check below would have gone quiet on the SHIPPING corpus the moment v2
 # became the default, leaving only the retired corpus guarded -- the same
-# inversion V2_CORPUS_SHA256 exists to prevent in audit_corpus.py. Measured
-# twice in one session and identical both times; same CRLF caveat as above.
-V2_RESULTS_SHA256 = ("10751076FAA65A300D366932B8CDC7EF2E57BD2CE862CAB950999313"
-                     "ED97E057").lower()
+# inversion V2_CORPUS_SHA256 exists to prevent in audit_corpus.py. Re-measured
+# twice at E1b's budget and identical both times; same CRLF caveat as above.
+V2_RESULTS_SHA256 = ("2429CAFCD1385047385F7E990B931ECC81B9F40C5A0F5C9849D1FEF8"
+                     "4EEDC0B9").lower()
 
 RESULTS_SHA256 = {"v1": V1_RESULTS_SHA256, "v2": V2_RESULTS_SHA256}
 
@@ -280,10 +303,13 @@ def main() -> None:
     recs = {r["id"]: r for r in json.loads(
         TRANSCRIPT.read_text(encoding="utf-8")) if r["id"].startswith("Q")}
 
-    # select_top, not [:6] -- the same merge ask() ships. A harness that slices
-    # differently from ask() is measuring a system nobody ships.
+    # select_top, not [:12] -- the same merge ask() ships. A harness that slices
+    # differently from ask() is measuring a system nobody ships. k=4/doc,
+    # top_n=12 since Phase E1b (2026-09-20); was k=3, 6. The reverse_rel probe
+    # above (k=3, 3, min_per_doc=0) is a DIFFERENT measurement on the generated
+    # answer and is deliberately NOT moved with the shipping arm.
     rows = [eval_question("Q%d" % (i + 1), q, recs["Q%d" % (i + 1)],
-                          select_top(ret.query(q, k=3), 6), ret)
+                          select_top(ret.query(q, k=4), 12), ret)
             for i, q in enumerate(questions)]
     print("\n== PER-QUESTION (retrieval live/offline; answers frozen v2) ==")
     print("  %-4s %-6s %-6s %-6s %-6s %-6s %-6s  missed-expected" % (

@@ -36,8 +36,10 @@ from evalset import strict_covered  # noqa: E402
 from rag import CORPUS_VERSION, build_corpus  # noqa: E402
 from retrieve import MIN_SCORE, PerDocRetriever, select_top  # noqa: E402
 
-K_PER_DOC = 3   # ask() / eval_phase06 depth
-TOP_N = 6       # ask() / eval_phase06 merge width
+# Widened 3/6 -> 4/12 at Phase E1b (2026-09-20). TOP_N == 3*K_PER_DOC, so with
+# three docs select_top returns every candidate retrieved and cuts nothing.
+K_PER_DOC = 4   # ask() / eval_phase06 depth
+TOP_N = 12      # ask() / eval_phase06 merge width
 MIN_PER_DOC = 1  # ask() default -- the doc-quota merge, Phase 09 step 3 M2
 
 # ---- the absolute recall gate, re-scoped per corpus at D6 (2026-09-19).
@@ -56,8 +58,19 @@ MIN_PER_DOC = 1  # ask() default -- the doc-quota merge, Phase 09 step 3 M2
 # The v2 floor is NOT a quality target -- it is the D5-measured value recorded
 # as a tripwire, so a future expansion change that degrades the shipping arm
 # cannot pass unnoticed. Raising it is a Phase E result, never a D6 edit.
+#
+# RAISED AT E1b (2026-09-20), which is the "Phase E result" the paragraph above
+# reserved this edit for. Was 0.632738 -- the D5-measured value of the OLD
+# shipping arm k=3/doc -> top_n=6. E1b widened the arm to k=4/doc -> top_n=12
+# and the measured after-expansion strict mean on the frozen 10 is
+# 0.7339285714285714, the same float eval_heldout.py now pins. Left at 0.632738
+# the tripwire would have gone quiet on the shipping arm: a revert of E1b's
+# budget would have passed unnoticed, which is the guard-failing-open defect D6
+# was cleaning up. The direction is a TIGHTENING on a measurement, never a
+# threshold lowered to make a number pass. v1's 0.75 is untouched and its arm
+# still passes: plain recall 0.925 -> 0.938 at the new budget.
 ABLATE_MIN_RECALL_V1 = 0.75
-ABLATE_MIN_STRICT_V2 = 0.632738   # NOT 0.633: see eval_heldout.py's note
+ABLATE_MIN_STRICT_V2 = 0.733928   # NOT 0.734: see eval_heldout.py's note
 ABLATE_EPS = 1e-6
 
 # The v2 arm compares with >= and a tolerance, NOT the bare > the v1 arm uses.

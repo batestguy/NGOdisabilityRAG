@@ -32,10 +32,16 @@ REUSE, NOT REIMPLEMENTATION (the discipline ablate_phase08.py already states)
               Copying any of them would let this battery drift away from the
               sets the rest of the repo measures, which is how a guard quietly
               stops guarding.
-  scoring  <- eval_heldout.measure_one at its K_PER_DOC=3 / TOP_N=6 /
-              MIN_PER_DOC=1, i.e. the SHIPPING arm. Every number printed here
-              is therefore directly comparable to a published one rather than
-              merely similar-looking.
+  scoring  <- eval_heldout.measure_one at its K_PER_DOC / TOP_N / MIN_PER_DOC,
+              i.e. the SHIPPING arm, whatever that currently is. Phase E1b
+              (2026-09-20) widened it from 3/6 to 4/12 and this battery followed
+              automatically because the constants are IMPORTED, not copied --
+              which is the whole point. Every number printed here is therefore
+              directly comparable to a published one rather than merely
+              similar-looking. The refusal decision is invariant to k and top_n
+              (the top-score vector is byte-identical from k=3 to k=20), so
+              gate 1 stays at 0 disagreements by construction across E1b; if it
+              ever does not, that is a finding, not a number to re-pin.
   corpora  <- rag.build_corpus("v1") and build_corpus("v2"). The `docs` dict is
               NOT reordered: PerDocRetriever iterates it in insertion order and
               sorts by score alone (src/retrieve.py:331-338), so insertion
@@ -568,7 +574,7 @@ def negative_tests(rets: dict, probes: list) -> list[str]:
         print("             clears' holds identically at both floors and this")
         print("             injection is not a falsifier. The docstring's")
         print("             'latent inconsistency' is real but affects WHICH")
-        print("             six chunks are shown, not the refusal decision.")
+        print("             chunks are shown, not the refusal decision.")
         print("             Gate 1 is therefore proven live by 1b instead.")
 
     # -- GATE 1 (b), an injection that DOES violate the premise -------------

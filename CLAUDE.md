@@ -26,6 +26,8 @@ C:\conda-envs\drlca-rag\python.exe scripts\audit_corpus.py         # corpus shap
 C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py         # held-out retrieval baseline (+ recall_strict)
 C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn set, 22 conv / 62 turns
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase08.py       # retrieval ablations
+C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase10.py       # (k, top_n) width ladder, measure-only, never gates
+C:\conda-envs\drlca-rag\python.exe scripts\calibrate_refusal.py    # refusal invariance, 212 probes, 0 disagreements
 C:\conda-envs\drlca-rag\python.exe scripts\eval_phase06.py --out=scripts\eval_tmp.json
 C:\conda-envs\drlca-rag\python.exe -c "import app"                 # boot-import smoke (must not start a server)
 C:\conda-envs\drlca-rag\python.exe -m streamlit run app.py         # local UI → http://localhost:8501
@@ -98,10 +100,33 @@ Constitution chapter-aware 400, Factsheet recursive 500/50.
 
 `PerDocRetriever` merges top-k from *each* doc rather than one joint index, because the
 Constitution is ~95% of the joint index and floods Act-specific queries. Consequence:
-context **precision 0.333 is by design** — never gate or "fix" it. Its `docs` dict is
+context **precision is low by design** — never gate or "fix" it. *(This line read
+"precision 0.333" until 2026-09-20; at Phase E1's budget it is **0.217**. Same relevant
+chunks over twice as many shown chunks — arithmetic, not degradation. The design point
+never changed; only the figure was stale.)* Its `docs` dict is
 iterated in **insertion order** and hits are sorted by score alone
 (`src/retrieve.py:331-338`), so **insertion order breaks ties** — reordering the dict in
 `build_corpus()` silently moves published numbers.
+
+**The shipping retrieval budget is `k=4/doc, top_n=12` (Phase E1b, 2026-09-20 —
+`src/rag.py` `ask()`, `app.py` `offline_legal_hits()`).** It was `k=3/doc, top_n=6` from
+Phase 01 to E1b, so **any baseline or comment predating 2026-09-20 was measured at 3/6.**
+`top_n == 3 × k` is load-bearing, not incidental: it means `select_top` returns every
+candidate retrieved, so the cross-doc cosine cut — the comparison `PerDocRetriever`'s own
+docstring calls invalid — never discards anything. Widening `k` *without* holding
+`top_n == 3k` measured **worse on all three sets**, because the spare slots go to the
+global top and the Constitution owns it. Neither `k` nor `top_n` can move a refusal: the
+top-score vector is byte-identical from k=3 to k=20.
+
+**Two retrieval upgrades were built, measured and DECLINED — their code is deliberately NOT in
+this tree.** A BM25/RRF re-rank inside the gate (Phase E2a) and a corpus-derived query-expansion
+map (Phase E3a) both lost on every arm; the implementations, their harnesses and both
+`synonyms_auto*.json` artifacts live on branch `phase10/retrieval-quality` at `a6016e4` and are
+kept there for reproduction only. **Do not re-implement either here.** The shipping expander is
+still the hand-written `SYNONYMS` + `expand_query`, and **`SYNONYMS` must not be edited casually**:
+`calibrate_refusal.py:150` builds 34 of its 106 probes from that map's keys, so touching it moves
+that suite off **212 runs** and requires a fresh calibration. The full measurement record is in
+`docs/phases/13_retrieval_quality.md` **Results** and in the amendment boxes on steps E2/E3/E4.
 
 > **"Act section-aware 800" is misleading — recorded 2026-09-17.** `chunk.SECTION_RE`
 > (`Section \d+.*`) matches only **4 times** in the entire cleaned Act text, and all four
@@ -184,13 +209,62 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   **Pushing to `main` auto-deploys to Render and real users — that decision is ALWAYS the
   user's, never yours.** Phase D's merge was authorised explicitly on 2026-09-19; that
   authorisation covered that merge and does not carry forward to the next one.
-  **ACTIVE: Phase E — `docs/phases/13_retrieval_quality.md`**, branch
-  `phase10/retrieval-quality` off `main`. Two D6 findings bind on it (both are also in that
-  playbook's amendment box):
+  **ACTIVE: Phase E — `docs/phases/13_retrieval_quality.md`.**
+  **E1 is DONE 2026-09-20 — `3d280fb` (measure-only) + `9748086` (shipped `k=4/doc, top_n=12`).
+  Held-out `test` strict recall 0.471 → 0.529, dev 0.473 → 0.573, frozen-10 0.633 → 0.734, false
+  refusals still 0/10 · 0/25 · 0/17, `MIN_SCORE` untouched. Zero Gemini calls.**
+  **E1b reaches users only when `phase10/ship-e1b` merges; until then `main` still serves the
+  `3/6` budget.** That merge needs its own explicit authorisation — see the deploy rule above.
+  **E2 and E3 are MEASURED AND DECLINED IN FULL 2026-09-20. NEXT IS E4, AND IT MUST BE RE-SCOPED
+  BEFORE IT IS RUN** (amendment box on the E4 step).
+  ⚠ **TWO BRANCHES, AND THE SPLIT IS DELIBERATE.** `phase10/ship-e1b` carries **only** the measured
+  E1 win and the written record; it is what merges. `phase10/retrieval-quality` (cut at `1ee6ea9`)
+  carries E2a's and E3a's **declined code** — `scripts/ablate_rerank.py`, `scripts/build_synonyms.py`,
+  `scripts/ablate_synonyms.py`, their opt-in `src/retrieve.py` consumers (`bm25=`, `rerank=`,
+  `load_auto_synonyms()`) and both `data/processed/synonyms_auto*.json` artifacts (~36.6k lines) —
+  and is **retained unmerged as the reproduction branch**. None of that code is on `main` or on the
+  ship branch, by design: it is inert, it would ship in the Render image for no runtime purpose, and
+  every arm lost. **Re-run declined arms from `phase10/retrieval-quality` at `a6016e4`; do not
+  rebuild them here, and do not re-run them at all without a new reason.**
+  **E2 (BM25/RRF re-rank) — DECLINED.** As written it was an *ordering* change, which E1b made
+  **provably inert** (`top_n == 3k` ⇒ `select_top` returns all 12 *and* re-sorts by score; every
+  recall metric scores a **set**): measured `+0.000` while re-ordering 55/60 questions. Moved to
+  *selection* it **fires and loses** — `test` 0.529 → **0.471**, no gain on any set, same on v1.
+  **The finding that generalises: BM25 is the same lexical family as TF-IDF cosine, so the `+0.206`
+  pool headroom is NOT lexically reachable.** D6's "chunk length is the mechanism, therefore BM25"
+  prediction is **measured false**.
+  **E3 (corpus-derived synonym map) — DECLINED.** `SYNONYMS`, `expand_query` and the two-sided
+  expansion gate are **unchanged**. `recall_strict` frozen-10 / dev / test — hand (control)
+  **0.734 / 0.573 / 0.529** · auto 0.601 / **0.387** / 0.382 · none 0.634 / 0.500 / **0.588** ·
+  hand∪auto 0.702 / 0.440 / 0.382. The auto map **loses on every set and gains not one question
+  anywhere** (0 up / 13 down of 52) and **halves its own target class** (pooled `vocab-mismatch`
+  strict 0.479 → **0.229**) — dilution, not inertness. **It cannot be parameterised out of it**:
+  **6 of the 34 hand keys (`fined`, `fired`, `jail`, `job`, `lawyer`, `sack`) do not occur in the
+  corpus at all**, and those are exactly the user-register bridges.
+  ⚠ **The `none` arm is a genuine dev/test DISAGREEMENT, not a win for either side**: `C − A` is
+  `−0.100 / −0.073 / +0.059` on v2 and `−0.100 / −0.047 / +0.088` on v1 — same sign on every set,
+  both corpora. **Dev selects and test checks, so the hand map stays** — but **we still have no
+  held-out evidence it is worth having. That is an E5 item; do not settle it on 17 questions.**
+  ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level lexical signal
+  failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to differ in kind.
+  A static-embedding blend is **also term-level association** — **E4's ship gate should be strict
+  and E4 should be prepared to be declined.** E4's *re-rank* framing is inert for E2a's exact
+  reason; its one structural advantage over E3 is that a **pretrained** table contains the six
+  keys the corpus never uses, which puts its live mechanism on the **expansion** side.
+  ⚠ **E1 did NOT ship what its own playbook specified**, and the reason generalises:
+  **`k=20/doc` measures `+0.000` on test.** The knob was `top_n == 3k`, and a wider pool at an
+  unchanged budget is a **regression on all three sets** (the spare slots go to the global top,
+  which the Constitution owns). A prototyped `max_per_doc` ceiling proved **bit-identical** to plain
+  `k=4/doc` and was not added. Full amendment box in that playbook's **Results**.
+  Two D6 findings bind on it (both are also in that playbook's amendment box):
   **`CT4.t3`'s correct chunk sits outside the 60-candidate pool entirely** (rank 104 at k=200),
-  so **E1's `k=20/doc` widening does not reach it** — know that before judging E1; and
+  so **E1's widening does not reach it** — confirmed, and E1 shipped a *narrower* pool than the
+  one that could not reach it anyway; and
   **`recall_strict` does NOT neutralise the packed-ref subsidy in the `ctx` arm** — it corrects
   scoring, not retrieval, and cannot see a chunk retrieved because of another clause's words.
+  That second one bit on E1b: its `eval_chat` ctx gains look large (`chat_dev` 0.607 → 0.786) but
+  **a budget showing twice as many chunks inflates any recall-shaped metric by construction.**
+  E1b's load-bearing evidence is the single-turn held-out `test` column, not the chat deltas.
   Order is **E → G → F**: **E** (retrieval quality — `docs/phases/13_retrieval_quality.md`, **NEW**
   and the consolidated playbook; supersedes the scattered `09` step 3 and `10` M1/M2 sizing) →
   **G** (fresh transcripts + judge + cross-turn citation drift, M5 + `11_chat.md`) →

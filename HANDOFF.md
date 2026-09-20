@@ -1,6 +1,123 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-19)
+# HANDOFF — start here (60 seconds, updated 2026-09-20)
 
-> **LATEST (2026-09-19, MERGED + DEPLOYED): PHASE D IS SHIPPED. PHASE E IS ACTIVE.**
+> **LATEST (2026-09-20): E1b IS STAGED FOR `main` ON `phase10/ship-e1b`; E2 AND E3 ARE DECLINED
+> AND THEIR CODE IS DELIBERATELY NOT MERGED. NEXT IS E4, RE-SCOPED. Zero Gemini calls — today's
+> spend is 0, and the whole of Phase E so far has spent 0.**
+>
+> **THE PROBLEM THIS SESSION EXISTS TO FIX: Phase E produced exactly one win and it was reaching
+> nobody.** `main` is still `1ee6ea9`, so every user on https://ngodisabilityrag.onrender.com is
+> served the **old `3/6` budget — the `0.471` arm, not the `0.529` one.**
+>
+> **Branch `phase10/ship-e1b`, cut at `9416fef`** — the E1 work is a clean linear prefix of
+> `phase10/retrieval-quality` (`3d280fb` → `9748086` → `9416fef` sit directly on `main`), so this is
+> a **branch point, not a cherry-pick and not a revert**. It carries the measured E1 win plus one
+> docs commit, and **nothing else**.
+>
+> **WHAT WAS DELIBERATELY LEFT BEHIND, and it is not a small amount:** ~400 lines of inert
+> `src/retrieve.py` code (`bm25=`, `rerank=`, `load_auto_synonyms()`), three ablation harnesses
+> (`scripts/ablate_rerank.py`, `scripts/build_synonyms.py`, `scripts/ablate_synonyms.py`) and
+> **36,636 lines of JSON artifact** (`data/processed/synonyms_auto*.json`) that would otherwise ship
+> in the Render image for **no runtime purpose**. Every arm of both lost. **The findings are merged;
+> the code is not.** `phase10/retrieval-quality` is **retained untouched at `a6016e4`** as the sole
+> reproduction branch — it is the only copy. **Re-run declined arms from there; do not rebuild them,
+> and do not re-run them at all without a new reason.**
+>
+> **E2 (BM25/RRF) — DECLINED.** As written it was an *ordering* change, which E1b made **provably
+> inert** (`top_n == 3k` ⇒ `select_top` returns all 12 *and* re-sorts by score; every recall metric
+> scores a **set**): `+0.000` on all three sets while re-ordering 55/60 questions. Moved to
+> *selection*, it **fires and loses** — `test` 0.529 → **0.471**, no gain on any set, same on v1.
+> **BM25 is the same lexical family as TF-IDF cosine, so the `+0.206` pool headroom is NOT lexically
+> reachable.** D6's "chunk length is the mechanism, therefore BM25" prediction is **measured false**.
+>
+> **E3 (corpus-derived synonym map) — DECLINED.** hand / auto / none / hand∪auto `recall_strict` on
+> frozen-10 · dev · test: **0.734/0.573/0.529** · 0.601/**0.387**/0.382 · 0.634/0.500/**0.588** ·
+> 0.702/0.440/0.382. The auto map **gains not one question anywhere** (0 up / 13 down of 52) and
+> **halves its own target class** (`vocab-mismatch` strict 0.479 → **0.229**) — dilution, not
+> inertness. **6 of the 34 hand keys (`fined`, `fired`, `jail`, `job`, `lawyer`, `sack`) do not
+> occur in the corpus at all**, so no corpus-derived generator emits them at any setting.
+>
+> ⚠ **The `none` arm is a real dev/test DISAGREEMENT and stays open.** `C − A` is
+> `−0.100 / −0.073 / +0.059` on v2 and `−0.100 / −0.047 / +0.088` on v1 — same sign on every set,
+> both corpora, all inside noise. **Dev selects and test checks, so the hand map stays — but we have
+> no held-out evidence it is worth having. E5 item; do not settle it on 17 questions.**
+>
+> ⚠ **E4 MUST BE RE-SCOPED BEFORE IT IS RUN.** Its stated mechanism — a static-embedding *re-rank*
+> signal — is **inert at the shipping budget for E2a's exact reason**, and turning it into
+> *selection* inherits the stage E2a already measured as a loss. Its one structural advantage over
+> E3 is that a **pretrained** table contains the six keys the corpus never uses, which puts the live
+> mechanism on the **expansion** side and makes `data/processed/`'s artifact a **vocabulary**, not a
+> re-ranker. And this is the **second consecutive phase** where a term-level lexical signal missed
+> the `+0.206` headroom — **set E4's ship gate strict and expect to decline.** Full box on the E4
+> step in `docs/phases/13_retrieval_quality.md`.
+>
+> ⚠ **E1b IS USER-VISIBLE AND COSTS SOMETHING.** The excerpt list goes **6 → 12 chunks**, rendered
+> **3 inline + 9 behind one collapsed fold** (`INLINE_EXCERPTS` stays 3). And **12 chunks in the
+> Gemini prompt instead of 6 roughly doubles prompt tokens per call** — free tier counts **calls**,
+> not tokens, so the **40/day budget is unaffected**, but latency rises and **Phase G's ~30-call
+> judge run gets more expensive per call.**
+>
+> **STILL NOT MERGED. Pushing `main` auto-deploys to Render and to real users, and that call is the
+> user's** — Phase D's authorisation covered Phase D's merge and does **not** carry forward.
+
+> **(2026-09-20, E1): PHASE E SESSION 0 + E1 ARE DONE. Zero Gemini calls.**
+>
+> Branch **`phase10/retrieval-quality`**, cut from `main` at `1ee6ea9`. **`3d280fb`** (E1a,
+> measure-only) + **`9748086`** (E1b, shipped). **Unmerged and unpushed on purpose** — pushing
+> `main` auto-deploys to real users and that call is the user's. Phase D's authorisation does
+> **not** carry forward.
+>
+> **HEADLINE: held-out `test` strict recall `0.471 → 0.529` (+0.058), dev `0.473 → 0.573`,
+> frozen-10 `0.633 → 0.734`.** False refusals still **0/10 · 0/25 · 0/17**. `MIN_SCORE` untouched.
+> `requirements.txt` byte-identical. `audit_corpus` stdout byte-identical. **Session 0's control
+> REPRODUCED** against `scripts/baseline_v2_2026-09-19.txt` before the first edit; raw captures are
+> in `D:\e0_baseline\` and should stay there until E5 archives its own baseline.
+>
+> **⚠ E1 DID NOT SHIP WHAT THE PLAYBOOK SPECIFIED, AND THAT IS THE THING TO KNOW BEFORE E2.**
+> The playbook's arm is `k=20/doc` (60 candidates). Measured, **it gains `+0.000` on test.** What
+> gained `+0.058` was **`k=4/doc, top_n=12`**. Both show 12 chunks, so they are comparable, and the
+> entire difference is **per-doc allocation, not pool depth**. Widening the pool at an unchanged
+> budget is a **regression on all three sets** (`k=10 n=6`: 0.633/0.473/0.471 → 0.622/0.453/0.426),
+> because the spare slots go to the global top and the Constitution owns it — the Act's share of
+> displayed chunks falls **36% → 28% → 25%**. That is the flooding `PerDocRetriever` exists to
+> prevent, re-introduced by widening. **The knob is `top_n == 3k`**: then `select_top` returns every
+> candidate retrieved and the invalid cross-doc cosine cut never discards anything. A `max_per_doc`
+> ceiling was prototyped and is **bit-identical to plain `k=4/doc`** — **it was not added.**
+>
+> **TWO PLAYBOOK NUMBERS WERE MISLABELLED AND ARE CORRECTED IN PLACE.** Its diagnosis table heads a
+> column **"r@6 (shipping)"** reading test **0.426** — that is the **recall@k CURVE**, whose
+> `select_top(top_n=60)` over 60 candidates makes the quota phase vacuous, so its `@6` has **no
+> `min_per_doc` reservation**. **Shipping was 0.471.** The `+0.309` gap is really **+0.264**. Exit
+> criterion 1 always said 0.471, so the playbook contradicted itself.
+>
+> **DO NOT QUOTE THE `eval_chat` GAINS AS E1's RESULT** (`chat_dev` ctx 0.607 → 0.786). **A budget
+> showing twice as many chunks inflates any recall-shaped metric by construction**, D6's amendment
+> says `recall_strict` does not neutralise the packed-ref subsidy in the `ctx` arm, and the Phase B
+> gates are computed on `chat_dev`, the tuning set. **E1b's load-bearing evidence is the single-turn
+> held-out `test` column.**
+>
+> **Re-pinned deliberately, all tightening, old values kept in comments:**
+> `FROZEN10_STRICT_BASELINE_V2` `0.632738 → 0.733928` (the **truncated true float**, never the
+> printed `0.734` — see `eval_heldout.py:155-165`), `ablate_phase08.ABLATE_MIN_STRICT_V2` likewise,
+> and `eval_phase06`'s two digests (`V2 → 2429cafc…`, `V1 → 12bdeba0…`). The old v1 digest was
+> proven still reproducible by running the **pre-commit code at the old budget** in a throwaway
+> worktree — only the instrument moved.
+>
+> **NOT DONE, carry forward:** the **12-card fold has never been seen in a browser** (3 inline + 9
+> behind one collapsed fold — no harness measures it, and it is E1b's only user-facing change) ·
+> `probe_embed_quota.py` still **never run** · `scripts/baseline_phaseE_<date>.txt` not archived
+> (E5 owns it) · **Phase G's prompt cost per legal turn has doubled** — confirm it fits *before* G
+> spends its ~30 calls.
+>
+> **NEXT: E2 — BM25 re-rank INSIDE the existing gate**, never replacing the scorer. D6's length
+> finding is its direct evidence (v2 clause chunks run to ~305 chars and lose to long ones under
+> TF-IDF's length handling). **Re-run `calibrate_refusal.py` after it — it must still report 0
+> disagreements.** E1's refusal invariance does **not** transfer for free: E1 was safe because the
+> top-score vector is byte-identical from k=3 to k=20, which is a property of selection *depth*.
+>
+> *(E2 was executed later the same day and **DECLINED**; so was E3. See the LATEST block above —
+> this "NEXT" line is kept as the record of what was planned, not erased.)*
+
+> **(2026-09-19, MERGED + DEPLOYED): PHASE D IS SHIPPED. PHASE E IS ACTIVE.**
 >
 > **`phase10/corpus-v2` merged to `main` as `8682869` on the user's explicit instruction, and
 > Render auto-deployed it.** 25 commits, D0–D6. **The `[Act cl. 39]` mis-citation — cl.38's tail
