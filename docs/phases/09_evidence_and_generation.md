@@ -174,8 +174,13 @@ day with failover, two without.
 - [x] Held-out set of ~30 questions with corpus-verified ground truth; frozen-10 reproduces
       bit-identically; held-out baseline recorded. (2026-09-13; 30 questions, 16335 B both runs.)
 - [x] False-refusal and false-answer rates measured for the first time. (2026-09-13.)
-- [ ] BM25 re-rank shipped inside the gate, ablated on frozen-10 **and** held-out.
-- [ ] `synonyms_auto.json` shipped and ablated against the hand-written map on held-out data.
+- [~] BM25 re-rank shipped inside the gate, ablated on frozen-10 **and** held-out.
+      **CLOSED 2026-09-20 — ablated and DECLINED as Phase E2a** (`13_retrieval_quality.md`, E2
+      amendment box + Results). Nine arms, two corpora, no gain anywhere. **Do not re-run.**
+- [~] `synonyms_auto.json` shipped and ablated against the hand-written map on held-out data.
+      **CLOSED 2026-09-20 — built, ablated four ways and DECLINED as Phase E3a** (same playbook).
+      The auto map loses on every set and halves its own target class. **Do not re-run.**
+      Code for both lives on `phase10/retrieval-quality` at `a6016e4`, **not on `main`**.
 - [ ] Q3 answers ≥2 cited claims; faith_audited ≥ 0.85 earned on a FRESH transcript.
 - [ ] `reverse_rel` re-baselined in its own commit, old and new numbers side by side.
 - [ ] `requirements.txt` still byte-identical; live smoke green on Render.

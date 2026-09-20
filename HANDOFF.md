@@ -1,7 +1,65 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-20)
 
-> **LATEST (2026-09-20): PHASE E SESSION 0 + E1 ARE DONE. NEXT IS E2. Zero Gemini calls —
-> today's spend is 0, and the whole of E1 spent 0.**
+> **LATEST (2026-09-20): E1b IS STAGED FOR `main` ON `phase10/ship-e1b`; E2 AND E3 ARE DECLINED
+> AND THEIR CODE IS DELIBERATELY NOT MERGED. NEXT IS E4, RE-SCOPED. Zero Gemini calls — today's
+> spend is 0, and the whole of Phase E so far has spent 0.**
+>
+> **THE PROBLEM THIS SESSION EXISTS TO FIX: Phase E produced exactly one win and it was reaching
+> nobody.** `main` is still `1ee6ea9`, so every user on https://ngodisabilityrag.onrender.com is
+> served the **old `3/6` budget — the `0.471` arm, not the `0.529` one.**
+>
+> **Branch `phase10/ship-e1b`, cut at `9416fef`** — the E1 work is a clean linear prefix of
+> `phase10/retrieval-quality` (`3d280fb` → `9748086` → `9416fef` sit directly on `main`), so this is
+> a **branch point, not a cherry-pick and not a revert**. It carries the measured E1 win plus one
+> docs commit, and **nothing else**.
+>
+> **WHAT WAS DELIBERATELY LEFT BEHIND, and it is not a small amount:** ~400 lines of inert
+> `src/retrieve.py` code (`bm25=`, `rerank=`, `load_auto_synonyms()`), three ablation harnesses
+> (`scripts/ablate_rerank.py`, `scripts/build_synonyms.py`, `scripts/ablate_synonyms.py`) and
+> **36,636 lines of JSON artifact** (`data/processed/synonyms_auto*.json`) that would otherwise ship
+> in the Render image for **no runtime purpose**. Every arm of both lost. **The findings are merged;
+> the code is not.** `phase10/retrieval-quality` is **retained untouched at `a6016e4`** as the sole
+> reproduction branch — it is the only copy. **Re-run declined arms from there; do not rebuild them,
+> and do not re-run them at all without a new reason.**
+>
+> **E2 (BM25/RRF) — DECLINED.** As written it was an *ordering* change, which E1b made **provably
+> inert** (`top_n == 3k` ⇒ `select_top` returns all 12 *and* re-sorts by score; every recall metric
+> scores a **set**): `+0.000` on all three sets while re-ordering 55/60 questions. Moved to
+> *selection*, it **fires and loses** — `test` 0.529 → **0.471**, no gain on any set, same on v1.
+> **BM25 is the same lexical family as TF-IDF cosine, so the `+0.206` pool headroom is NOT lexically
+> reachable.** D6's "chunk length is the mechanism, therefore BM25" prediction is **measured false**.
+>
+> **E3 (corpus-derived synonym map) — DECLINED.** hand / auto / none / hand∪auto `recall_strict` on
+> frozen-10 · dev · test: **0.734/0.573/0.529** · 0.601/**0.387**/0.382 · 0.634/0.500/**0.588** ·
+> 0.702/0.440/0.382. The auto map **gains not one question anywhere** (0 up / 13 down of 52) and
+> **halves its own target class** (`vocab-mismatch` strict 0.479 → **0.229**) — dilution, not
+> inertness. **6 of the 34 hand keys (`fined`, `fired`, `jail`, `job`, `lawyer`, `sack`) do not
+> occur in the corpus at all**, so no corpus-derived generator emits them at any setting.
+>
+> ⚠ **The `none` arm is a real dev/test DISAGREEMENT and stays open.** `C − A` is
+> `−0.100 / −0.073 / +0.059` on v2 and `−0.100 / −0.047 / +0.088` on v1 — same sign on every set,
+> both corpora, all inside noise. **Dev selects and test checks, so the hand map stays — but we have
+> no held-out evidence it is worth having. E5 item; do not settle it on 17 questions.**
+>
+> ⚠ **E4 MUST BE RE-SCOPED BEFORE IT IS RUN.** Its stated mechanism — a static-embedding *re-rank*
+> signal — is **inert at the shipping budget for E2a's exact reason**, and turning it into
+> *selection* inherits the stage E2a already measured as a loss. Its one structural advantage over
+> E3 is that a **pretrained** table contains the six keys the corpus never uses, which puts the live
+> mechanism on the **expansion** side and makes `data/processed/`'s artifact a **vocabulary**, not a
+> re-ranker. And this is the **second consecutive phase** where a term-level lexical signal missed
+> the `+0.206` headroom — **set E4's ship gate strict and expect to decline.** Full box on the E4
+> step in `docs/phases/13_retrieval_quality.md`.
+>
+> ⚠ **E1b IS USER-VISIBLE AND COSTS SOMETHING.** The excerpt list goes **6 → 12 chunks**, rendered
+> **3 inline + 9 behind one collapsed fold** (`INLINE_EXCERPTS` stays 3). And **12 chunks in the
+> Gemini prompt instead of 6 roughly doubles prompt tokens per call** — free tier counts **calls**,
+> not tokens, so the **40/day budget is unaffected**, but latency rises and **Phase G's ~30-call
+> judge run gets more expensive per call.**
+>
+> **STILL NOT MERGED. Pushing `main` auto-deploys to Render and to real users, and that call is the
+> user's** — Phase D's authorisation covered Phase D's merge and does **not** carry forward.
+
+> **(2026-09-20, E1): PHASE E SESSION 0 + E1 ARE DONE. Zero Gemini calls.**
 >
 > Branch **`phase10/retrieval-quality`**, cut from `main` at `1ee6ea9`. **`3d280fb`** (E1a,
 > measure-only) + **`9748086`** (E1b, shipped). **Unmerged and unpushed on purpose** — pushing
@@ -55,6 +113,9 @@
 > TF-IDF's length handling). **Re-run `calibrate_refusal.py` after it — it must still report 0
 > disagreements.** E1's refusal invariance does **not** transfer for free: E1 was safe because the
 > top-score vector is byte-identical from k=3 to k=20, which is a property of selection *depth*.
+>
+> *(E2 was executed later the same day and **DECLINED**; so was E3. See the LATEST block above —
+> this "NEXT" line is kept as the record of what was planned, not erased.)*
 
 > **(2026-09-19, MERGED + DEPLOYED): PHASE D IS SHIPPED. PHASE E IS ACTIVE.**
 >
