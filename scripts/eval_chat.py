@@ -23,9 +23,9 @@ TWO ARMS, ONE RETRIEVER
                   enter the query, and the merged string is retrieved on.
 
 Everything else is held identical -- same corpus, same PerDocRetriever, same
-k=3/doc, same select_top(top_n=6, min_per_doc=1), same MIN_SCORE. The only
-independent variable is the query string, which is what makes the delta
-attributable.
+k=4/doc, same select_top(top_n=12, min_per_doc=1), same MIN_SCORE (was 3/6 until
+Phase E1b, 2026-09-20). The only independent variable is the query string, which
+is what makes the delta attributable.
 
 REUSE, NOT REIMPLEMENTATION
 ---------------------------
@@ -116,8 +116,10 @@ def corpus_stamp() -> str:
 
 
 # Held identical to eval_heldout.py / ask() / eval_phase06 / ablate_phase08.
-K_PER_DOC = 3
-TOP_N = 6
+# Widened 3/6 -> 4/12 at Phase E1b (2026-09-20); TOP_N == 3*K_PER_DOC means
+# select_top discards nothing.
+K_PER_DOC = 4
+TOP_N = 12
 MIN_PER_DOC = 1
 
 # One wide pool read at prefixes, same construction as eval_heldout.measure_curve.

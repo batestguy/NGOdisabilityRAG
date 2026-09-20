@@ -78,7 +78,10 @@ CHECKPOINT = ROOT / "scripts" / ".judge_phase06_checkpoint.json"
 OUT = ROOT / "scripts" / ("judge_phase06_results_%s_%s.json"
                           % (JUDGE_MODEL, date.today().isoformat()))
 
-K_PER_DOC, TOP_N, MIN_PER_DOC = 3, 6, 1
+# Widened 3/6 -> 4/12 at Phase E1b (2026-09-20), kept in step with ask() /
+# eval_heldout / eval_chat / ablate_phase08 / eval_phase06. Phase G has not run
+# yet, so no judge transcript exists that was scored at the old budget.
+K_PER_DOC, TOP_N, MIN_PER_DOC = 4, 12, 1
 
 
 # --------------------------------------------------------------------------
