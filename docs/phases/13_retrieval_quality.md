@@ -7,8 +7,10 @@ all four arms lose, the auto map halves its own target class, `SYNONYMS` unchang
 **NEXT IS E4 — and it MUST BE RE-SCOPED BEFORE IT IS RUN** (amendment box on the E4 step): as
 written it is inert at the shipping budget for E2a's exact reason, and two consecutive term-level
 arms have now failed to reach the pool headroom while E4 is also term-level.
-**E1b is staged for `main` on `phase10/ship-e1b` and is NOT YET MERGED — until it is, users are
-still served the `3/6` budget, i.e. the `0.471` arm and not the `0.529` one.**
+**E1b IS MERGED AND DEPLOYED 2026-09-20 (`b92e2f4`, merge of `phase10/ship-e1b`, on the user's
+explicit authorisation). Users moved from the `0.471` arm to the `0.529` arm** — confirmed by live
+smoke on https://ngodisabilityrag.onrender.com, which renders 12 chunks (3 inline + 9 folded) with
+a citation-tag list identical, in order, to the local measurement.
 Zero Gemini quota spent in the phase so far, and none is needed for E4.
 *(This line read "planned, not yet started" until 2026-09-20.)*
 **Runs after:** Phase D (`12_corpus_v2.md`) — **COMPLETE, MERGED to `main` and DEPLOYED
@@ -16,12 +18,13 @@ Zero Gemini quota spent in the phase so far, and none is needed for E4.
 getting**, which changes one thing about this phase: it is no longer working on a side corpus.
 **Every E arm that lands on `main` reaches real users on the next push.**
 **Branches — TWO, and the split is deliberate (2026-09-20).**
-`phase10/ship-e1b`, cut at `9416fef`, carries **only** the measured E1 win and the written record;
-**it is what merges to `main`.** `phase10/retrieval-quality`, cut from `main` at `8682869` and
-retained untouched at `a6016e4`, carries E2a's and E3a's **declined code** —
+`phase10/ship-e1b`, cut at `9416fef`, carried **only** the measured E1 win and the written record;
+**it is what merged to `main` as `b92e2f4`.** `phase10/retrieval-quality`, cut from `main` at
+`8682869` and retained untouched at `a6016e4`, carries E2a's and E3a's **declined code** —
 `scripts/ablate_rerank.py`, `scripts/build_synonyms.py`, `scripts/ablate_synonyms.py`, their opt-in
 `src/retrieve.py` consumers and both `data/processed/synonyms_auto*.json` artifacts (~36.6k lines).
-**It is the only copy. Re-run declined arms from there; none of it is on `main`.**
+**Pushed to `origin` 2026-09-20 as an archive** (pushing a topic branch does not deploy; only
+`main` does). **Re-run declined arms from there; none of it is on `main`.**
 
 ---
 
@@ -901,3 +904,91 @@ it records when the map was derived rather than when the script last ran.
 **Declined, recorded, not dropped:** the auto map (arm B), the union (arm D), and no-expansion
 (arm C). All four arms live in `scripts/ablate_synonyms.py:make_arms` and re-run in about a minute
 on either corpus.
+
+### E1b SHIPPED TO USERS — 2026-09-20, merge `b92e2f4`. Zero Gemini calls.
+
+> **This section records a DEPLOY, not a measurement.** No arm was run, no parameter moved, and
+> nothing in `src/` changed relative to `9748086`. What changed is **who is served by it.**
+
+**The gap this closed was organisational, not technical.** E1 had shipped `k=4/doc, top_n=12` on
+`phase10/retrieval-quality` on 2026-09-20 and measured `test recall_strict 0.471 → 0.529`. `main`
+stayed at `1ee6ea9`, so **every real user was still served the 0.471 arm.** Phase E's stated
+justification was that it "costs zero quota and *improves* the system"; the improvement existed and
+was stranded on an unmerged branch alongside two declined arms.
+
+**The prune was a branch point, not a revert.** `3d280fb` → `9748086` → `9416fef` are a clean
+linear prefix of `phase10/retrieval-quality` sitting directly on `main`, and contain **no BM25
+code, no auto-synonym code and neither JSON artifact**. So `git switch -c phase10/ship-e1b 9416fef`
+isolated the win with **zero conflicts and zero cherry-picking**. One docs commit (`2b8d0ec`)
+carried E2a's and E3a's findings across — the measurement record is the valuable half — while every
+reference to the declined *code* was re-pointed at the branch that holds it.
+
+**What stayed off `main`, deliberately:** ~400 lines of inert `src/retrieve.py` consumers
+(`bm25=`, `rerank=`, `pool_per_doc`, `pin_top`, `load_auto_synonyms()`), three ablation harnesses,
+and **36,636 lines of JSON artifact** that would otherwise ship in the Render image for **no runtime
+purpose**. Verified absent by explicit `Test-Path` and grep checks rather than assumed.
+
+**VERIFICATION RAN ON THE MERGED TREE, BEFORE THE PUSH.** The E1b numbers were originally measured
+on a tree that also carried E2a/E3a's inert code, so they were **re-derived here** on the tree that
+actually deploys (captures in `D:\ship_e1b\`):
+
+| gate | result |
+|---|---|
+| `eval_heldout` `recall_strict` frozen-10 / dev / test | **0.734 / 0.573 / 0.529** — exact |
+| false refusals | **0/10 · 0/25 · 0/17** |
+| `calibrate_refusal` | **PASS, 0/212 disagreements**, all three gates |
+| `eval_phase06` digests | **`2429cafc…`** (v2) · **`12bdeba0…`** (v1) — both exact |
+| bench · `audit_corpus` · `ablate_phase08` · `ablate_phase10` · `eval_chat` | all **PASS** |
+| 03 · 04 · 05 · 09 ops | 16/16+7/7 · 10/10 · **137/137** · ALL PASS |
+| `import app` | clean, starts no server |
+| `MIN_SCORE` · `requirements.txt` | **0.10** · **byte-identical** |
+
+The merged tree was additionally diffed against the branch tip (**identical**) and `eval_heldout`
+re-run on it after the merge commit, before the push.
+
+**LIVE SMOKE AFTER THE DEPLOY, and this is the part that proves the new budget actually shipped
+rather than merely merged.** On https://ngodisabilityrag.onrender.com the penalties query renders
+**"📄 9 more excerpt(s) retrieved for this turn"** — 3 inline + 9 folded = **12 chunks**; under the
+old budget that label reads **"3 more"**. Its **12 citation tags are identical, in order, to the
+local measurement** (`[Constitution s. 4] ×2, [Act cl. 1], [Constitution s. 3], [Act cl. 58],
+[Factsheet Section 1], [Factsheet Section 16], [Act cl. 16], [Constitution s. 4],
+[Factsheet Section 22,23,24], [Act cl. 12], [Factsheet Section 12]`) — a cross-check that the
+deployed retrieval is byte-for-byte the one that was measured, not merely a page that loads.
+Helplines lead the page and every assistant turn; NGO lookup returns helplines-first + 3 verified
+Lagos organisations.
+
+**THE LOCAL BROWSER SMOKE FOUND TWO DOC DEFECTS, both recorded in `CLAUDE.md` and neither fixed.**
+
+1. **`top_n` is a CEILING, not a count, and `app.py:256` states otherwise.** Its docstring says
+   "the display is 3 inline + 9 folded" unconditionally. `MIN_SCORE` trims below `top_n`, so the
+   shown count varies: measured over six realistic queries it was **7 · 12 · 9 · 7 · 7 · 6 — mean 8
+   of a max 12**. The very first turn smoked showed *"4 more excerpt(s)"*. **Do not write a test or
+   a doc that assumes 12.** The docstring is in `9748086`, i.e. it shipped with E1b.
+2. **A query can surface two byte-identical excerpt cards** — same tag, same 166 chars, same score
+   `0.3748` (`[Constitution s. 4]` on the penalties query). Checked against the old budget rather
+   than assumed: it **reproduces identically at `k=3/doc, top_n=6`**, so **E1b did not cause it**.
+   It is a duplicate pair in the corpus, and a small real accessibility cost.
+
+**Also confirmed by hand, since accessibility is a requirement and no harness measures this:**
+linear screen-reader-safe order · the fold's `<summary>` carries `tabIndex 0` and **opens on
+Enter** · every visible excerpt carries its citation tag · the AI expander is **collapsed by
+default** (offline invariant intact) · a genuinely off-corpus probe (`H25`) **still refuses**, with
+helplines both above and inside the refusal text · an ellipsis follow-up still resolves
+(*"🔗 Read as a follow-up (thin:1<=3) — I searched using the previous turn as well as this one"*).
+**Scroll length, named:** one legal turn collapsed ≈ **3.2 screens**; a 12-chunk turn with the fold
+open ≈ **10 screens**; a 5-turn thread ≈ **14.5 screens** at 1440×900.
+
+**COST, NAMED RATHER THAN BURIED: 12 chunks in the Gemini prompt instead of 6 roughly doubles
+prompt tokens per call.** Free tier counts **calls**, not tokens, so the **40/day budget is
+unaffected** — but latency rises and **Phase G's ~30-call judge run gets more expensive per call.**
+Confirm it fits *before* G spends its first call.
+
+**`phase10/retrieval-quality` was pushed to `origin` as an archive**, since it was the single local
+copy of the declined code and both artifacts. Pushing a topic branch does **not** deploy.
+
+**Open, carried forward, neither started:** the hand synonym map still has **no held-out evidence
+it is worth having** (dev says keep, `test` says drop, both inside noise — E5, and not to be settled
+on 17 questions; the honest outcome may be shipping *less* code) · **`scripts/probe_embed_quota.py`
+has still never been written or run**, so M2 cannot be priced.
+
+**Next: E4 — re-scoped first. Do not execute it as written.**

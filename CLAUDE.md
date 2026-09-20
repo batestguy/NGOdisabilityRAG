@@ -118,6 +118,16 @@ docstring calls invalid — never discards anything. Widening `k` *without* hold
 global top and the Constitution owns it. Neither `k` nor `top_n` can move a refusal: the
 top-score vector is byte-identical from k=3 to k=20.
 
+> **`top_n` is a CEILING, not a count — recorded 2026-09-20 from the live smoke.**
+> `app.py:256` says "the display is 3 inline + 9 folded" as though unconditional. It is not:
+> `MIN_SCORE` trims below `top_n`, so the shown count varies. Measured over six realistic
+> queries: **7 · 12 · 9 · 7 · 7 · 6 — mean 8 of a max 12.** `INLINE_EXCERPTS` stays 3, so the
+> fold holds *the rest*, which is often 4, not 9. Do not write a test or a doc that assumes 12.
+> Separately: a query can surface **two byte-identical excerpt cards** (same tag, same text,
+> same score — e.g. `[Constitution s. 4]` on the penalties query). That is a **duplicate pair in
+> the corpus and is pre-existing** — it reproduces identically at the old `k=3/doc, top_n=6`
+> budget, so E1b did not cause it. Unfixed, and a real (small) accessibility cost.
+
 **Two retrieval upgrades were built, measured and DECLINED — their code is deliberately NOT in
 this tree.** A BM25/RRF re-rank inside the gate (Phase E2a) and a corpus-derived query-expansion
 map (Phase E3a) both lost on every arm; the implementations, their harnesses and both
@@ -213,19 +223,24 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   **E1 is DONE 2026-09-20 — `3d280fb` (measure-only) + `9748086` (shipped `k=4/doc, top_n=12`).
   Held-out `test` strict recall 0.471 → 0.529, dev 0.473 → 0.573, frozen-10 0.633 → 0.734, false
   refusals still 0/10 · 0/25 · 0/17, `MIN_SCORE` untouched. Zero Gemini calls.**
-  **E1b reaches users only when `phase10/ship-e1b` merges; until then `main` still serves the
-  `3/6` budget.** That merge needs its own explicit authorisation — see the deploy rule above.
+  **E1b IS MERGED AND DEPLOYED 2026-09-20 (`b92e2f4`, merge of `phase10/ship-e1b`).** The user
+  authorised it explicitly; Render auto-deployed on the push, and the live site was smoked after —
+  helplines lead the page and the turn, one legal answer returns **12 tagged excerpts whose tag
+  list is identical to the local measurement**, one NGO lookup returns helplines-first + 3 Lagos
+  orgs. **Users moved from the `0.471` arm to the `0.529` arm.** *That authorisation covered that
+  merge and does NOT carry forward.*
   **E2 and E3 are MEASURED AND DECLINED IN FULL 2026-09-20. NEXT IS E4, AND IT MUST BE RE-SCOPED
   BEFORE IT IS RUN** (amendment box on the E4 step).
-  ⚠ **TWO BRANCHES, AND THE SPLIT IS DELIBERATE.** `phase10/ship-e1b` carries **only** the measured
-  E1 win and the written record; it is what merges. `phase10/retrieval-quality` (cut at `1ee6ea9`)
-  carries E2a's and E3a's **declined code** — `scripts/ablate_rerank.py`, `scripts/build_synonyms.py`,
+  ⚠ **TWO BRANCHES, AND THE SPLIT IS DELIBERATE.** `phase10/ship-e1b` (merged as `b92e2f4`) carried
+  **only** the measured E1 win and the written record. `phase10/retrieval-quality` (`a6016e4`,
+  **pushed to `origin` 2026-09-20 as an archive — pushing a topic branch does not deploy**) carries
+  E2a's and E3a's **declined code** — `scripts/ablate_rerank.py`, `scripts/build_synonyms.py`,
   `scripts/ablate_synonyms.py`, their opt-in `src/retrieve.py` consumers (`bm25=`, `rerank=`,
   `load_auto_synonyms()`) and both `data/processed/synonyms_auto*.json` artifacts (~36.6k lines) —
-  and is **retained unmerged as the reproduction branch**. None of that code is on `main` or on the
-  ship branch, by design: it is inert, it would ship in the Render image for no runtime purpose, and
-  every arm lost. **Re-run declined arms from `phase10/retrieval-quality` at `a6016e4`; do not
-  rebuild them here, and do not re-run them at all without a new reason.**
+  and is **retained unmerged as the reproduction branch**. None of that code is on `main`, by
+  design: it is inert on the shipping path, it would ship in the Render image for no runtime
+  purpose, and every arm lost. **Re-run declined arms from `phase10/retrieval-quality` at
+  `a6016e4`; do not rebuild them here, and do not re-run them at all without a new reason.**
   **E2 (BM25/RRF re-rank) — DECLINED.** As written it was an *ordering* change, which E1b made
   **provably inert** (`top_n == 3k` ⇒ `select_top` returns all 12 *and* re-sorts by score; every
   recall metric scores a **set**): measured `+0.000` while re-ordering 55/60 questions. Moved to

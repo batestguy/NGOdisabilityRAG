@@ -1,12 +1,37 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-20)
 
-> **LATEST (2026-09-20): E1b IS STAGED FOR `main` ON `phase10/ship-e1b`; E2 AND E3 ARE DECLINED
-> AND THEIR CODE IS DELIBERATELY NOT MERGED. NEXT IS E4, RE-SCOPED. Zero Gemini calls — today's
-> spend is 0, and the whole of Phase E so far has spent 0.**
+> **LATEST (2026-09-20): E1b IS MERGED AND DEPLOYED (`b92e2f4`). E2 AND E3 ARE DECLINED AND THEIR
+> CODE IS DELIBERATELY NOT ON `main`. NEXT IS E4, WHICH MUST BE RE-SCOPED BEFORE IT IS RUN.
+> Zero Gemini calls — today's spend is 0, and the whole of Phase E has spent 0.**
 >
-> **THE PROBLEM THIS SESSION EXISTS TO FIX: Phase E produced exactly one win and it was reaching
-> nobody.** `main` is still `1ee6ea9`, so every user on https://ngodisabilityrag.onrender.com is
-> served the **old `3/6` budget — the `0.471` arm, not the `0.529` one.**
+> **THE PROBLEM THIS SESSION EXISTED TO FIX: Phase E had produced exactly one win and it was
+> reaching nobody.** `main` sat at `1ee6ea9`, so every user on https://ngodisabilityrag.onrender.com
+> was served the **old `3/6` budget — the `0.471` arm, not the `0.529` one.** That is now fixed.
+>
+> **MERGED ON EXPLICIT AUTHORISATION; Render auto-deployed on the push.** *That authorisation
+> covered this merge and does **not** carry forward.* Verification ran **before** the push and on
+> the **merged** tree, not inherited from the branch: `eval_heldout` **0.734 / 0.573 / 0.529** ·
+> false refusals **0/10 · 0/25 · 0/17** · `calibrate_refusal` **PASS, 0/212** · `eval_phase06`
+> digests **`2429cafc…` (v2) / `12bdeba0…` (v1)** · bench · `audit_corpus` · `ablate_phase08` ·
+> `ablate_phase10` · `eval_chat` all PASS · 16/16+7/7 · 10/10 · **137/137** · ops ALL PASS ·
+> `import app` clean · `MIN_SCORE` **0.10** · `requirements.txt` **byte-identical**.
+>
+> **LIVE SMOKE AFTER THE DEPLOY — the decisive evidence the new budget actually shipped:** the
+> penalties query on the live site renders **"📄 9 more excerpt(s)"** — 3 inline + 9 folded =
+> **12 chunks** (under the old budget this reads "3 more") — and its **12 citation tags are
+> identical, in order, to the local measurement**. Helplines lead the page and every assistant
+> turn. NGO lookup returns helplines-first + 3 verified Lagos orgs.
+>
+> ⚠ **TWO THINGS THE SMOKE FOUND THAT THE DOCS HAD WRONG.** (1) **`top_n` is a CEILING, not a
+> count.** `app.py:256` states "3 inline + 9 folded" unconditionally; `MIN_SCORE` trims below
+> `top_n`, so across six realistic queries the shown count was **7 · 12 · 9 · 7 · 7 · 6 — mean 8 of
+> a max 12**. Do not write a test or a doc that assumes 12. (2) A query can surface **two
+> byte-identical excerpt cards** (same tag, text and score). **Pre-existing** — it reproduces at the
+> old `3/6` budget, so E1b did not cause it. Both recorded in `CLAUDE.md`; neither was fixed.
+>
+> **`phase10/retrieval-quality` was PUSHED TO `origin` as an archive** (it was the only copy of the
+> declined code and both JSON artifacts). **Pushing a topic branch does not deploy — only `main`
+> does.**
 >
 > **Branch `phase10/ship-e1b`, cut at `9416fef`** — the E1 work is a clean linear prefix of
 > `phase10/retrieval-quality` (`3d280fb` → `9748086` → `9416fef` sit directly on `main`), so this is
@@ -56,8 +81,16 @@
 > not tokens, so the **40/day budget is unaffected**, but latency rises and **Phase G's ~30-call
 > judge run gets more expensive per call.**
 >
-> **STILL NOT MERGED. Pushing `main` auto-deploys to Render and to real users, and that call is the
-> user's** — Phase D's authorisation covered Phase D's merge and does **not** carry forward.
+> **TWO OPEN ITEMS CARRIED FORWARD, neither started:**
+> **(1) The hand synonym map has NO held-out evidence it is worth having.** `C − A` was
+> `−0.100 / −0.073 / +0.059` on v2 and `−0.100 / −0.047 / +0.088` on v1 — **dev says keep, `test`
+> says drop, both inside noise.** It stays by the declared rule (dev selects), **not by proof**.
+> **Do not settle it on 17 questions** — it needs a larger held-out set, and **the honest outcome
+> may be shipping *less* code.** E5 owns it.
+> **(2) `scripts/probe_embed_quota.py` has never been written or run**, so M2 still cannot be
+> priced. It is cheap, and the playbook says run it **regardless** of the M2 decision.
+>
+> **NEXT: E4 — but RE-SCOPE IT FIRST. Do not execute the playbook's E4 as written.**
 
 > **(2026-09-20, E1): PHASE E SESSION 0 + E1 ARE DONE. Zero Gemini calls.**
 >

@@ -2861,3 +2861,93 @@ outcome.
 All four arms live in `scripts/ablate_synonyms.py` and re-run in about a minute on either corpus.
 The generator, both artifacts and the opt-in consumer are committed so nobody rebuilds this to
 re-learn it. **E3 is declined, not deferred.**
+
+## 2026-09-20 — E1b reaches users, and the lesson is about shipping, not retrieval
+
+Zero Gemini calls. Merge `b92e2f4` (`phase10/ship-e1b` -> `main`), pushed on explicit
+authorisation, Render auto-deployed, live-smoked after.
+
+### The finding is that a measured win had been sitting unshipped
+
+Phase E ran three arms and produced exactly one win. E1b measured held-out `test recall_strict`
+`0.471 -> 0.529` and was committed on 2026-09-20. `main` stayed at `1ee6ea9`. So for the whole
+of that day, **every real user was served the 0.471 arm** while the repo''s own documentation
+said Phase E "costs zero quota and *improves* the system".
+
+Nothing was broken. The branch was correct, the numbers were correct, the docs were honest.
+The improvement simply had no path to a user, and no step in the phase owned putting it there.
+**A playbook that ends at "measured and committed" will produce exactly this.** E5 should own a
+ship gate, not just a re-baseline.
+
+### Why the prune was cheap, and why that was worth checking first
+
+Two declined arms (E2a BM25/RRF, E3a corpus-derived synonyms) sat **on top of** the E1 work, not
+interleaved with it. `3d280fb` -> `9748086` -> `9416fef` is a clean linear prefix sitting directly
+on `main`, carrying **no BM25 code, no auto-synonym code and neither JSON artifact**.
+
+That made "ship the win, drop the rest" a **branch point** — `git switch -c phase10/ship-e1b
+9416fef` — rather than a cherry-pick or a revert. Zero conflicts, and nothing to get wrong.
+
+**This was luck that is worth converting into habit.** It held because each arm was committed
+measure-only and self-contained, in order, without amending earlier commits. Had E2a touched
+`src/rag.py` or E3a rebased over E1b, the same decision would have needed a revert and a re-run.
+**Commit ablations as append-only prefixes and the decline-later option stays free.**
+
+### What was deliberately NOT merged, and the size of it
+
+~400 lines of inert `src/retrieve.py` consumers, three ablation harnesses, and **36,636 lines of
+JSON artifact** — all of which would have shipped in the Render image for **no runtime purpose**,
+since nothing on the shipping path calls any of it and every arm lost.
+
+The **findings** are the valuable half of a negative result, and they were merged in full:
+both amendment boxes, both Results sections, the arm tables, the `none`-arm disagreement. The
+**code** is retained on `phase10/retrieval-quality` at `a6016e4`, now pushed to `origin` as an
+archive. Every reference on `main` points at that branch and says "do not rebuild".
+
+**Merging a finding is not the same as merging its implementation**, and conflating the two is
+how a repo accumulates dead weight that later reads as endorsed.
+
+### Verifying on the tree that actually deploys, not the tree that was measured
+
+E1b''s numbers were first measured on a tree that *also* carried E2a/E3a''s inert code. Inert is
+an argument, not a measurement, so the whole battery was re-run on the pruned tree **and again on
+the merged tree before the push**: `0.734 / 0.573 / 0.529` exact, `0/212` refusal disagreements,
+both `eval_phase06` digests exact, 137/137, `MIN_SCORE` 0.10, `requirements.txt` byte-identical.
+
+The live smoke is the piece that actually closed the loop. **Checking that the site loads proves
+nothing** — the old build loads too. What proves the deploy is that the penalties query renders
+**"9 more excerpt(s)"** where the old budget renders **"3 more"**, and that its **12 citation tags
+match the local measurement in order**. Pick a live check that can only pass on the new code.
+
+### Two doc defects the browser found that no harness could
+
+1. **`top_n` is a ceiling, not a count.** `app.py:256` says "3 inline + 9 folded" flatly. But
+   `MIN_SCORE` trims below `top_n`, so across six realistic queries the shown count was
+   **7 / 12 / 9 / 7 / 7 / 6 — mean 8 of a max 12**. The very first turn smoked showed "4 more".
+   I had been about to report "3 inline + 9 folded" as confirmed, because that is what the plan
+   and the docstring both said. **Looking at the thing is what caught it.**
+2. **Two byte-identical excerpt cards** can appear (same tag, text and score). The tempting
+   conclusion was "the wider budget surfaces duplicates". **Measured instead of assumed: it
+   reproduces exactly at the old `k=3/doc, top_n=6`.** E1b did not cause it. A new change is the
+   obvious suspect for a defect noticed right after it — and that is precisely why the old arm
+   has to be run before the claim is made.
+
+Neither was fixed; both are recorded. `app.py:256` shipped inside `9748086` and correcting it
+would have meant editing a tree that had already passed its full verification.
+
+### Cost, stated because it is easy to leave out
+
+12 chunks in the Gemini prompt instead of 6 **roughly doubles prompt tokens per call**. Free tier
+counts **calls**, not tokens, so the 40/day budget is untouched — but latency rises and Phase G''s
+~30-call judge run gets more expensive per call. A change that is free on the metric you happen to
+track is not necessarily free.
+
+### Carried forward
+
+- **The hand synonym map has no held-out evidence it is worth having.** dev says keep, `test` says
+  drop, both inside noise, same signs on both corpora. It stays by the declared rule (dev selects),
+  not by proof. **Do not settle it on 17 questions.** The honest outcome may be shipping *less*.
+- **`scripts/probe_embed_quota.py` has still never been run**, so M2 cannot be priced.
+- **E4 must be re-scoped before it is run** — as written it is inert at the shipping budget for
+  E2a''s exact reason, and its one real advantage over E3 (a *pretrained* table contains the six
+  hand keys the corpus never uses) sits on the **expansion** side, not the ranking side.
