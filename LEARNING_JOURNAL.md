@@ -2737,3 +2737,127 @@ would have invalidated the `MIN_SCORE` calibration by construction.
 Ordering-only, pool 10 / 20 / 40, unpinned, RRF, unigram-only — all seven arms live in
 `scripts/ablate_rerank.py` and re-run in about a minute. The BM25 code stays in `src/retrieve.py`
 behind `rerank=None`. **E2 is declined, not deferred**; the next session should not re-run this.
+
+## 2026-09-20 — Phase E3a: the corpus-derived synonym map, measured once and declined
+
+Zero Gemini calls. `measure(phase10-E3a)` on `phase10/retrieval-quality`, unmerged and unpushed.
+Nothing on the shipping path moved: `SYNONYMS`, `expand_query` and the two-sided expansion gate
+are unchanged, and `src/rag.py` / `app.py` were not edited.
+
+### The result
+
+Four arms, budget fixed at E1b's `k=4/doc, top_n=12`, `recall_strict`, corpus v2:
+
+| arm | frozen-10 (fitted) | dev (selector) | test (check) |
+|---|---|---|---|
+| A hand map (control) | 0.734 | 0.573 | 0.529 |
+| B auto map | 0.601 | **0.387** | 0.382 |
+| C no expansion | 0.634 | 0.500 | **0.588** |
+| D hand ∪ auto | 0.702 | 0.440 | 0.382 |
+
+The auto map loses everywhere and **never wins a single question on any set** — 0 up / 13 down
+across 52 answerable rows. That is not a tuning problem.
+
+### What I got wrong going in
+
+I expected E3 to be the arm that could work. The reasoning was clean and I still think it was the
+right reasoning: E2a declined BM25 because it only **reweights terms the query already has**, so
+it fails wherever the query and the chunk do not share words; synonym expansion **adds terms the
+query lacks**, so it is a genuinely different mechanism and the one thing in this playbook that
+could cross vocabulary mismatch without a semantic model. That prediction was testable and it was
+wrong.
+
+The failure mode was not the one I was watching for. I was braced for the auto map to be *inert* —
+to fire rarely and change little. It did the opposite: post-gate it expanded **58/60** questions
+against the hand map's 32/60, changed the displayed set on **59/60**, and appended a **median 8**
+terms, saturating the cap on nearly every query. **The mechanism that adds terms the query lacks is
+the same mechanism that buries the terms it has.** Expansion *mass*, not expansion *quality*, was
+the dominant effect, and it shows up most sharply in the one place it should have helped: pooled
+`vocab-mismatch` strict fell **0.479 → 0.229**. The arm halved the recall of the class that
+justified building it.
+
+### The structural limit was knowable in advance, and I checked it in advance
+
+Before measuring, a read-only probe showed that **6 of the 34 hand keys — `fined`, `fired`, `jail`,
+`job`, `lawyer`, `sack` — do not occur in the corpus at all**. Those are precisely the
+user-register bridges: what a person types, against what the Act writes ("terminate the employment
+of"). A generator over corpus vocabulary **cannot emit them at any parameter setting**. Knowing
+that before the run is what put arm D (hand ∪ auto) in the design — without it, a loss for B would
+have been ambiguous between "the method is wrong" and "the method is missing 18% of the map by
+construction". D lost too (dev −0.133), which disambiguates it: restoring the missing keys does not
+rescue the method. Designing the disambiguating arm *before* seeing the result is the part worth
+keeping.
+
+A related trap I nearly wrote into the docs: the generator's own output initially reported "17 hand
+keys absent from the corpus term space", conflating two very different absences — words the corpus
+**never uses** (unreachable by any corpus-derived method) and words it uses too rarely to survive
+`min_df` (unreachable by *this parameterisation*). Only the first is a property of the approach.
+The script now prints the three buckets separately.
+
+### The discipline that makes the negative worth believing
+
+The playbook's warning was that the hand map was curated by its effect on Q1–Q10, so building the
+automatic one the same way would spend the effort and learn nothing. So: the generator **never
+reads `data/eval/questions.json`**, every filter was declared a priori with a principle that does
+not mention a metric (`min_df=5`, `max_df=0.20`, alphabetic + `len>=4`, 4 neighbours per key = the
+hand map's own median, `min_cos=0.50`), `AUTO_MAX_TERMS=8` was fixed before measuring, and **the
+map was built once and measured once.** When the result came back at −0.187 on dev, the temptation
+was immediate and obvious — raise `min_cos`, drop the cap, prune the map — and every one of those
+moves would have been the fitted-map mistake wearing a new name. Map size and post-gate firing rate
+are reported as first-class columns *next to recall* precisely so that dilution is **priced rather
+than dialled out**.
+
+### The bug that only the second control caught
+
+`ablate_rerank.py` established that a harness should reproduce a number it did not produce. Here I
+gated on two, at opposite ends: arm A must reproduce E1b (0.734/0.573/0.529), and arm C must
+reproduce `ablate_phase08.py`'s independently published expansion-off figure on frozen-10 (0.634).
+
+The second one earned its place immediately. The draft harness computed each arm's effective query
+correctly, then called `ret.query()` — which resolves `expand_query` as a **module global**. So it
+measured the shipping map four times while printing four different arm labels, and **the arm A
+check passed perfectly the whole time**, because arm A *was* the shipping map. A control that only
+checks the control arm cannot detect a harness that ignores its arm argument. Arms are now swapped
+by monkeypatching `retrieve.expand_query` (the technique `ablate_phase08.py` already uses),
+restored in a `finally`.
+
+**Generalisable:** a self-check on the control arm proves the *pipeline* runs; it says nothing
+about whether the *independent variable* is connected. Gate on at least one non-control arm whose
+value was published elsewhere.
+
+### The finding I am least comfortable with, stated plainly
+
+Arm C — turning expansion off entirely — is a real dev/test disagreement, and I am not going to
+round it off. `C − A` is `−0.100 / −0.073 / +0.059` on v2 and `−0.100 / −0.047 / +0.088` on v1:
+**the same sign on every set across both corpora.** frozen-10's −0.100 is not evidence at all, since
+that is the set the hand map was fitted to. dev (n=25) favours the hand map by ≈1.8 questions. And
+**test (n=17), the only uncontaminated set left in the project, favours turning the map off — by
+exactly one question.**
+
+Both deltas sit inside sampling noise. The rule declared before measuring (dev selects, test
+checks) keeps the hand map, and so does the tie-break that changing a shipping path requires
+positive evidence and there is none. That is the decision. But the weaker statement is the honest
+one and it goes in the record: **after two sessions we still have no held-out evidence that the
+hand map is worth having, and the one clean set says the opposite.** Resolving it on 17 questions
+would be exactly the over-reading this project keeps catching itself in; it is an E5 item.
+
+### What this hands to E4 — both halves
+
+This is the **second consecutive phase** in which a term-level lexical signal failed to reach the
+`+0.206` pool headroom. E2a failed because BM25 is the same lexical family as TF-IDF cosine. E3a
+failed because adding associated terms dilutes faster than it bridges. E3a was the arm that was
+*supposed* to be different in kind, and it was — it just lost anyway, and lost worst on its target
+class.
+
+The comfortable reading is that this strengthens the case for E4's semantic arm, since nothing
+lexical has worked. The uncomfortable reading is that a static-embedding blend is **also term-level
+association**, built from co-occurrence statistics, and will append or re-weight on the same
+principle that has now failed twice. Both readings are in the playbook. **E4's ship gate should be
+strict, and E4 should go in prepared to be declined** — which, on this evidence, is the more likely
+outcome.
+
+### Declined, recorded, not dropped
+
+All four arms live in `scripts/ablate_synonyms.py` and re-run in about a minute on either corpus.
+The generator, both artifacts and the opt-in consumer are committed so nobody rebuilds this to
+re-learn it. **E3 is declined, not deferred.**

@@ -2,7 +2,11 @@
 
 **Status:** **ACTIVE.** **E1 DONE and SHIPPED 2026-09-20** (`3d280fb` + `9748086`) · **E2
 MEASURED and DECLINED 2026-09-20** (`measure(phase10-E2a)` — see the amendment box on E2) ·
-**NEXT IS E3.** Zero Gemini quota spent in the phase so far, and none is needed for E3–E4.
+**E3 MEASURED and DECLINED 2026-09-20** (`measure(phase10-E3a)` — see the amendment box on E3;
+all four arms lose, the auto map halves its own target class, `SYNONYMS` unchanged) ·
+**NEXT IS E4 — and read E3a's point 6 before scheduling it: two consecutive term-level arms have
+now failed to reach the pool headroom, and E4 is also term-level.**
+Zero Gemini quota spent in the phase so far, and none is needed for E4.
 *(This line read "planned, not yet started" until 2026-09-20.)*
 **Runs after:** Phase D (`12_corpus_v2.md`) — **COMPLETE, MERGED to `main` and DEPLOYED
 2026-09-19 (`8682869`).** `CORPUS_VERSION = "v2"` is the default **and is what users are now
@@ -338,6 +342,74 @@ are attributable.
 ---
 
 ### E3 — Replace the hand-written synonym map with a corpus-derived one
+
+> ## ⚠ AMENDED 2026-09-20 (E3a, `measure(phase10-E3a)`). **THE AUTO MAP LOSES ON EVERY SET AND MAKES ITS OWN TARGET CLASS WORSE. E3 SHIPS NOTHING.**
+>
+> Four arms, budget fixed at E1b's `k=4/doc, top_n=12`, `recall_strict`, corpus v2
+> (`scripts/ablate_synonyms.py`; map from `scripts/build_synonyms.py`, PPMI + truncated SVD over
+> term-chunk co-occurrence, **built without reading `data/eval/questions.json`**):
+>
+> | arm | frozen-10 (fitted) | **dev (SELECTOR)** | test (check) |
+> |---|---|---|---|
+> | **A hand map (control = E1b)** | **0.734** | **0.573** | **0.529** |
+> | B auto map (corpus-derived) | 0.601 (−0.133) | 0.387 (**−0.187**) | 0.382 (−0.147) |
+> | C **no expansion at all** | 0.634 (−0.100) | 0.500 (−0.073) | **0.588 (+0.059)** |
+> | D hand ∪ auto | 0.702 (−0.032) | 0.440 (−0.133) | 0.382 (−0.147) |
+>
+> **1. Arm B is declined on evidence that is not close.** It loses on all three v2 sets and, on the
+> per-question breakdown, **gains not one single question anywhere**: `0 up / 3 down` on frozen-10,
+> `0 up / 7 down` on dev, `0 up / 3 down` on test — **0 up / 13 down across 52 answerable rows.** A
+> loss that never once wins is not a tuning problem.
+>
+> **2. It made the class it exists to fix WORSE, by half.** Pooled `vocab-mismatch` strict (n=18)
+> falls **0.479 → 0.229**. Per set: `0.562/0.500/0.438` → `0.312/0.312/0.125`. This is the specific
+> class E3 was justified on and the one E4's ship gate reads.
+>
+> **3. It fired hard, so this is dilution, not inertness.** Post-gate, the auto map expanded
+> **58/60** questions (the hand map expands 32/60) and changed the displayed set on **59/60**,
+> appending a **median 8** terms — i.e. saturating `AUTO_MAX_TERMS` on nearly every query. The hand
+> map appends a median 4 to about half as many questions. **Expansion MASS, not expansion quality,
+> is the dominant effect**, and the mechanism that "adds terms the query lacks" is the same one that
+> buries the terms it has.
+>
+> **4. Why a corpus-derived map cannot be rescued by better parameters.** Chunk-level co-occurrence
+> over a corpus that is **2037 of 2134 chunks Constitution** yields topical association within
+> constitutional register — `penalty → complaint, award, level, runs, week, revoke`. And the keys a
+> user actually needs are structurally unreachable: **6 of the 34 hand keys — `fined`, `fired`,
+> `jail`, `job`, `lawyer`, `sack` — do not occur in the corpus at all**, and 11 more fall below the
+> a priori `min_df`/length filters. Those six are exactly the user-register bridges ("can they sack
+> me" → "terminate the employment of"). **No corpus-derived generator emits them at any parameter
+> setting.** Arm D exists precisely to test whether restoring them rescues the method: it does not
+> (dev −0.133, test −0.147).
+>
+> **5. Arm C is the real finding, and it is a genuine dev/test disagreement — not a win for either
+> side.** `C − A` is **−0.100 / −0.073 / +0.059** on v2 and **−0.100 / −0.047 / +0.088** on v1:
+> **the same sign on every set across both corpora.** Read it honestly:
+> * frozen-10's −0.100 is **not evidence**. That is the set the hand map was fitted to; it is
+>   measuring memorisation, which is the whole reason `evalset.py` exists.
+> * dev (n=25) favours the hand map by 0.073 ≈ **1.8 questions**.
+> * test (n=17), **the only clean set left**, favours *no expansion* by 0.059 = **exactly 1
+>   question**.
+>
+> Both live inside sampling noise. **The declared rule — dev selects, test checks — keeps the hand
+> map, and so does the tie-break that a change to the shipping path requires positive evidence and
+> there is none.** But record the weaker statement plainly: **after two sessions we still have no
+> held-out evidence that the hand map is worth having**, and the one uncontaminated set says the
+> opposite. That is an E5 item, not something to settle on 17 questions.
+>
+> **6. What this hands to E4, including the uncomfortable half.** This is the **second consecutive
+> phase** in which a term-level lexical signal failed to reach the `+0.206` pool headroom — E2a
+> because BM25 only reweights terms the query has, E3a because adding associated terms dilutes
+> faster than it bridges. E3a was supposed to be the arm that *could* cross vocabulary mismatch
+> without a semantic model; it crossed nothing and cost 0.187 on the selector. **That is evidence
+> for E4's semantic arm and evidence against it at the same time**: a static-embedding blend is also
+> term-level association, and it will append or re-weight on the same principle that just failed
+> twice. **E4's ship gate should be strict, and E4 should be prepared to be declined.**
+>
+> **VERDICT: E3 IS DECLINED IN FULL — B, C and D all stay off; `SYNONYMS` and `expand_query` are
+> unchanged.** The generator, the artifact, the opt-in consumer and the harness are committed so
+> nobody re-runs the experiment, but **nothing on the shipping path moved.** Full detail in
+> **Results**.
 
 Zero quota at runtime. Build-time may use free Colab.
 
@@ -676,3 +748,88 @@ likely to be informative.
 **Declined, recorded, not dropped:** the ordering-only arm (`0b`, +0.000 by construction), pool
 depths 10 / 20 / 40, the unpinned variant, RRF, and unigram-only BM25. All seven live in
 `scripts/ablate_rerank.py:ARMS` and re-run in about a minute.
+
+### E3a — 2026-09-20. Zero Gemini calls. **MEASURE-ONLY: nothing on the shipping path moved.**
+
+Commit **`measure(phase10-E3a)`** on `phase10/retrieval-quality`. One source file
+(`src/retrieve.py`, opt-in and default-off), two new scripts (`scripts/build_synonyms.py`,
+`scripts/ablate_synonyms.py`), two artifacts (`data/processed/synonyms_auto.json` and its v1 twin),
+the E3 amendment box above. `src/rag.py` and `app.py` were **not edited in this session**.
+
+**HEADLINE: the corpus-derived map loses on every set, never wins a single question, and halves
+the recall of the exact class it was built to fix. E3 ships nothing.** The arm table, the
+structural reason a corpus-derived generator cannot reach the user register, and the arm C
+dev/test disagreement are in the amendment box on the E3 step above — recorded there rather than
+only here so that a reader of the *step* cannot act on the superseded text.
+
+**THE ONE RULE THIS STEP EXISTED TO RESPECT, AND HOW IT WAS ENFORCED.** The playbook's warning was
+that the hand map was curated by its effect on Q1–Q10, so building the automatic one the same way
+would spend the effort and learn nothing. `scripts/build_synonyms.py` **never reads
+`data/eval/questions.json`**, and every filter is declared a priori with a stated principle that
+does not mention a metric — `min_df=5` (fewer occurrences give no usable co-occurrence
+statistics), `max_df=0.20` (drops `person`/`act`/`section`/`shall` boilerplate, otherwise
+everyone's nearest neighbour), alphabetic and `len>=4` (numbers are citation refs), 4 neighbours
+per key (the hand map's own median), `min_cos=0.50` (weak keys emit **nothing** rather than noise).
+None was moved after seeing a result. **The map was built once and measured once**, which is what
+makes the −0.187 on dev believable rather than an artifact of a bad draw.
+
+**The harness validates itself at BOTH ends, and the second check caught a real bug.** Arm A must
+reproduce E1b (0.734 / 0.573 / 0.529) *and* arm C must reproduce `ablate_phase08.py`'s
+independently published expansion-off figure on frozen-10 (**0.634**, printed by that script as
+`MEAN 0.634 -> 0.734 (strict)` since Phase 08). Both are gated in-script on v2 and print
+PASS. Checking only arm A would not have been enough: the draft of this harness computed each arm's
+effective query correctly but then called `ret.query()`, which resolves `expand_query` as a module
+global — so it measured the **shipping map four times while printing four different arm labels**,
+and the arm A check passed perfectly throughout. The arm is now swapped by monkeypatching
+`retrieve.expand_query` (the technique `ablate_phase08.py:118-149` already uses), restored in a
+`finally`.
+
+**The firing rate is POST-GATE, and that distinction is load-bearing.** `PerDocRetriever.query()`
+scores the original query first and discards an expansion that cannot clear `MIN_SCORE`, so a
+pre-gate count would overstate every arm. Measured post-gate: hand **32/60**, auto **58/60**, union
+**59/60**, none 0/60. Terms appended, median/max: hand 4/12, auto 8/8 (**saturating the cap on
+nearly every query**), union 11/19.
+
+**`AUTO_MAX_TERMS = 8` is a declared cap, not a tuned one.** It was fixed before measuring, and the
+harness reports map size and firing rate as first-class columns precisely so dilution is **priced
+rather than dialled out**. The auto map has **1063 keys / 3952 terms** against the hand map's **34 /
+121** — ~30× — because it covers the whole corpus vocabulary rather than 34 curated user-register
+words. That size *is* the finding; lowering the cap or raising `min_cos` until the number improved
+would have been the fitted-map mistake with a new name.
+
+**Corpus v1 corroborates, which is what rules out a v2 artifact.** `C − A` is `−0.100 / −0.047 /
++0.088` on v1 against `−0.100 / −0.073 / +0.059` on v2 — **the same sign on every set**. Arm B on
+v1: `0.582 / 0.293 / 0.412`, i.e. −0.171 / −0.240 on the fitted and selector sets. The v1 auto map
+(1102 keys) is built and committed, so `--corpus=v1` reproduces from this commit.
+
+**What moved in `src/retrieve.py`, and what deliberately did not.** Added: `AUTO_MAX_TERMS`,
+`auto_synonyms_path()`, `load_auto_synonyms()` (lazy, cached, returns `{}` when the artifact is
+absent so a checkout without it behaves exactly as today), `auto_terms()` and `expand_query_auto()`
+— which mirrors `expand_query`'s contract exactly (original query plus appended terms, never a
+replacement; deterministic; deduped; capped). **Not touched: `SYNONYMS`, `expand_query`, and the
+two-sided gate in `PerDocRetriever.query()`.** Leaving `SYNONYMS` alone is what keeps
+`calibrate_refusal.py` at exactly **106 probes / 212 runs** with byte-identical output, since
+`calibrate_refusal.py:150` builds 34 of its probes from that map's keys. Leaving the gate alone is
+what makes refusal invariance hold for *any* map: **0 false refusals in all four arms**, which is a
+property of the gate rather than of the map's contents.
+
+**"The only new output in the repo is the new harness's" — verified by diff, not by assertion.**
+Captured to `D:\e3_baseline\` **before the first edit** and re-run after: `eval_heldout`,
+`ablate_phase10`, `ablate_phase08`, `bench_phase01`, `audit_corpus`, `eval_chat`,
+`calibrate_refusal` and `test_phase09_ops` are **stdout byte-identical**. `ablate_rerank` differs
+in **two lines, both wall-clock** (`build time: bm25 off 0.88s -> on 1.44s`); no metric moved.
+`test_phase05` differs only in Streamlit's timestamped bare-mode warning (**137/137** either way).
+`eval_phase06` differs only in the `--out=` path it echoes; **digest identical**
+(`2429cafc…`). `calibrate_refusal` **PASS, 0/212**. `test_phase09_ops` **ALL PASS**. `import app`
+clean, no server. `MIN_SCORE` still `0.10`. `git diff main -- requirements.txt` empty.
+`scripts/eval_tmp.json` left untracked.
+
+**The generator is deterministic, checked rather than claimed.** Two consecutive runs produced a
+byte-identical file (sha256 `3F6E9B77…`). SVD `random_state` is fixed, neighbour ties break on the
+term string, keys are written sorted, and `_meta.built` — the one field that would otherwise move
+across days — is **preserved from the existing file whenever the corpus sha256 is unchanged**, so
+it records when the map was derived rather than when the script last ran.
+
+**Declined, recorded, not dropped:** the auto map (arm B), the union (arm D), and no-expansion
+(arm C). All four arms live in `scripts/ablate_synonyms.py:make_arms` and re-run in about a minute
+on either corpus.

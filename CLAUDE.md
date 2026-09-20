@@ -28,6 +28,8 @@ C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn 
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase08.py       # retrieval ablations
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase10.py       # (k, top_n) width ladder, measure-only, never gates
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_rerank.py        # BM25/RRF selection re-rank arms, measure-only (E2a: all DECLINED)
+C:\conda-envs\drlca-rag\python.exe scripts\build_synonyms.py       # derives data/processed/synonyms_auto.json (PPMI+SVD); NEVER reads the eval set
+C:\conda-envs\drlca-rag\python.exe scripts\ablate_synonyms.py      # hand/auto/none/union expansion arms, measure-only (E3a: all DECLINED)
 C:\conda-envs\drlca-rag\python.exe scripts\calibrate_refusal.py    # refusal invariance, 212 probes, 0 disagreements
 C:\conda-envs\drlca-rag\python.exe scripts\eval_phase06.py --out=scripts\eval_tmp.json
 C:\conda-envs\drlca-rag\python.exe -c "import app"                 # boot-import smoke (must not start a server)
@@ -125,6 +127,15 @@ loss — leave it off.** `Hit.score` stays cosine under every arm by design, so 
 calibration is untouched; the `pin_top` guard keeps each doc's cosine argmax in its slots, which is
 what preserves the refusal-invariance *proof* rather than merely the observation.
 
+`src/retrieve.py` also carries a corpus-derived query expansion consumer (Phase E3a):
+`load_auto_synonyms()` / `auto_terms()` / `expand_query_auto()` over
+`data/processed/synonyms_auto.json`, built by `scripts/build_synonyms.py`. **Nothing on the
+shipping path calls it, E3a measured every arm as a loss, and it stays off.** The shipping
+expander is still the hand-written `SYNONYMS` + `expand_query`, and **`SYNONYMS` must not be
+edited casually**: `calibrate_refusal.py:150` builds 34 of its 106 probes from that map's keys, so
+touching it moves that suite off **212 runs** and requires a fresh calibration. `load_auto_synonyms()`
+returns `{}` when the artifact is missing, so a checkout without it behaves identically.
+
 > **"Act section-aware 800" is misleading — recorded 2026-09-17.** `chunk.SECTION_RE`
 > (`Section \d+.*`) matches only **4 times** in the entire cleaned Act text, and all four
 > sit at 89.8%+ of the document (Second Schedule + Forms). So `section_aware_split` yields
@@ -212,7 +223,7 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   Held-out `test` strict recall 0.471 → 0.529, dev 0.473 → 0.573, frozen-10 0.633 → 0.734, false
   refusals still 0/10 · 0/25 · 0/17, `MIN_SCORE` untouched. Zero Gemini calls.**
   **E2 is MEASURED AND DECLINED 2026-09-20 — `measure(phase10-E2a)`, measure-only, nothing on the
-  shipping path moved. NEXT IS E3.** BM25 does not help here and **do not re-run the experiment**:
+  shipping path moved.** BM25 does not help here and **do not re-run the experiment**:
   `scripts/ablate_rerank.py` keeps all seven arms. As written, E2 was an *ordering* change, which
   E1b made **provably inert** (`top_n == 3k` ⇒ `select_top` returns all 12 *and* re-sorts by score;
   every recall metric scores a **set**) — measured at `+0.000` while re-ordering 55/60 questions.
@@ -224,6 +235,28 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   D6's "chunk length is the mechanism, therefore BM25" prediction is **measured false**; `b` is the
   length knob and sweeping it does not recover the class (it does show the arm is knife-edge on
   `b`, which is further evidence against shipping).
+  **E3 is MEASURED AND DECLINED IN FULL 2026-09-20 — `measure(phase10-E3a)`, measure-only, nothing
+  on the shipping path moved. NEXT IS E4.** `SYNONYMS`, `expand_query` and the two-sided expansion
+  gate are **unchanged**. **Do not re-run it**: all four arms live in `scripts/ablate_synonyms.py`.
+  `recall_strict` frozen-10 / dev / test — hand (control) **0.734 / 0.573 / 0.529** · auto
+  (corpus-derived) 0.601 / **0.387** / 0.382 · none 0.634 / 0.500 / **0.588** · hand∪auto
+  0.702 / 0.440 / 0.382. **The auto map loses on every set and gains not one question anywhere**
+  (0 up / 13 down of 52), and it **halves its own target class** — pooled `vocab-mismatch` strict
+  0.479 → **0.229**. It is **dilution, not inertness**: post-gate it expands 58/60 questions
+  (hand 32/60), changes the displayed set on 59/60, and appends a median 8 terms. **The method
+  cannot be parameterised out of it** — **6 of the 34 hand keys (`fined`, `fired`, `jail`, `job`,
+  `lawyer`, `sack`) do not occur in the corpus at all**, and those are exactly the user-register
+  bridges; the union arm tested whether restoring them rescues the method and it does not.
+  ⚠ **The `none` arm is a genuine dev/test DISAGREEMENT, not a win for either side**: `C − A` is
+  `−0.100 / −0.073 / +0.059` on v2 and `−0.100 / −0.047 / +0.088` on v1 — same sign on every set,
+  both corpora. frozen-10's loss is **not evidence** (it is the fitted set); dev favours the hand
+  map by ≈1.8 questions; **`test`, the only clean set, favours turning the map off by exactly 1.**
+  Both inside noise. **Dev selects and test checks, so the hand map stays** — but record that **we
+  still have no held-out evidence it is worth having. That is an E5 item; do not settle it on 17
+  questions.** ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level
+  lexical signal failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to be
+  different in kind. A static-embedding blend is **also term-level association** — **E4's ship gate
+  should be strict and E4 should be prepared to be declined.**
   ⚠ **E1 did NOT ship what its own playbook specified**, and the reason generalises:
   **`k=20/doc` measures `+0.000` on test.** The knob was `top_n == 3k`, and a wider pool at an
   unchanged budget is a **regression on all three sets** (the spare slots go to the global top,

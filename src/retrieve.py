@@ -353,6 +353,126 @@ def expand_query(q: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Corpus-derived query expansion -- OPT-IN, OFF, and unreferenced by the
+# shipping path (Phase E3a, added 2026-09-20).
+#
+# The map above is hand-written and was curated against Q1..Q10, which is why
+# frozen-10 read 0.925 while held-out read 0.420. E3 asks whether a map derived
+# from corpus text ALONE -- no sight of any eval question -- does better, and
+# whether either beats turning expansion off entirely
+# (docs/phases/13_retrieval_quality.md, E3). scripts/build_synonyms.py derives
+# it (PPMI + truncated SVD over term-chunk co-occurrence); this block is the
+# consumer; scripts/ablate_synonyms.py is the only caller.
+#
+# WHAT IS DELIBERATELY NOT TOUCHED HERE, and why each one matters:
+#
+#   * SYNONYMS is not edited. scripts/calibrate_refusal.py:150 builds 34 of its
+#     106 probes from retrieve.SYNONYMS keys, so leaving the map alone keeps
+#     that suite at exactly 106 probes / 212 runs and its output
+#     byte-identical. A map that SHIPS would move those numbers, which is why
+#     rebuilding the probe set is on the (separate) ship decision, not here.
+#   * expand_query is not edited, and neither is the two-sided gate in
+#     PerDocRetriever.query(). The playbook is explicit that the gate stays as
+#     is, and the gate is what makes refusal invariance hold for ANY map: the
+#     ORIGINAL query is scored first and an expansion that cannot clear the
+#     floor is discarded, so expansion "never turns a refusal into an answer,
+#     and never turns an answer into a refusal" regardless of what is appended.
+#     That property is a consequence of the gate, not of the map's contents,
+#     so it survives swapping the map underneath it.
+#
+# A checkout without data/processed/synonyms_auto.json behaves exactly as
+# today: load_auto_synonyms() returns {} and expand_query_auto() is the
+# identity. The artifact is measurement input, not a runtime dependency.
+
+# Consumer-side cap on appended terms, declared a priori. The hand map has 34
+# keys on purpose; the generator emits ~1,060 over the whole corpus vocabulary,
+# so without a cap a single question can fire a dozen keys and bury the user's
+# own wording under expansion mass. 8 is roughly two hand-map entries' worth.
+# THE CAP IS NOT A TUNING KNOB -- scripts/ablate_synonyms.py reports terms
+# appended and post-gate firing rate as first-class numbers precisely so that
+# dilution is priced rather than dialled out.
+AUTO_MAX_TERMS = 8
+
+_AUTO_CACHE: dict[str, dict] = {}
+
+
+def auto_synonyms_path() -> str:
+    """Default artifact path. Corpus v1's map lives beside it under its own
+    name, so both can exist and `--corpus=v1` reproduces from this commit."""
+    from pathlib import Path as _Path
+    return str(_Path(__file__).resolve().parent.parent
+               / "data" / "processed" / "synonyms_auto.json")
+
+
+def load_auto_synonyms(path: str | None = None) -> dict:
+    """{stemmed_key: ((term, cosine), ...)} from the generated artifact.
+
+    Lazy and cached on the path, so the ablation's four arms share one parse
+    and the module costs nothing at import time. Returns {} when the file is
+    absent or unreadable -- a missing artifact must degrade to "no expansion",
+    never to an exception on a user's query path.
+
+    Cosines are carried through rather than discarded: the cap in
+    expand_query_auto has to compare neighbours ACROSS the several keys one
+    query can fire, which rank-within-a-key cannot express.
+    """
+    p = auto_synonyms_path() if path is None else path
+    if p not in _AUTO_CACHE:
+        import json as _json
+        import os as _os
+        out: dict = {}
+        if _os.path.exists(p):
+            try:
+                with open(p, encoding="utf-8") as fh:
+                    raw = _json.load(fh)
+                out = {k: tuple((t, float(c)) for t, c in v)
+                       for k, v in raw.get("map", {}).items()}
+            except (ValueError, OSError, TypeError):
+                out = {}
+        _AUTO_CACHE[p] = out
+    return _AUTO_CACHE[p]
+
+
+def auto_terms(q: str, path: str | None = None) -> tuple[str, ...]:
+    """The terms expand_query_auto() would append, highest cosine first.
+
+    Exposed separately from expand_query_auto so the ablation's union arm can
+    merge these with the hand map's terms without doing string surgery on an
+    expanded query. Deterministic: ties break on the term string, terms already
+    present in the query are dropped (appending a word the query has only
+    re-weights it, which is BM25's job and not this step's), and the result is
+    truncated to AUTO_MAX_TERMS.
+    """
+    amap = load_auto_synonyms(path)
+    if not amap:
+        return ()
+    forms = _surface_forms(q)
+    best: dict[str, float] = {}
+    for key in forms:
+        for term, cos in amap.get(key, ()):
+            if term in forms:
+                continue
+            if cos > best.get(term, -1.0):
+                best[term] = cos
+    ranked = sorted(best.items(), key=lambda p: (-p[1], p[0]))
+    return tuple(t for t, _ in ranked[:AUTO_MAX_TERMS])
+
+
+def expand_query_auto(q: str, path: str | None = None) -> str:
+    """expand_query's contract, backed by the corpus-derived map.
+
+    Returns the ORIGINAL query plus appended terms, never a replacement --
+    identical shape to expand_query, so PerDocRetriever.query()'s two-sided
+    gate treats the two interchangeably and the ablation can swap arms by
+    substituting this for that.
+    """
+    extra = auto_terms(q, path)
+    if not extra:
+        return q
+    return q + " " + " ".join(extra)
+
+
+# ---------------------------------------------------------------------------
 # BM25 -- a SELECTION signal, never a score (Phase E2a, added 2026-09-20).
 #
 # TEXTBOOK DEFAULTS. These are Robertson's original values and they are NOT to
