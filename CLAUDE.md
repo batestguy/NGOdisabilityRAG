@@ -27,6 +27,7 @@ C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py         # held-out re
 C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn set, 22 conv / 62 turns
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase08.py       # retrieval ablations
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase10.py       # (k, top_n) width ladder, measure-only, never gates
+C:\conda-envs\drlca-rag\python.exe scripts\ablate_rerank.py        # BM25/RRF selection re-rank arms, measure-only (E2a: all DECLINED)
 C:\conda-envs\drlca-rag\python.exe scripts\calibrate_refusal.py    # refusal invariance, 212 probes, 0 disagreements
 C:\conda-envs\drlca-rag\python.exe scripts\eval_phase06.py --out=scripts\eval_tmp.json
 C:\conda-envs\drlca-rag\python.exe -c "import app"                 # boot-import smoke (must not start a server)
@@ -118,6 +119,12 @@ docstring calls invalid — never discards anything. Widening `k` *without* hold
 global top and the Constitution owns it. Neither `k` nor `top_n` can move a refusal: the
 top-score vector is byte-identical from k=3 to k=20.
 
+`PerDocRetriever` also takes `rerank=("bm25"|"rrf")` with `pool_per_doc`/`pin_top` (Phase E2a).
+**It defaults to `None`, nothing on the shipping path passes it, and E2a measured every arm as a
+loss — leave it off.** `Hit.score` stays cosine under every arm by design, so the `MIN_SCORE`
+calibration is untouched; the `pin_top` guard keeps each doc's cosine argmax in its slots, which is
+what preserves the refusal-invariance *proof* rather than merely the observation.
+
 > **"Act section-aware 800" is misleading — recorded 2026-09-17.** `chunk.SECTION_RE`
 > (`Section \d+.*`) matches only **4 times** in the entire cleaned Act text, and all four
 > sit at 89.8%+ of the document (Second Schedule + Forms). So `section_aware_split` yields
@@ -203,8 +210,20 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   `phase10/retrieval-quality` off `main` (cut at `1ee6ea9`, **unmerged and unpushed on purpose**).
   **E1 is DONE 2026-09-20 — `3d280fb` (measure-only) + `9748086` (shipped `k=4/doc, top_n=12`).
   Held-out `test` strict recall 0.471 → 0.529, dev 0.473 → 0.573, frozen-10 0.633 → 0.734, false
-  refusals still 0/10 · 0/25 · 0/17, `MIN_SCORE` untouched. Zero Gemini calls. NEXT IS E2 (BM25
-  re-rank inside the existing gate).**
+  refusals still 0/10 · 0/25 · 0/17, `MIN_SCORE` untouched. Zero Gemini calls.**
+  **E2 is MEASURED AND DECLINED 2026-09-20 — `measure(phase10-E2a)`, measure-only, nothing on the
+  shipping path moved. NEXT IS E3.** BM25 does not help here and **do not re-run the experiment**:
+  `scripts/ablate_rerank.py` keeps all seven arms. As written, E2 was an *ordering* change, which
+  E1b made **provably inert** (`top_n == 3k` ⇒ `select_top` returns all 12 *and* re-sorts by score;
+  every recall metric scores a **set**) — measured at `+0.000` while re-ordering 55/60 questions.
+  Moved to *selection* (BM25 picks which `k` of a wider cosine pool each doc contributes) it
+  **fires and loses**: displayed set changes on 51/60, `test` 0.529 → **0.471**, no gain on any set,
+  same on corpus v1. RRF and unigram-only lose less (−0.029), still nothing gains. **The finding
+  that generalises: BM25 is the same lexical family as TF-IDF cosine, so the `+0.206` pool headroom
+  is NOT lexically reachable** — that is evidence for E4's semantic arm, and a caution for E3.
+  D6's "chunk length is the mechanism, therefore BM25" prediction is **measured false**; `b` is the
+  length knob and sweeping it does not recover the class (it does show the arm is knife-edge on
+  `b`, which is further evidence against shipping).
   ⚠ **E1 did NOT ship what its own playbook specified**, and the reason generalises:
   **`k=20/doc` measures `+0.000` on test.** The knob was `top_n == 3k`, and a wider pool at an
   unchanged budget is a **regression on all three sets** (the spare slots go to the global top,

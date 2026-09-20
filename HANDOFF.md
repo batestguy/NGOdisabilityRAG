@@ -1,6 +1,97 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-20)
 
-> **LATEST (2026-09-20): PHASE E SESSION 0 + E1 ARE DONE. NEXT IS E2. Zero Gemini calls —
+> **LATEST (2026-09-20, later): E2a IS DONE AND E2 IS DECLINED. NEXT IS E3. Zero Gemini calls —
+> today's spend is still 0.**
+>
+> Commit **`measure(phase10-E2a)`** on `phase10/retrieval-quality` (still **unmerged and unpushed
+> on purpose**). **MEASURE-ONLY: nothing on the shipping path moved.** `src/rag.py` and `app.py`
+> were **not edited**. `MIN_SCORE` still `0.10`. `requirements.txt` byte-identical.
+>
+> **HEADLINE: BM25 DOES NOT HELP THIS CORPUS. DO NOT RE-RUN THE EXPERIMENT** — all seven arms live
+> in **`scripts/ablate_rerank.py`** and re-run in about a minute.
+>
+> **⚠ FIRST, E2 AS THE PLAYBOOK WROTE IT IS A NO-OP — and that is provable by reading the code,
+> not only by measuring.** It specifies re-ordering the already-admitted hits. At the E1b arm
+> `top_n == 3k`, so `select_top` returns **all 12** candidates **and re-sorts them by score**, and
+> every recall metric in the repo scores a **set** (`eval_heldout.py:215-224`,
+> `ablate_phase10.py:145-147`, `eval_phase06.py:286`). Arm `0b` measures it anyway: BM25 re-ordered
+> the displayed chunks on **55 of 60** questions for **exactly `+0.000`** on all three sets, with
+> the displayed **set** changed on **0/60**.
+>
+> **SO IT WAS MOVED ONE STAGE EARLIER, TO SELECTION — and there it FIRES AND LOSES.** BM25 chooses
+> which `k` of a wider cosine pool each doc contributes; cosine still admits, scores, orders and
+> gates. `recall_strict`, corpus v2, every arm showing 12 chunks:
+>
+> | arm | frozen-10 | dev | **test (clean)** | pool ceiling (test) |
+> |---|---|---|---|---|
+> | **0 control (= E1b)** | **0.734** | **0.573** | **0.529** | 0.529 |
+> | 2 bm25 pool=20/doc, pinned (primary) | 0.734 | 0.573 | **0.471 (−0.059)** | **0.735** |
+> | 3 bm25 pool=40/doc | 0.734 | 0.573 | 0.471 | 0.824 |
+> | 5 rrf pool=20/doc | 0.734 | 0.573 | 0.500 (−0.029) | 0.735 |
+> | 6 bm25 unigrams only | 0.748 | 0.580 | 0.500 (−0.029) | 0.735 |
+>
+> **No arm gains on any set.** Corpus v1 corroborates (frozen `0.753 → 0.728`, dev
+> `0.533 → 0.520`), so it is not a v2 artifact. Pool 10 / 20 / 40 are identical to each other, and
+> the unpinned arm is identical to the pinned one.
+>
+> **Sample sizes are n = 10 / 25 / 17, so read the deltas honestly.** One `test` question is worth
+> 0.059 — the primary arm's `−0.059` is **two half-questions**, and `+0.000` means "nothing crossed
+> a threshold", not "provably zero". **The verdict rests on nine arms across two corpora producing
+> no gain anywhere, plus the mechanism below** — not on the size of any single delta.
+>
+> **The mechanism FIRED and bought nothing — that is a different finding from inertness.** The
+> primary arm changed the **displayed set on 51 of 60** questions while per-question strict moved
+> `0 up / 0 down` on frozen-10 and dev and `0 up / 2 down` on test. BM25 is swapping chunks that
+> carry no expected ref, and on two clean questions it swaps out one that does.
+>
+> **⚠ THE REASON GENERALISES, AND IT IS THE USEFUL HALF OF THE NEGATIVE.** BM25 is **the same
+> family of signal as TF-IDF cosine** — lexical term overlap over the same stemmed (1,2)-gram
+> vocabulary, differing only in saturation and length normalisation. Where cosine cannot rank the
+> right chunk into a doc's top-4, neither can BM25, because **the query and the chunk do not share
+> the words**. That is the vocab-mismatch class, still the worst one. **The `+0.206` test headroom
+> to the pool ceiling is NOT lexically reachable** — direct evidence for **E4**'s semantic arm, and
+> a caution for **E3**: a corpus-derived synonym map is also term-level, so E3's *no-expansion* arm
+> is the one most likely to be informative.
+>
+> **D6's length argument is MEASURED FALSE as a prediction.** It called chunk length "the strongest
+> single piece of evidence in the playbook for doing E2 at all". BM25's `b` **is** the length knob
+> and turning it does not recover the class. What the sweep does show is that the arm is
+> **knife-edge on `b`** — test `0.500 / 0.500 / 0.471 / 0.529` at `b = 0.00 / 0.50 / 0.75 / 1.00`, a
+> swing the size of E1b's entire gain. `b=1.00` is the only value that does not lose, and picking it
+> for that reason is exactly how the synonym map was built. **`b` stays at the textbook `0.75`.**
+>
+> **WHY YOU CAN TRUST A NEGATIVE: the harness checks itself against three numbers it did not
+> produce.** Arm 0 reproduces E1b exactly (gated in-script, PASS/PASS/PASS) · arm 2's pool ceiling
+> equals the published `rs@60` **0.904 / 0.733 / 0.735** (`scripts/baseline_v2_2026-09-19.txt:278-281`)
+> · arm 3's equals the published perfect ceiling **0.824** on test.
+>
+> **WHAT LANDED IN `src/retrieve.py`, ALL OPT-IN AND DEFAULT-OFF:** `TfidfRetriever(chunks,
+> bm25=False)` with an Okapi index over the **reused TF-IDF vocabulary** (identical term space by
+> construction, **zero new packages**), and `PerDocRetriever(rerank=None, pool_per_doc=20,
+> pin_top=True)`. **`Hit.score` stays COSINE in every arm** — BM25 chooses, cosine scores, orders
+> and gates — so the calibration block is untouched *by construction*, not by argument. `pin_top`
+> cost **zero** here (arm 4: 0 false refusals, bit-identical top-score vector) and is **kept
+> anyway**, because it is what makes refusal invariance a *proof* on questions nobody has measured.
+>
+> **VERIFIED BY DIFF, NOT BY ASSERTION** (captures in `D:\e2_baseline\`, taken **before** the first
+> edit): `eval_heldout`, `ablate_phase10`, `bench_phase01`, `audit_corpus`, `ablate_phase08`,
+> `eval_chat`, `calibrate_refusal`, `test_phase09_ops` **stdout byte-identical** · `test_phase05`
+> **137/137**, differing only in Streamlit's timestamped bare-mode warning · `eval_phase06`
+> differing only in the `--out=` path it echoes, **digest identical `2429cafc…`** ·
+> `calibrate_refusal` **PASS, 0/212** · `import app` clean · `git diff main -- requirements.txt`
+> empty. Index cost, recorded for a ship decision that did not happen: **+1.5 MB, +0.9 s build.**
+> Cost was never the blocker — the absence of a gain was.
+>
+> **STILL CARRIED FORWARD FROM E1, none of it discharged:** the **12-card fold has never been seen
+> in a browser** · `probe_embed_quota.py` still **never run** · `scripts/baseline_phaseE_<date>.txt`
+> not archived (E5 owns it) · **Phase G's prompt cost per legal turn has doubled** — confirm it fits
+> before G spends its ~30 calls.
+>
+> **NEXT: E3** — replace the hand-written synonym map with a corpus-derived one, built **without
+> looking at the eval questions**, three arms (hand / auto / **none**). Read E2a's point about
+> lexical signals first: it lowers the prior on the auto map and raises it on the *none* arm.
+
+> **Previous (2026-09-20, earlier): PHASE E SESSION 0 + E1 ARE DONE. Zero Gemini calls —
 > today's spend is 0, and the whole of E1 spent 0.**
 >
 > Branch **`phase10/retrieval-quality`**, cut from `main` at `1ee6ea9`. **`3d280fb`** (E1a,
@@ -50,11 +141,13 @@
 > (E5 owns it) · **Phase G's prompt cost per legal turn has doubled** — confirm it fits *before* G
 > spends its ~30 calls.
 >
-> **NEXT: E2 — BM25 re-rank INSIDE the existing gate**, never replacing the scorer. D6's length
+> ~~**NEXT: E2 — BM25 re-rank INSIDE the existing gate**, never replacing the scorer. D6's length
 > finding is its direct evidence (v2 clause chunks run to ~305 chars and lose to long ones under
-> TF-IDF's length handling). **Re-run `calibrate_refusal.py` after it — it must still report 0
-> disagreements.** E1's refusal invariance does **not** transfer for free: E1 was safe because the
-> top-score vector is byte-identical from k=3 to k=20, which is a property of selection *depth*.
+> TF-IDF's length handling).~~ **DONE AND DECLINED 2026-09-20 — see the LATEST banner. BM25 loses
+> on every set, and D6's length argument is measured false as a prediction.** Kept unedited because
+> the expectation is the record. Two things in it were *right* and held: `calibrate_refusal.py` was
+> re-run (**0/212**), and E1's invariance genuinely did not transfer for free — E2a had to earn it
+> with the `pin_top` guard rather than inherit it.
 
 > **(2026-09-19, MERGED + DEPLOYED): PHASE D IS SHIPPED. PHASE E IS ACTIVE.**
 >

@@ -2630,3 +2630,110 @@ read carefully, and its central sizing (`k=20/doc`) is inert while a number it n
 (`top_n == 3k`) carried the entire gain. **Measure the playbook's own arm before implementing it** —
 E1's "measure-only first" instruction existed for precisely this, and it is the reason the wrong arm
 cost an afternoon of measurement instead of a shipped regression.
+
+---
+
+## 2026-09-20 — Phase E2a: BM25 measured, BM25 declined, and the negative is the useful part
+
+**Session type:** measure-only, zero Gemini calls. Branch `phase10/retrieval-quality`, commit
+`measure(phase10-E2a)`. Nothing on the shipping path moved; `src/rag.py` and `app.py` untouched.
+
+### The step's premise dissolved before the first measurement
+
+E2 was the playbook's "highest-confidence item". Its text specifies **re-ordering the already-
+admitted hits** by BM25 and calls that "a pure ordering change". E1b, landed hours earlier, made
+that **provably inert** — and the proof is code-reading, not measurement:
+
+- `top_n == 3k`, so `select_top(hits, 12, min_per_doc=1)` returns **every** candidate retrieved;
+- `select_top` **re-sorts its output by score**, so it also discards any incoming order;
+- every recall metric in the repo scores a **set**, not a prefix.
+
+Three independent reasons, any one of which is sufficient. So E2's literal arm cannot move a single
+published number. **It was measured anyway, as arm `0b`** — because "provably +0.000" in prose is a
+claim, and `+0.000` in a table next to "re-ordered the displayed chunks on 55 of 60 questions" is
+evidence. That pairing is the whole value of the row: it shows the arm *fired* and still bought
+nothing, which is a different statement from "the arm did nothing".
+
+**The generalisable lesson is about when a step's premise expires.** E2 was scoped on 2026-09-13
+against `k=3/doc, top_n=6`, where 9 candidates competed for 6 slots and ordering was load-bearing.
+E1b changed the stage E2 acts on, not E2's plausibility, and nothing in the playbook flagged the
+dependency. **A step written against a specific arm should name that arm**; E1's amendment box now
+says so, and E2's says it happened.
+
+### Moved to selection, it fires and loses
+
+The only version of E2 that can reach the pool headroom acts one stage earlier: cosine admits a
+pool per doc, BM25 chooses which `k` of that pool the doc contributes, the doc's cosine argmax is
+pinned in. Measured (`recall_strict`, corpus v2, every arm showing 12 chunks):
+
+| arm | frozen-10 | dev | test | pool ceiling (test) |
+|---|---|---|---|---|
+| control (= E1b) | 0.734 | 0.573 | **0.529** | 0.529 |
+| bm25 pool=20, pinned | 0.734 | 0.573 | **0.471** | 0.735 |
+| bm25 pool=40 | 0.734 | 0.573 | 0.471 | 0.824 |
+| rrf pool=20 | 0.734 | 0.573 | 0.500 | 0.735 |
+| bm25 unigrams only | 0.748 | 0.580 | 0.500 | 0.735 |
+
+**No arm gains on any set.** Corpus v1 corroborates. The displayed set changed on **51 of 60**
+questions while per-question strict moved `0 up / 0 down` on frozen-10 and dev and `0 up / 2 down`
+on test.
+
+**The deltas are small against n = 10 / 25 / 17, and the write-up says so.** One `test` question is
+worth 0.059, so the primary arm's loss is **two half-questions**, and `+0.000` means "nothing
+crossed a threshold", not "provably zero". **What carries a decline is the shape of the table, not
+the size of any delta**: nine arms, two corpora, no gain anywhere, plus a mechanism that predicts
+exactly that. Declining on a coin-flip-sized loss alone would be the mirror image of the mistake
+that shipped the synonym map — reading n=10 noise as signal, with the sign flipped.
+
+### Why, and this is the finding worth carrying
+
+**BM25 is the same family of signal as TF-IDF cosine.** Same stemmed (1,2)-gram vocabulary — by
+construction here, since the BM25 index reuses the fitted TF-IDF vocabulary — differing only in
+term saturation and length normalisation. Where cosine cannot rank the right chunk into a doc's
+top-4, BM25 fails in the same direction, because **the query and the chunk do not share the
+words**. That is the vocab-mismatch class, which the diagnosis has named the worst one since
+Phase 09.
+
+So the `+0.206` test headroom to the pool ceiling is **not lexically reachable**, and that is now
+measured rather than assumed. Two different lexical rankings plus a rank fusion of them all fail on
+the same questions. It is direct evidence for **E4** (semantic/static embeddings) and a real
+caution for **E3**: a corpus-derived synonym map is *also* term-level, so the informative arm in
+E3's three-way ablation is probably the **no-expansion** one.
+
+**D6's prediction is measured false.** D6 argued chunk length was the mechanism and called it "the
+strongest single piece of evidence in the playbook for doing E2 at all". BM25's `b` **is** the
+length knob. Turning it does not recover the class. The length *observation* may still be true
+about why short chunks lose; the *inference* that BM25 therefore recovers them is not.
+
+### Two methodological things worth keeping
+
+**1. A negative result needs an instrument you can check against numbers it did not produce.** The
+harness validates three ways: arm 0 reproduces E1b exactly (gated in-script), arm 2's pool ceiling
+equals the published `rs@60` (0.904 / 0.733 / 0.735), and arm 3's equals the published perfect
+ceiling 0.824. Without those a flat table is indistinguishable from a broken harness — and the
+first thing that looked wrong in this session *was* a table too flat to believe. The probe that
+resolved it (displayed sets differ on 51/60) became the permanent "DID THE MECHANISM FIRE?" block.
+
+**2. Knife-edge sensitivity is evidence against shipping, not a knob.** The `b` sweep reads test
+`0.500 / 0.500 / 0.471 / 0.529` at `b = 0.00 / 0.50 / 0.75 / 1.00` — a swing the size of E1b's
+entire gain, from a parameter with no principled setting for this corpus. `b=1.00` is the only
+value that does not lose. Choosing it for that reason is **exactly** how the synonym map was built
+(keep what helps Q5/Q8/Q9, delete what hurts Q7, publish 0.925 on the fitted set). `b` stays at the
+textbook 0.75, the sweep is reported and never chosen, and the constants carry a comment saying so.
+
+### The guard that cost nothing and was kept
+
+`pin_top` forces each doc's cosine argmax into its `k` slots. Without it a re-rank can demote the
+global maximum out of the returned set and **manufacture a false refusal** — the failure CLAUDE.md
+names as the worst one. Measured, the unpinned arm produced **0 false refusals** and a
+**bit-identical top-score vector** on all 60 questions. It was kept anyway, and the reasoning is
+the point: **the pin is what makes refusal invariance a proof rather than an observation.** 60
+questions cannot certify a property that has to hold for every question a user asks. The same
+argument retired `Hit.score`-as-BM25 before it was written: BM25 is unbounded, so returning it
+would have invalidated the `MIN_SCORE` calibration by construction.
+
+### Declined, recorded, not dropped
+
+Ordering-only, pool 10 / 20 / 40, unpinned, RRF, unigram-only — all seven arms live in
+`scripts/ablate_rerank.py` and re-run in about a minute. The BM25 code stays in `src/retrieve.py`
+behind `rerank=None`. **E2 is declined, not deferred**; the next session should not re-run this.

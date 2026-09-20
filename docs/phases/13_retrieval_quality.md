@@ -1,6 +1,9 @@
 # Phase E — retrieval quality: close the ranking gap, spend nothing
 
-**Status:** **ACTIVE** as of 2026-09-19 — planned, not yet started. Zero Gemini quota for E1–E4.
+**Status:** **ACTIVE.** **E1 DONE and SHIPPED 2026-09-20** (`3d280fb` + `9748086`) · **E2
+MEASURED and DECLINED 2026-09-20** (`measure(phase10-E2a)` — see the amendment box on E2) ·
+**NEXT IS E3.** Zero Gemini quota spent in the phase so far, and none is needed for E3–E4.
+*(This line read "planned, not yet started" until 2026-09-20.)*
 **Runs after:** Phase D (`12_corpus_v2.md`) — **COMPLETE, MERGED to `main` and DEPLOYED
 2026-09-19 (`8682869`).** `CORPUS_VERSION = "v2"` is the default **and is what users are now
 getting**, which changes one thing about this phase: it is no longer working on a side corpus.
@@ -220,6 +223,91 @@ measured together in one commit.
 ---
 
 ### E2 — BM25 re-rank **inside** the existing gate
+
+> ## ⚠ AMENDED 2026-09-20 (E2a, `measure(phase10-E2a)`). **E2 AS WRITTEN BELOW IS A NO-OP, AND THE MEASURED REPLACEMENT LOST.**
+>
+> **1. E1b invalidated the STAGE this step acts on.** The text below says *"re-order the
+> already-admitted hits by BM25 … re-ranking within the admitted set is a pure ordering change"*.
+> At the E1b arm that is **provably inert**, and it is provable by reading the code rather than by
+> measuring: `PerDocRetriever.query(q, k=4)` returns 12 candidates, `select_top(hits, 12,
+> min_per_doc=1)` fills to `top_n` and therefore returns **all 12**, `select_top` **re-sorts its
+> output by score** so it also discards any incoming order, and every recall metric in the repo
+> scores a **set** (`eval_heldout.py:215-224`, `ablate_phase10.py:145-147`,
+> `eval_phase06.py:286`). Measured anyway as arm `0b`: BM25 re-ordered the displayed chunks on
+> **55 of 60 questions** and moved `recall_strict` by **exactly +0.000 on all three sets**, with
+> the displayed **set** changed on **0/60**. The only reachable effects are MRR, which chunks land
+> inline vs in the fold, and prompt order — and whether prompt order helps generation **cannot be
+> measured until Phase G spends quota.**
+>
+> **2. So the re-rank was moved one stage earlier, to SELECTION — and it did not pay.** Cosine
+> still admits a pool per doc; BM25 chooses which `k` of that pool the doc contributes; the doc's
+> cosine argmax is pinned in as a refusal guard. That is the only version of E2 that can reach the
+> pool headroom. `recall_strict`, corpus v2, every arm showing 12 chunks:
+>
+> | arm | frozen-10 | dev | **test (clean)** | pool ceiling (test) |
+> |---|---|---|---|---|
+> | **0 control (= E1b)** | **0.734** | **0.573** | **0.529** | 0.529 |
+> | 0b bm25 order-only | 0.734 | 0.573 | 0.529 **(+0.000)** | 0.529 |
+> | 1 bm25 pool=10/doc | 0.734 | 0.573 | 0.471 (**−0.059**) | 0.618 |
+> | **2 bm25 pool=20/doc (primary)** | 0.734 | 0.573 | **0.471 (−0.059)** | **0.735** |
+> | 3 bm25 pool=40/doc | 0.734 | 0.573 | 0.471 (−0.059) | 0.824 |
+> | 4 bm25 pool=20, **not pinned** | 0.734 | 0.573 | 0.471 (−0.059) | 0.735 |
+> | 5 rrf pool=20/doc | 0.734 | 0.573 | 0.500 (−0.029) | 0.735 |
+> | 6 bm25 pool=20, unigrams only | 0.748 | 0.580 | 0.500 (−0.029) | 0.735 |
+>
+> **No arm gains on any set. `test` loses on every arm that fires.** Corpus v1 corroborates
+> (frozen `0.753 → 0.728`, dev `0.533 → 0.520`, test flat) — this is not a v2 artifact.
+>
+> **Read those with the sample sizes attached: n = 10 / 25 / 17.** One `test` question is worth
+> 0.059, so the primary arm's `−0.059` is **two half-questions**, not a trend, and `+0.000` on
+> frozen-10 and dev means "nothing crossed a threshold", not "provably zero". What carries the
+> verdict is not the size of any single delta — it is that **nine arms across two corpora produced
+> no gain anywhere**, plus the mechanism in point 4. A decline on a coin-flip-sized loss would be
+> over-reading; a decline on "no arm gains on any set, for a reason that predicts it" is not.
+>
+> **3. The mechanism FIRED; it just bought nothing.** This is the distinction the table is built
+> to make, because "flat" has two very different causes. The primary arm changed the **displayed
+> set on 51 of 60 questions** and still moved `0 up / 0 down` on frozen-10 and dev, `0 up / 2 down`
+> on test. BM25 is swapping chunks that carry no expected ref, and on two clean questions it swaps
+> out one that does.
+>
+> **4. THE REASON GENERALISES, AND IT IS THE FINDING WORTH CARRYING TO E3/E4.** The `+0.206`
+> headroom on test is real and none of it was collected. BM25 is **the same family of signal as
+> TF-IDF cosine** — lexical term overlap over the same stemmed (1,2)-gram vocabulary, differing
+> only in saturation and length normalisation. Where cosine fails to rank the right chunk into a
+> doc's top-4, BM25 fails in the same direction, because the query and the chunk **do not share
+> the words**. That is the vocab-mismatch class, and the diagnosis section above already names it
+> the worst one (dev recall 0.375, n=8). **The pool headroom is not lexically reachable**, which
+> is direct evidence for a *semantic* signal (E4) over further lexical work.
+>
+> **5. D6's length argument (amendment point 2 at the top of this file) is NOT confirmed.** It
+> reasoned that v2's short clause chunks lose to long ones under TF-IDF's length handling, and
+> called that "the strongest single piece of evidence in the playbook for doing E2 at all". BM25's
+> `b` **is** the length knob, and turning it did not recover the class. The argument may still be
+> true about *why* short chunks lose; it is now measured **false** as a prediction that BM25
+> recovers them.
+>
+> **6. The arm is knife-edge on `b`, which is independent evidence against shipping it.** Swept at
+> pool=20, `test` reads `0.500 / 0.500 / 0.471 / 0.529` at `b = 0.00 / 0.50 / 0.75 / 1.00` — a
+> 0.058 swing, the same size as E1b's entire gain, from a parameter with no principled setting
+> here. `b=1.00` is the only value that does not lose, and choosing it because it did not lose is
+> exactly how the synonym map was built. **`b` stays at the textbook `0.75` and the arm stays
+> declined.**
+>
+> **7. `max_per_doc`-style depth is inert again, for the second phase running.** Arms 2 and 3
+> (pool 20 vs 40) are **identical on every cell of every set** — BM25's top-4 within the first 20
+> candidates is its top-4 within the first 40. Pool depth beyond 20 contributes nothing, which is
+> the selection-stage restatement of E1a's "pool width is inert once `top_n == 3k`".
+>
+> **8. The refusal guard cost nothing and is kept anyway.** Arm 4 drops the pin and produced **0
+> false refusals** and a **bit-identical top-score vector** on all 60 questions. That prices the
+> pin at zero *here*; it does not make it safe to drop, because the pin is what makes the
+> invariance a **proof** rather than an observation, on questions nobody has measured.
+>
+> **VERDICT: E2 IS DECLINED, not deferred.** The code is committed and measurable
+> (`src/retrieve.py`, `rerank` defaults to `None`; `scripts/ablate_rerank.py`) so the next session
+> does not re-run the experiment, but **nothing on the shipping path moved and nothing should.**
+> Full detail in **Results**.
 
 Zero quota. This is `09_evidence_and_generation.md` step 3(a), unchanged in substance.
 
@@ -523,3 +611,68 @@ measure-only width-ablation harness, absent from `CLAUDE.md`'s harness list and 
 baseline archive, and it is exactly E1's instrument. It ran clean first time and reproduced the
 scratch probe on every shared arm. E1a extended it with the no-cut ladder and two new output blocks
 (displayed-chunks-per-doc, and the expected-ref prior check). **It is now in `CLAUDE.md`'s list.**
+
+### E2a — 2026-09-20. Zero Gemini calls. **MEASURE-ONLY: nothing on the shipping path moved.**
+
+Commit **`measure(phase10-E2a)`** on `phase10/retrieval-quality`. One source file
+(`src/retrieve.py`, opt-in and default-off), one new harness (`scripts/ablate_rerank.py`), the E2
+amendment box above. `src/rag.py` and `app.py` were **not edited in this session**.
+
+**HEADLINE: BM25 buys nothing here, and the reason is that it is the wrong family of signal.**
+No arm gains on any set; every arm that fires loses on the clean `test` set. **E2 is DECLINED.**
+The full arm table, the `b` sweep and the seven supporting findings are in the amendment box on
+the E2 step above — they are recorded there rather than only here so that a reader of the *step*
+cannot act on the superseded text.
+
+**The harness validates itself three independent ways, and this matters more than any arm row.**
+A negative result is only worth recording if the instrument is trustworthy, so
+`scripts/ablate_rerank.py` was built to be checkable against numbers it did not produce:
+
+1. **Arm 0 (control) reproduces E1b exactly** — 0.734 / 0.573 / 0.529, gated in the script
+   (`CONTROL_STRICT`) and printed PASS/PASS/PASS. If it failed, no other row would mean anything.
+2. **Arm 2's pool ceiling equals the published `rs@60`** — 0.904 / 0.733 / 0.735, matching
+   `scripts/baseline_v2_2026-09-19.txt:278-281` to three decimals. At pool=20/doc the candidate
+   set **is** `eval_heldout.py`'s 60-candidate curve pool, so this is a cross-harness check that
+   E2a's pool is the pool the ceiling was measured on.
+3. **Arm 3's pool ceiling equals the "3 questions absent" ceiling** — test **0.824**, the exact
+   number "Three hard numbers that bound the work" #1 records as 14/17. A pool of 40/doc finds
+   everything findable.
+
+**The `b` gate is corpus-aware, and that is a deliberate correction made during the session.** The
+first version compared `--corpus=v1` against `CONTROL_STRICT`, which is a v2 number, and exited
+nonzero for a correct run. It now gates on v2 and merely prints on v1 — the same
+one-baseline-per-corpus rule `eval_heldout.py`'s frozen-10 guard follows.
+
+**What moved in `src/retrieve.py`, and what did not.** `TfidfRetriever` gained `bm25: bool =
+False` (default off, so `scripts/bench_phase01.py`'s direct construction and raw-cosine asserts are
+untouched) and an Okapi BM25 index built over the **reused TF-IDF vocabulary** — identical term
+space by construction, not by coincidence, and zero new packages. `PerDocRetriever` gained
+`rerank=None, pool_per_doc=20, pin_top=True` plus the three BM25 knobs. **`Hit.score` is still
+cosine in every arm**: BM25 chooses, cosine scores, orders and gates, so the calibration block at
+`src/retrieve.py:26-93` is untouched by construction rather than by argument. `MIN_SCORE` is still
+`0.10`.
+
+**"The only new output in the repo is the new harness's" — verified by diff, not by assertion.**
+Captured to `D:\e2_baseline\` **before the first edit** and re-run after:
+`eval_heldout`, `ablate_phase10`, `bench_phase01`, `audit_corpus`, `ablate_phase08`, `eval_chat`,
+`calibrate_refusal` and `test_phase09_ops` are **stdout byte-identical**. `test_phase05` differs
+only in Streamlit's timestamped bare-mode warning (137/137 either way). `eval_phase06` differs only
+in the `--out=` path it echoes; **the digest is identical** (`2429cafc…`). `calibrate_refusal`
+**PASS, 0/212 disagreements**. `import app` clean, no server. `git diff main -- requirements.txt`
+empty.
+
+**Cost of the index, recorded now for a ship decision that did not happen.** `bm25=True` adds
+**1.5 MB** (count matrix + idf + doc lengths across all three docs) and **+0.9 s** to corpus build.
+Render free is 512 MB, so cost was never the blocker — **the absence of a gain was.**
+
+**What E2a hands to E3/E4, and it is the useful half of a negative result.** The `+0.206` test
+headroom to the pool ceiling is untouched and is now known to be **not lexically reachable**: two
+different lexical rankings over the same vocabulary (TF-IDF cosine, BM25) and a rank fusion of them
+(RRF) all fail on the same questions. E4's static-embedding blend is the arm that addresses the
+actual mechanism; **E3 should be read with this in mind too**, since a corpus-derived synonym map
+is also term-level and the "three-arm ablation including *no expansion*" is the part of E3 most
+likely to be informative.
+
+**Declined, recorded, not dropped:** the ordering-only arm (`0b`, +0.000 by construction), pool
+depths 10 / 20 / 40, the unpinned variant, RRF, and unigram-only BM25. All seven live in
+`scripts/ablate_rerank.py:ARMS` and re-run in about a minute.

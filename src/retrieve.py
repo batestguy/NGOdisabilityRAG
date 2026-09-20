@@ -20,7 +20,13 @@ Retrieval strategy (Phase 02, option b -- per-doc retrievers):
   but the MIN_SCORE refusal gate is applied per-hit identically.
 """
 from collections import namedtuple
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
+
+import numpy as np
+from sklearn.feature_extraction.text import (
+    ENGLISH_STOP_WORDS,
+    CountVectorizer,
+    TfidfVectorizer,
+)
 from sklearn.metrics.pairwise import cosine_similarity
 
 # ---------------------------------------------------------------------------
@@ -346,11 +352,39 @@ def expand_query(q: str) -> str:
     return q + " " + " ".join(dict.fromkeys(extra))
 
 
+# ---------------------------------------------------------------------------
+# BM25 -- a SELECTION signal, never a score (Phase E2a, added 2026-09-20).
+#
+# TEXTBOOK DEFAULTS. These are Robertson's original values and they are NOT to
+# be tuned against the eval sets. The hand-written SYNONYMS map above is what
+# happens when a knob is fitted to frozen-10: it reads +0.061 on the ten
+# questions it was fitted to and is carried by two of them (playbook
+# docs/phases/13_retrieval_quality.md). A b chosen because it moved `test` would
+# be the same mistake with a nicer name. scripts/ablate_rerank.py DOES sweep b,
+# and reports it as a sensitivity check only -- if an arm's result depends on b,
+# that is evidence against shipping the arm, not a knob to turn.
+BM25_K1 = 1.5
+BM25_B = 0.75
+
+# Reciprocal-rank fusion constant (Cormack et al. 2009's 60). RRF fuses two
+# RANKINGS, so it sidesteps the scale incomparability that forbids mixing a
+# cosine with a BM25 score directly -- there is no weight to fit.
+RRF_K = 60
+
+
 class TfidfRetriever:
     """Single-corpus TF-IDF retriever. Kept backward compatible:
-    chunks are bare strings, query() returns [(idx, score, text)]."""
+    chunks are bare strings, query() returns [(idx, score, text)].
 
-    def __init__(self, chunks: list[str]):
+    `bm25=True` additionally builds an Okapi BM25 index over the SAME term
+    space and exposes bm25_scores(). It changes nothing about query(): cosine
+    is still the only thing this class scores or orders by. The flag DEFAULTS
+    TO FALSE so that every existing construction site -- scripts/bench_phase01.py
+    builds `TfidfRetriever(chunks)` directly and asserts on raw cosines -- is
+    byte-identical with the flag present.
+    """
+
+    def __init__(self, chunks: list[str], bm25: bool = False):
         self.chunks = chunks
         self.vec = TfidfVectorizer(
             preprocessor=stem_preprocess,
@@ -360,6 +394,89 @@ class TfidfRetriever:
             ngram_range=(1, 2),
         )
         self.mat = self.vec.fit_transform(chunks)
+        self.cnt = self.bm25_idf = self.bm25_dl = None
+        self.bm25_avgdl = 0.0
+        if bm25:
+            self._build_bm25()
+
+    def _build_bm25(self) -> None:
+        """Raw term counts + BM25 idf over the TF-IDF vocabulary.
+
+        The vocabulary is REUSED rather than re-fitted (`vocabulary=` below),
+        so the BM25 term space is identical to the cosine one BY CONSTRUCTION
+        instead of by coincidence -- same preprocessor, same stemmed stopword
+        list, same (1,2) n-grams, same columns in the same order. A separately
+        fitted CountVectorizer would agree today and could silently diverge on
+        the next `min_df`-shaped edit.
+        """
+        cv = CountVectorizer(
+            preprocessor=stem_preprocess,
+            stop_words=[stem(w) for w in ENGLISH_STOP_WORDS],
+            ngram_range=(1, 2),
+            vocabulary=self.vec.vocabulary_,
+        )
+        self.cnt = cv.fit_transform(self.chunks).tocsr().astype(np.float64)
+        n_docs = self.cnt.shape[0]
+        df = np.asarray((self.cnt > 0).sum(axis=0)).ravel()
+        # Robertson/Sparck Jones idf in its non-negative ("plus-one") form:
+        # ln(1 + (N - df + 0.5) / (df + 0.5)). The bare form goes negative for
+        # terms in more than half the corpus, which would let a common term
+        # PENALISE a chunk that contains it.
+        self.bm25_idf = np.log(1.0 + (n_docs - df + 0.5) / (df + 0.5))
+        # Document length counts every term occurrence in the vocabulary,
+        # bigrams included. Bigram counts inflate |d| by roughly a constant
+        # factor across chunks, so b's length normalisation still compares
+        # like with like; the unigram-only variant is an ablation arm, not an
+        # assumption baked in here.
+        self.bm25_dl = np.asarray(self.cnt.sum(axis=1)).ravel()
+        self.bm25_avgdl = float(self.bm25_dl.mean()) if n_docs else 0.0
+
+    def bm25_scores(
+        self,
+        q: str,
+        idxs: list[int],
+        k1: float = BM25_K1,
+        b: float = BM25_B,
+        unigrams_only: bool = False,
+    ) -> list[float]:
+        """Okapi BM25 of query `q` against the chunks at `idxs`.
+
+        Query analysis goes through `self.vec.build_analyzer()`, i.e. the exact
+        analyzer the cosine side uses, so the two signals see the same tokens.
+        Repeated query terms are summed once per occurrence (rank_bm25's
+        convention); after expand_query()'s dict.fromkeys dedup the query is
+        almost always term-unique anyway.
+
+        Returns 0.0 for every idx when no query term is in the vocabulary --
+        the caller must treat an all-zero vector as "no opinion", which is why
+        every arm that uses this keeps a cosine tie-break.
+        """
+        assert self.cnt is not None, "TfidfRetriever built without bm25=True"
+        if not idxs:
+            return []
+        vocab = self.vec.vocabulary_
+        terms = self.vec.build_analyzer()(q)
+        if unigrams_only:
+            terms = [t for t in terms if " " not in t]
+        cols = [vocab[t] for t in terms if t in vocab]
+        if not cols:
+            return [0.0] * len(idxs)
+        tf = self.cnt[idxs][:, cols].toarray()            # (n_cand, n_terms)
+        dl = self.bm25_dl[idxs]
+        norm = k1 * (1.0 - b + b * dl / (self.bm25_avgdl or 1.0))
+        denom = tf + norm[:, None]
+        sat = np.divide(tf * (k1 + 1.0), denom,
+                        out=np.zeros_like(tf), where=denom > 0)
+        return (sat @ self.bm25_idf[cols]).tolist()
+
+    def bm25_bytes(self) -> int:
+        """In-memory size of the BM25 index only. Reported by ablate_rerank.py
+        because Render free is 512 MB and the Constitution is 2,037 chunks."""
+        if self.cnt is None:
+            return 0
+        return int(self.cnt.data.nbytes + self.cnt.indices.nbytes
+                   + self.cnt.indptr.nbytes + self.bm25_idf.nbytes
+                   + self.bm25_dl.nbytes)
 
     def query(self, q: str, k: int = 3) -> list[tuple[int, float, str]]:
         sims = cosine_similarity(self.vec.transform([q]), self.mat)[0]
@@ -374,23 +491,115 @@ class PerDocRetriever:
     merged ranking no matter how large the Constitution index gets.
     query() returns Hit tuples sorted by score desc. retrieve() applies
     the MIN_SCORE gate and returns a refusal signal instead of weak hits.
+
+    ------------------------------------------------------------------------
+    OPT-IN SELECTION RE-RANK (Phase E2a, 2026-09-20). `rerank` DEFAULTS TO
+    None, which is the shipping path and is byte-identical to the code that
+    preceded this parameter. Nothing in src/rag.py or app.py passes it; the
+    only caller today is scripts/ablate_rerank.py.
+
+    WHY IT ACTS AT SELECTION AND NOT AT ORDERING. E2 was written as "re-order
+    the already-admitted hits". At the E1b shipping arm that is provably inert:
+    top_n == 3k, so select_top returns every candidate retrieved, and it
+    re-sorts by score anyway -- an ordering-only re-rank cannot change which
+    chunks are returned OR the order they are returned in. Every recall metric
+    in the repo scores a SET. So the re-rank is moved one stage earlier:
+
+        cosine over all chunks   -> top `pool` per doc    ADMISSION, unchanged
+        bm25/rrf over that pool  -> top `k` per doc       SELECTION, new
+        pin the doc's cosine #1  -> into those k          REFUSAL GUARD, new
+        re-sort the k by cosine  -> then append           tie-break convention
+        select_top(top_n)        -> unchanged
+
+    HIT.SCORE STAYS COSINE. BM25 is unbounded and not comparable to a cosine;
+    returning it would silently invalidate the calibration block at the top of
+    this file. BM25 chooses; cosine still scores, orders and gates.
+
+    WHY `pin_top`, AND WHY IT IS ON BY DEFAULT. Without it a doc's cosine-best
+    chunk can be demoted out of its k slots. If that chunk is the GLOBAL max
+    and it is dropped, the max over returned hits falls and can cross
+    MIN_SCORE -- a manufactured FALSE REFUSAL, the failure CLAUDE.md names as
+    the worst one. With it, the refusal-invariance proof under select_top
+    carries verbatim: every doc's cosine argmax is returned (k >= 1), so the
+    global max is; select_top provably keeps the global max; refusal <=> global
+    max < MIN_SCORE. Bit-identical, question for question. It also pins
+    query()'s expansion gates, which read base[0].score -- so expansion fires
+    on exactly the same queries as today and E2 does not entangle itself with
+    E3. `pin_top=False` exists so scripts/ablate_rerank.py can PRICE the guard.
+    ------------------------------------------------------------------------
     """
 
-    def __init__(self, docs: dict[str, list[Chunk]], k_default: int = 2):
+    def __init__(
+        self,
+        docs: dict[str, list[Chunk]],
+        k_default: int = 2,
+        rerank: str | None = None,
+        pool_per_doc: int = 20,
+        pin_top: bool = True,
+        bm25_k1: float = BM25_K1,
+        bm25_b: float = BM25_B,
+        bm25_unigrams: bool = False,
+    ):
         for doc_id in docs:
             assert doc_id in DOC_IDS, "unknown doc_id %r" % doc_id
+        assert rerank in (None, "bm25", "rrf"), "unknown rerank %r" % rerank
         self.docs = docs
         self.k_default = k_default
+        self.rerank = rerank
+        self.pool_per_doc = pool_per_doc
+        self.pin_top = pin_top
+        self.bm25_k1 = bm25_k1
+        self.bm25_b = bm25_b
+        self.bm25_unigrams = bm25_unigrams
         self.sub = {
-            doc_id: TfidfRetriever([c.text for c in chunks])
+            doc_id: TfidfRetriever([c.text for c in chunks],
+                                   bm25=rerank is not None)
             for doc_id, chunks in docs.items()
         }
+
+    def _doc_candidates(
+        self, doc_id: str, q: str, k: int
+    ) -> list[tuple[int, float, str]]:
+        """This doc's k contributions, in cosine order. See the class docstring.
+
+        `rerank is None` is the shipping path and must stay a plain call to the
+        sub-retriever -- no pool, no extra transform, no behaviour to argue
+        about. When the pool cannot be deeper than k (a caller asking k=20 at
+        pool_per_doc=20, e.g. eval_heldout's recall@k curve) the re-rank has
+        nothing to choose between and is a no-op by construction.
+        """
+        if self.rerank is None:
+            return self.sub[doc_id].query(q, k=k)
+        cand = self.sub[doc_id].query(q, k=max(self.pool_per_doc, k))
+        if len(cand) <= k:
+            return cand
+        n = len(cand)
+        # cand is cosine-desc, so the index j IS the cosine rank. Using j as
+        # the tie-break keeps every ordering below deterministic and makes an
+        # all-zero BM25 vector ("no query term in vocabulary") degrade to the
+        # cosine order rather than to an arbitrary one.
+        bm = self.sub[doc_id].bm25_scores(
+            q, [i for i, _, _ in cand], k1=self.bm25_k1, b=self.bm25_b,
+            unigrams_only=self.bm25_unigrams)
+        bm_order = sorted(range(n), key=lambda j: (-bm[j], j))
+        if self.rerank == "bm25":
+            order = bm_order
+        else:                                   # "rrf"
+            bm_rank = [0] * n
+            for r, j in enumerate(bm_order):
+                bm_rank[j] = r
+            order = sorted(range(n), key=lambda j: (
+                -(1.0 / (RRF_K + 1 + j) + 1.0 / (RRF_K + 1 + bm_rank[j])), j))
+        chosen = order[:k]
+        if self.pin_top and 0 not in chosen:    # 0 == this doc's cosine argmax
+            chosen = [0] + chosen[:k - 1]
+        return [cand[j] for j in sorted(chosen)]
 
     def _merged(self, q: str, k: int) -> list[Hit]:
         """Top-k from each doc, merged and sorted. No expansion, no gating."""
         hits: list[Hit] = []
         for doc_id, chunks in self.docs.items():
-            for i, s, _ in self.sub[doc_id].query(q, k=k):
+            for i, s, _ in self._doc_candidates(doc_id, q, k):
                 hits.append(Hit(chunks[i].doc_id, chunks[i].ref, chunks[i].text, s))
         hits.sort(key=lambda h: h.score, reverse=True)
         return hits
