@@ -1,6 +1,62 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-19)
+# HANDOFF — start here (60 seconds, updated 2026-09-20)
 
-> **LATEST (2026-09-19, MERGED + DEPLOYED): PHASE D IS SHIPPED. PHASE E IS ACTIVE.**
+> **LATEST (2026-09-20): PHASE E SESSION 0 + E1 ARE DONE. NEXT IS E2. Zero Gemini calls —
+> today's spend is 0, and the whole of E1 spent 0.**
+>
+> Branch **`phase10/retrieval-quality`**, cut from `main` at `1ee6ea9`. **`3d280fb`** (E1a,
+> measure-only) + **`9748086`** (E1b, shipped). **Unmerged and unpushed on purpose** — pushing
+> `main` auto-deploys to real users and that call is the user's. Phase D's authorisation does
+> **not** carry forward.
+>
+> **HEADLINE: held-out `test` strict recall `0.471 → 0.529` (+0.058), dev `0.473 → 0.573`,
+> frozen-10 `0.633 → 0.734`.** False refusals still **0/10 · 0/25 · 0/17**. `MIN_SCORE` untouched.
+> `requirements.txt` byte-identical. `audit_corpus` stdout byte-identical. **Session 0's control
+> REPRODUCED** against `scripts/baseline_v2_2026-09-19.txt` before the first edit; raw captures are
+> in `D:\e0_baseline\` and should stay there until E5 archives its own baseline.
+>
+> **⚠ E1 DID NOT SHIP WHAT THE PLAYBOOK SPECIFIED, AND THAT IS THE THING TO KNOW BEFORE E2.**
+> The playbook's arm is `k=20/doc` (60 candidates). Measured, **it gains `+0.000` on test.** What
+> gained `+0.058` was **`k=4/doc, top_n=12`**. Both show 12 chunks, so they are comparable, and the
+> entire difference is **per-doc allocation, not pool depth**. Widening the pool at an unchanged
+> budget is a **regression on all three sets** (`k=10 n=6`: 0.633/0.473/0.471 → 0.622/0.453/0.426),
+> because the spare slots go to the global top and the Constitution owns it — the Act's share of
+> displayed chunks falls **36% → 28% → 25%**. That is the flooding `PerDocRetriever` exists to
+> prevent, re-introduced by widening. **The knob is `top_n == 3k`**: then `select_top` returns every
+> candidate retrieved and the invalid cross-doc cosine cut never discards anything. A `max_per_doc`
+> ceiling was prototyped and is **bit-identical to plain `k=4/doc`** — **it was not added.**
+>
+> **TWO PLAYBOOK NUMBERS WERE MISLABELLED AND ARE CORRECTED IN PLACE.** Its diagnosis table heads a
+> column **"r@6 (shipping)"** reading test **0.426** — that is the **recall@k CURVE**, whose
+> `select_top(top_n=60)` over 60 candidates makes the quota phase vacuous, so its `@6` has **no
+> `min_per_doc` reservation**. **Shipping was 0.471.** The `+0.309` gap is really **+0.264**. Exit
+> criterion 1 always said 0.471, so the playbook contradicted itself.
+>
+> **DO NOT QUOTE THE `eval_chat` GAINS AS E1's RESULT** (`chat_dev` ctx 0.607 → 0.786). **A budget
+> showing twice as many chunks inflates any recall-shaped metric by construction**, D6's amendment
+> says `recall_strict` does not neutralise the packed-ref subsidy in the `ctx` arm, and the Phase B
+> gates are computed on `chat_dev`, the tuning set. **E1b's load-bearing evidence is the single-turn
+> held-out `test` column.**
+>
+> **Re-pinned deliberately, all tightening, old values kept in comments:**
+> `FROZEN10_STRICT_BASELINE_V2` `0.632738 → 0.733928` (the **truncated true float**, never the
+> printed `0.734` — see `eval_heldout.py:155-165`), `ablate_phase08.ABLATE_MIN_STRICT_V2` likewise,
+> and `eval_phase06`'s two digests (`V2 → 2429cafc…`, `V1 → 12bdeba0…`). The old v1 digest was
+> proven still reproducible by running the **pre-commit code at the old budget** in a throwaway
+> worktree — only the instrument moved.
+>
+> **NOT DONE, carry forward:** the **12-card fold has never been seen in a browser** (3 inline + 9
+> behind one collapsed fold — no harness measures it, and it is E1b's only user-facing change) ·
+> `probe_embed_quota.py` still **never run** · `scripts/baseline_phaseE_<date>.txt` not archived
+> (E5 owns it) · **Phase G's prompt cost per legal turn has doubled** — confirm it fits *before* G
+> spends its ~30 calls.
+>
+> **NEXT: E2 — BM25 re-rank INSIDE the existing gate**, never replacing the scorer. D6's length
+> finding is its direct evidence (v2 clause chunks run to ~305 chars and lose to long ones under
+> TF-IDF's length handling). **Re-run `calibrate_refusal.py` after it — it must still report 0
+> disagreements.** E1's refusal invariance does **not** transfer for free: E1 was safe because the
+> top-score vector is byte-identical from k=3 to k=20, which is a property of selection *depth*.
+
+> **(2026-09-19, MERGED + DEPLOYED): PHASE D IS SHIPPED. PHASE E IS ACTIVE.**
 >
 > **`phase10/corpus-v2` merged to `main` as `8682869` on the user's explicit instruction, and
 > Render auto-deployed it.** 25 commits, D0–D6. **The `[Act cl. 39]` mis-citation — cl.38's tail

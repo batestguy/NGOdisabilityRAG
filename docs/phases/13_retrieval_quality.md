@@ -63,15 +63,24 @@ corpus v2, shipping arm `k=3/doc → top_n=6, MIN_SCORE=0.10`).
 
 ### The problem is RANKING, not absence
 
-| set | r@3 | **r@6 (shipping)** | r@10 | r@20 | **r@60** | MRR | med-rk | found in pool |
+| set | r@3 | r@6 | r@10 | r@20 | **r@60** | MRR | med-rk | found in pool |
 |---|---|---|---|---|---|---|---|---|
 | frozen-10 (fitted on) | 0.512 | 0.655 | 0.684 | 0.713 | 0.904 | 0.925 | 1 | 10/10 |
 | dev (n=25) | 0.373 | 0.440 | 0.527 | 0.607 | 0.733 | 0.435 | 2 | 20/25 |
-| **test (clean, n=17)** | 0.324 | **0.426** | 0.441 | 0.559 | **0.735** | 0.400 | 3 | **14/17** |
+| **test (clean, n=17)** | 0.324 | 0.426 | 0.441 | 0.559 | **0.735** | 0.400 | 3 | **14/17** |
+
+> **⚠ CORRECTED 2026-09-20 (E1). The `r@6` column above was headed "(shipping)" and it is NOT the
+> shipping arm** — this whole table is the **recall@k CURVE**, and `eval_heldout.py:128-131` warns
+> against quoting its `@6` as the shipping number. The curve builds `select_top(top_n=60)` over 60
+> candidates, so its quota phase is **vacuous** and `@6` carries no `min_per_doc` reservation.
+> **Shipping test recall was `0.471`, not `0.426`** (and is `0.529` since E1b). Exit criterion 1
+> below always said `0.471`, so the playbook contradicted itself; the criterion was right.
 
 `eval_heldout.py` prints the interpretation rule itself: *"A large gap between @6 and @60 means
 the miss is RANKING, and a re-ranker can reach it. A flat curve would mean the chunk is simply
-absent."* The test gap is **+0.309**. That is the budget Phase E is trying to collect.
+absent."* From the **real** shipping baseline the test gap is **+0.264** (0.471 → 0.735), not the
+`+0.309` this section originally claimed. That is the budget Phase E is trying to collect, and E1
+has taken **+0.058** of it.
 
 ### Three hard numbers that bound the work
 
@@ -168,6 +177,11 @@ same experiment.
 ## Steps
 
 ### E1 — Separate the three budgets, and measure before changing anything
+
+> **✅ DONE 2026-09-20 — but NOT as specified below. `3d280fb` (E1a, measure-only) + `9748086`
+> (E1b, shipped). SHIPPED `k=4/doc, top_n=12`, NOT the `k=20/doc` this step asks for — that arm
+> measures `+0.000` on test. See the amendment box in **Results** before reading anything below as
+> current. Test strict recall 0.471 → 0.529. Zero Gemini calls.**
 
 Zero quota. **Measure-only first**; no ranking change ships in this step.
 
@@ -384,4 +398,128 @@ retrieval via Gemini embeddings).
 
 ## Results
 
-*(nothing executed yet — Phase E is planned as of 2026-09-19)*
+### Session 0 + E1 — 2026-09-20. Zero Gemini calls.
+
+Branch `phase10/retrieval-quality` cut from `main` at `1ee6ea9`. Commits: **`3d280fb`** (E1a,
+measure-only) · **`9748086`** (E1b, the shipping flip).
+
+**Session 0 control: REPRODUCES.** All five harnesses re-captured to `D:\e0_baseline\` before the
+first edit and diffed against `scripts/baseline_v2_2026-09-19.txt`: `audit_corpus` (153 lines),
+`eval_heldout` (151), `eval_chat` (218), `ablate_phase08` (71) and `eval_phase06` (31) are
+**byte-identical** to the archived sections. `eval_phase06`'s only difference is the `--out` path it
+prints; the sha256 digest matched. `calibrate_refusal` has no archived counterpart (it postdates the
+archive) and was captured fresh: PASS, 0/212 disagreements.
+
+**HEADLINE: held-out `test` strict recall 0.471 → 0.529 (+0.058); dev 0.473 → 0.573 (+0.100);
+frozen-10 0.633 → 0.734.** False refusals still **0/10 · 0/25 · 0/17**. `MIN_SCORE` untouched at
+`0.10`. `requirements.txt` byte-identical. `audit_corpus` stdout byte-identical (the corpus was not
+touched). Exit criterion 1's "meaningful movement off 0.471 toward the 0.824 ceiling" is **22% of
+the available headroom**, from one number.
+
+> ### ⚠ THIS PLAYBOOK'S E1 SIZING WAS WRONG, AND TWO OF ITS PUBLISHED NUMBERS WERE MISLABELLED
+>
+> **1. `k=20/doc` buys nothing. The knob is `top_n == 3k`.** E1 above specifies a 60-candidate pool
+> plus a prompt budget of "10–12, ≤4/doc". Measured (`ablate_phase10.py`, recall_strict):
+>
+> | arm | frozen10 | dev | test | shown | Act share of slots |
+> |---|---|---|---|---|---|
+> | ship `k=3 n=6` | 0.633 | 0.473 | 0.471 | 6 | 36% |
+> | `k=10 n=6` | 0.622 | 0.453 | **0.426** | 6 | 28% |
+> | **`k=20 n=12` (this playbook's arm)** | 0.698 | 0.527 | **0.471 = +0.000** | 12 | 25% |
+> | **`k=4 n=12` (SHIPPED)** | **0.734** | **0.573** | **0.529** | 12 | 33% |
+> | `k=5 n=15` | 0.748 | 0.587 | 0.529 | 15 | 33% |
+> | `k=6 n=18` (**declined**) | 0.748 | 0.587 | 0.559 | 18 | 33% |
+>
+> `k=20 n=12` and `k=4 n=12` both show 12 chunks, so they are comparable, and the playbook's arm
+> gains **+0.000 on test**. The whole difference is per-doc allocation, not pool depth.
+>
+> **2. Widening the pool at an unchanged budget is a REGRESSION on all three sets.** `k=10 n=6`
+> isolates it: 0.633/0.473/0.471 → 0.622/0.453/**0.426**. The extra slots go to the global top,
+> which the Constitution (2037 of 2134 chunks) owns — the Act's share of displayed chunks falls
+> 36% → 28% → 25% as the pool widens. **This is the flooding `PerDocRetriever` exists to prevent,
+> re-introduced by widening**; `min_per_doc=1` is too weak a guarantee at 30–60 candidates.
+> The section "We are barely selecting at all… widening the pool is a *precondition* for
+> re-ranking" is therefore **half right**: widening is fine, widening *without fixing the
+> allocation* is harmful, and that distinction is not in the text above.
+>
+> **3. `max_per_doc` is UNNECESSARY.** A per-doc ceiling was prototyped. `k=20/doc capped at
+> ≤4/doc` is **bit-identical to plain `k=4/doc, top_n=12`** on every cell of every set — within a
+> doc, global score order *is* that doc's own order, so each doc's best 4 of 20 is its best 4 of 4.
+> `k=8` and `k=20` capped at 4 both reproduce `k=4 n=12` exactly. E1 shipped **one number** and no
+> new `select_top` parameter.
+>
+> **4. The diagnosis table above mislabels the curve as shipping.** Its `r@6` column is headed
+> "**r@6 (shipping)**" and reads test **0.426**. That is the **recall@k CURVE** row, not the
+> shipping arm. `eval_heldout.py:128-131` warns against exactly this quote: the curve builds
+> `select_top(top_n=60)` over 60 candidates, so its quota phase is **vacuous** and its `@6` has no
+> `min_per_doc` reservation. **Shipping test recall was 0.471.** The `+0.309` gap in "The problem is
+> RANKING" is therefore **+0.264** from the real baseline. Exit criterion 1 already said 0.471, so
+> the playbook contradicted itself; the criterion was right.
+>
+> **5. `MIN_SCORE` cannot be reached by this class of change, and that is now measured.** The
+> top-score vector is **byte-identical from k=3 to k=20** and the refused-row count never moves, so
+> **neither `k` nor `top_n` can create or destroy a refusal.** `ablate_phase08`'s off-corpus top
+> scores are identical digit-for-digit before and after E1b; only hit counts moved. E2 does not get
+> this for free — it re-orders, which is still refusal-invariant, but it must re-run
+> `calibrate_refusal.py` as the playbook already requires.
+
+**`k=6 n=18` is DECLINED, not dropped.** frozen-10 and dev plateau at `k=5` (0.748/0.587); only
+test keeps climbing (0.529 → 0.559). Paying **6 more excerpt cards** of screen-reader burden for a
+gain visible on one set is not a trade this project takes — accessibility is a requirement, not
+polish. Recorded so the next session does not re-run the experiment.
+
+**The gain is not the eval set's prior.** Every `top_n == 3k` arm allocates 4/4/4, so the obvious
+objection is that an even split just matches the set's shape. It does not: expected refs run
+**~50% Act / ~20% Constitution / ~30% Factsheet** (frozen 59/8/33, dev 50/25/25, test 47/15/38).
+The even split **under-serves the Act**, which owns half the answers. `ablate_phase10.py` prints
+this distribution so the check is in output, not prose. And the gain replicates on **test**, never
+tuned against. *Corollary worth having, and it is a fit-risk not a free win:* an Act-weighted
+allocation would probably score higher still, but choosing weights against these numbers is fitting
+to the eval set's doc prior. If it is ever tried, it belongs in E5 with a declared fit-risk and a
+test-set-only validation.
+
+**Two baselines were deliberately re-pinned, and both tightened.** `FROZEN10_STRICT_BASELINE_V2`
+`0.632738 → 0.733928` (the truncated true float `0.7339285714285714`, **not** the printed `0.734` —
+`eval_heldout.py:155-165` warns why) and `ablate_phase08.ABLATE_MIN_STRICT_V2` likewise. The second
+was not in the brief; it was taken because that file's own comment reserved the edit for Phase E and
+a stale tripwire would let a revert of E1b pass silently. Both old values are kept in comments
+recording that **E1's budget moved them, not a corpus change**. `eval_phase06`'s two digests moved
+too — `V2 10751076… → 2429cafc…`, `V1 ce716fb3… → 12bdeba0…` — and the old v1 digest was proven
+still reproducible by running the **pre-commit code at the old budget** in a throwaway worktree.
+Only the instrument moved.
+
+**Controls that held.** `eval_heldout`'s RECALL@K CURVE block is **numerically identical** before
+and after (`K_CURVE=20` untouched by design); only its generated caption changed.
+`calibrate_refusal` 0/212 disagreements and all three gates PASS. `audit_corpus`, `test_phase03`,
+`test_phase09_ops` and `bench_phase01` stdout byte-identical. `test_phase05` **137/137, with no
+assertion edited** — the source-text asserts survived because they assert `>= 1`, not `== 6`.
+`import app` clean. Suites 03/04/05/09 green.
+
+> **⚠ READ THE `eval_chat` GAINS WITH THE AMENDMENT BOX AT THE TOP OF THIS FILE.** `chat_dev` ctx
+> 0.607 → 0.786 and `chat_test` ctx 0.571 → 0.714 are **not self-certifying**: amendment point 3
+> says `recall_strict` does not neutralise the packed-ref subsidy in the `ctx` arm, and Phase B's
+> gates are computed on `chat_dev`, the tuning set. Two things make the direction credible anyway —
+> `chat_test`'s ellipsis class moved off the flat `0.000 → 0.000` that D6 recorded, to
+> `0.000 → 0.333` on the **blind** set, and the change is justified independently by the
+> single-turn held-out `test` gain. But **a budget that shows twice as many chunks inflates any
+> recall-shaped metric by construction**, so E1b's load-bearing evidence is the `test` column, not
+> these. Do not quote the chat deltas as E1's result.
+
+**Recorded as moved, not fixed:** context precision falls **0.333 → 0.217**. This is arithmetic —
+the same relevant chunks over twice the shown chunks — and `CLAUDE.md` says precision is by design
+and must never be gated. What is stale is the **figure** `0.333` quoted in `CLAUDE.md`, not the
+design point; corrected in place there. `eval_phase06`'s frozen-10 recall gate still reads
+**FAIL (0.734 vs >0.75)** and was left unrelaxed.
+
+**Not done in this session, and outstanding for E5 / later:** `probe_embed_quota.py` still has
+**never been run** (exit criterion 6), `scripts/baseline_phaseE_<date>.txt` is not yet archived
+(criterion 7 — E5 owns it), and the **12-card fold has not been eyeballed in a browser**. No
+harness measures that, and it is the one user-facing part of E1b: each assistant turn now renders
+3 inline + **9** behind one `expanded=False` fold. Read-aloud speaks only the answer, so it is
+unaffected; default tab/screen-reader burden is unchanged because the fold stays collapsed.
+
+**Also found: `scripts/ablate_phase10.py` had apparently never been run.** It is a committed
+measure-only width-ablation harness, absent from `CLAUDE.md`'s harness list and from the Phase D
+baseline archive, and it is exactly E1's instrument. It ran clean first time and reproduced the
+scratch probe on every shared arm. E1a extended it with the no-cut ladder and two new output blocks
+(displayed-chunks-per-doc, and the expected-ref prior check). **It is now in `CLAUDE.md`'s list.**

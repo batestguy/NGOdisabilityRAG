@@ -2489,3 +2489,144 @@ That last detail is not fussiness. **D6 found a guard that had been failing open
 D5's raw captures still existed to diff against** — a summary of those runs would have said
 "PASS" and preserved nothing. The generalisation: *a baseline is the artifact, not the sentence
 you wrote about it.*
+
+## 2026-09-20 — the playbook's headline arm bought nothing, and the knob was a different number
+
+Phase E, Session 0 and E1. Two commits, `3d280fb` (measure-only) and `9748086` (shipped). Zero
+Gemini calls. Held-out `test` strict recall **0.471 → 0.529**.
+
+### Session 0 did its job on the very first read
+
+The control reproduced — all five harnesses byte-identical to the Phase D archive before the first
+edit. That is the boring outcome and the one you want. But the *reason* Session 0 exists paid out
+immediately anyway: with `D:\e0_baseline\heldout_v2.txt` open on disk, the shipping headline and the
+recall@k curve sit twenty lines apart, and the playbook's diagnosis table turns out to quote the
+wrong one.
+
+The table heads a column **"r@6 (shipping)"** and reads test **0.426**. `eval_heldout.py:128-131`
+warns in as many words against that quote. The curve builds `select_top(top_n=60)` over exactly 60
+candidates — so `top_n == len(hits)`, the quota phase is **vacuous**, and the returned order is pure
+global cross-doc cosine with **no `min_per_doc` reservation**. The shipping arm has one. Shipping
+test recall was **0.471**.
+
+The tell that this was a real defect and not my misreading: **the playbook contradicted itself.**
+Exit criterion 1 says "meaningful movement off **0.471**". Diagnosis said 0.426. When a document
+disagrees with itself, one half is quoting a different measurement, and finding which is cheaper
+than re-deriving either.
+
+### The finding: a wider pool is a regression, and the playbook's own arm gains nothing
+
+E1 was specified as "widen the candidate pool to `k=20/doc` (60 candidates)" plus a prompt budget of
+"10–12, ≤4/doc". Measured, recall_strict:
+
+```
+arm                     frozen10  dev     test    shown   Act share of slots
+ship k=3 n=6            0.633     0.473   0.471   6       36%
+     k=10 n=6           0.622     0.453   0.426   6       28%
+     k=20 n=12  <-- the playbook's arm
+                        0.698     0.527   0.471   12      25%
+     k=4  n=12  <-- shipped
+                        0.734     0.573   0.529   12      33%
+```
+
+`k=20 n=12` and `k=4 n=12` both show twelve chunks, so they are comparable, and **the playbook's own
+arm gains `+0.000` on the clean set.** The whole difference is per-doc allocation.
+
+And `k=10 n=6` — widening at an unchanged budget — **loses recall on all three sets**. The mechanism
+is visible in the slot counts: the spare slots go to the global top, and the Constitution is 2037 of
+2134 chunks, so the Act's share falls 36% → 28% → 25% as the pool widens. **This is exactly the
+flooding `PerDocRetriever` was built to prevent, re-introduced by widening.** `min_per_doc=1`
+reserves *one* slot; at 60 candidates that is not a guarantee, it is a rounding error.
+
+So the playbook's "widening the pool is a *precondition* for re-ranking, not an alternative" is half
+right in the way that matters: widening is fine, widening **without fixing the allocation** is
+harmful, and that distinction is nowhere in the text.
+
+The real knob is **`top_n == 3k`**. Then `select_top` returns every candidate retrieved and the
+cross-doc cosine cut — the comparison the class docstring calls *invalid* — never discards anything.
+E1 did not add a ranking improvement so much as **stop throwing retrieved evidence away.**
+
+### The prototype that deleted itself
+
+I built a `max_per_doc` ceiling for `select_top`, measured `k=20/doc` capped at `≤4/doc`, and got
+**0.734 / 0.573 / 0.529** — the best arm. Then `k=4/doc, top_n=12` with no cap and no wide pool
+returned **identically**. Every cell. So did `k=8` capped at 4, and `k=20` capped at 4.
+
+Of course it did: within a doc, global score order **is** that doc's own order, so each doc's best 4
+out of 20 is its best 4 out of 4. The wide pool contributes nothing once the allocation is fixed,
+and the ceiling is a no-op restated.
+
+The generalisation, and it is the one I want to keep: **when a new parameter's best setting makes it
+equivalent to not having the parameter, you have found a simpler change, not a feature.** I nearly
+shipped a `select_top` argument, a docstring, and a refusal-invariance proof obligation for it. The
+arm that falsified it cost one line in a table.
+
+### An even split that is not the set's prior
+
+Every `top_n == 3k` arm allocates 4/4/4, so the obvious objection is that the gain is just the eval
+set's doc distribution handed back. It is not: expected refs run **~50% Act / ~20% Constitution /
+~30% Factsheet**. The even split **under-serves** the Act, which owns half the answers. The gain was
+not bought by matching the shape, and it replicates on `test`.
+
+Which also means an Act-weighted allocation would probably score higher — and that **is** fitting to
+the eval set's doc prior. I wrote it down as a fit-risk for E5 rather than taking the free points.
+This project has already spent 30 held-out questions once by tuning against them.
+
+I put that distribution check into `ablate_phase10.py`'s own output rather than the commit message,
+because I had written the claim in a comment citing numbers from a scratch probe — and the harness
+pools off-corpus rows, so its counts differ. The comment would have contradicted the table printed
+four lines below it. **A comment citing numbers the adjacent code does not print is a defect with a
+delay fuse.**
+
+### Refusal invariance, proved instead of argued
+
+The top-score vector is **byte-identical from k=3 to k=20**, and the refused-row count never moves.
+So neither `k` nor `top_n` can create or destroy a refusal — not "should not", cannot. That turned
+E1's most safety-critical exit criterion from a thing to check into a thing that is true by
+construction, and `ablate_phase08` corroborated it independently: off-corpus top scores identical
+digit-for-digit before and after, only hit counts moved.
+
+Worth being precise about the scope: this is a property of *selection depth*, not of retrieval
+generally. E2 re-orders within the admitted set, which is also refusal-invariant, but for a different
+reason — and it still has to re-run `calibrate_refusal.py` to show it.
+
+### The number that inflates itself
+
+`eval_chat` moved a lot: `chat_dev` ctx 0.607 → 0.786, `chat_test` 0.571 → 0.714. It would have been
+easy, and wrong, to lead with that.
+
+**A budget showing twice as many chunks inflates any recall-shaped metric by construction.** D6's
+standing amendment says `recall_strict` does not neutralise the packed-ref subsidy in the `ctx` arm,
+and Phase B's gates are computed on `chat_dev`, the tuning set. So the chat deltas are consistent
+with the change being good, and would also be consistent with it being nothing. E1b's load-bearing
+evidence is the single-turn held-out `test` column and nothing else. The reviewer flagged that the
+commit message quoted the chat numbers without naming that caveat — correct, and it is named here
+and in the playbook.
+
+Same discipline on the other side: context precision fell 0.333 → 0.217. That is arithmetic (same
+relevant chunks, twice the shown chunks) and `CLAUDE.md` says precision is by design and must never
+be gated. But the *figure* in `CLAUDE.md` was stale, so it is corrected in place. **The design point
+and the number it was illustrated with have different lifetimes.**
+
+### Two small things worth keeping
+
+**A committed harness nobody had run.** `scripts/ablate_phase10.py` — a measure-only `(k, top_n)`
+ladder, exactly E1's instrument — was in the repo, absent from `CLAUDE.md`'s harness list and from
+the Phase D baseline archive, and appears never to have been executed. It ran clean first time and
+reproduced my scratch probe on every shared arm, which is what let me cross-validate scratch numbers
+against committed code instead of trusting a file in `D:\`. It is in `CLAUDE.md`'s list now, and so
+is `calibrate_refusal.py`, which was also missing.
+
+**A tripwire raised without being asked.** `ablate_phase08.ABLATE_MIN_STRICT_V2` was not in the
+brief; it passed at the old value. It was raised anyway because that file's own comment reserved the
+edit for Phase E, and a stale tripwire that passes on the old budget would let a revert of E1b
+through silently — the Phase D failing-open defect class. Tightening a gate on a measurement is
+always allowed; loosening one to make a number pass is never. The asymmetry is the whole rule.
+
+### What I would tell the next session
+
+The playbook is a hypothesis with a date on it. This one was written before the recall@k curve was
+read carefully, and its central sizing (`k=20/doc`) is inert while a number it never mentions
+(`top_n == 3k`) carried the entire gain. **Measure the playbook's own arm before implementing it** —
+E1's "measure-only first" instruction existed for precisely this, and it is the reason the wrong arm
+cost an afternoon of measurement instead of a shipped regression.
