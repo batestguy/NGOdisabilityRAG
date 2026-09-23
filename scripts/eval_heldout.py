@@ -100,7 +100,7 @@ from evalset import (  # noqa: E402
     verify_expected,
 )
 from rag import CORPUS_VERSION, build_corpus  # noqa: E402
-from retrieve import MIN_SCORE, PerDocRetriever, select_top  # noqa: E402
+from retrieve import MIN_SCORE, Hit, PerDocRetriever, select_top  # noqa: E402
 
 # ---- the corpus stamp (D6, 2026-09-19) -----------------------------------
 # Every table stamps the corpus this run ACTUALLY built: the --corpus= override
@@ -266,6 +266,85 @@ def measure_curve(ret, row: dict) -> dict:
     out["rank"] = rank
     out["rr"] = (1.0 / rank) if rank else 0.0
     return out
+
+
+# Phase E5.1 (2026-09-23). The first 3 excerpts render inline (app.INLINE_EXCERPTS)
+# and are what a screen-reader user hears first; the rest sit behind a fold.
+INLINE_DEPTH = 3
+
+
+def measure_shown(ret, row: dict) -> dict:
+    """What the PAGE renders for one question -- through app.offline_legal_hits.
+
+    Phase E5.1. Set recall (measure_one) scores the whole top_n list as a SET,
+    so it cannot see a worse top excerpt or fewer excerpts shown -- E4a's
+    `boss -> manager` case moved neither metric. This reads the page's own
+    display function, not a re-implementation of it: offline_legal_hits calls
+    select_top WITH floor=, which measure_one does not, and a display metric that
+    diverged from the display would be measuring a page nobody sees.
+
+    REPORTED, NEVER GATED. Imported lazily so `import eval_heldout` (which
+    calibrate_refusal does) stays free of the Streamlit import.
+    """
+    if str(ROOT) not in sys.path:     # app.py lives at the repo root
+        sys.path.insert(0, str(ROOT))
+    import app  # noqa: E402  -- import-safe by contract (CLAUDE.md)
+    p = app.offline_legal_hits(row["text"], ret, k=K_PER_DOC, top_n=TOP_N,
+                               min_per_doc=MIN_PER_DOC, min_score=MIN_SCORE)
+    shown = [Hit(e["doc_id"], e["ref"], e["text"], e["score"])
+             for e in p["excerpts"]]
+    exp = row["expected"]
+    n_exp = sum(len(v) for v in exp.values())
+    out = {"id": row["id"], "set": row["set"], "class": row["class"],
+           "expect_gate": row["expect_gate"], "n_shown": len(shown),
+           "refused": p["refused"]}
+    if not n_exp:
+        out.update({"hit3": None, "strict3": None, "rr_shown": None})
+        return out
+    inline = shown[:INLINE_DEPTH]
+    rank = next((i + 1 for i, h in enumerate(shown)
+                 if ref_nums(h.ref) & exp.get(h.doc_id, set())), None)
+    out.update({
+        # any expected ref among the inline three
+        "hit3": 1.0 if any(ref_nums(h.ref) & exp.get(h.doc_id, set())
+                           for h in inline) else 0.0,
+        # share of expected refs the inline three cover, one ref per chunk
+        "strict3": strict_covered(inline, exp) / n_exp,
+        # reciprocal rank of the first expected ref in the SHOWN list (0 if none)
+        "rr_shown": (1.0 / rank) if rank else 0.0,
+    })
+    return out
+
+
+def shown_table(shown: dict) -> None:
+    """E5.1 block: the user-facing view, every set, plus vocab-mismatch."""
+    print("\n== USER-FACING VIEW (Phase E5.1 -- what the page renders; REPORTED, NOT GATED) ==")
+    print("  Through app.offline_legal_hits, the page's own display function. The")
+    print("  first %d excerpts render inline and are heard first on a screen reader;"
+          % INLINE_DEPTH)
+    print("  set recall above cannot see their quality or how many excerpts show.")
+    print("  hit@3 = any expected ref inline | strict@3 = refs covered inline |")
+    print("  MRR = first expected ref in the SHOWN list | shown = excerpts rendered")
+    print("  %-40s %-7s %-9s %-7s %-7s %-5s %s" % (
+        "set", "hit@3", "strict@3", "MRR", "shown", "min", "rows<=2"))
+    for s in LABELS:
+        ans = [r for r in shown[s] if r["hit3"] is not None]
+        if not ans:
+            continue
+        for label, sub in ((LABELS[s], ans),
+                           ("  of which vocab-mismatch",
+                            [r for r in ans if r["class"] == "vocab-mismatch"])):
+            if not sub:
+                continue
+            print("  %-40s %-7s %-9s %-7s %-7s %-5d %d/%d" % (
+                label, fmt(mean(r["hit3"] for r in sub)),
+                fmt(mean(r["strict3"] for r in sub)),
+                fmt(mean(r["rr_shown"] for r in sub)),
+                fmt(mean(r["n_shown"] for r in sub), "%.2f"),
+                min(r["n_shown"] for r in sub),
+                sum(1 for r in sub if r["n_shown"] <= 2), len(sub)))
+    print("  Findings, not baselines: nothing here is pinned or gated. E5.4 archives")
+    print("  them in scripts/baseline_phaseE_<date>.txt.")
 
 
 def mean(vals) -> float | None:
@@ -439,6 +518,7 @@ def main(argv: list[str] | None = None) -> int:
     print("  points. Do not edit a question to move any of these numbers.")
 
     curve_table(curves)
+    shown_table({s: [measure_shown(ret, r) for r in by_set[s]] for s in LABELS})
 
     # ---- false refusals. The number that matters most in this project.
     print("\n== FALSE-REFUSAL RATE (answerable questions, every set) ==")

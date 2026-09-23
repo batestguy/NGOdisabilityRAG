@@ -1366,3 +1366,46 @@ arm is now hand + bridge (a note was added).
 merged tree is byte-identical to the branch tip, and the key checks were re-run on it and all
 passed (`D:\ship_e4a\merged\`). The user then **deferred deployment until every phase is complete**;
 there are no active users yet. The live smoke runs with that deploy. **E5 builds on local `main`.**
+
+
+### E5.0 + E5.1 — 2026-09-23, local `main`. Zero Gemini calls.
+
+**E5.0: the control reproduces.** Every harness in the `CLAUDE.md` list was re-captured to
+`D:\e5_control\` and diffed against `D:\ship_e4a\` and `D:\ship_e4a\merged\`:
+* **0 diff lines:** bench, 03, 09, `audit_corpus`, `eval_heldout` (v2 and v1), `eval_chat`,
+  `ablate_phase08`, `ablate_phase10`, `calibrate_refusal` (0/212) and `ablate_oov_bridge`
+  (72/72 · 0.734/0.613/0.647).
+* **Digests:** `eval_phase06` `2429cafc…` (v2) and `12bdeba0…` (v1).
+* **The only differences:** a routing-latency line in 04 and Streamlit timestamps in 05, which
+  are timing noise, not results.
+
+**E5.1: the user-facing columns are added** to `scripts/eval_heldout.py` as a new block, `USER-FACING
+VIEW`, printed after the recall@k curve. **Every existing block is byte-identical**, on v2 and v1.
+It is computed through `app.offline_legal_hits`, the page's own display function (which passes
+`floor=` to `select_top`, unlike `measure_one`), and imported lazily so `import eval_heldout`
+stays free of Streamlit. `calibrate_refusal` output is unchanged. **It is reported, never
+gated.**
+
+Shipping state (hand map + bridge), with the pre-E4a hand-only arm measured by the same function
+for the record:
+
+| | hit@3 | strict@3 | MRR (shown) | shown mean · min · rows ≤ 2 |
+|---|---|---|---|---|
+| frozen-10, hand → ship | 0.900 → 0.900 | 0.462 → 0.462 | 0.925 → 0.925 | 9.20 · 5 · 0/10, both |
+| dev, hand → ship | 0.520 → 0.520 | 0.373 → 0.373 | 0.421 → 0.421 | 7.08 · 3 · 0/25 → 6.92 · **2 · 2/25** |
+| test, hand → ship | 0.412 → 0.412 | 0.294 → **0.265** | 0.368 → **0.422** | 7.41 · 2 · 3/17 → 7.65 · 2 · 2/17 |
+| test `vocab-mismatch`, hand → ship | 0.250 → 0.250 | 0.250 → **0.188** | 0.188 → **0.302** | 6.50 → 6.38 |
+
+**What it says.**
+1. **The inline block is weak regardless of E4a.** On `test`, only **41%** of answerable questions
+   have any expected ref in the 3 excerpts a screen-reader user hears first, and **25%** for
+   `vocab-mismatch`. Set recall (0.647) is much kinder than the first screen. **That gap, not
+   set recall, is now the most user-relevant retrieval number in the project**, and `test2` should
+   be read against it.
+2. **E4a's user-facing effect is mixed and small.** hit@3 is unchanged everywhere, MRR is up on
+   `test`, and strict@3 is down by about half a question. Dev gains two thin-display rows (≤ 2
+   excerpts). That agrees with the set-recall win being real but located past the inline three.
+   E4a stays shipped: these columns weren't in its declared gate, and reading them now as a gate
+   would be moving the goalposts.
+
+**Next: E5.2, authoring `test2`**, its own session per the box.

@@ -3052,3 +3052,18 @@ M2's case is also weaker than when it was written. E4a moved one "absent" test r
 and with no users and launch deferred, "decline M2 for launch, revisit with real query logs" costs
 nothing. The embedding-quota probe still runs, because an unpriced option can't be declined
 honestly either.
+
+## 2026-09-23 — E5.1: the metric users feel was the one nobody measured
+
+Four sub-phases were judged on set recall over twelve displayed chunks. Measured through the
+page's own display function, the three inline excerpts, which are what a screen-reader user hears
+before any fold, carry a correct reference for **41%** of clean-test questions, and for **25%**
+of `vocab-mismatch` ones. Set recall reads 0.647 on the same questions. Both numbers are true, but
+only one describes the first screen.
+
+**Why this matters for method, not only for the number.** Every Phase E gate was declared in advance
+and honoured, and that discipline held. But a gate can only be as good as the metric it names, and
+the metric named was chosen for comparability with Phase 01, not for what the user experiences.
+E4a's `boss` case was the symptom; this column is the measurement. It was added as **report-only**,
+deliberately: turning it into a retroactive gate on E4a would repeat the goalpost-moving the phase
+exists to avoid. It becomes a declared gate for future arms, starting with `test2`.

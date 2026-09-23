@@ -23,7 +23,7 @@ C:\conda-envs\drlca-rag\python.exe scripts\test_phase04.py         # Intent rout
 C:\conda-envs\drlca-rag\python.exe scripts\test_phase05.py         # UI script-level asserts, 137/137
 C:\conda-envs\drlca-rag\python.exe scripts\test_phase09_ops.py     # ops/chat invariants, 51/51, zero network
 C:\conda-envs\drlca-rag\python.exe scripts\audit_corpus.py         # corpus shape gate + v1 regression tripwire
-C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py         # held-out retrieval baseline (+ recall_strict)
+C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py         # held-out retrieval baseline (+ recall_strict, + E5.1 user-facing view)
 C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn set, 22 conv / 62 turns
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase08.py       # retrieval ablations
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase10.py       # (k, top_n) width ladder, measure-only, never gates
