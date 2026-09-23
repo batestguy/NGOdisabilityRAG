@@ -530,14 +530,17 @@ via `calibrate_refusal.py` · whichever arm wins, the decision recorded with its
 > * **Built without reading `data/eval/questions.json`.** The generator takes the corpus and the
 >   GloVe file only.
 >
-> **5. The risk that is new to E4, and the reason `calibrate_refusal.py` is load-bearing here.**
-> Off-corpus questions are *dense* in out-of-corpus words. This is the first arm in Phase E that
-> can **manufacture overlap for exactly the queries that should refuse**: "football match" can
-> bridge to `competition`, and so on. Nothing false-refuses more, but the floor can be pushed
-> *open*. So E4a reports, per set, how many `refuse` rows change `kept` from 0 to more than 0, and
-> `calibrate_refusal.py` must still be **0 disagreements on 212**, and it must be run **with the bridge
-> switched on**, which needs an opt-in flag in that harness. Run on the shipping path, it measures nothing. The probe count stays 212 because
-> `SYNONYMS` is not touched.
+> **5. ⚠ CORRECTED 2026-09-23, the same day, before any measurement.** This point first said the
+> bridge was "the first arm in Phase E that can manufacture overlap for exactly the queries that
+> should refuse" and could push the floor *open*. **That is false, and the code says so.**
+> `PerDocRetriever.query()` (`src/retrieve.py`) has a two-sided gate. It scores the **original**
+> query first, returns it unexpanded if it can't clear `MIN_SCORE`, and discards any expansion
+> whose own top score falls below the floor. So **no expander can change a refusal decision, in
+> either direction.** It was built after the `job` key did exactly this in Phase 08. The
+> false-refusal and refuse-row-flip columns, and `calibrate_refusal.py` 0/212 **with the bridge on**
+> (`--oov-bridge`, which is needed because the shipping path would measure nothing), stay in the
+> gate. **They confirm the property; they don't guard a live risk.** The probe count stays 212
+> because `SYNONYMS` is not touched.
 >
 > **6. Ship gate — every line must hold, measured in this order, and `test` is read once, last:**
 > 1. **dev (selector):** strict > 0.573, with at least 1 question up and no more questions down than up.
