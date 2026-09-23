@@ -1,0 +1,69 @@
+PASS 1 -- question texts only (2026-09-23). Refs are added in pass 2.
+Sources: corpus text dumped from rag.build_corpus("v2", check_bridge=False) + class definitions
+(docs/phases/09 step 2). No bridge, no expand_query, no retrieval, no eval output read.
+
+vocab-mismatch (15)
+T2_01 They chained my cousin to a pole at a prayer house because they say he is mad. Is that allowed?
+T2_02 I run a private company with about 200 staff. Is there a quota that says I must hire a certain number of disabled workers?
+T2_03 Where can my son get a hearing aid without paying for it?
+T2_04 Who gives out the disabled sticker for my car windscreen, and do I need one to use the special parking bays?
+T2_05 I am suing the disability commission. Where do I drop off the court papers?
+T2_06 If a staff member of the disability commission is taken to court over something he did on the job and he wins, is he covered?
+T2_07 Does the person who runs the disability commission day to day have to be disabled himself?
+T2_08 The toilets at the local government secretariat are too narrow for my wheelchair. Is there a law about that?
+T2_09 The bus conductor started moving before my mother, who uses a walking stick, had got down. Is there a law that says the bus must stop fully first?
+T2_10 Can the disability commission buy a plot to build a rehabilitation centre?
+T2_11 I work in a federal ministry. If I move to the disability commission, will my years in the ministry still count for my pension?
+T2_12 A private school refused to admit my daughter because she has Down syndrome. Is that legal?
+T2_13 Can a minister order the disability commission to drop an investigation?
+T2_14 My brother cannot work because of his condition and he has nothing to eat. Is the government meant to help people like him?
+T2_15 I had a bad accident last month and the doctor is not sure I will walk again. Can I get any official paper now, before it is known if it is permanent?
+
+odd-wording (9)
+T2_16 Abeg, wetin be the correct name of this disability law? I wan tell my lawyer.
+T2_17 Dem talk say if pikin no dey hear, government school suppose get teacher wey sabi sign. Na true?
+T2_18 pls i need to know if the law say the disability commission must be in abuja or can it be in my state because i want to go there and complain
+T2_19 penalty using disabled person to beg
+T2_20 I should be most obliged if you would kindly clarify whether the members of the governing council of the disability commission are remunerated for their service.
+T2_21 My brother is having mental challenge. They are saying he cannot contest for president, is it true?
+T2_22 wat r d dutys of d council of d disabilty comission
+T2_23 If President come sick finish and e no fit do the work again, wetin Constitution talk?
+T2_24 DOES THE LAW SAY BUSES MUST SHOW OR ANNOUNCE WHERE THEY ARE GOING FOR BLIND PPL
+
+cross-document (8)
+T2_25 My mother is a High Court judge and she has become partly blind. Can she be removed from office because of that, and does the disability law protect her right to keep working?
+T2_26 My uncle has a mental disability. Can he run for governor, and what does the disability law say about disabled people taking part in politics?
+T2_27 My deaf daughter is starting secondary school. Should it be free, under both the Constitution and the disability law?
+T2_28 Is the government hospital supposed to treat my son with a mental illness free, and does the Constitution say anything about medical facilities for everyone?
+T2_29 The disability commission wants to collect records on every disabled person in my area. Is that part of its job, and what does the Constitution say about my privacy?
+T2_30 The TV news is never signed or captioned. Do I have a right to get information in a form I can use?
+T2_31 My relatives say I cannot inherit or own land because I am blind. What do the Constitution and the disability law say?
+T2_32 Who is responsible for welfare schemes for disabled people, under the Constitution and under the 2018 Act?
+
+toc-trap (6)
+T2_33 Does the Constitution say anything about the safety and welfare of disabled people at work?
+T2_34 I was a federal civil servant and became disabled. What does the Constitution say about my pension?
+T2_35 Can I be refused a passport or stopped from leaving Nigeria because I am in a wheelchair?
+T2_36 Do staff of the disability commission get a pension when they retire?
+T2_37 Does the Constitution say anything about a minimum living wage or welfare for disabled people?
+T2_38 Can the disability commission borrow money for a special project?
+
+direct (4)
+T2_39 What are the functions of the National Commission for Persons with Disabilities?
+T2_40 How are staff of the National Commission for Persons with Disabilities appointed?
+T2_41 What does the Act say about persons with disabilities in situations of risk and humanitarian emergencies?
+T2_42 What must the Commission do about keeping accounts and controlling its assets?
+
+off-corpus (8)
+T2_43 How do I register a business name with the Corporate Affairs Commission?
+T2_44 What is the exchange rate of the naira to the US dollar today?
+T2_45 What documents do I need for a UK student visa from Nigeria?
+T2_46 How much does the JAMB registration form cost this year?
+T2_47 How long does it take to renew a Nigerian international passport?
+T2_48 Which club won the Nigeria Premier League last season?
+T2_49 What is the procedure for a divorce in a customary court in Nigeria?
+T2_50 How do I treat malaria in a small child at home?
+
+PASS-1 REVISION (before any ref was written into a row): T2_09 and T2_19 were reworded because
+they duplicated the clause coverage of T2_17 (cl.18) and T2_15 (cl.22). Coverage-driven, not
+retrieval-driven -- no retrieval had been run.

@@ -1,0 +1,20 @@
+{
+ "_about": "Phase E5.2 user-register smoke list (authored 2026-09-23, with test2, before any measurement). Realistic questions in the words users actually use (Nigerian English, Pidgin, everyday nouns such as boss / landlord / okada / headmaster). NO expected refs, on purpose. It is a SMOKE TEST, NEVER A METRIC: inspect each query by eye through app.offline_legal_hits(q, PerDocRetriever(rag.build_corpus())) at every future ship step, and compare the shown excerpts before and after the change. What you are looking for is the E4a `boss` -> `manager` failure class: a user word that the change expands or reweights into the wrong part of the corpus, or a query whose shown-excerpt count collapses. Never add expected refs, never compute a number over it, and never tune against it; a query that disappoints is a finding to record, not a query to reword. Entries are append-only.",
+ "queries": [
+  {"id": "S01", "text": "My boss sacked me after I told him I have epilepsy. What can I do?", "why": "boss/sacked register on the right-to-work clauses; the E4a regression word"},
+  {"id": "S02", "text": "My landlord says he will not rent the flat to me because I use a wheelchair.", "why": "landlord register; housing is only partly in the corpus (accommodation definition, goods and services)"},
+  {"id": "S03", "text": "The okada man refused to carry me because of my crutches.", "why": "Nigerian transport noun absent from the corpus"},
+  {"id": "S04", "text": "Na only stairs for the new general hospital, no ramp at all. Who I go report am to?", "why": "Pidgin on accessibility + complaint route"},
+  {"id": "S05", "text": "My son is autistic and the headmaster says he is disturbing the class and must leave the school.", "why": "headmaster/autistic register on education clauses"},
+  {"id": "S06", "text": "Police arrested my brother who has a mental illness and they are keeping him in the cell.", "why": "detention register; Constitution liberty provisions"},
+  {"id": "S07", "text": "The bus people are charging me extra money to carry my wheelchair.", "why": "extra fare register on transport and goods/services"},
+  {"id": "S08", "text": "Is there any monthly allowance from government for blind people?", "why": "allowance/benefit register; the corpus mostly speaks of welfare and schemes"},
+  {"id": "S09", "text": "My wife is deaf and the chemist will not explain her drugs to her.", "why": "chemist/drugs register; communication duties are hospital-specific in the Act"},
+  {"id": "S10", "text": "Can my oga at work refuse to promote me because I am albino?", "why": "oga + albinism; neither word is in the corpus"},
+  {"id": "S11", "text": "The pastor is using my disabled uncle to collect money on the road for the church.", "why": "begging clause in everyday words (collect money, road)"},
+  {"id": "S12", "text": "My in-laws want to take my children from me because I am blind.", "why": "family/custody; mostly off-corpus, so it probes what the gate shows for a near miss"},
+  {"id": "S13", "text": "Where can I get a free wheelchair?", "why": "short, concrete need; assistive-device vocabulary gap"},
+  {"id": "S14", "text": "The ATM at my bank is too high for me and nobody comes to help.", "why": "ATM/bank register on accessibility and services"},
+  {"id": "S15", "text": "Dem no gree make my sister write WAEC because she no fit see well.", "why": "Pidgin + exam-board acronym absent from the corpus"}
+ ]
+}

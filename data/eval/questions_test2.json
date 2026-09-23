@@ -1,0 +1,732 @@
+[
+ {
+  "id": "T2_01",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "They chained my cousin to a pole at a prayer house because they say he is mad. Is that allowed?",
+  "expected": {
+   "constitution1999": [
+    34
+   ]
+  },
+  "note": "Const s.34(1)(a) (constitution_1999_NHRC.txt Chapter IV): 'Every individual is entitled to respect for the dignity of his person, and accordingly - (a) no person shall be subject to torture or to inhuman or degrading treatment'. Mismatch: user says 'chained', 'pole', 'prayer house', 'mad'; corpus says 'inhuman or degrading treatment', 'dignity'. NOT expected: s.35 (liberty / 'persons of unsound mind ... for the purpose of their care or treatment') -- the question is about the chaining itself, not a lawful detention; Act cl.1 -- the Act has no provision on restraint or ill-treatment. SCORING NOTE: the Second Schedule Exclusive List item '34. Labour, including trade unions ...' also carries ref s.34 in v2 and would credit this pair spuriously; that is a pre-existing ref-numbering artifact, recorded not fixed."
+ },
+ {
+  "id": "T2_02",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "I run a private company with about 200 staff. Is there a quota that says I must hire a certain number of disabled workers?",
+  "expected": {
+   "act2018": [
+    29
+   ],
+   "factsheet2020": [
+    28
+   ]
+  },
+  "note": "Act cl.29: 'All employers of labour in public organisations shall, as much as possible, have persons with disabilities constituting at least 5% of their employment.' Factsheet row 'Section 28 / Equal Right to Work' tail: 'Employers of labour in public institutions shall have at least 5% of persons with disabilities in their employment- section' -- carried by ref 'Section 28' (the factsheet has no Section 29 ref). The correct answer is that the 5% duty is on PUBLIC organisations, so a private firm is not bound by it. Mismatch: 'private company', 'quota', 'hire'; corpus: 'employers of labour in public organisations', '5% of their employment'. NOT expected: Act cl.38(d) (Commission to 'make available not less than 5% of the work force') -- a Commission function, not an employer duty; cl.28 -- the equal right to work, not the quota."
+ },
+ {
+  "id": "T2_03",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Where can my son get a hearing aid without paying for it?",
+  "expected": {
+   "act2018": [
+    38
+   ],
+   "factsheet2020": [
+    38
+   ]
+  },
+  "note": "Act cl.38(r): the Commission shall 'procure assistive devices for all disability types'; cl.57: '\"assistive device\" means any device that assists, increases or improves the functional capabilities of persons with disabilities'. Factsheet 'Section 38 / Functions of the Commission': 'procuring assistive devices for all disability types'. Mismatch: 'hearing aid', 'without paying'; corpus: 'assistive devices', 'procure'. NOT expected: cl.17(3) ('The Commission shall provide educational assistive devices') -- nothing in the question is about school; cl.57 -- a definition, not the provision that answers who supplies one."
+ },
+ {
+  "id": "T2_04",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Who gives out the disabled sticker for my car windscreen, and do I need one to use the special parking bays?",
+  "expected": {
+   "act2018": [
+    12,
+    38
+   ],
+   "factsheet2020": [
+    12,
+    38
+   ]
+  },
+  "note": "Act cl.12(2): 'For a person with disability to be entitled to the use of the reserved space in subsection (1), his car shall have been properly identified with the necessary insignia.' Act cl.38(l): the Commission shall 'issue insignia of identification with persons with disabilities'. Factsheet 'Section 12 / Reserved Places': 'to be entitled to a reserved parking space, it is expected that the car can be identified with the necessary insignia (sign, symbol etc)'; factsheet 'Section 38': 'issuing the insignia of identification for persons with disabilities'. Mismatch: 'sticker', 'windscreen', 'parking bays'; corpus: 'insignia', 'reserved space', 'public parking lots'."
+ },
+ {
+  "id": "T2_05",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "I am suing the disability commission. Where do I drop off the court papers?",
+  "expected": {
+   "act2018": [
+    52
+   ],
+   "factsheet2020": [
+    52
+   ]
+  },
+  "note": "Act cl.52: 'A notice, summons or other documents required or authorised to be served upon the Commission ... may be served by delivering it to the Executive Secretary or by sending it by registered post and addressing it to the Executive Secretary at the head office of the Commission.' Factsheet row headed 'Section 54 Indemnity of Officers', ref 'Section 54,52', restates it '- section 52'. Mismatch: 'drop off', 'court papers', 'suing'; corpus: 'served', 'summons', 'documents', 'Executive Secretary'. NOT expected: cl.31(2)(b) ('may sue and be sued') -- the user already knows they can sue; the question is where to serve."
+ },
+ {
+  "id": "T2_06",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "If a staff member of the disability commission is taken to court over something he did on the job and he wins, is he covered?",
+  "expected": {
+   "act2018": [
+    54
+   ],
+   "factsheet2020": [
+    54
+   ]
+  },
+  "note": "Act cl.54: 'A member of the Council, the Executive Secretary, any officer or employee of the Commission shall be indemnified against any proceeding, whether civil or criminal, in which judgement is given in his favour or in which is acquitted, if any such proceeding is brought against him in his capacity as ... the employee of the Commission.' Factsheet 'Section 54 / Indemnity of Officers': 'This indemnifies a Member of the Council, Executive Secretary, officer or employee of the Commission from civil or criminal proceedings.' Mismatch: 'staff member', 'taken to court', 'on the job', 'wins', 'covered'; corpus: 'indemnified', 'proceeding', 'judgement is given in his favour', 'in his capacity as'."
+ },
+ {
+  "id": "T2_07",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Does the person who runs the disability commission day to day have to be disabled himself?",
+  "expected": {
+   "act2018": [
+    40
+   ],
+   "factsheet2020": [
+    40
+   ]
+  },
+  "note": "Act cl.40(1): 'There shall be an Executive Secretary for the Commission who shall- ... (b) be a person with disability; and (c) be responsible to the Council for the execution of the policies and administration of the daily affairs of the Commission.' Factsheet 'Section 40': 'responsible for the execution of its policies and daily administration ... the Executive Director must be a person with disability.' Mismatch: 'the person who runs ... day to day', 'disabled himself'; corpus: 'Executive Secretary', 'administration of the daily affairs', 'be a person with disability'. NOT expected: cl.32 (Council membership) -- that is the board, already asked by test T8."
+ },
+ {
+  "id": "T2_08",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "The toilets at the local government secretariat are too narrow for my wheelchair. Is there a law about that?",
+  "expected": {
+   "act2018": [
+    4
+   ],
+   "factsheet2020": [
+    3
+   ]
+  },
+  "note": "Act cl.4: 'A public building shall be constructed with the necessary accessibility aids such as lifts (where necessary), ramps and any other facility that shall make them accessible to and usable by persons with disabilities.' cl.57: '\"public building\" means a building owned or used by government or government agency'. Factsheet 'Section 3 / Right of access to public premises': 'complemented by sections 4 and 5 ... special facilities such as elevators, crutches, guide canes, toilet facilities, door protective and re-opening devices' -- its chunk ref is 'Section 3', so 3 is the factsheet number. Mismatch: 'toilets', 'too narrow', 'local government secretariat'; corpus: 'accessibility aids', 'public building', 'usable by'. NOT expected: Act cl.3 (general right of access) and cl.6 (five-year transitory period) -- the question asks whether a rule exists for the facility, and cl.4 is the facility rule; cl.8 (complaint route) is not asked."
+ },
+ {
+  "id": "T2_09",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "The bus conductor started moving before my mother, who uses a walking stick, had got down. Is there a law that says the bus must stop fully first?",
+  "expected": {
+   "act2018": [
+    11
+   ],
+   "factsheet2020": [
+    11
+   ]
+  },
+  "note": "Act cl.11(4): 'Before a person with disability boards or alights from a vehicle, the driver shall ensure that the vehicle comes to a stop.' Factsheet row 'Section 10 Accessibility of vehicles', ref 'Section 10,11': 'section 11(4) places a duty of care on a driver who must ensure that his vehicle comes to a stop before a person with disability alights from the vehicle.' Mismatch: 'bus conductor', 'started moving', 'got down', 'walking stick'; corpus: 'driver', 'alights', 'comes to a stop'. NOT expected: cl.10 -- accessibility aids and destination displays, not stopping; cl.11(5) is about other passengers waiting, not the vehicle stopping."
+ },
+ {
+  "id": "T2_10",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Can the disability commission buy a plot to build a rehabilitation centre?",
+  "expected": {
+   "act2018": [
+    51
+   ],
+   "factsheet2020": [
+    51
+   ]
+  },
+  "note": "Act cl.51: 'The Commission may, subject to the Land Use Act, acquire any land for the purpose of performing its functions.' Factsheet row 'Section 39 Powers of the Commission', ref 'Section 39,51': 'The Commission may also acquire any land for the purpose of performing any of its functions-section 51'. Mismatch: 'buy a plot', 'rehabilitation centre'; corpus: 'acquire any land', 'performing its functions'. NOT expected: cl.39(1)(b) ('purchase or acquire any assets, business or property') -- general asset power; cl.51 is the land-specific rule. cl.38(j) (rehabilitation centres as a function) is not what is asked -- the question is whether it may buy land."
+ },
+ {
+  "id": "T2_11",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "I work in a federal ministry. If I move to the disability commission, will my years in the ministry still count for my pension?",
+  "expected": {
+   "act2018": [
+    42
+   ]
+  },
+  "note": "Act cl.42(2): 'The person seconded under this section, may elect to be transferred to the service of the Commission, and any previous service the person may have rendered in the Public Service shall count as service to the Commission for the purpose of any pension subsequently payable by the Commission.' Factsheet has no Section 42 row. Mismatch: 'federal ministry', 'move', 'years ... still count'; corpus: 'secondment from any Public Service of the Federation', 'previous service ... shall count as service'. NOT expected: cl.44 (staff pension under the Pension Reform Act) -- that says pension exists, not whether prior service counts."
+ },
+ {
+  "id": "T2_12",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "A private school refused to admit my daughter because she has Down syndrome. Is that legal?",
+  "expected": {
+   "act2018": [
+    17
+   ],
+   "factsheet2020": [
+    17
+   ]
+  },
+  "note": "Act cl.17(1): 'A person with disability shall have an unfettered right to education without discrimination or segregation in any form.' Factsheet 'Section 17 / Right to Free Education': 'This entitles a person with disability to a right to education free from discrimination.' Mismatch: 'private school', 'refused to admit', 'Down syndrome'; corpus: 'right to education without discrimination or segregation in any form'. NOT expected: cl.18 -- its inclusiveness duty is on 'All public schools', and this is a private school; cl.9 (goods/services) is arguable but cl.17 is the education-specific rule the question turns on."
+ },
+ {
+  "id": "T2_13",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Can a minister order the disability commission to drop an investigation?",
+  "expected": {
+   "act2018": [
+    39
+   ]
+  },
+  "note": "Act cl.39(3): 'The Commission shall not be subject to a direction, control or suspension by any other authority or person in the performance of its functions under this Act except the President.' Factsheet 'Section 39' row lists powers only and does not restate 39(3), so no factsheet ref is expected. Mismatch: 'minister', 'order', 'drop an investigation'; corpus: 'direction, control or suspension by any other authority', 'except the President'. NOT expected: cl.38(o) (supporting investigation/prosecution) -- that is what the Commission does, not who may stop it."
+ },
+ {
+  "id": "T2_14",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "My brother cannot work because of his condition and he has nothing to eat. Is the government meant to help people like him?",
+  "expected": {
+   "constitution1999": [
+    16,
+    17
+   ]
+  },
+  "note": "Const s.16(2)(d) (Chapter II): the State shall direct its policy towards ensuring 'that suitable and adequate shelter, suitable and adequate food, reasonable national minimum living wage, old age care and pensions, and unemployment, sick benefits and welfare of the disabled are provided for all citizens.' Const s.17(3)(g): 'provision is made for public assistance in deserving cases or other conditions of need'. Mismatch: 'cannot work', 'nothing to eat', 'government meant to help'; corpus: 'unemployment, sick benefits and welfare of the disabled', 'adequate food', 'public assistance in deserving cases'. NOT expected: s.6(6)(c) non-justiciability -- the question asks whether a duty exists, not whether it is enforceable (dev H17 asks that); Act cl.38(b) social-welfare schemes -- a Commission planning function, not help to the individual."
+ },
+ {
+  "id": "T2_15",
+  "set": "test2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "I had a bad accident last month and the doctor is not sure I will walk again. Can I get any official paper now, before it is known if it is permanent?",
+  "expected": {
+   "act2018": [
+    22
+   ],
+   "factsheet2020": [
+    22
+   ]
+  },
+  "note": "Act cl.22(2): 'If a doctor suspects disability in the course of treatment of a person who before was not a person with disability, the doctor may with the approval of the Commission, issue a Temporary Certificate of Disability which shall last for not longer than 180 days.' 22(3): permanent certificate if it persists beyond 180 days. Factsheet 'Section 22 / Certificate of Disability', ref 'Section 22,23,24', restates 22(2) and 22(3). Mismatch: 'bad accident', 'not sure I will walk again', 'official paper', 'before it is known if it is permanent'; corpus: 'Temporary Certificate of Disability', 'doctor suspects disability in the course of treatment'. NOT expected: cl.23 (unlawful procurement) -- not asked."
+ },
+ {
+  "id": "T2_16",
+  "set": "test2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "Abeg, wetin be the correct name of this disability law? I wan tell my lawyer.",
+  "expected": {
+   "act2018": [
+    58
+   ]
+  },
+  "note": "Act cl.58: 'This Act may be cited as the Discrimination Against Persons with Disabilities (Prohibition) Act, 2018.' Factsheet has no Section 58 row. Odd wording: Nigerian Pidgin ('Abeg, wetin be the correct name ... I wan tell my lawyer'). In-corpus and answerable -- measures false refusal on register."
+ },
+ {
+  "id": "T2_17",
+  "set": "test2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "Dem talk say if pikin no dey hear, government school suppose get teacher wey sabi sign. Na true?",
+  "expected": {
+   "act2018": [
+    18
+   ],
+   "factsheet2020": [
+    18
+   ]
+  },
+  "note": "Act cl.18(1)(a): every public school 'shall have- (a) at least a trained personnel to cater for the educational development of persons with disabilities'; 18(2): 'Braille, sign language and other skills for communicating with persons with disabilities shall form part of the curricula'. Factsheet row 'Section 17 Right to Free Education', ref 'Section 17,18': 'section 18 which mandates all public schools ... at least one trained personnel ... the inclusion of braille, sign language'. Odd wording: Pidgin ('if pikin no dey hear, government school suppose get teacher wey sabi sign'). NOT expected: cl.20 (appropriate mode of education) -- plausible, but the question asks specifically whether the school must have a signing teacher, which is 18."
+ },
+ {
+  "id": "T2_18",
+  "set": "test2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "pls i need to know if the law say the disability commission must be in abuja or can it be in my state because i want to go there and complain",
+  "expected": {
+   "act2018": [
+    31
+   ],
+   "factsheet2020": [
+    31
+   ]
+  },
+  "note": "Act cl.31(3): 'The head office of the Commission shall be in the Federal Capital Territory, Abuja.' Factsheet 'Section 31': 'The head office of the Commission shall be in the Federal Capital Territory (FCT)- section 31'. Odd wording: all lower case, no punctuation, run-on. NOT expected: cl.43 (departments in the head office) and cl.38(n) (receiving complaints) -- the question is where the Commission is, not how to complain."
+ },
+ {
+  "id": "T2_19",
+  "set": "test2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "penalty using disabled person to beg",
+  "expected": {
+   "act2018": [
+    16
+   ],
+   "factsheet2020": [
+    16
+   ]
+  },
+  "note": "Act cl.16(1)(a): 'A person shall not- (a) employ, use or involve a person with disability in begging'; 16(2): 'liable on conviction to a fine of N100,000 or a term of six months imprisonment or both' (OCR prints 'N10o,000'). Factsheet 'Section 16': 'liable on conviction to a fine of N100,000, a term of 6 months imprisonment or both- section 16(2)'. Odd wording: keyword-only fragment, no verb agreement. Dev H2 asks the same clause in full-sentence register; this row measures the fragment register."
+ },
+ {
+  "id": "T2_20",
+  "set": "test2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "I should be most obliged if you would kindly clarify whether the members of the governing council of the disability commission are remunerated for their service.",
+  "expected": {
+   "act2018": [
+    36
+   ]
+  },
+  "note": "Act cl.36: 'Members of the Council shall be paid allowances and expenses as the Government may direct.' Factsheet has no Section 36 row. Odd wording: over-formal ('I should be most obliged ... remunerated for their service'); corpus says 'allowances and expenses'. NOT expected: cl.37(c) (staff remuneration) -- that is employees, not Council members."
+ },
+ {
+  "id": "T2_21",
+  "set": "test2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "My brother is having mental challenge. They are saying he cannot contest for president, is it true?",
+  "expected": {
+   "constitution1999": [
+    137
+   ]
+  },
+  "note": "Const s.137(1)(c) (Chapter VI): 'A person shall not be qualified for election to the office of President if - ... (c) under the law in any part of Nigeria, he is adjudged to be a lunatic or otherwise declared to be of unsound mind'. 137(2) suspends that while an appeal is pending. Odd wording: Nigerian English ('is having mental challenge', 'contest for president'). The honest answer is narrow: only an adjudication/declaration of unsound mind disqualifies, not a disability as such. NOT expected: s.131 (positive qualifications) -- it has no mental-capacity limb; Act cl.30 -- general encouragement, does not answer the eligibility question."
+ },
+ {
+  "id": "T2_22",
+  "set": "test2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "wat r d dutys of d council of d disabilty comission",
+  "expected": {
+   "act2018": [
+    37
+   ],
+   "factsheet2020": [
+    37
+   ]
+  },
+  "note": "Act cl.37: 'The Council shall have power to- (a) manage and superintend over the affairs of the Commission; (b) make rules and regulations ...; (c) employ the staff ...; (d) enter into contract ...; and (e) receive, disburse and account for funds of the Commission.' Factsheet 'Section 37 / Powers of the Council' restates it. Odd wording: SMS spelling ('wat r d dutys of d council of d disabilty comission'). NOT expected: cl.38 -- functions of the Commission, not of the Council; cl.32 -- Council membership."
+ },
+ {
+  "id": "T2_23",
+  "set": "test2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "If President come sick finish and e no fit do the work again, wetin Constitution talk?",
+  "expected": {
+   "constitution1999": [
+    144
+   ]
+  },
+  "note": "Const s.144(1)-(3): the President ceases to hold office if the executive council of the Federation declares him 'incapable of discharging the functions of his office' and a medical panel verifies it; 144(2) 'suffering from such infirmity of body or mind as renders him permanently incapable'; 144(4) the panel is 'five medical practitioners'. Odd wording: Pidgin ('If President come sick finish and e no fit do the work again'). NOT expected: s.146 (who acts on vacancy) -- the question is what happens to the President's office, which 144 answers."
+ },
+ {
+  "id": "T2_24",
+  "set": "test2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "DOES THE LAW SAY BUSES MUST SHOW OR ANNOUNCE WHERE THEY ARE GOING FOR BLIND PPL",
+  "expected": {
+   "act2018": [
+    10
+   ],
+   "factsheet2020": [
+    10
+   ]
+  },
+  "note": "Act cl.10(2): 'Every public vehicle shall have functional audible and visual display of their destination within five years from the commencement of this Act.' Factsheet row 'Section 10 Accessibility of vehicles', ref 'Section 10,11': 'mandates every public vehicle to have functional audible and visual display of their destination within five years'. Odd wording: all capitals, 'PPL'. NOT expected: cl.15 (general information in accessible format) -- cl.10(2) is the vehicle-specific rule. Test T15 asks the same clause in a long run-on register; this row is the shouting/SMS register."
+ },
+ {
+  "id": "T2_25",
+  "set": "test2",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "My mother is a High Court judge and she has become partly blind. Can she be removed from office because of that, and does the disability law protect her right to keep working?",
+  "expected": {
+   "constitution1999": [
+    292
+   ],
+   "act2018": [
+    28
+   ],
+   "factsheet2020": [
+    28
+   ]
+  },
+  "note": "Const s.292(1): a judicial officer may be removed before retirement age only by the stated procedure 'for his inability to discharge the functions of his office or appointment (whether arising from infirmity of mind or of body) or for misconduct'. Act cl.28(1): 'A person with disability has the right to work on an equal basis with others'. Factsheet 'Section 28 / Equal Right to Work' restates it. Cross-document: removal ground is Constitutional; the protection is the Act. NOT expected: s.291 (judicial pensions) -- not asked; Act cl.1 -- the general prohibition, while cl.28 is the work-specific right the second half asks about."
+ },
+ {
+  "id": "T2_26",
+  "set": "test2",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "My uncle has a mental disability. Can he run for governor, and what does the disability law say about disabled people taking part in politics?",
+  "expected": {
+   "constitution1999": [
+    182
+   ],
+   "act2018": [
+    30
+   ],
+   "factsheet2020": [
+    30
+   ]
+  },
+  "note": "Const s.182(1)(c): 'No person shall be qualified for election to the office of Governor of a State if ... (c) under the law in any part of Nigeria, he is adjudged to be a lunatic or otherwise declared to be of unsound mind'. Act cl.30(1): 'Persons with disabilities shall be encouraged to fully participate in politics and public life.' Factsheet 'Section 30 / Participation in politics' restates it. Cross-document. NOT expected: s.177 (positive qualifications for Governor) -- no mental-capacity limb; s.137 -- that is the President (T2_21)."
+ },
+ {
+  "id": "T2_27",
+  "set": "test2",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "My deaf daughter is starting secondary school. Should it be free, under both the Constitution and the disability law?",
+  "expected": {
+   "constitution1999": [
+    18
+   ],
+   "act2018": [
+    17
+   ],
+   "factsheet2020": [
+    17
+   ]
+  },
+  "note": "Const s.18(3): 'Government shall as and when practicable provide (a) free, compulsory and universal primary education; (b) free secondary education; ...'. Act cl.17(2): 'A person with disability is entitled to free education to secondary school level.' Factsheet 'Section 17': 'entitles a person with disability to free education up to secondary level'. Cross-document. NOT expected: Act cl.18/cl.20 (inclusive schools, mode of education) -- the question asks only whether it is free; deafness is context."
+ },
+ {
+  "id": "T2_28",
+  "set": "test2",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "Is the government hospital supposed to treat my son with a mental illness free, and does the Constitution say anything about medical facilities for everyone?",
+  "expected": {
+   "act2018": [
+    21
+   ],
+   "factsheet2020": [
+    21
+   ],
+   "constitution1999": [
+    17
+   ]
+  },
+  "note": "Act cl.21(2): 'A person with mental disability shall be entitled to free medical and health service in all public institutions.' Factsheet 'Section 21 / Free Health care': 'entitles persons with mental disability to free medical and health services in all public institutions'. Const s.17(3)(d): the State shall direct its policy towards ensuring 'there are adequate medical and health facilities for all persons'. Cross-document. NOT expected: Act cl.24 (special communication at hospitals) -- not asked."
+ },
+ {
+  "id": "T2_29",
+  "set": "test2",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "The disability commission wants to collect records on every disabled person in my area. Is that part of its job, and what does the Constitution say about my privacy?",
+  "expected": {
+   "act2018": [
+    38
+   ],
+   "factsheet2020": [
+    38
+   ],
+   "constitution1999": [
+    37
+   ]
+  },
+  "note": "Act cl.38(f): the Commission shall 'collect data and records on special education of persons with disabilities, which shall be a regular exercise so that the persons with disabilities are identified, and enumerated for planning and treatment'. Factsheet 'Section 38': 'collecting data and records on the special education of persons with disabilities'. Const s.37: 'The privacy of citizens, their homes, correspondence, telephone conversations and telegraphic communications is hereby guaranteed and protected.' Cross-document. NOT expected: Act cl.57 'document' definition -- not asked."
+ },
+ {
+  "id": "T2_30",
+  "set": "test2",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "The TV news is never signed or captioned. Do I have a right to get information in a form I can use?",
+  "expected": {
+   "act2018": [
+    15
+   ],
+   "factsheet2020": [
+    15
+   ],
+   "constitution1999": [
+    39
+   ]
+  },
+  "note": "Act cl.15: 'Any general information shall be translated into the accessible format appropriate to the person with disability present.' Factsheet row 'Section 14 Seaports and Railways', ref 'Section 14,13,15': 'all general information to be translated into an accessible format appropriate to the person with a disability present- section 15'. Const s.39(1): 'Every person shall be entitled to freedom of expression, including freedom to hold opinions and to receive and impart ideas and information without interference.' Cross-document. NOT expected: Act cl.38(q) ('collaborate with the media to make information available in accessible format') -- relevant background, deliberately left out so the row expects the rights, not the Commission's function; recorded so a hit on it is not misread as noise."
+ },
+ {
+  "id": "T2_31",
+  "set": "test2",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "My relatives say I cannot inherit or own land because I am blind. What do the Constitution and the disability law say?",
+  "expected": {
+   "constitution1999": [
+    43
+   ],
+   "act2018": [
+    1
+   ],
+   "factsheet2020": [
+    1
+   ]
+  },
+  "note": "Const s.43: 'Subject to the provisions of this Constitution, every citizen of Nigeria shall have the right to acquire and own immovable property anywhere in Nigeria.' Act cl.1(1): 'A person with disability shall not be discriminated against on the [ground of disability]' (the OCR line is partly garbled: 'on the o uuu Aun u uons o uosd ...'); 1(3) civil action. Factsheet 'Section 1': 'This prohibits the discrimination of a person on the ground of his/her disability'. Cross-document. Inheritance itself is off-corpus (no succession law in the corpus); the row expects only the ownership right and the anti-discrimination rule. NOT expected: s.44 (compulsory acquisition) -- that is the state taking property, not relatives."
+ },
+ {
+  "id": "T2_32",
+  "set": "test2",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "Who is responsible for welfare schemes for disabled people, under the Constitution and under the 2018 Act?",
+  "expected": {
+   "constitution1999": [
+    16
+   ],
+   "act2018": [
+    38
+   ],
+   "factsheet2020": [
+    38
+   ]
+  },
+  "note": "Const s.16(2)(d): the State shall direct its policy towards ensuring '... unemployment, sick benefits and welfare of the disabled are provided for all citizens.' Act cl.38(b): the Commission shall 'prepare schemes designed to promote social welfare of persons with disabilities and the estimate of cost of implementing such schemes'; 38(c) 'promote and uplift the general social well-being'. Factsheet 'Section 38': 'promoting and uplifting the social well-being of persons with disabilities'. Cross-document. NOT expected: s.17(3)(g) -- public assistance in need is adjacent but the question names welfare schemes, which 16(2)(d) + 38(b) answer; dev H17 asks the same s.16 about justiciability, a different question."
+ },
+ {
+  "id": "T2_33",
+  "set": "test2",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "Does the Constitution say anything about the safety and welfare of disabled people at work?",
+  "expected": {
+   "constitution1999": [
+    17
+   ]
+  },
+  "note": "Const s.17(3)(b)-(c) (Chapter II body): 'conditions of work are just and humane ...; (c) the health, safety and welfare of all persons in employment are safeguarded and not endangered or abused'. TOC TRAP: the Second Schedule Exclusive Legislative List item '34. Labour, including trade unions, industrial relations; conditions, safety and welfare of labour ...' matches 'safety', 'welfare', 'work' almost word for word, carries ref s.34, and answers nothing (it only assigns legislative competence). s.34 is NOT expected. Nor is Act cl.28 -- the question asks what the Constitution says."
+ },
+ {
+  "id": "T2_34",
+  "set": "test2",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "I was a federal civil servant and became disabled. What does the Constitution say about my pension?",
+  "expected": {
+   "constitution1999": [
+    173
+   ]
+  },
+  "note": "Const s.173(1)-(4) (Chapter VI body): 'the right of a person in the public service of the Federation to receive pension or gratuity shall be regulated by law'; (2) benefits 'shall not be withheld or altered to his disadvantage'; (3) reviewed every five years; (4) not taxed. TOC TRAP: Exclusive List item '44. Pensions, gratuities and other-like benefit payable out of the Consolidated Revenue Fund or any other public funds of the Federation' matches 'pension' + 'federal' and carries ref s.44 -- NOT expected (competence only). Also NOT expected: s.210 (the State public-service twin) -- the user says federal; Act cl.44 -- Commission staff only."
+ },
+ {
+  "id": "T2_35",
+  "set": "test2",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "Can I be refused a passport or stopped from leaving Nigeria because I am in a wheelchair?",
+  "expected": {
+   "constitution1999": [
+    41
+   ]
+  },
+  "note": "Const s.41(1): 'Every citizen of Nigeria is entitled to move freely throughout Nigeria and to reside in any part thereof, and no citizen of Nigeria shall be expelled from Nigeria or refused entry thereby or exit therefrom.' TOC TRAP: Exclusive List item '42. Passports and visas' matches 'passport' exactly, carries ref s.42, and answers nothing -- NOT expected. (Body s.42 is freedom from discrimination, but its listed grounds are community, ethnic group, place of origin, sex, religion, political opinion and birth; disability is not among them, so it is not expected either.) The corpus never mentions passport issuance, so s.41 'exit' is the whole answer; recorded so a partial answer is not scored as a miss of an unexpected ref."
+ },
+ {
+  "id": "T2_36",
+  "set": "test2",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "Do staff of the disability commission get a pension when they retire?",
+  "expected": {
+   "act2018": [
+    44
+   ]
+  },
+  "note": "Act cl.44: 'The staff of the Commission are entitled to pension, gratuity, and any other retirement benefit in accordance with the Pension Reform Act.' Factsheet has no Section 44 ref. TOC/NUMBER TRAP: Constitution Exclusive List item '44. Pensions, gratuities and other-like benefit ...' carries ref s.44 in the Constitution doc -- same number, different doc, and lexically the closest chunk in the corpus. A cross-doc hit on it does not score (doc_id differs), which is the point. Also NOT expected: Act cl.42(2) (prior service counts) -- T2_11 owns that."
+ },
+ {
+  "id": "T2_37",
+  "set": "test2",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "Does the Constitution say anything about a minimum living wage or welfare for disabled people?",
+  "expected": {
+   "constitution1999": [
+    16
+   ]
+  },
+  "note": "Const s.16(2)(d): 'suitable and adequate shelter, suitable and adequate food, reasonable national minimum living wage, old age care and pensions, and unemployment, sick benefits and welfare of the disabled are provided for all citizens.' TOC TRAP: Exclusive List item '34. Labour ... prescribing a national minimum wage for the Federation or any part thereof' matches 'national minimum wage' and carries ref s.34 -- NOT expected. Nor is s.17 -- 17(3)(e) is equal pay, not a minimum wage."
+ },
+ {
+  "id": "T2_38",
+  "set": "test2",
+  "class": "toc-trap",
+  "expect_gate": "answer",
+  "text": "Can the disability commission borrow money for a special project?",
+  "expected": {
+   "act2018": [
+    47
+   ],
+   "factsheet2020": [
+    47
+   ]
+  },
+  "note": "Act cl.47: 'The Commission may borrow such money as it may require to execute or complete some special projects of the Commission.' Factsheet row 'Section 45 Funds of the Commission', ref 'Section 45,46,47,53': 'It may also borrow to execute or complete some special projects - section 47'. TOC TRAP: Constitution Exclusive List item '7. Borrowing of moneys within or outside Nigeria for the purposes of the Federation or of any State' matches 'borrow' + 'money' (ref 'general' in v2, so it scores nothing and can only displace). NOT expected: cl.45 (the Fund) -- where money comes from, not borrowing."
+ },
+ {
+  "id": "T2_39",
+  "set": "test2",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "What are the functions of the National Commission for Persons with Disabilities?",
+  "expected": {
+   "act2018": [
+    38
+   ],
+   "factsheet2020": [
+    38
+   ]
+  },
+  "note": "Act cl.38 (three v2 chunks, all ref 'cl. 38'): 'The Commission shall- (a) formulate and implement policies ... (r) procure assistive devices for all disability types.' Factsheet 'Section 38 / Functions of the Commission'. Direct: the question uses the corpus's own heading words. NOT expected: cl.39 (powers) -- the question says functions, and the Act separates the two."
+ },
+ {
+  "id": "T2_40",
+  "set": "test2",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "How are staff of the National Commission for Persons with Disabilities appointed?",
+  "expected": {
+   "act2018": [
+    41,
+    42
+   ]
+  },
+  "note": "Act cl.41: 'The Council shall appoint for the Commission such number of employees as may, in the opinion of the Council, be expedient and necessary'. cl.42(1): 'The Council may appoint for the Commission, either directly or by secondment from any Public Service of the Federation, such number of employees'. Factsheet has no Section 41/42 row. Direct. NOT expected: cl.37(c) (Council power to 'employ the staff') -- restates the power in one line; cl.40 -- the Executive Secretary, not staff."
+ },
+ {
+  "id": "T2_41",
+  "set": "test2",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "What does the Act say about persons with disabilities in situations of risk and humanitarian emergencies?",
+  "expected": {
+   "act2018": [
+    25
+   ],
+   "factsheet2020": [
+    25
+   ]
+  },
+  "note": "Act cl.25: 'In all situations of risk, violence, emergencies and the occurrences of natural disasters, the Government shall take all necessary steps to ensure the safety and protection of persons with disabilities taking cognisance of their peculiar vulnerability.' Factsheet 'Section 25 / Situation of Risk and Humanitarian Emergencies' restates it. Direct: heading words. NOT expected: Const s.45 (derogation) -- dev H20 owns the cross-document form; this row asks what the Act says."
+ },
+ {
+  "id": "T2_42",
+  "set": "test2",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "What must the Commission do about keeping accounts and controlling its assets?",
+  "expected": {
+   "act2018": [
+    48
+   ],
+   "factsheet2020": [
+    48
+   ]
+  },
+  "note": "Act cl.48: 'The Commission shall (a) cause to be kept accounts and records of transaction and affairs of the Commission; and (b) ensure that all payments out of its Fund are correctly made and properly authorised. (2) ... adequate control is maintained over the assets of ... the Commission'. Factsheet row 'Section 48 Annual Estimate and Expenditure', ref 'Section 48,45,49,50': 'keeping of the accounts and records of transaction by the Commission who must ensure all payments from the Fund are authorised- section 48'. Direct. NOT expected: cl.49 (Auditor-General) and cl.45(3) (quarterly audit) -- test T10 owns audit; this asks the Commission's own duty."
+ },
+ {
+  "id": "T2_43",
+  "set": "test2",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "How do I register a business name with the Corporate Affairs Commission?",
+  "expected": {},
+  "note": "OFF-CORPUS: business-name registration procedure (Companies and Allied Matters Act / CAC) is not in any of the three documents. LEXICAL NEAR-MISS on purpose: Constitution s.251 ('business names') and Exclusive List item 62(f) ('registration of business names', ref s.62 in v2) mention the term as heads of jurisdiction/competence only -- they do not answer how. Probes false-answer on a term-overlap question."
+ },
+ {
+  "id": "T2_44",
+  "set": "test2",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "What is the exchange rate of the naira to the US dollar today?",
+  "expected": {},
+  "note": "OFF-CORPUS: currency exchange rates are not in the corpus. Exclusive List '15. Currency, coinage and legal tender' is competence only and does not answer."
+ },
+ {
+  "id": "T2_45",
+  "set": "test2",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "What documents do I need for a UK student visa from Nigeria?",
+  "expected": {},
+  "note": "OFF-CORPUS: UK visa documentation is foreign immigration law. LEXICAL NEAR-MISS: Exclusive List '42. Passports and visas' and s.251 'passports and visas' mention the word only."
+ },
+ {
+  "id": "T2_46",
+  "set": "test2",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "How much does the JAMB registration form cost this year?",
+  "expected": {},
+  "note": "OFF-CORPUS: JAMB fees are administrative, not in the corpus. Some term overlap with the Act's education clauses (17-20) and Const s.18 on 'education' -- none states a fee."
+ },
+ {
+  "id": "T2_47",
+  "set": "test2",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "How long does it take to renew a Nigerian international passport?",
+  "expected": {},
+  "note": "OFF-CORPUS: passport renewal processing time is not in the corpus. LEXICAL NEAR-MISS: Exclusive List '42. Passports and visas', s.41 (exit from Nigeria). Deliberately paired with T2_35, which is answerable, so the refusal floor is probed from both sides of the same vocabulary."
+ },
+ {
+  "id": "T2_48",
+  "set": "test2",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "Which club won the Nigeria Premier League last season?",
+  "expected": {},
+  "note": "OFF-CORPUS: football results. No overlap expected."
+ },
+ {
+  "id": "T2_49",
+  "set": "test2",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "What is the procedure for a divorce in a customary court in Nigeria?",
+  "expected": {},
+  "note": "OFF-CORPUS: customary-court divorce procedure is not in the corpus. LEXICAL NEAR-MISS: Exclusive List '61. The formation, annulment and dissolution of marriages other than marriages under Islamic law and Customary law' and the Customary Court of Appeal provisions (ss.265-269, 280-284) are competence/jurisdiction only."
+ },
+ {
+  "id": "T2_50",
+  "set": "test2",
+  "class": "off-corpus",
+  "expect_gate": "refuse",
+  "text": "How do I treat malaria in a small child at home?",
+  "expected": {},
+  "note": "OFF-CORPUS: medical treatment advice. LEXICAL NEAR-MISS: a schedule chunk late in the Constitution text (ref s.2 in v2) mentions 'reduction of the incidence of malaria' (a local-government health function), which does not answer a treatment question."
+ }
+]

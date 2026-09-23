@@ -3067,3 +3067,36 @@ the metric named was chosen for comparability with Phase 01, not for what the us
 E4a's `boss` case was the symptom; this column is the measurement. It was added as **report-only**,
 deliberately: turning it into a retroactive gate on E4a would repeat the goalpost-moving the phase
 exists to avoid. It becomes a declared gate for future arms, starting with `test2`.
+
+## 2026-09-23 — E5.2: a clean set has to be sealed by the loader, not by good intentions
+
+`test2` exists: 50 rows, 42 answerable (82 refs, verified on v2) + 8 off-corpus. It was written
+from the corpus text and the class definitions in two passes, and committed before anything was
+measured on it. Three things I learned while writing it.
+
+**1. Adding rows to the canonical file would have spent the set on the next harness run.**
+`load_eval_set()` with no argument feeds `calibrate_refusal`, `eval_heldout`, `ablate_oov_bridge`
+and `ablate_phase10`. Fifty new rows in `questions.json` would have pushed calibrate off 212 and
+had every harness score `test2` the first time anyone ran it, with no decision behind it. So
+`test2` lives in its own file and loads **only by name**. A set is clean only while nothing *can*
+read it. That has to be a property of the loader, not a note in a playbook.
+
+**2. `toc-trap` did not disappear with the Arrangement; it moved to the Schedules.** v2 excluded
+the Constitution's arrangement listing, but the legislative-list items keep `s. N` refs, and they
+read like headings: `34. Labour … welfare of labour … national minimum wage`, `44. Pensions,
+gratuities …`, `42. Passports and visas`. They assign legislative competence and answer nothing,
+yet they are the closest lexical match to ordinary questions. They also create a scoring artifact
+running the other way: a list item whose number *equals* an expected body section credits that
+pair spuriously (T2_01 / s.34 is recorded). The traps were built with the bait at a different
+number, or in the other document.
+
+**3. The set is v2-only, and that is fine.** Six refs fail on v1 because v1's Act split never
+isolates cl.38 or cl.40. v1 is retired as the default, so this constrains nothing in E5.3. But any
+future `--corpus=v1` run has to skip `test2`, not fail on it.
+
+**Process note, for honesty.** After the set was written and verified, a `sed` that was only meant
+to find where to append Results printed the E5.1 numbers for the existing sets. No row was written
+or changed after that. It is recorded because the box asks for the ordering to be provable.
+
+The user-register smoke list (15 queries, no refs) is a separate file and is never a metric.
+Next: E5.3.

@@ -1409,3 +1409,56 @@ for the record:
    would be moving the goalposts.
 
 **Next: E5.2, authoring `test2`**, its own session per the box.
+
+### E5.2 — `test2` authored and committed before any measurement — 2026-09-23, local `main`. Zero Gemini calls, zero retrieval.
+
+**What landed:** `data/eval/questions_test2.json` (50 rows) + `data/eval/smoke_user_register.json`
+(15 queries) + `scripts/evalset.py` (`"test2"` in `SETS`, a sealed loader path, a docstring paragraph).
+
+| class | n | box minimum |
+|---|---|---|
+| `vocab-mismatch` | 15 | ≥ 14 |
+| `odd-wording` | 9 (Pidgin ×4, SMS/lower-case/caps ×3, keyword fragment, over-formal) | ≥ 8 |
+| `cross-document` | 8 | ≥ 8 |
+| `toc-trap` | 6 | ≥ 5 |
+| `direct` | 4 | rest |
+| **answerable** | **42 (82 expected refs)** | ≥ 40 |
+| `off-corpus` | 8 (5 of them deliberate lexical near-misses, e.g. passport, business names) | ≥ 8 |
+
+**How it was authored.** The corpus text was dumped from `rag.build_corpus("v2", check_bridge=False)`,
+so the bridge artifact was never opened. Class definitions came from `docs/phases/09` step 2.
+**Pass 1** wrote the texts only, into a scratch file. Two were re-worded *within* pass 1 because
+they duplicated another row's clause coverage (T2_09, T2_19); that was a coverage change, not
+driven by retrieval. **Pass 2** read the refs from the corpus and wrote a note per row that quotes
+the text, says what is **not** expected and why, and names every known ref-number artifact.
+`verify_expected()` passes on v2 (**82 refs**). No `expand_query`, no retrieval, no bridge entry
+and no eval output was read while authoring.
+⚠ **Disclosure:** *after* the file was written and verified, a `sed` meant to find this section
+printed the E5.1 Results table (existing-set numbers). It had no bearing on any `test2` row,
+which already existed. It is recorded here because the box asks for exactly this kind of ordering.
+
+**`toc-trap` in v2 means something specific.** v2 excluded the Constitution's Arrangement, but
+the **Schedule legislative-list items carry `s. N` refs**: for example `34. Labour … welfare of
+labour; … national minimum wage`, `44. Pensions, gratuities …`, `42. Passports and visas`. Each
+`test2` trap puts the lexical bait on a list item with a **different** number from the body section
+that answers (s.17, s.173, s.41, s.16), or on the same number in the **other** document (Act
+cl.44 vs Constitution item 44; Act cl.47 vs Exclusive List item 7). **One artifact is recorded,
+not fixed:** T2_01 expects s.34, and Schedule item 34 also carries ref 34, so it can credit that
+pair spuriously.
+
+**Sealed by construction.** `test2` is in its own file, and `load_eval_set()` returns it **only**
+for `which="test2"`. The no-argument path still returns the same 60 rows (checked). So
+`calibrate_refusal` stays at 212 probes, `eval_heldout` and every ablation are byte-identical,
+and **no harness can read `test2` until E5.3 wires it in on purpose**. The loader asserts that each
+file holds only its own sets. `assert_frozen10_matches_notebook()` passes.
+
+**`test2` is v2-only.** On v1, six refs fail `verify_expected` (Act cl.38 and cl.40 are not
+standalone refs in v1's split). v1 is retired as the default, so E5.3 measures on v2 only, and any
+`--corpus=v1` path must skip `test2` rather than fail.
+
+**User-register smoke list.** 15 queries (boss, landlord, okada, oga, headmaster, chemist, ATM,
+Pidgin) with **no refs**. It is inspected by eye through `app.offline_legal_hits` at every ship
+step and is never a metric. The file carries its own rules. It has not been run.
+
+**Next: E5.3.** Wire `test2` into `eval_heldout` (a new `LABELS` entry) and into the S/B/N arm
+harness. Run dev first, then `test2` **once**, under the rule already written in the box.

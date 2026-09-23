@@ -1,15 +1,14 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-23)
 
-> **LATEST: E5.0 and E5.1 are DONE (local `main`, zero quota, not pushed).**
-> * **E5.0:** the control reproduces byte-for-byte (`D:\e5_control\`).
-> * **E5.1:** `eval_heldout.py` gains a report-only **USER-FACING VIEW** block (hit@3 / strict@3 /
->   shown-list MRR / excerpts shown, through `app.offline_legal_hits`). Every existing block is
->   byte-identical.
-> * **Finding:** on `test` only **41%** of questions have a correct excerpt in the 3 shown inline
->   (**25%** for `vocab-mismatch`), against set recall of 0.647. E4a's own effect there is mixed
->   and small (hit@3 unchanged, MRR up, strict@3 −0.029).
-> * **NEXT: E5.2, author `test2`**, its own session. Rules are in the E5 box; commit it before any
->   measurement.
+> **LATEST: E5.2 is DONE (local `main`, zero quota, zero retrieval, not pushed).**
+> * **`test2` authored and committed before any measurement:** `data/eval/questions_test2.json`,
+>   42 answerable (82 corpus-verified refs) + 8 off-corpus, `toc-trap` included (6).
+> * **Sealed:** it is returned only by `load_eval_set("test2")`, so every existing harness is
+>   byte-identical and nothing reads it by accident. It is **v2-only**.
+> * **Smoke list:** `data/eval/smoke_user_register.json`, 15 user-register queries, no refs, eyeball only.
+> * E5.0/E5.1 (control reproduces; USER-FACING VIEW, test hit@3 41%) are in the playbook Results.
+> * **NEXT: E5.3**: wire `test2` into `eval_heldout` + the S/B/N arms, dev first, then `test2`
+>   **once**, under the rule in the E5 box.
 
 > **NEXT SESSION: E5. The playbook is written** (the box on the E5 step in
 > `docs/phases/13_retrieval_quality.md`, 2026-09-23). Work it in order:

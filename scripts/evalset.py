@@ -25,6 +25,22 @@ Three sets live in that one file, and the distinction is the point of Phase 09:
              never tuned against. If a `test` number disappoints, that is the
              finding -- re-authoring or re-weighting questions in response
              would destroy the only clean yardstick the project has left.
+  test2    : the NEW clean set, authored Phase E5.2 (2026-09-23) because `test`
+             (n=17) had by then been read for four decisions (E1b, E2a, E3a,
+             E4a). Same authoring rules as `test`: questions from the corpus
+             text and the class definitions only, refs read from
+             data/processed/ and checked by verify_expected(), questions
+             written before refs, and the whole set committed BEFORE any arm
+             was measured on it -- that commit is the proof of cleanliness.
+             No bridge entry, expanded query or retrieval result was read
+             while writing it. 42 answerable + 8 off-corpus, weighted to the
+             weak classes, and it has the `toc-trap` rows `test` lacks.
+             SEALED: it lives in its own file and load_eval_set() returns it
+             ONLY when asked for by name. The no-argument path still returns
+             exactly the 60 rows every published harness was measured on, so
+             calibrate_refusal (212), eval_heldout and the ablations are
+             byte-identical and cannot read test2 by accident. It is first
+             read by E5.3, once, under the rule written in that step.
 
 WHY THE SPLIT EXISTS
 --------------------
@@ -49,8 +65,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 QUESTIONS_PATH = ROOT / "data" / "eval" / "questions.json"
+TEST2_PATH = ROOT / "data" / "eval" / "questions_test2.json"
 
-SETS = ("frozen10", "heldout", "test")
+SETS = ("frozen10", "heldout", "test", "test2")
 GATES = ("answer", "refuse")
 DOC_IDS = ("act2018", "constitution1999", "factsheet2020")
 
@@ -58,13 +75,21 @@ DOC_IDS = ("act2018", "constitution1999", "factsheet2020")
 def load_eval_set(which: str | None = None) -> list[dict]:
     """Rows from questions.json, `expected` normalised to {doc_id: set[int]}.
 
-    which=None returns every row; any member of SETS filters to that set.
+    which=None returns every row of questions.json -- NOT test2, which is
+    sealed in its own file and returned only for which="test2" (see the
+    module docstring). Any other member of SETS filters to that set.
     """
     if which is not None and which not in SETS:
         raise ValueError("unknown set %r (expected one of %s)" % (which, SETS))
-    raw = json.loads(QUESTIONS_PATH.read_text(encoding="utf-8"))
+    path = TEST2_PATH if which == "test2" else QUESTIONS_PATH
+    raw = json.loads(path.read_text(encoding="utf-8"))
     rows, seen = [], set()
     for r in raw:
+        # Each file holds only its own sets, so a test2 row can never leak
+        # into the no-argument path, and nothing else can hide in test2's file.
+        assert (r.get("set") == "test2") == (path == TEST2_PATH), (
+            "%s: set %r does not belong in %s" % (r.get("id"), r.get("set"),
+                                                   path.name))
         # Schema is checked on every load, not in a separate linter nobody
         # runs. A malformed row must fail loudly here rather than quietly
         # score 0.0 recall and look like a retrieval regression.
