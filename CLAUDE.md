@@ -28,6 +28,9 @@ C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn 
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase08.py       # retrieval ablations
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase10.py       # (k, top_n) width ladder, measure-only, never gates
 C:\conda-envs\drlca-rag\python.exe scripts\calibrate_refusal.py    # refusal invariance, 212 probes, 0 disagreements
+C:\conda-envs\drlca-rag\python.exe scripts\ablate_oov_bridge.py    # E4a: hand vs hand+bridge + PORT CHECK (--read-test spends test)
+C:\conda-envs\drlca-rag\python.exe scripts\build_oov_bridge.py     # rebuild data/processed/oov_bridge.json (needs D:\e4_vectors\)
+C:\conda-envs\drlca-rag\python.exe scripts\e4_reach.py             # E4.0 reach gate, dev only
 C:\conda-envs\drlca-rag\python.exe scripts\eval_phase06.py --out=scripts\eval_tmp.json
 C:\conda-envs\drlca-rag\python.exe -c "import app"                 # boot-import smoke (must not start a server)
 C:\conda-envs\drlca-rag\python.exe -m streamlit run app.py         # local UI → http://localhost:8501
@@ -132,8 +135,12 @@ top-score vector is byte-identical from k=3 to k=20.
 this tree.** A BM25/RRF re-rank inside the gate (Phase E2a) and a corpus-derived query-expansion
 map (Phase E3a) both lost on every arm; the implementations, their harnesses and both
 `synonyms_auto*.json` artifacts live on branch `phase10/retrieval-quality` at `a6016e4` and are
-kept there for reproduction only. **Do not re-implement either here.** The shipping expander is
-still the hand-written `SYNONYMS` + `expand_query`, and **`SYNONYMS` must not be edited casually**:
+kept there for reproduction only. **Do not re-implement either here.** **The shipping expander
+is now two stages (Phase E4a, branch `phase10/ship-e4a`, 2026-09-23):** `expand_query()` =
+`expand_query_hand()` (the hand-written `SYNONYMS`, unchanged) **followed by the OOV bridge**
+(`oov_bridge_terms()`, a 393 KB dict built from GloVe at build time). **The bridge code is the
+measured function verbatim — do not "tidy" its loose hand-key skip or its cap-before-dedupe;**
+`scripts/ablate_oov_bridge.py`'s PORT CHECK asserts it. **`SYNONYMS` must not be edited casually**:
 `calibrate_refusal.py:150` builds 34 of its 106 probes from that map's keys, so touching it moves
 that suite off **212 runs** and requires a fresh calibration. The full measurement record is in
 `docs/phases/13_retrieval_quality.md` **Results** and in the amendment boxes on steps E2/E3/E4.
@@ -169,6 +176,11 @@ that suite off **212 runs** and requires a fresh calibration. The full measureme
 - **Verified contacts only.** `ngo.load_ngo()` hard-fails on placeholder/blank phones.
   Pruned orgs listed in the `src/ngo.py` docstring must not be re-added without fresh
   verification against the official site.
+- **`data/processed/oov_bridge.json` is corpus-keyed.** Its keys are "words absent from the v2
+  index", so `rag.build_corpus("v2")` hard-fails on a missing or stale artifact (sha256 of the
+  chunk stream). Any corpus change means rebuild (`scripts/build_oov_bridge.py`, needs the GloVe
+  file in `D:\e4_vectors\`, never committed) **and re-measure** — the bridge is not
+  re-validated by rebuilding it. `check_bridge=False` exists for the generator only.
 - **`data/processed/_SAMPLE_DO_NOT_CITE.txt` is a dev placeholder** — never loaded, never
   cited.
 - **Accessibility is a requirement, not polish**: linear screen-reader-safe layout,
@@ -233,10 +245,13 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   `scripts/e4_reach.py`, dev only).** It is now an **"OOV bridge"**: pretrained-vector expansion of
   out-of-corpus query terms only. Its reach is **4 of 12 failing dev questions (1 of 4
   `vocab-mismatch`)**. **NEXT IS E4a** under the strict ship gate in the re-scope box on the E4
-  step, which fixes its parameters in advance. **E4a MEASURED 2026-09-23 (`597a23b`): it PASSES
-  that gate.** `test` strict 0.529 → **0.647** (+2 / −0), dev 0.573 → 0.613, frozen-10
-  unchanged, `calibrate_refusal --oov-bridge` 0/212. **NOT SHIPPED; the ship/merge call is the
-  user's.** Porting must keep the measured `bridge_expand` byte-for-byte in behaviour.
+  step, which fixes its parameters in advance. **E4a MEASURED 2026-09-23 (`597a23b`) and PASSED
+  that gate:** `test` strict 0.529 → **0.647** (+2 / −0), dev 0.573 → 0.613, frozen-10
+  unchanged, 0/212. **PORTED AND STAGED on `phase10/ship-e4a` (`d4d7653`), verified on that
+  tree, reviewer verdict SHIP WITH CAVEATS — NOT MERGED. Merging is the user's call.** Both
+  `eval_phase06` digests are unchanged, so nothing was re-pinned. Caveats: in `docs/phases/13`
+  E4a-ship Results (dev in-corpus min top score 0.1369 → 0.1032; test r@3 0.324 → 0.294; one
+  ad-hoc `boss` → `manager` regression).
   ⚠ **TWO BRANCHES, AND THE SPLIT IS DELIBERATE.** `phase10/ship-e1b` (merged as `b92e2f4`) carried
   **only** the measured E1 win and the written record. `phase10/retrieval-quality` (`a6016e4`,
   **pushed to `origin` 2026-09-20 as an archive — pushing a topic branch does not deploy**) carries

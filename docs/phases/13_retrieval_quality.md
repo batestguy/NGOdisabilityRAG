@@ -10,6 +10,8 @@ failing dev questions, and 1 of the 4 failing `vocab-mismatch` questions** (orac
 +0.147 dev). **E4a MEASURED 2026-09-23 (`597a23b`) and it PASSES ITS A-PRIORI SHIP GATE:** strict
 `test` 0.529 → **0.647** (2 up / 0 down), dev 0.573 → 0.613, frozen-10 unchanged, 0/212. **NOT
 SHIPPED. The ship decision is the user's.** See E4a in **Results**.
+**E4a PORTED AND STAGED 2026-09-23 on `phase10/ship-e4a` (`d4d7653`)**, verified on that tree, with
+reviewer verdict SHIP WITH CAVEATS. **Not merged.** See "E4a SHIP STAGING" in **Results**.
 *(This line read "NEXT IS E4 — and it MUST BE RE-SCOPED BEFORE IT IS RUN" until 2026-09-23.)*
 **E1b IS MERGED AND DEPLOYED 2026-09-20 (`b92e2f4`, merge of `phase10/ship-e1b`, on the user's
 explicit authorisation). Users moved from the `0.471` arm to the `0.529` arm** — confirmed by live
@@ -1165,3 +1167,65 @@ corpus-sha256 hard-fail, and re-pinning `eval_phase06`'s digests. Expected uncha
 `FROZEN10_STRICT_BASELINE_V2` (frozen-10 doesn't move). Before merge, `eval_chat` and
 `eval_phase06`'s `reverse_rel` (which feeds whole answers through the expander) must be
 re-checked, along with all suites, on a `phase10/ship-e4a` branch, then a live smoke.
+
+
+### E4a SHIP STAGING — 2026-09-23, branch `phase10/ship-e4a`, port `d4d7653`. Zero Gemini calls. **NOT MERGED.**
+
+The branch is `main` + the E4.0/E4a record + one port commit, a **branch point off
+`phase10/e4-rescope`, not a cherry-pick**. The port puts the measured `bridge_expand` in
+`src/retrieve.py` as `expand_query()`. The hand map becomes `expand_query_hand()`, unchanged. The
+artifact loads at import, and `rag.build_corpus("v2")` hard-fails on a missing or stale artifact.
+`calibrate_refusal.py` is restored to `main`'s version, because the default path now carries the
+bridge. `app.py` and `requirements.txt` are byte-identical to `main`. Captures are in
+`D:\ship_e4a\`, and the same harnesses were re-run on a `main` worktree for comparison in
+`D:\ship_e4a\main\`.
+
+**Verified on the tree that would deploy:**
+* **Port check:** shipping `expand_query` equals the measured function on **72/72** probes (every
+  eval row plus `OFF_CORPUS`). The reviewer confirmed it is the same algorithm line for line, so
+  equivalence holds for all inputs.
+* **Artifact rebuild:** byte-identical.
+* **Headline numbers:** recall_strict frozen-10 / dev / test **0.734 / 0.573 / 0.529 → 0.734 / 0.613 / 0.647**
+(0 / +1 / +2 questions, zero down on any set).
+* **`eval_phase06` digests unchanged on both corpora** (`2429cafc…` v2, `12bdeba0…` v1): frozen-10
+  doesn't move, and neither does `reverse_rel`. **No baseline was re-pinned.**
+* **Suites and harnesses:** `calibrate_refusal` 0/212 · bench · `audit_corpus` · `ablate_phase08`
+  · `ablate_phase10` · `eval_chat` all PASS · 16/16+7/7 · 10/10 · 137/137 · ops ALL PASS ·
+  `import app` clean.
+* **Failure modes:** a missing artifact and a stale digest both raise a `RuntimeError` naming the
+  fix. v1 loads unchecked, by design.
+
+**What else moved, measured against `main` (none of it gates):**
+| | `main` | ship |
+|---|---|---|
+| v2 MRR dev / test | 0.435 / 0.400 | **0.442 / 0.452** |
+| v2 pool found (r@60) dev / test | 20/25 · 14/17 | **21/25 · 15/17** |
+| v2 r@3 test | **0.324** | 0.294 |
+| v2 r@10 dev | **0.527** | 0.493 |
+| v1 strict test | 0.353 | 0.382 (v1 frozen-10 and dev unchanged) |
+| `eval_chat` ctx arms | — | up on both sets, nothing down |
+| shown excerpts, mean, dev / test | 7.08 / 7.41 | 6.92 / 7.65 (frozen-10 identical) |
+
+The bridge also reaches refs that were **outside** the 60-candidate pool, so it raises the
+"in-pool ceiling" this playbook treated as fixed for E1–E4.
+
+**Caveats, recorded rather than smoothed over:**
+1. **The refusal margin is thinner.** The v2 dev in-corpus minimum top score fell **0.1369 → 0.1032**
+   (H11), 0.003 above the floor. It **cannot** become a refusal, because the exit gate falls back
+   to the original hits. The note is in the `src/retrieve.py` calibration block.
+2. **Shallow ranks lose a little** (test r@3 −0.030, dev r@10 −0.034) while set recall and MRR
+   gain. The top-3 is what a screen-reader user hears first, so E5 should re-check it.
+3. **An ad-hoc regression the gate cannot see**, reproduced independently by the reviewer. "Can my
+   boss refuse to hire me because I am deaf?" shows **1 excerpt instead of 2**, and the one it
+   shows is `[Constitution s. 3]`, an Abuja Tourism Agency "General Manager" clause pulled in by
+   `boss` → `manager`. The hand-only result was already weak (Factsheet Section 20 at 0.1175).
+   That's 1 bad result in about 9 hand-written probes. **It is not fixed:** removing `boss` from the
+   artifact would be tuning after `test` was read.
+
+**Reviewer (ship branch): SHIP WITH CAVEATS.** No blocking issue. Its notes were the doc gap
+(closed by this entry), the undocumented r@3 figure (source now given above:
+`eval_heldout`'s recall@k curve, `main` vs ship), and `ablate_phase08`'s header, whose "on"
+arm is now hand + bridge (a note was added).
+
+**Merge decision: the user's.** Pushing `main` deploys to real users. After a merge: live smoke
+(helplines lead; one legal query's tag list matches local; one NGO lookup), then E5.

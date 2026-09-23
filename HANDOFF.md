@@ -1,5 +1,24 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-23)
 
+> **LATEST (2026-09-23, end of session): E4a IS PORTED, VERIFIED AND STAGED ON `phase10/ship-e4a`.
+> IT IS NOT MERGED; THE MERGE IS THE USER'S CALL.** The port commit is `d4d7653`. Nothing is pushed.
+> Zero Gemini calls all day.
+> * `expand_query()` = hand map (`expand_query_hand`, unchanged) + OOV bridge
+>   (`data/processed/oov_bridge.json`, 393 KB). `build_corpus("v2")` hard-fails on a missing or
+>   stale artifact. `app.py` and `requirements.txt` are untouched.
+> * On the ship tree: recall_strict frozen-10 / dev / test **0.734 / 0.573 / 0.529 → 0.734 / 0.613 / 0.647**
+>   (0 / +1 / +2 questions, zero down on any set). The port check is 72/72, and
+>   **both `eval_phase06` digests are unchanged, so there is no re-pin.** 0/212. Every suite PASS.
+> * **Caveats:** the dev refusal margin is thinner (min top score 0.1369 → 0.1032; it can't become a
+>   refusal). Test r@3 0.324 → 0.294 while MRR rises. One ad-hoc `boss` → `manager` regression,
+>   **not fixed** (fixing it would be tuning after `test` was read).
+> * **Reviewer: SHIP WITH CAVEATS**, no blocker.
+> * **To ship:** the user authorises; merge `phase10/ship-e4a` into `main`; push, which makes
+>   Render deploy. Then a live smoke: helplines lead, one legal query's tags match local, one NGO
+>   lookup. Then E5.
+> * **Still open for E5:** is the hand map worth having; the `beg`/`begging` surface-form gap; the
+>   r@3 check; `probe_embed_quota.py` (never run); the `baseline_phaseE` archive.
+
 > **LATEST (2026-09-23, later): E4a PASSES ITS A-PRIORI SHIP GATE. IT IS NOT SHIPPED; THE SHIP
 > CALL IS THE USER'S.** `597a23b` on `phase10/e4-rescope` is measure-only, and `src/` is untouched.
 > `recall_strict` frozen-10 / dev / test goes **0.734 / 0.573 / 0.529 → 0.734 / 0.613 / 0.647**

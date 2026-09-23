@@ -3003,3 +3003,28 @@ that is about what it delivered.
 after dev passed. Mechanism was checked on `test` by a reviewer without IDs being revealed. The
 size is stated with its n: 3 questions. The dev gain turned out to be a surface-form fix
 (`beg` → `begging`), and that is recorded rather than smoothed over.
+
+## 2026-09-23 — E4a staged: what the gate could not see, and why it stays unfixed
+
+**Done.** The measured bridge was ported into `src/retrieve.py` unchanged, and a port check makes
+the "unchanged" observable (72/72). The whole harness set was run on the tree that would
+deploy, and again on a `main` worktree for comparison. The branch is staged, not merged.
+
+**Found by looking, not by the gate.** Six hand-written queries through `app.offline_legal_hits`
+showed "Can my boss refuse to hire me because I am deaf?" losing its best excerpt to an Abuja
+Tourism Agency "General Manager" clause, via `boss` → `manager`. The eval metrics score **sets
+of refs**, so they cannot see a worse top excerpt or fewer excerpts shown. Two follow-ups made
+the anecdote measurable. **Shown-excerpt count** barely moves across 52 answerable rows.
+**Shallow rank** does: test r@3 drops 0.030 while MRR rises. So the ship gate was necessary but
+not sufficient, and **E5's re-baseline should add a top-3 / excerpt-count column** next to set
+recall.
+
+**Why the regression is recorded and not fixed.** Deleting `boss` from the artifact would be a
+post-hoc edit after `test` was read. That is the same move that made the hand map's frozen-10
+number unreadable. The honest options are ship-as-measured or re-measure a new arm on a new
+held-out set. Patching in place is neither.
+
+**A second prior corrected.** The playbook treated the 0.824 "in-pool ceiling" as out of reach for
+E1–E4. The bridge moved refs **into** the 60-candidate pool (test 14/17 → 15/17), because
+expansion changes which chunks are candidates, not just their order. The ceiling was a property of
+the query, not of the index.
