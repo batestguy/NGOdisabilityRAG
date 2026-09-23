@@ -82,14 +82,18 @@ carried clause 7's text under a cl.8 tag. Both are retired (never edited), and w
 apparent "ellipsis regression" on the blind set turns out to be v1's number having been unearned
 rather than v2 degrading. Baseline: `scripts/baseline_v2_2026-09-19.txt`, all five harnesses green.
 
-**Now: Phase E — retrieval quality** (`docs/phases/13_retrieval_quality.md`). The legal Q&A
-path is the app's weak half and the diagnosis is measured: the misses are **ranking, not
-absence**. Clean test reads `r@6 = 0.426` shipping against `r@60 = 0.735` in the pool — a
-**+0.309 gap**, against a hard ceiling of 0.824. Plan: widen the candidate pool, BM25 re-rank
-*inside* the existing gate, replace the hand-tuned synonym map with a corpus-derived one, and
-optionally blend a pure-numpy static-embedding signal. **$0, zero Gemini quota, no new runtime
-dependency, default path stays fully offline.** Then **G** (judge + cross-turn drift, quota-paced)
-and **F** (re-examine first — free GPU gives free *training*, not free *serving*).
+**Now: Phase E — retrieval quality** (`docs/phases/13_retrieval_quality.md`). $0, zero Gemini
+quota, no new runtime dependency, and the default path stays fully offline. Held-out clean-test
+`recall_strict`, the number every step is judged on:
+* **E1 (shipped 2026-09-20):** retrieval budget 3/6 → 4/12 per doc. **0.471 → 0.529.**
+* **E2 (BM25 re-rank) and E3 (corpus-derived synonym map):** measured, **declined**. Every arm
+  lost, and the code is archived on `phase10/retrieval-quality`.
+* **E4a (OOV bridge), staged 2026-09-23, not yet merged:** pretrained-vector neighbours for query
+  words the corpus never uses, shipped as a 393 KB lookup. **0.529 → 0.647**, zero questions lost,
+  refusals unchanged. The evidence is 3 questions, with recorded caveats.
+
+Then **E5** (re-baseline and the M2 decision), **G** (judge + cross-turn drift, quota-paced) and
+**F** (re-examine first: free GPU gives free *training*, not free *serving*).
 
 Numbers to read with the caveats attached: frozen-10 recall **0.925** is measured on
 the same 10 questions the synonym map was tuned on; **held-out recall is 0.420**

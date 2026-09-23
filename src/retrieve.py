@@ -19,7 +19,10 @@ Retrieval strategy (Phase 02, option b -- per-doc retrievers):
   spaces have different IDFs, so raw cosines are not strictly comparable),
   but the MIN_SCORE refusal gate is applied per-hit identically.
 """
+import hashlib
+import json
 from collections import namedtuple
+from pathlib import Path
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -50,6 +53,16 @@ from sklearn.metrics.pairwise import cosine_similarity
 # eval_heldout's constants rather than copying them. The in-corpus minima and
 # off-corpus maxima printed by a fresh run are the authority; this block is the
 # 3/6-era record of them.
+#
+# PHASE E4a (2026-09-23) DOES MOVE TOP SCORES, UNLIKE k/top_n. The OOV bridge
+# appends terms, and an expanded query can score LOWER than the original while
+# still clearing the floor. Measured by calibrate_refusal.py at ship: the v2 dev
+# in-corpus minimum fell 0.1369 -> 0.1032 (H11), test 0.1209 -> 0.1222 (T9), and
+# v1 dev 0.1359 -> 0.1184 (H1). The refusal DECISION still cannot move: the
+# exit gate in PerDocRetriever.query() falls back to the original query's hits
+# whenever the expanded top score is below MIN_SCORE (0/212 disagreements). But
+# the reported margin above the floor on dev is now 0.003 -- read it there, not
+# here.
 #
 # CALIBRATION, v1-era (historical) and v2 (current):
 #   in-corpus minima, lowest top score over expect_gate=answer rows
@@ -315,8 +328,13 @@ def _surface_forms(q: str) -> set[str]:
     return forms
 
 
-def expand_query(q: str) -> str:
+def expand_query_hand(q: str) -> str:
     """Append curated legal synonyms for terms the query actually contains.
+
+    This is the hand-map half of expand_query() and was expand_query itself
+    until Phase E4a (2026-09-23). It is kept callable on its own because the
+    E4a ablation's control arm, and any future re-measurement of the hand map,
+    need exactly this function with the bridge absent.
 
     Returns the ORIGINAL query plus appended terms, never a replacement: the
     user's own wording keeps its weight and expansion only adds mass on the
@@ -344,6 +362,113 @@ def expand_query(q: str) -> str:
     if not extra:
         return q
     return q + " " + " ".join(dict.fromkeys(extra))
+
+
+# ---------------------------------------------------------------------------
+# OOV bridge -- Phase E4a, shipped 2026-09-23 (docs/phases/13_retrieval_quality.md
+# E4 re-scope box + E4a Results).
+#
+# WHAT IT IS. For a query word the corpus NEVER uses and the hand map does not
+# own, append up to two in-corpus neighbours from a pretrained GloVe 6B 100d
+# table ("beg" -> "begging", "boss" -> "manager"). The table is reduced at
+# BUILD time (scripts/build_oov_bridge.py) to a plain dict in
+# data/processed/oov_bridge.json -- 13,489 keys, ~393 KB. No vector, no numpy
+# and no new dependency at runtime: it is a lookup exactly like SYNONYMS.
+#
+# WHY IT SHIPPED. It passed a six-line gate fixed BEFORE the first measurement:
+# recall_strict frozen-10 / dev / test 0.734 / 0.573 / 0.529 -> 0.734 / 0.613 /
+# 0.647, zero questions down on any set, calibrate_refusal 0/212. The evidence
+# is 3 questions; E5 re-checks it on the larger re-baseline.
+#
+# THIS CODE IS THE MEASURED FUNCTION, VERBATIM IN BEHAVIOUR. Do not "tidy" it.
+# The hand-key skip {t, stem(t), t[:-1]} is looser than _surface_forms() (a
+# reviewer noted it), and the 4-term cap is applied BEFORE the de-duplication
+# against hand terms. Both are what was measured; changing either changes the
+# arm and means reading `test` again. scripts/ablate_oov_bridge.py asserts
+# this function equals the measured one on every eval question.
+#
+# REFUSALS CANNOT MOVE. PerDocRetriever.query()'s two-sided gate scores the
+# ORIGINAL query first and discards any expansion that cannot clear MIN_SCORE,
+# so this is re-ranking within the answered set only.
+#
+# CORPUS-KEYED. Keys are "absent from the v2 index", so the artifact is only
+# valid for the corpus it was built from. rag.build_corpus("v2") hard-fails on
+# a digest mismatch (check_oov_bridge). v1 is retired and runs with the same
+# bridge UNCHECKED -- its published numbers were re-pinned in the same commit.
+# ---------------------------------------------------------------------------
+OOV_BRIDGE_PATH = Path(__file__).resolve().parent.parent / "data" / "processed" / "oov_bridge.json"
+OOV_MAX_TERMS = 4
+_HAND_KEYS = set(SYNONYMS) | {stem(k) for k in SYNONYMS}
+
+
+def _load_oov_bridge(path: Path = OOV_BRIDGE_PATH) -> tuple[dict, dict]:
+    """(bridge, meta), or ({}, {}) if the artifact is absent.
+
+    Absent is tolerated HERE only so scripts/build_oov_bridge.py can import this
+    module to build the artifact in the first place. It is not tolerated on any
+    serving path: rag.build_corpus("v2") calls check_oov_bridge(), which
+    hard-fails on a missing or stale artifact before any retriever exists.
+    """
+    if not path.exists():
+        return {}, {}
+    blob = json.loads(path.read_text(encoding="utf-8"))
+    return blob["bridge"], blob["_meta"]
+
+
+OOV_BRIDGE, OOV_BRIDGE_META = _load_oov_bridge()
+
+
+def corpus_sha256(docs: dict) -> str:
+    """Order-sensitive digest of the exact chunk stream an index is built from."""
+    h = hashlib.sha256()
+    for doc_id, chunks in docs.items():
+        for c in chunks:
+            h.update(("%s\x1f%s\x1f%s\x1e" % (doc_id, c.ref, c.text)).encode("utf-8"))
+    return h.hexdigest()
+
+
+def check_oov_bridge(docs: dict) -> None:
+    """Hard-fail if the shipped bridge is missing or built against another corpus."""
+    if not OOV_BRIDGE_META:
+        raise RuntimeError(
+            "data/processed/oov_bridge.json is missing -- the shipping query "
+            "expander needs it; build it with scripts/build_oov_bridge.py")
+    want = OOV_BRIDGE_META["corpus_sha256"]
+    got = corpus_sha256(docs)
+    if got != want:
+        raise RuntimeError(
+            "data/processed/oov_bridge.json was built against corpus %s..., but "
+            "the v2 corpus is now %s... -- rebuild it with "
+            "scripts/build_oov_bridge.py and re-measure (docs/phases/"
+            "13_retrieval_quality.md E4a)" % (want[:12], got[:12]))
+
+
+def oov_bridge_terms(q: str, bridge: dict | None = None) -> list[str]:
+    """Bridge neighbours for the query's out-of-corpus, hand-unowned tokens."""
+    import re as _re
+    bridge = OOV_BRIDGE if bridge is None else bridge
+    out: list[str] = []
+    for t in _re.findall(r"[a-z]+", q.lower()):
+        if {t, stem(t), t[:-1]} & _HAND_KEYS:
+            continue                  # the hand map owns this word
+        nb = bridge.get(t) or (bridge.get(t[:-1]) if t.endswith("s") else None)
+        for w in nb or ():
+            if w not in out:
+                out.append(w)
+    return out[:OOV_MAX_TERMS]
+
+
+def expand_query(q: str) -> str:
+    """The shipping query expander: the hand map, then the OOV bridge.
+
+    Hand terms first and unchanged (expand_query_hand); bridge terms appended
+    last, never removing or reordering a hand term. Same contract as before
+    Phase E4a: the original query plus appended terms, or `q` itself.
+    """
+    e = expand_query_hand(q)
+    have = set(e.lower().split())
+    extra = [w for w in oov_bridge_terms(q) if w not in have]
+    return e + " " + " ".join(extra) if extra else e
 
 
 class TfidfRetriever:

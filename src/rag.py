@@ -21,7 +21,8 @@ from chunk import (
     section_aware_split,
 )
 from load import build_clean_text, clean_text, repair_joins
-from retrieve import MIN_SCORE, Chunk, PerDocRetriever, cite_tag, select_top
+from retrieve import (MIN_SCORE, Chunk, PerDocRetriever, check_oov_bridge, cite_tag,
+                      select_top)
 
 # Resolved 2026-09-08 via client.models.list(): `models/gemini-2.5-flash`
 # exists ("Gemini 2.5 Flash"); `gemini-2.0-flash` is gone (retired).
@@ -661,7 +662,8 @@ def _const_chunks_v2() -> list[Chunk]:
     ]
 
 
-def build_corpus(version: str | None = None) -> dict[str, list[Chunk]]:
+def build_corpus(version: str | None = None,
+                 check_bridge: bool = True) -> dict[str, list[Chunk]]:
     """Load + chunk all three docs. Raw files are never modified.
 
     version defaults to CORPUS_VERSION ("v1" until D6), so every existing
@@ -698,6 +700,12 @@ def build_corpus(version: str | None = None) -> dict[str, list[Chunk]]:
         _const_chunks_v1() if version == "v1" else _const_chunks_v2())
     docs["factsheet2020"] = (
         _fact_chunks_v1() if version == "v1" else _fact_chunks_v2())
+    # check_bridge=False exists for scripts/build_oov_bridge.py ONLY -- it is
+    # the one caller that must read the corpus before the artifact exists.
+    if version == "v2" and check_bridge:
+        # Phase E4a: the OOV bridge is keyed on "absent from THIS index", so a
+        # corpus change without a bridge rebuild must fail loudly, not degrade.
+        check_oov_bridge(docs)
     return docs
 
 

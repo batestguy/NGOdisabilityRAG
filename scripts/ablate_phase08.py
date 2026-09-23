@@ -20,6 +20,12 @@ so the numbers printed here are directly comparable to the eval's recall column.
 The ablation is done by swapping retrieve.expand_query for the identity
 function, which is exactly what "before" means: the map absent, the index and
 the MIN_SCORE calibration unchanged.
+
+SINCE PHASE E4a (2026-09-23) "AFTER" IS HAND MAP + OOV BRIDGE, not the hand map
+alone: expand_query() is now expand_query_hand() followed by the bridge. On
+frozen-10 the two are indistinguishable (the bridge changes no frozen-10
+number), so this file's printed means did not move. The hand-only vs
+hand+bridge comparison lives in scripts/ablate_oov_bridge.py.
 """
 
 import sys
