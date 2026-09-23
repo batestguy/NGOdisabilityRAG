@@ -229,8 +229,11 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   list is identical to the local measurement**, one NGO lookup returns helplines-first + 3 Lagos
   orgs. **Users moved from the `0.471` arm to the `0.529` arm.** *That authorisation covered that
   merge and does NOT carry forward.*
-  **E2 and E3 are MEASURED AND DECLINED IN FULL 2026-09-20. NEXT IS E4, AND IT MUST BE RE-SCOPED
-  BEFORE IT IS RUN** (amendment box on the E4 step).
+  **E2 and E3 are MEASURED AND DECLINED IN FULL 2026-09-20. E4 WAS RE-SCOPED 2026-09-23 (E4.0,
+  `scripts/e4_reach.py`, dev only).** It is now an **"OOV bridge"**: pretrained-vector expansion of
+  out-of-corpus query terms only. Its reach is **4 of 12 failing dev questions (1 of 4
+  `vocab-mismatch`)**. **NEXT IS E4a** under the strict ship gate in the re-scope box on the E4
+  step, which fixes its parameters in advance. Or decline it and go to E5.
   ⚠ **TWO BRANCHES, AND THE SPLIT IS DELIBERATE.** `phase10/ship-e1b` (merged as `b92e2f4`) carried
   **only** the measured E1 win and the written record. `phase10/retrieval-quality` (`a6016e4`,
   **pushed to `origin` 2026-09-20 as an archive — pushing a topic branch does not deploy**) carries

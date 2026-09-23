@@ -4,9 +4,12 @@
 MEASURED and DECLINED 2026-09-20** (`measure(phase10-E2a)` — see the amendment box on E2) ·
 **E3 MEASURED and DECLINED 2026-09-20** (`measure(phase10-E3a)` — see the amendment box on E3;
 all four arms lose, the auto map halves its own target class, `SYNONYMS` unchanged) ·
-**NEXT IS E4 — and it MUST BE RE-SCOPED BEFORE IT IS RUN** (amendment box on the E4 step): as
-written it is inert at the shipping budget for E2a's exact reason, and two consecutive term-level
-arms have now failed to reach the pool headroom while E4 is also term-level.
+**E4 RE-SCOPED 2026-09-23 (E4.0, `scripts/e4_reach.py`, dev only).** E4 is now "OOV bridge":
+pretrained-vector expansion of out-of-corpus query terms only. **Its measured reach is 4 of the 12
+failing dev questions, and 1 of the 4 failing `vocab-mismatch` questions** (oracle ceiling
++0.147 dev). **NEXT IS E4a**, under the strict gate in the re-scope box on the E4 step. **Decline
+is the expected outcome.**
+*(This line read "NEXT IS E4 — and it MUST BE RE-SCOPED BEFORE IT IS RUN" until 2026-09-23.)*
 **E1b IS MERGED AND DEPLOYED 2026-09-20 (`b92e2f4`, merge of `phase10/ship-e1b`, on the user's
 explicit authorisation). Users moved from the `0.471` arm to the `0.529` arm** — confirmed by live
 smoke on https://ngodisabilityrag.onrender.com, which renders 12 chunks (3 inline + 9 folded) with
@@ -463,6 +466,100 @@ via `calibrate_refusal.py` · whichever arm wins, the decision recorded with its
 
 ### E4 — Static-embedding re-rank signal (candidate, measure before committing)
 
+> ## ✅ RE-SCOPED 2026-09-23 (E4.0, `scripts/e4_reach.py`). **E4 IS NOW "OOV BRIDGE": PRETRAINED-VECTOR EXPANSION OF OUT-OF-CORPUS QUERY TERMS ONLY. ITS REACH IS MEASURED AND NARROW. RUN E4a UNDER THE GATE BELOW, OR DECLINE.**
+>
+> This box **supersedes the step text below** (the 2026-09-20 amendment's diagnosis still stands;
+> this is the re-specification it asked for). Zero quota, zero network, nothing on the shipping
+> path moved. **E4.0 read the dev set only. `test` was not read.**
+>
+> **1. A correction to the 2026-09-20 amendment's point 3.** It credits a pretrained table with
+> containing the six keys the corpus never uses (`sack`, `fired`, `jail`, `job`, `lawyer`, `fined`).
+> True, but **the hand map already bridges all six** — that is why they are keys. So the
+> pretrained table's *only* marginal contribution is on out-of-corpus query terms the hand map
+> does **not** cover. That set is what E4.0 measured.
+>
+> **2. Reach, dev only.** The v2 index has **4,674** stems. Of 25 answerable dev questions, 18
+> contain at least one out-of-corpus term the hand map doesn't bridge. That raw count is inflated,
+> though: most of those terms are function words (`somebody`, `says`, `near`, `wants`, `supposed`).
+> Crossed with the **12 dev questions that currently miss** (strict < 1 at `k=4/doc, top_n=12`):
+>
+> | failing dev q | class | content-bearing unbridged OOV term | reachable? |
+> |---|---|---|---|
+> | H2 | vocab-mismatch | `beg`, `brother` | **yes** |
+> | H11 | toc-trap | `locked` (→ detained / liberty, s. 35) | **yes** |
+> | H15 | cross-document | `differently` (→ discriminat-) | **yes** |
+> | H18 | cross-document | `reachable` (→ access-) | **yes** |
+> | H1, H4, H8 | vocab-mismatch | none. The mismatch is **in-vocabulary** ("train as a teacher", "paper that proves I am disabled"). | no, by construction |
+> | H9, H14, H16, H17, H30 | mixed | none | no, by construction |
+>
+> **E4 can touch 4 of the 12 failing dev questions, and only 1 of the 4 failing `vocab-mismatch`
+> questions.** Even the one it's named for is mostly out of reach: 3 of the 4 `vocab-mismatch`
+> misses use words the corpus already has, in the wrong register. Expanding *in-vocabulary* terms
+> from pretrained neighbours is the E3a mechanism with a different association source, and E3a
+> measured that as dilution (0.479 → 0.229). **It is out of scope.**
+> **Oracle ceiling:** if all 4 reachable questions went to strict 1.0, dev would move 0.573 →
+> **≤ 0.720 (+0.147)**. That's a hard upper bound, not a forecast. A realistic outcome is 1–2
+> questions, and zero is plausible.
+>
+> **3. Side finding, recorded and NOT fixed here.** H2 says `beg`. The hand key `begging` does not
+> fire on it, because `_surface_forms("beg")` never produces `begging`, and `beg` itself is out of
+> corpus. It's a hand-map surface-form gap. Fixing it changes which probes fire, so it moves
+> `calibrate_refusal.py` off 212. **Hand it to E5 with the hand-map question. It is not part of E4.**
+>
+> **4. E4a specification — what is built, if it is run.**
+> * **Source (build-time only, never in the repo, never at runtime):** GloVe 6B 100d
+>   (`glove-wiki-gigaword-100`, public-domain PDDL, ~130 MB), downloaded once to `D:\e4_vectors\`.
+>   The file is frequency-ordered, and that ordering is the content filter.
+> * **Artifact `data/processed/oov_bridge.json`, a plain dict `{word: [corpus_term, ...]}`.**
+>   Keys: GloVe words with rank in `(R, 50000]` whose stem is **absent** from the v2 index
+>   vocabulary. Values: at most `m` nearest neighbours **restricted to corpus-index terms**, with
+>   cosine ≥ `τ`. At runtime this is a dict lookup, like `SYNONYMS`. **No vectors ship, numpy isn't
+>   touched, and `requirements.txt` stays byte-identical.** Size cap **2 MB**.
+>   The artifact embeds the corpus sha256 and hard-fails on mismatch. It is corpus-keyed exactly
+>   like M2's.
+> * **Parameters fixed before the first measurement:** `R = 2000` (skip the most frequent English
+>   words; that is where `somebody` / `says` / `near` live), `m = 2`, `τ = 0.55`, plus a **total cap
+>   of 4 appended terms per query**. The cap is E3a's lesson: the auto map failed at a median of 8.
+>   If dev is ≤ 0 at the pre-set point, **stop and decline — do not grid-search.** A single
+>   one-step retreat (`R = 5000` or `τ = 0.65`), chosen on **dev only**, is allowed and must be
+>   recorded as a second look.
+> * **Additive and last:** the bridge fires only on query tokens that are out of corpus **and**
+>   not already bridged by `SYNONYMS`. `SYNONYMS`, `expand_query`'s existing behaviour, the
+>   two-sided entry gate and `stem()` are **untouched**. It is a new opt-in function that the
+>   harness calls, so the shipping path is byte-identical until a ship decision.
+> * **Built without reading `data/eval/questions.json`.** The generator takes the corpus and the
+>   GloVe file only.
+>
+> **5. The risk that is new to E4, and the reason `calibrate_refusal.py` is load-bearing here.**
+> Off-corpus questions are *dense* in out-of-corpus words. This is the first arm in Phase E that
+> can **manufacture overlap for exactly the queries that should refuse**: "football match" can
+> bridge to `competition`, and so on. Nothing false-refuses more, but the floor can be pushed
+> *open*. So E4a reports, per set, how many `refuse` rows change `kept` from 0 to more than 0, and
+> `calibrate_refusal.py` must still be **0 disagreements on 212**, and it must be run **with the bridge
+> switched on**, which needs an opt-in flag in that harness. Run on the shipping path, it measures nothing. The probe count stays 212 because
+> `SYNONYMS` is not touched.
+>
+> **6. Ship gate — every line must hold, measured in this order, and `test` is read once, last:**
+> 1. **dev (selector):** strict > 0.573, with at least 1 question up and no more questions down than up.
+> 2. **dev `vocab-mismatch`** not below control.
+> 3. **frozen-10** ≥ 0.734 (tripwire).
+> 4. **false refusals** 0/10 · 0/25 · 0/17. **`calibrate_refusal` 0/212.** Refuse-row `kept`
+>    0 → >0 flips reported, and none on H25 (the only dev refuse row the floor currently holds).
+> 5. **`test` (check, read once):** strict ≥ **0.588**, i.e. at least one question net up,
+>    with **no** test question down. *Avoiding a loss is not enough* (2026-09-20 amendment
+>    point 4).
+> 6. Artifact ≤ 2 MB, `requirements.txt` byte-identical, zero network on the default path.
+>
+> Report as well: fire rate, median appended terms, per-question up/down on every set, and the
+> reachable four individually. **If lines 1–4 fail, decline without reading `test`**, which keeps
+> the last clean set clean.
+>
+> **7. Prior.** The two previous term-level arms lost, and the measured reach is 4 dev questions.
+> **Decline is the expected outcome.** E4a is still worth running once, for three reasons. It is
+> the only Phase E arm aimed at out-of-corpus words. It costs zero quota and one build-time
+> download. And a clean decline is what lets E5 price M2 honestly, because it would show that
+> term-level methods are exhausted.
+
 > ## ⚠ AMENDED 2026-09-20 (after E2a and E3a). **E4 AS WRITTEN BELOW IS INERT AT THE SHIPPING BUDGET. RE-SCOPE IT BEFORE RUNNING IT.**
 >
 > **1. The step's stated mechanism — "one signal in the re-rank score" — cannot move any number we
@@ -523,8 +620,10 @@ fits in the repo, fits in Render's 512 MB, loads at boot, and runs fully offline
 > chosen on **dev only**, and ablate it as its own arm. If it does not beat E2+E3 on held-out
 > data, **do not ship it** — a 4 MB artifact and a blend weight are real complexity.
 
-**E4 green:** ablated as its own arm against E2+E3 · vocab-mismatch class recall reported
-specifically · shipped only on a held-out win · `requirements.txt` still byte-identical.
+**E4 green** *(superseded 2026-09-23 by the re-scope box's six-line ship gate; E2 and E3 are
+declined, so "against E2+E3" now means against E1b's control)*: ablated as its own arm against
+E2+E3 · vocab-mismatch class recall reported specifically · shipped only on a held-out win ·
+`requirements.txt` still byte-identical.
 
 ---
 
@@ -992,3 +1091,24 @@ on 17 questions; the honest outcome may be shipping *less* code) · **`scripts/p
 has still never been written or run**, so M2 cannot be priced.
 
 **Next: E4 — re-scoped first. Do not execute it as written.**
+
+### E4.0 — re-scope + reach gate — 2026-09-23. Zero Gemini calls. **MEASURE-ONLY, dev only; `test` not read.**
+
+`scripts/e4_reach.py` (branch `phase10/e4-rescope`). Control reproduced first: `eval_heldout`
+reports **0.734 / 0.573 / 0.529**, PASS. Findings, in full in the E4 re-scope box:
+* **The "pretrained table has the six missing keys" advantage was already banked.** The hand map
+  bridges all six, so E4's marginal target is only the out-of-corpus terms the hand map leaves out.
+* **Reach is 4 of 12 failing dev questions** (H2 `beg`/`brother`, H11 `locked`, H15 `differently`,
+  H18 `reachable`), and **1 of 4 in `vocab-mismatch`**. The other `vocab-mismatch` misses (H1,
+  H4, H8) are *in-vocabulary* register mismatches, and OOV expansion can't touch them by
+  construction. Oracle ceiling: dev ≤ 0.720.
+* **Side finding:** `beg` doesn't fire the hand key `begging` (a `_surface_forms` gap). Handed
+  to E5, not fixed, because fixing it moves `calibrate_refusal` off 212.
+* **E4a is specified with its parameters fixed in advance** (`R=2000, m=2, τ=0.55`, cap 4
+  terms/query, a dict artifact ≤ 2 MB, no vectors shipped). Its ship gate requires a net win on
+  `test`, not just no loss, plus `calibrate_refusal` 0/212 **with the bridge on**. That second
+  condition matters because this arm, unlike E2/E3, can push the refusal floor *open* for
+  off-corpus queries.
+
+**Next: E4a**, per the re-scope box. Or decline it outright and go to E5. With a reach of 4 dev
+questions, that is a defensible call.

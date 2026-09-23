@@ -2951,3 +2951,33 @@ track is not necessarily free.
 - **E4 must be re-scoped before it is run** — as written it is inert at the shipping budget for
   E2a''s exact reason, and its one real advantage over E3 (a *pretrained* table contains the six
   hand keys the corpus never uses) sits on the **expansion** side, not the ranking side.
+
+## 2026-09-23 — Phase E4.0: re-scoping E4 by measuring its reach before building it
+
+**What was done.** E4 was flagged 2026-09-20 as inert as written: a re-rank signal at a
+budget where `top_n == 3k` makes re-ranking unobservable. Its live mechanism was left on the
+expansion side. Before building anything, the cheapest possible question was asked: **if the
+mechanism worked perfectly, which failing questions could it even touch?** `scripts/e4_reach.py`
+answers it on the dev set only, with no vectors, no download and no quota.
+
+**What it found.** The amendment's headline advantage, that a pretrained table knows `sack`,
+`fired`, `jail`, `job`, `lawyer` and `fined`, **was already banked**: those six are hand-map keys
+*because* the corpus lacks them. What's left is out-of-corpus terms the hand map leaves out, and
+that reaches **4 of 12 failing dev questions** and **1 of 4** failing `vocab-mismatch`. The
+class E4 was named for mostly fails on words the corpus already has, used in the wrong register
+("train as a teacher", "a paper that proves I am disabled"). Expanding those in-vocabulary words
+from any association source is E3a again, and E3a measured as dilution.
+
+**Why it matters (the generalisable lesson).** Three Phase E steps in a row were written from
+a mechanism story ("length, therefore BM25"; "vocabulary, therefore synonyms"; "semantics,
+therefore embeddings"). **A reach count, meaning which failures the mechanism can touch by
+construction, costs minutes, and would have bounded E2 and E3 before either was built.** It
+should be the first step of any retrieval arm from here on. It also exposed a risk the E4 text
+never mentioned: OOV expansion is the first arm that can manufacture overlap for *off-corpus*
+queries, which are full of words the corpus never uses, and so push the refusal floor open.
+That is why `calibrate_refusal` with the bridge on is now a ship-gate line.
+
+**Discipline kept.** `test` not read. E4a's parameters written down before any vectors exist.
+A decline-without-reading-test path is specified. `SYNONYMS` is untouched, and the `beg` →
+`begging` surface-form gap is recorded, not fixed, because fixing it moves the 212-probe
+calibration.

@@ -1,4 +1,32 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-20)
+# HANDOFF — start here (60 seconds, updated 2026-09-23)
+
+> **LATEST (2026-09-23): E4 IS RE-SCOPED (E4.0). NEXT IS E4a, AND DECLINE IS THE EXPECTED OUTCOME.
+> Zero Gemini calls. Branch `phase10/e4-rescope` (docs + one measure-only script), not merged.
+> Nothing on the shipping path moved.**
+>
+> * **E4.0 read the dev set only. `test` was not read.** Control reproduced: 0.734 / 0.573 / 0.529.
+> * **The "pretrained table contains the six missing keys" argument was already banked.** The hand
+>   map bridges all six, so E4 can only add value on the *other* out-of-corpus query terms.
+> * **Reach (`scripts/e4_reach.py`): 4 of the 12 failing dev questions** (H2 `beg`/`brother`, H11
+>   `locked`, H15 `differently`, H18 `reachable`), and **1 of the 4 failing `vocab-mismatch`**.
+>   H1, H4 and H8 are in-vocabulary register mismatches that OOV expansion can't touch.
+>   Oracle ceiling: dev ≤ 0.720.
+> * **E4a spec:** a GloVe 6B 100d neighbour map (build-time download to `D:\e4_vectors\`, never
+>   in the repo) shipped as a ≤ 2 MB **dict** `data/processed/oov_bridge.json`. It fires only on
+>   OOV tokens the hand map doesn't bridge. `R=2000, m=2, τ=0.55`, ≤ 4 terms/query, **fixed
+>   before the first measurement**, with one dev-only retreat. `SYNONYMS` and `stem()` are
+>   untouched, and the generator never reads `questions.json`.
+> * **The ship gate needs a NET WIN on `test`, plus `calibrate_refusal` 0/212 WITH THE BRIDGE
+>   ON.** The calibration has to be run through a new opt-in flag. This is the first Phase E arm
+>   that can push the refusal floor *open* for off-corpus queries. **If dev fails, decline
+>   without reading `test`.**
+> * **Side finding, not fixed:** `beg` doesn't fire the hand key `begging` (a `_surface_forms`
+>   gap). Handed to E5, together with the open "is the hand map worth having" question.
+> * **Still carried:** `probe_embed_quota.py` has never been written or run. The
+>   `baseline_phaseE` archive is not done (E5).
+>
+> **NEXT: E4a, per the re-scope box on E4 in `docs/phases/13_retrieval_quality.md`, or decline it
+> and go to E5.**
 
 > **LATEST (2026-09-20): E1b IS MERGED AND DEPLOYED (`b92e2f4`). E2 AND E3 ARE DECLINED AND THEIR
 > CODE IS DELIBERATELY NOT ON `main`. NEXT IS E4, WHICH MUST BE RE-SCOPED BEFORE IT IS RUN.
