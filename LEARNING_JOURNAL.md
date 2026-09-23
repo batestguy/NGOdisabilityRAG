@@ -3100,3 +3100,23 @@ or changed after that. It is recorded because the box asks for the ordering to b
 
 The user-register smoke list (15 queries, no refs) is a separate file and is never a metric.
 Next: E5.3.
+
+## 2026-09-23 — E5.3: 42 fresh questions settled what 17 could not
+
+The hand map question had been open since E3: dev said keep it, while `test` said "no expansion"
+was +0.059 better, and both were inside noise. With the rule written first and `test2` authored
+blind, the answer is unambiguous. Dropping the hand map costs **−0.052** (bridge only) and
+**−0.075** (no expansion) on `test2`, and on `vocab-mismatch` it falls from 0.450 to 0.283, the
+class the map exists for. Every user-facing column moves the same way, and the displayed list
+shrinks (min shown drops to 1).
+
+Two lessons. **First, n=17 can point the wrong way with the same sign on both corpora.** The
+`test` result replicated on v1 and v2, and it still turned out to be noise. Replicating across
+corpora is not the same as replicating across questions. **Second, the conjunctive rule did its
+job before `test2` was read:** both arms failed on dev, so the held-out read could only confirm,
+never be used to rescue an arm. That is the point of writing the rule first.
+
+The first `test2` findings are also worth keeping. `toc-trap` scores 6/6, so the Schedule bait
+does not win at this budget. 4/42 questions have no correct chunk anywhere in the 60-pool, and
+that is the ceiling M2 is being priced against. All 8 off-corpus rows clear the 0.10 floor,
+which was expected and changes nothing.

@@ -364,7 +364,12 @@ LABELS = {
     "frozen10": "frozen-10 (fitted on)",
     "heldout": "dev (ex-held-out, inspected 2026-09-13)",
     "test": "test (clean, never tuned against)",
+    # Phase E5.2 set, first read by E5.3 (2026-09-23). Its rows are sealed in
+    # their own file and exist on corpus v2 only; main() drops this label on a
+    # v1 run so that output stays byte-identical to every v1 baseline.
+    "test2": "test2 (clean, E5.2; read at E5.3)",
 }
+CLEAN_SETS = ("test", "test2")   # missed refs / offenders withheld by default
 
 
 def per_question_table(label: str, rows: list[dict], show_missed: bool) -> None:
@@ -465,6 +470,10 @@ def main(argv: list[str] | None = None) -> int:
 
     assert_frozen10_matches_notebook()
     rows = load_eval_set()
+    if (corpus or CORPUS_VERSION) == "v2":
+        rows = rows + load_eval_set("test2")
+    else:
+        LABELS.pop("test2", None)   # test2 is v2-only (6 refs absent on v1)
     by_set = {s: [r for r in rows if r["set"] == s] for s in LABELS}
 
     docs = build_corpus(corpus)
@@ -479,15 +488,15 @@ def main(argv: list[str] | None = None) -> int:
     measured = {s: [measure_one(ret, r) for r in by_set[s]] for s in LABELS}
     curves = {s: [measure_curve(ret, r) for r in by_set[s]] for s in LABELS}
 
-    for s in ("heldout", "test"):
+    for s in ("heldout",) + tuple(c for c in CLEAN_SETS if c in LABELS):
         if not measured[s]:
             print("\nNo %r questions in data/eval/questions.json yet." % s)
             continue
         # The clean set's missed-refs column is the tuning handle, so it is the
         # one thing withheld by default. See TEST-SET PROTECTION in the header.
         per_question_table(LABELS[s], measured[s],
-                           show_missed=(s != "test") or reveal_test)
-        if s == "test" and not reveal_test:
+                           show_missed=(s not in CLEAN_SETS) or reveal_test)
+        if s in CLEAN_SETS and not reveal_test:
             print("  still-missed withheld: reading which refs a CLEAN set misses")
             print("  is what turned the 30 dev questions into a dev set. Pass")
             print("  --reveal-test to print it, and record in the journal that")
@@ -510,7 +519,7 @@ def main(argv: list[str] | None = None) -> int:
     print("  and corpus v2 removes by design. Across corpus versions compare")
     print("  STRICT only; plain recall is not comparable v1 -> v2.")
     f_recall = recalls["frozen10"]
-    for s in ("heldout", "test"):
+    for s in ("heldout",) + tuple(c for c in CLEAN_SETS if c in LABELS):
         if f_recall is not None and recalls[s] is not None:
             print("  delta vs frozen-10 (%s): %+.3f" % (s, recalls[s] - f_recall))
     print("  A drop here is THE FINDING, not a bug to tune away: it is the")
@@ -530,7 +539,7 @@ def main(argv: list[str] | None = None) -> int:
         print("  %-40s %d/%d = %.1f%% retrieve NOTHING"
               % (LABELS[s], len(fr), len(ans),
                  100 * len(fr) / len(ans) if ans else 0.0))
-        if fr and (s != "test" or reveal_test):
+        if fr and (s not in CLEAN_SETS or reveal_test):
             print("    offenders: %s" % ", ".join(
                 "%s (%s, top %.4f)" % (r["id"], r["class"], r["top"]) for r in fr))
 

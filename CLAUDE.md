@@ -23,12 +23,13 @@ C:\conda-envs\drlca-rag\python.exe scripts\test_phase04.py         # Intent rout
 C:\conda-envs\drlca-rag\python.exe scripts\test_phase05.py         # UI script-level asserts, 137/137
 C:\conda-envs\drlca-rag\python.exe scripts\test_phase09_ops.py     # ops/chat invariants, 51/51, zero network
 C:\conda-envs\drlca-rag\python.exe scripts\audit_corpus.py         # corpus shape gate + v1 regression tripwire
-C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py         # held-out retrieval baseline (+ recall_strict, + E5.1 user-facing view)
+C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py         # held-out retrieval baseline (+ recall_strict, + E5.1 view, + test2 on v2)
 C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn set, 22 conv / 62 turns
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase08.py       # retrieval ablations
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase10.py       # (k, top_n) width ladder, measure-only, never gates
 C:\conda-envs\drlca-rag\python.exe scripts\calibrate_refusal.py    # refusal invariance, 212 probes, 0 disagreements
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_oov_bridge.py    # E4a: hand vs hand+bridge + PORT CHECK (--read-test spends test)
+C:\conda-envs\drlca-rag\python.exe scripts\ablate_handmap.py       # E5.3: S ship / B bridge-only / N none, dev (+ --read-test2)
 C:\conda-envs\drlca-rag\python.exe scripts\build_oov_bridge.py     # rebuild data/processed/oov_bridge.json (needs D:\e4_vectors\)
 C:\conda-envs\drlca-rag\python.exe scripts\e4_reach.py             # E4.0 reach gate, dev only
 C:\conda-envs\drlca-rag\python.exe scripts\eval_phase06.py --out=scripts\eval_tmp.json
@@ -285,6 +286,10 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   `−0.100 / −0.073 / +0.059` on v2 and `−0.100 / −0.047 / +0.088` on v1 — same sign on every set,
   both corpora. **Dev selects and test checks, so the hand map stays** — but **we still have no
   held-out evidence it is worth having. That is an E5 item; do not settle it on 17 questions.**
+  **SETTLED 2026-09-23 (E5.3, `scripts/ablate_handmap.py`):** on the fresh `test2` (n=42, authored
+  and committed before any measurement, E5.2) the hand map earns its place: ship S **0.629** vs
+  bridge-only 0.577 vs none 0.554 (`vocab-mismatch` 0.450 / 0.283 / 0.283), agreeing with dev.
+  The `test` +0.059 was noise. **S stays; `SYNONYMS` unchanged.**
   ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level lexical signal
   failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to differ in kind.
   A static-embedding blend is **also term-level association** — **E4's ship gate should be strict

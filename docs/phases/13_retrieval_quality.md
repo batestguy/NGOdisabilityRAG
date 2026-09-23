@@ -1462,3 +1462,54 @@ step and is never a metric. The file carries its own rules. It has not been run.
 
 **Next: E5.3.** Wire `test2` into `eval_heldout` (a new `LABELS` entry) and into the S/B/N arm
 harness. Run dev first, then `test2` **once**, under the rule already written in the box.
+
+### E5.3 — The hand map stays, now with held-out evidence — 2026-09-23, local `main`. Zero Gemini calls.
+
+**Harness:** `scripts/ablate_handmap.py`. It installs each arm by monkeypatching
+`retrieve.expand_query`, so set recall and the page view (`app.offline_legal_hits`) see the same
+arm, and `src/` is untouched. Arm S reproduces the shipping numbers (0.734 / 0.613), which is the
+control. **Dev was run and recorded first** (`D:\e5_3\e53_dev.txt`); `test2` was then scored
+**once** with `--read-test2` (`D:\e5_3\e53_test2.txt`).
+
+| recall_strict | frozen-10 | dev (selector) | **test2** (read once) | test2 up/down vs S |
+|---|---|---|---|---|
+| **S** ship (hand + bridge) | 0.734 | 0.613 | **0.629** | — |
+| B bridge only | 0.634 | 0.540 | 0.577 | 1 / 4 |
+| N no expansion | 0.634 | 0.500 | 0.554 | 1 / 5 |
+| `vocab-mismatch` S / B / N | 0.562 / 0.312 / 0.312 | 0.625 / 0.438 / 0.312 | **0.450 / 0.283 / 0.283** | |
+
+User-facing view on `test2` (hit@3 · strict@3 · MRR · shown mean/min · rows ≤ 2):
+S 0.524 · 0.395 · 0.460 · 7.83/2 · 1/42 — B 0.476 · 0.367 · 0.430 · 7.05/**1** · 4/42 —
+N 0.476 · 0.355 · 0.418 · 7.33/**1** · 3/42. Removing the hand map is worse on every column
+and shrinks the displayed list.
+
+**Verdict under the pre-declared rule: S STAYS.** Both B and N already fail the **dev** half
+(−0.073 and −0.113, with 0 questions up), so `test2` could not have changed the outcome. It was
+read anyway, because the box asks for held-out evidence and E5.4/E5.6 need its column. **The
+old dev/test disagreement is settled:** on `test` (n=17) N looked +0.059 better; on `test2`
+(n=42) N is **−0.075**, which agrees with dev. The `test` reading was noise on 17 questions. No
+ship change means no calibration change: `calibrate_refusal` stays 0/212, and `SYNONYMS` and
+`src/` are byte-identical. No arm produced a false refusal or a refuse-row flip on any set.
+
+**Check on the B definition:** B leaves the bridge's hand-key skip in place. Emptying it (B′,
+which is what deleting `SYNONYMS` would really do) changes the expansion of exactly 1 of 90
+scored questions (dev H5: `sacked` also bridges to `resigned resign`). So the B column describes
+"ship less code" well enough, and B′ would not rescue it.
+
+**`test2` is now wired into `eval_heldout.py` on v2** (a `test2` label; missed refs and
+false-refusal offenders are withheld like `test`'s). **v1 output is byte-identical** (diffed).
+v2 output differs only by added `test2` lines (both captures in `D:\e5_3\`). First `test2`
+findings, now reportable:
+* strict **0.629**, by class: toc-trap **1.000** (6/6), direct 0.750, odd-wording 0.667,
+  cross-document 0.583, `vocab-mismatch` **0.450**. The weak class is weak on fresh data too.
+* **Pool: 38/42 in the 60-candidate pool, so 4/42 are absent.** That is the E5.6 "residual gain"
+  input for M2.
+* 0/42 false refusals. **Gate-level false answers 8/8**: every off-corpus row clears
+  `MIN_SCORE`, with tops from 0.131 to 0.243. That is expected (the floor is not a semantic
+  filter) and recorded, not tuned.
+* The `toc-trap` rows all score 1.000. The Schedule bait does **not** displace the body section
+  at this budget. That is a finding about the trap class under v2, not a reason to re-author.
+
+**Next:** the optional `_surface_forms` (`beg` → `begging`) arm, S vs S + fix, measured the same
+way. Note that `test2` has now been read once, so a second decision on it spends it further; the
+arm should be judged on dev primarily. Then **E5.4**, archive `baseline_phaseE_<date>.txt`.

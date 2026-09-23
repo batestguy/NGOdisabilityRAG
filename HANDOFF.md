@@ -1,14 +1,13 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-23)
 
-> **LATEST: E5.2 is DONE (local `main`, zero quota, zero retrieval, not pushed).**
-> * **`test2` authored and committed before any measurement:** `data/eval/questions_test2.json`,
->   42 answerable (82 corpus-verified refs) + 8 off-corpus, `toc-trap` included (6).
-> * **Sealed:** it is returned only by `load_eval_set("test2")`, so every existing harness is
->   byte-identical and nothing reads it by accident. It is **v2-only**.
-> * **Smoke list:** `data/eval/smoke_user_register.json`, 15 user-register queries, no refs, eyeball only.
-> * E5.0/E5.1 (control reproduces; USER-FACING VIEW, test hit@3 41%) are in the playbook Results.
-> * **NEXT: E5.3**: wire `test2` into `eval_heldout` + the S/B/N arms, dev first, then `test2`
->   **once**, under the rule in the E5 box.
+> **LATEST: E5.3 is DONE (local `main`, zero quota, not pushed). The hand map STAYS.**
+> * `scripts/ablate_handmap.py`, dev first, then `test2` read **once**: recall_strict S ship / B bridge-only /
+>   N none = dev 0.613 / 0.540 / 0.500, **test2 0.629 / 0.577 / 0.554**. Both fail the dev half of the
+>   pre-declared rule, and test2 agrees. No src change; calibrate is still 0/212.
+> * `eval_heldout.py` now prints `test2` on v2 (v1 byte-identical). Captures are in `D:\e5_3\`.
+> * E5.2 (`test2` authored + sealed, smoke list) is in the playbook Results.
+> * **NEXT:** the optional `_surface_forms` (`beg`→`begging`) arm, judged on dev primarily (`test2` is
+>   now read once), then **E5.4**, archive `scripts/baseline_phaseE_<date>.txt`.
 
 > **NEXT SESSION: E5. The playbook is written** (the box on the E5 step in
 > `docs/phases/13_retrieval_quality.md`, 2026-09-23). Work it in order:
