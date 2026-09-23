@@ -2981,3 +2981,25 @@ That is why `calibrate_refusal` with the bridge on is now a ship-gate line.
 A decline-without-reading-test path is specified. `SYNONYMS` is untouched, and the `beg` →
 `begging` surface-form gap is recorded, not fixed, because fixing it moves the 212-probe
 calibration.
+
+## 2026-09-23 — Phase E4a: the arm expected to be declined passed, and the prior was wrong in two places
+
+**Result.** The OOV bridge passed every line of a gate written before any vectors existed. It
+won on `test` by 2 questions and lost none anywhere. That is the first clean-set win since E1.
+
+**Wrong prior #1: the refusal risk.** This morning's re-scope said the bridge could push the
+floor open for off-corpus queries. Reading `PerDocRetriever.query()` before measuring showed the
+two-sided gate, built in Phase 08 after the `job` key did exactly that, forbids it. **Lesson:
+read the guard that already exists before writing a new risk into a gate.** It is corrected in
+place, not erased.
+
+**Wrong prior #2: "decline is the expected outcome".** Two lexical arms had lost, so a third
+term-level arm was expected to lose too. What differed is where the terms come from, not how they
+are used: a table trained outside the corpus can bridge words the corpus never uses, which
+corpus statistics cannot. E4.0's reach count had bounded the mechanism to a few questions, and
+that is about what it delivered.
+
+**What keeps the result honest.** Parameters were fixed first. `test` was read once, and only
+after dev passed. Mechanism was checked on `test` by a reviewer without IDs being revealed. The
+size is stated with its n: 3 questions. The dev gain turned out to be a surface-form fix
+(`beg` → `begging`), and that is recorded rather than smoothed over.

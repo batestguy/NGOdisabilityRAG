@@ -1,5 +1,19 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-23)
 
+> **LATEST (2026-09-23, later): E4a PASSES ITS A-PRIORI SHIP GATE. IT IS NOT SHIPPED; THE SHIP
+> CALL IS THE USER'S.** `597a23b` on `phase10/e4-rescope` is measure-only, and `src/` is untouched.
+> `recall_strict` frozen-10 / dev / test goes **0.734 / 0.573 / 0.529 → 0.734 / 0.613 / 0.647**
+> (0 / +1 / +2 questions, **zero down anywhere**). `vocab-mismatch` test goes 0.438 → 0.688.
+> `calibrate_refusal --oov-bridge` is 0/212. The artifact is 393 KB. The reviewer found it SOUND.
+> **The evidence is 3 questions.** The dev gain is `beg` → `begging`, a surface-form variant. The
+> two test gains are genuine semantic bridges; the reviewer checked them without revealing IDs.
+> ⚠ **The re-scope's "can push the floor open" risk was WRONG**, and it is corrected in place:
+> the two-sided gate forbids any refusal flip.
+> **Next, if the user approves:** a `phase10/ship-e4a` branch that ports the *measured*
+> `bridge_expand` into `src/retrieve.py` **unchanged** (do not tighten the hand-key skip), then
+> re-pins the `eval_phase06` digests, re-checks `eval_chat` and `reverse_rel`, runs all suites and
+> a live smoke. The merge needs explicit authorisation.
+
 > **LATEST (2026-09-23): E4 IS RE-SCOPED (E4.0). NEXT IS E4a, AND DECLINE IS THE EXPECTED OUTCOME.
 > Zero Gemini calls. Branch `phase10/e4-rescope` (docs + one measure-only script), not merged.
 > Nothing on the shipping path moved.**
@@ -17,8 +31,9 @@
 >   before the first measurement**, with one dev-only retreat. `SYNONYMS` and `stem()` are
 >   untouched, and the generator never reads `questions.json`.
 > * **The ship gate needs a NET WIN on `test`, plus `calibrate_refusal` 0/212 WITH THE BRIDGE
->   ON.** The calibration has to be run through a new opt-in flag. This is the first Phase E arm
->   that can push the refusal floor *open* for off-corpus queries. **If dev fails, decline
+>   ON.** The calibration has to be run through a new opt-in flag. *(Its justification here, that
+>   the arm "can push the refusal floor open", was corrected the same day. The two-sided gate
+>   forbids it.)* **If dev fails, decline
 >   without reading `test`.**
 > * **Side finding, not fixed:** `beg` doesn't fire the hand key `begging` (a `_surface_forms`
 >   gap). Handed to E5, together with the open "is the hand map worth having" question.

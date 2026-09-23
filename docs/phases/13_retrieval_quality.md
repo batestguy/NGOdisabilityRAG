@@ -7,8 +7,9 @@ all four arms lose, the auto map halves its own target class, `SYNONYMS` unchang
 **E4 RE-SCOPED 2026-09-23 (E4.0, `scripts/e4_reach.py`, dev only).** E4 is now "OOV bridge":
 pretrained-vector expansion of out-of-corpus query terms only. **Its measured reach is 4 of the 12
 failing dev questions, and 1 of the 4 failing `vocab-mismatch` questions** (oracle ceiling
-+0.147 dev). **NEXT IS E4a**, under the strict gate in the re-scope box on the E4 step. **Decline
-is the expected outcome.**
++0.147 dev). **E4a MEASURED 2026-09-23 (`597a23b`) and it PASSES ITS A-PRIORI SHIP GATE:** strict
+`test` 0.529 → **0.647** (2 up / 0 down), dev 0.573 → 0.613, frozen-10 unchanged, 0/212. **NOT
+SHIPPED. The ship decision is the user's.** See E4a in **Results**.
 *(This line read "NEXT IS E4 — and it MUST BE RE-SCOPED BEFORE IT IS RUN" until 2026-09-23.)*
 **E1b IS MERGED AND DEPLOYED 2026-09-20 (`b92e2f4`, merge of `phase10/ship-e1b`, on the user's
 explicit authorisation). Users moved from the `0.471` arm to the `0.529` arm** — confirmed by live
@@ -1110,8 +1111,57 @@ reports **0.734 / 0.573 / 0.529**, PASS. Findings, in full in the E4 re-scope bo
 * **E4a is specified with its parameters fixed in advance** (`R=2000, m=2, τ=0.55`, cap 4
   terms/query, a dict artifact ≤ 2 MB, no vectors shipped). Its ship gate requires a net win on
   `test`, not just no loss, plus `calibrate_refusal` 0/212 **with the bridge on**. That second
-  condition matters because this arm, unlike E2/E3, can push the refusal floor *open* for
-  off-corpus queries.
+  condition was first justified as "this arm can push the refusal floor *open*". **Corrected the
+  same day:** the two-sided gate already makes that impossible, so the run is a confirmation.
 
-**Next: E4a**, per the re-scope box. Or decline it outright and go to E5. With a reach of 4 dev
-questions, that is a defensible call.
+**Next: E4a**, per the re-scope box. *(Run the same day; see below.)*
+
+
+### E4a — OOV bridge — 2026-09-23. Zero Gemini calls. **MEASURE-ONLY. PASSES ITS A-PRIORI SHIP GATE ON ALL SIX LINES.**
+
+`597a23b` on `phase10/e4-rescope`. `scripts/build_oov_bridge.py` builds a GloVe 6B 100d build-time
+input (`D:\e4_vectors\`, sha256 `4934d470…`) into `data/processed/oov_bridge.json`: **13,489 keys,
+393,349 bytes**, with `R=2000, m=2, τ=0.55` and ≤ 4 terms/query, exactly as fixed in the re-scope
+box. The generator never reads `questions.json` (confirmed by review). `scripts/ablate_oov_bridge.py`
+monkeypatches `retrieve.expand_query`, so **`src/` is untouched**. Captures are in `D:\e4a_capture\`.
+
+| `recall_strict` | frozen-10 (tripwire) | dev (selector) | test (read once) |
+|---|---|---|---|
+| A hand map (control = E1b) | 0.734 | 0.573 | 0.529 |
+| **E hand + OOV bridge** | **0.734** (0 up / 0 down) | **0.613** (+0.040; 1 up / 0 down) | **0.647** (+0.118; 2 up / 0 down) |
+| `vocab-mismatch` A → E | 0.562 → 0.562 | 0.500 → **0.625** | 0.438 → **0.688** |
+
+Gate, in the order it was run. **Lines 1–4** (dev > 0.573 with net up, dev `vocab-mismatch` not
+below control, frozen-10 ≥ 0.734, false refusals 0 on every set) **passed before `test` was
+scored.** `calibrate_refusal.py --oov-bridge` was **PASS, 0/212**, and the default run is still
+0/212. There were 0 refuse-row flips. **Line 5:** `test` 0.647 ≥ 0.588, 2 up, 0 down. **Line 6:**
+393 KB ≤ 2 MB, and `requirements.txt` and `src/` are byte-identical. The bridge fired post-gate on
+5/23/13 rows (the hand map alone: 5/17/10), appended a median of 6 terms, and changed the
+displayed set on 16/60 rows.
+
+**Mechanism, and it matters for what ships.** On dev, the single gain (H2) is `beg` → `begging`.
+That is a **surface-form variant**, the `_surface_forms` gap recorded in E4.0, not a semantic
+bridge. The reviewer inspected the two `test` gains **without reporting IDs or terms**. **Both are
+genuine semantic bridges:** one maps an out-of-corpus transport noun to corpus transport terms,
+the other maps an everyday phrase to the corpus's accommodation register. So the arm is not just
+a stemming patch in disguise, though its dev evidence is.
+**Visible noise, and none of it measured as a loss:** `somebody` → `anybody, maybe` fires on
+many queries; `locked` → `door, kept` and `differently` → `accordingly, fairly` are poor
+neighbours. The ≤ 4-term cap and the two-sided gate contain it.
+
+**Honest size of the evidence.** +1 question on dev and +2 on test, zero losses anywhere, with
+parameters fixed in advance and `test` read once. That's the first arm since E1 to win on the
+clean set, but it's **3 questions in total**, and inside the sampling noise E3a warned about.
+The prior was "decline expected". The measurement overturned it on the declared rule, and it
+should be quoted with its n.
+
+**Reviewer: SOUND, no blocking issues.** One non-blocking note: the hand-key skip
+`{t, stem(t), t[:-1]}` is looser than `_surface_forms()`. **Do not tighten it while porting:** the
+shipped function must be the measured one, or `test` has to be read again.
+
+**Next is a ship decision, and it is the user's.** Shipping means porting the measured
+`bridge_expand` into `src/retrieve.py` as the default expander, loading the artifact with a
+corpus-sha256 hard-fail, and re-pinning `eval_phase06`'s digests. Expected unchanged:
+`FROZEN10_STRICT_BASELINE_V2` (frozen-10 doesn't move). Before merge, `eval_chat` and
+`eval_phase06`'s `reverse_rel` (which feeds whole answers through the expander) must be
+re-checked, along with all suites, on a `phase10/ship-e4a` branch, then a live smoke.

@@ -233,7 +233,10 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   `scripts/e4_reach.py`, dev only).** It is now an **"OOV bridge"**: pretrained-vector expansion of
   out-of-corpus query terms only. Its reach is **4 of 12 failing dev questions (1 of 4
   `vocab-mismatch`)**. **NEXT IS E4a** under the strict ship gate in the re-scope box on the E4
-  step, which fixes its parameters in advance. Or decline it and go to E5.
+  step, which fixes its parameters in advance. **E4a MEASURED 2026-09-23 (`597a23b`): it PASSES
+  that gate.** `test` strict 0.529 → **0.647** (+2 / −0), dev 0.573 → 0.613, frozen-10
+  unchanged, `calibrate_refusal --oov-bridge` 0/212. **NOT SHIPPED; the ship/merge call is the
+  user's.** Porting must keep the measured `bridge_expand` byte-for-byte in behaviour.
   ⚠ **TWO BRANCHES, AND THE SPLIT IS DELIBERATE.** `phase10/ship-e1b` (merged as `b92e2f4`) carried
   **only** the measured E1 win and the written record. `phase10/retrieval-quality` (`a6016e4`,
   **pushed to `origin` 2026-09-20 as an archive — pushing a topic branch does not deploy**) carries
