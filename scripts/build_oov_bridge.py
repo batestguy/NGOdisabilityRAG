@@ -3,9 +3,11 @@
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\build_oov_bridge.py  (from D:\\NGORAG)
      ... --vectors=<path>   GloVe file (default D:\\e4_vectors\\glove-wiki-gigaword-100.gz)
 
-MEASURE-ONLY ARTIFACT. Writes data/processed/oov_bridge.json, consumed only by
-scripts/ablate_oov_bridge.py and calibrate_refusal.py --oov-bridge. Nothing on the
-shipping path reads it; src/ is not touched by E4a.
+SHIPPING ARTIFACT (since Phase E4a, 2026-09-23). Writes data/processed/oov_bridge.json,
+which src/retrieve.py loads at import and expand_query() consults on every query.
+rag.build_corpus("v2") hard-fails if the artifact's corpus digest no longer matches,
+so a corpus change forces a rebuild AND a re-measurement (scripts/ablate_oov_bridge.py).
+Re-running this on the same corpus and vector file is deterministic.
 
 SPEC: docs/phases/13_retrieval_quality.md, the E4 re-scope box (2026-09-23), point 4.
 The parameters below were FIXED THERE BEFORE THIS FILE EXISTED -- do not tune them
@@ -25,7 +27,6 @@ vector ships: the artifact is a plain dict, a lookup like SYNONYMS.
 """
 
 import gzip
-import hashlib
 import json
 import re
 import sys
@@ -37,7 +38,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from rag import build_corpus  # noqa: E402
-from retrieve import ENGLISH_STOP_WORDS, stem, stem_preprocess  # noqa: E402
+from retrieve import (ENGLISH_STOP_WORDS, corpus_sha256, stem,  # noqa: E402
+                      stem_preprocess)
 
 DEFAULT_VECTORS = Path(r"D:\e4_vectors\glove-wiki-gigaword-100.gz")
 OUT = ROOT / "data" / "processed" / "oov_bridge.json"
@@ -52,15 +54,6 @@ SIZE_CAP_BYTES = 2 * 1024 * 1024
 WORD = re.compile(r"^[a-z]{3,}$")
 
 
-def corpus_sha256(docs) -> str:
-    """Order-sensitive digest of the exact chunk stream the index is built from."""
-    h = hashlib.sha256()
-    for doc_id, chunks in docs.items():
-        for c in chunks:
-            h.update(("%s\x1f%s\x1f%s\x1e" % (doc_id, c.ref, c.text)).encode("utf-8"))
-    return h.hexdigest()
-
-
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     opt = dict(a[2:].split("=", 1) for a in argv if a.startswith("--") and "=" in a)
@@ -69,7 +62,7 @@ def main(argv: list[str] | None = None) -> int:
     tau = float(opt.get("tau", TAU))
     out = Path(opt.get("out", OUT))
 
-    docs = build_corpus("v2")
+    docs = build_corpus("v2", check_bridge=False)
     stems, tokens = set(), set()
     for chunks in docs.values():
         for c in chunks:

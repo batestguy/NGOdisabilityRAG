@@ -2,10 +2,6 @@
 
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\calibrate_refusal.py
      ... --negative-test    (prove each gate can FAIL; see NEGATIVE TESTS below)
-     ... --oov-bridge       run every block with Phase E4a's OOV bridge installed as the
-                            query expander (measure-only; see scripts/ablate_oov_bridge.py).
-                            The bridge is built against v2, so its digest is checked
-                            against v2; v1 runs under the same patch, unchecked.
 
 Zero network, zero quota, writes NO files. Both corpus versions are built in
 ONE process so v1 and v2 are scored by the same code on the same run -- an
@@ -601,8 +597,7 @@ def negative_tests(rets: dict, probes: list) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     negative = "--negative-test" in argv
-    bridge_on = "--oov-bridge" in argv
-    unknown = [a for a in argv if a not in ("--negative-test", "--oov-bridge")]
+    unknown = [a for a in argv if a != "--negative-test"]
     if unknown:
         print("unknown argument(s): %s" % ", ".join(unknown))
         return 2
@@ -613,14 +608,6 @@ def main(argv: list[str] | None = None) -> int:
     print("MIN_SCORE=%.2f  k=%d/doc  top_n=%d  min_per_doc=%d  "
           "network calls: 0  files written: 0"
           % (retrieve.MIN_SCORE, K_PER_DOC, TOP_N, MIN_PER_DOC))
-
-    if bridge_on:
-        # PerDocRetriever.query() resolves expand_query as a module global, so
-        # patching the module installs the bridge for every block below.
-        from ablate_oov_bridge import load_bridge, make_bridge_expand
-        retrieve.expand_query = make_bridge_expand(
-            load_bridge(docs=build_corpus("v2")))[0]
-        print("E4a OOV BRIDGE INSTALLED as the query expander (measure-only)")
 
     probes = build_probes()
     assert len(probes) == 106, "expected 106 probes, built %d" % len(probes)

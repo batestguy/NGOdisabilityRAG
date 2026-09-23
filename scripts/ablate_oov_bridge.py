@@ -5,11 +5,16 @@ Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\ablate_oov_bridge.py        
                          (playbook E4 re-scope box, point 6, lines 1-4) has passed.
      ... --bridge=<path> alternative artifact (the one allowed dev-only retreat)
 
-MEASURE-ONLY. src/ is not edited by E4a: the bridge arm is installed by
-monkeypatching retrieve.expand_query, the technique ablate_phase08.py and the
-archived E2a/E3a harnesses use, because PerDocRetriever.query() resolves
-expand_query as a module global. SYNONYMS, expand_query and the two-sided gate are
-untouched, so calibrate_refusal.py stays at 106 probes / 212 runs.
+SHIPPED 2026-09-23 (phase10/ship-e4a). This harness MEASURED E4a with src/
+untouched; the arm is now the shipping expander. Two things changed with the port:
+  * arm A is retrieve.expand_query_hand -- the hand map alone, i.e. E1b's expander;
+  * PORT CHECK: before measuring, the harness asserts that the shipping
+    retrieve.expand_query equals this file's measured bridge_expand on every eval
+    question and every off-corpus probe. If that fails the port is not the measured
+    arm and no number below means anything.
+Arms are installed by monkeypatching retrieve.expand_query (PerDocRetriever.query()
+resolves it as a module global). SYNONYMS and the two-sided gate are untouched, so
+calibrate_refusal.py stays at 106 probes / 212 runs.
 
 THE ARM. bridge_expand(q) = expand_query(q) plus, for each query token that is out
 of the corpus AND not already bridged by a SYNONYMS key, its bridge neighbours --
@@ -38,10 +43,12 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import retrieve  # noqa: E402
-from build_oov_bridge import OUT as BRIDGE_PATH, corpus_sha256  # noqa: E402
+from ablate_phase08 import OFF_CORPUS  # noqa: E402
+from build_oov_bridge import OUT as BRIDGE_PATH  # noqa: E402
 from evalset import load_eval_set, strict_covered, verify_expected  # noqa: E402
 from rag import build_corpus  # noqa: E402
-from retrieve import MIN_SCORE, SYNONYMS, PerDocRetriever, select_top, stem  # noqa: E402
+from retrieve import (MIN_SCORE, SYNONYMS, PerDocRetriever, corpus_sha256,  # noqa: E402
+                      select_top, stem)
 
 K_PER_DOC, TOP_N, MIN_PER_DOC = 4, 12, 1          # E1b shipping budget, held fixed
 MAX_BRIDGE_TERMS = 4                              # playbook point 4, fixed a priori
@@ -49,7 +56,7 @@ CONTROL_STRICT = {"frozen10": 0.734, "heldout": 0.573, "test": 0.529}
 LABELS = {"frozen10": "frozen-10 (tripwire)", "heldout": "dev (SELECTOR)",
           "test": "test (check, read once)"}
 
-HAND = retrieve.expand_query
+HAND = retrieve.expand_query_hand
 _HAND_KEYS = set(SYNONYMS) | {stem(k) for k in SYNONYMS}
 
 
@@ -151,6 +158,9 @@ def main(argv=None) -> int:
     bridge = load_bridge(bpath, docs)
     bx, bterms = make_bridge_expand(bridge)
     arms = [("A  hand map (control = E1b)", HAND), ("E  hand + OOV bridge", bx)]
+    probes = [r["text"] for r in rows] + [p for p in OFF_CORPUS]
+    probes = [p if isinstance(p, str) else p[-1] for p in probes]
+    port_bad = [p for p in probes if retrieve.expand_query(p) != bx(p)]
     by_set = {s: [r for r in rows if r["set"] == s] for s in sets}
     res = {lab: {s: measure(by_set[s], ret, ex) for s in sets} for lab, ex in arms}
     A, E = (res[lab] for lab, _ in arms)
@@ -207,6 +217,11 @@ def main(argv=None) -> int:
               % (LABELS[s], len(A[s]["false_ref"]), len(E[s]["false_ref"]), len(flips)))
         if fr or flips:
             bad.append(s)
+
+    print("\n== PORT CHECK: shipping retrieve.expand_query == measured bridge_expand ==")
+    print("  %d / %d probes identical%s" % (len(probes) - len(port_bad), len(probes),
+          "" if not port_bad else "  !! first mismatch: %r" % port_bad[0]))
+    bad += ["port"] if port_bad else []
 
     ctl = [s for s in sets if abs(A[s]["strict"] - CONTROL_STRICT[s]) >= 5e-4]
     print("\n== CONTROL: arm A must reproduce E1b ==")
