@@ -249,7 +249,10 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   that gate:** `test` strict 0.529 → **0.647** (+2 / −0), dev 0.573 → 0.613, frozen-10
   unchanged, 0/212. **PORTED (`d4d7653`), reviewer SHIP WITH CAVEATS, and MERGED TO LOCAL `main`
   2026-09-23 (`f846ee9`) on the user's authorisation — re-verified on the merged tree. NOT
-  PUSHED: deployment is deferred until all phases are done (see Deploy below).** Both
+  PUSHED: deployment is deferred until all phases are done (see Deploy below).**
+  **NEXT IS E5**, re-scoped 2026-09-23 into steps E5.0–E5.6 (the box on the E5 step). The key
+  new item is **`test2`, a fresh clean held-out set authored before any arm touches it**, because
+  `test` (n=17) has now been used for four decisions. Both
   `eval_phase06` digests are unchanged, so nothing was re-pinned. Caveats: in `docs/phases/13`
   E4a-ship Results (dev in-corpus min top score 0.1369 → 0.1032; test r@3 0.324 → 0.294; one
   ad-hoc `boss` → `manager` regression).

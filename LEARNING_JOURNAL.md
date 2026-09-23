@@ -3037,3 +3037,18 @@ users". That was true in intent, but it overstated the stakes now: the live site
 artefact until launch. **What changes:** E-phase work lands on local `main`; `origin/main` and the
 live site stay on E1b until a deliberate launch. **What doesn't:** the verification discipline, and
 the rule that the push to `main` is the user's decision.
+
+## 2026-09-23 — E5 re-scoped before starting: the yardstick is the first deliverable
+
+Writing E5 as the original brief said ("publish the full sweep, read `test` once, decide M2")
+would have leaned on a 17-question set that has now informed four decisions. It was never tuned
+on, so its numbers stand, but it can't settle anything new. Nor can it settle the open hand-map
+question the playbook keeps saying "do not settle on 17 questions". So E5 opens by building a new
+clean set (`test2`), and by adding the rank and count columns that the E4a smoke showed were
+missing, **before** anything is measured on it. The rule for the hand-map question is written
+before the set exists.
+
+M2's case is also weaker than when it was written. E4a moved one "absent" test ref into the pool,
+and with no users and launch deferred, "decline M2 for launch, revisit with real query logs" costs
+nothing. The embedding-quota probe still runs, because an unpriced option can't be declined
+honestly either.

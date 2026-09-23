@@ -1,5 +1,17 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-23)
 
+> **NEXT SESSION: E5. The playbook is written** (the box on the E5 step in
+> `docs/phases/13_retrieval_quality.md`, 2026-09-23). Work it in order:
+> **E5.0** reproduce the control against `D:\ship_e4a\merged\` →
+> **E5.1** add r@3 / shown-count / MRR columns (report-only) →
+> **E5.2** author `test2` (≥ 40 answerable + 8 off-corpus, `toc-trap` included; commit before any
+> measurement) plus a user-register smoke list →
+> **E5.3** hand map vs bridge-only vs none on `test2`, by the rule written in the box →
+> **E5.4** archive `scripts/baseline_phaseE_<date>.txt` →
+> **E5.5** `probe_embed_quota.py` (≤ 60 embedding calls, **needs the user's go-ahead and a HANDOFF
+> spend check**) → **E5.6** the M2 decision, written down.
+> E5.2 is big enough for its own session. **Do not push `main`**: deployment is deferred.
+
 > **LATEST (2026-09-23, final): E4a IS MERGED TO LOCAL `main` (`f846ee9`) AND NOT PUSHED.**
 > The user authorised the merge, then deferred deployment: **there are no active users yet, and
 > nothing is deployed until all phases are built and the user is satisfied.** Local `main` is

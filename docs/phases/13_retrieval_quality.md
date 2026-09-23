@@ -14,6 +14,10 @@ SHIPPED. The ship decision is the user's.** See E4a in **Results**.
 reviewer verdict SHIP WITH CAVEATS. **MERGED TO LOCAL `main` 2026-09-23 (`f846ee9`), NOT PUSHED.**
 The user deferred deployment until all phases are done (no active users yet). See "E4a SHIP
 STAGING" in **Results**.
+**NEXT IS E5**, re-scoped 2026-09-23 (the box on the E5 step). In order: reproduce the control ·
+add the r@3 / shown-count / MRR columns · **author a new clean `test2`** (≥ 40 answerable) · settle
+the hand-map question on it by a rule written in advance · archive `baseline_phaseE` · run the
+bounded `probe_embed_quota.py` (needs the user's OK) · decide M2.
 *(This line read "NEXT IS E4 — and it MUST BE RE-SCOPED BEFORE IT IS RUN" until 2026-09-23.)*
 **E1b IS MERGED AND DEPLOYED 2026-09-20 (`b92e2f4`, merge of `phase10/ship-e1b`, on the user's
 explicit authorisation). Users moved from the `0.471` arm to the `0.529` arm** — confirmed by live
@@ -509,7 +513,8 @@ via `calibrate_refusal.py` · whichever arm wins, the decision recorded with its
 > **3. Side finding, recorded and NOT fixed here.** H2 says `beg`. The hand key `begging` does not
 > fire on it, because `_surface_forms("beg")` never produces `begging`, and `beg` itself is out of
 > corpus. It's a hand-map surface-form gap. Fixing it changes which probes fire, so it moves
-> `calibrate_refusal.py` off 212. **Hand it to E5 with the hand-map question. It is not part of E4.**
+> `calibrate_refusal.py` off 212. *(Corrected in the E5 box: the probe COUNT stays 212, because
+> `_surface_forms` isn't a key. It needs a fresh calibration run, not a re-derivation.)* **Hand it to E5 with the hand-map question. It is not part of E4.**
 >
 > **4. E4a specification — what is built, if it is run.**
 > * **Source (build-time only, never in the repo, never at runtime):** GloVe 6B 100d
@@ -636,6 +641,131 @@ E2+E3 · vocab-mismatch class recall reported specifically · shipped only on a 
 ---
 
 ### E5 — Re-baseline, then decide about M2 with evidence instead of ambition
+
+> ## ✅ RE-SCOPED 2026-09-23, after E4a merged to local `main` (`f846ee9`). **THIS BOX IS THE E5 PLAYBOOK. WORK IT IN ORDER; THE STEP TEXT BELOW IS THE ORIGINAL BRIEF AND STILL BINDS WHERE THIS BOX IS SILENT.**
+>
+> **Starting state.** Shipping is `k=4/doc, top_n=12` + `expand_query()` = hand map + OOV bridge.
+> `recall_strict` frozen-10 / dev / test is **0.734 / 0.613 / 0.647**, and the pool (r@60) finds
+> 10/10 · 21/25 · 15/17. **Local `main` is ahead of `origin/main` and must NOT be pushed.**
+> Deployment is deferred until every phase is done (user, 2026-09-23). Gemini spend so far in Phase
+> E is **0**.
+>
+> **Why E5 is not "re-run everything and write down the number".** Three things changed during E1–E4
+> that the original brief below didn't anticipate:
+> 1. **`test` is no longer clean enough to settle anything new.** It was scored by E1b, printed by
+>    every E2a/E3a arm, and read once more for E4a's gate. It was never *tuned* on, so its numbers
+>    stand, but n=17 has now been used for four decisions. The hand-map question and any future
+>    arm need a set no decision has touched. **E5's first real deliverable is that set.**
+> 2. **Set recall is not the whole user-facing picture.** E4a's `boss` → `manager` case and the test
+>    r@3 dip (0.324 → 0.294) were invisible to every gate. A screen-reader user hears the top excerpts
+>    first. **E5 adds rank-and-count columns before it re-baselines**, so the archived baseline has them.
+> 3. **The "in-pool ceiling" moved.** E4a raised test pool coverage 14/17 → 15/17, so the "absent
+>    3/17" that M2 was supposed to buy is now 2/17. M2's residual gain is smaller than it looked.
+>
+> ### E5.0 — Session start: reproduce the control (zero quota)
+> On local `main`, run the full harness list in `CLAUDE.md` and diff against
+> `D:\ship_e4a\merged\` and `D:\ship_e4a\`. **Expected byte-identical:** `eval_heldout`,
+> `calibrate_refusal` 0/212, `ablate_oov_bridge.py` (port check 72/72, 0.734/0.613/0.647 — pass
+> `--read-test` here only to confirm, it's the same number already read), `eval_phase06` digests
+> `2429cafc…` (v2) and `12bdeba0…` (v1). **If anything differs, stop and find out why before E5.1.**
+>
+> ### E5.1 — Instrument: add the user-facing columns (zero quota, measure-only)
+> Extend `scripts/eval_heldout.py`, reporting only and gating nothing, with, per set and per class:
+> * **r@3 strict:** is an expected ref in the first 3 displayed excerpts? That's the inline block,
+>   since `INLINE_EXCERPTS = 3`.
+> * **shown count:** mean, min, and the number of rows with ≤ 2 excerpts, computed through
+>   `app.offline_legal_hits()` so it is what the page renders, not what `select_top` returns.
+> * **MRR** of the first expected ref in the displayed list.
+>
+> Pin nothing new except the frozen-10 guard that already exists. The current shipping values of
+> the new columns are **findings, not baselines**; E5.4 archives them. **Do not** turn r@3 into a
+> ship gate retroactively for E4a; it was not declared in advance.
+>
+> ### E5.2 — Author `test2`, the new clean held-out set (zero quota), BEFORE any arm touches it
+> * **Size:** at least **40 answerable + 8 off-corpus**. Weight it toward the weak classes:
+>   `vocab-mismatch` ≥ 14, `odd-wording` ≥ 8 (including Nigerian English / Pidgin register),
+>   `cross-document` ≥ 8, `toc-trap` ≥ 5 (`test` has **zero** `toc-trap` rows, a gap), and `direct`
+>   for the rest.
+>   One `vocab-mismatch` question becomes ≈ 0.07 of its class instead of 0.125. That's still noisy,
+>   and it's why the hand-map decision below is framed as a rule, not a hunch.
+> * **Authoring rules, same as `test` in Phase 09:** questions come from the corpus text and the
+>   class definitions only. Expected refs are read from `data/processed/` and checked by
+>   `evalset.verify_expected()`. **Never read an expanded query, a bridge entry or a retrieval
+>   result while authoring.** Write the questions first, then the refs, in two passes, and commit
+>   them before any measurement: that commit is the proof of cleanliness.
+> * **`evalset.py`:** add `"test2"` to `SETS` with a docstring paragraph matching the `test` one.
+>   Don't touch the existing 60 rows. `assert_frozen10_matches_notebook()` must still pass.
+> * **Also author, separately, a 10–15 query "user-register smoke list".** These are realistic
+>   questions like the E4a `boss`/`landlord` probes, with **no expected refs**. It is inspected by
+>   eye through `offline_legal_hits` at every future ship step. It is a smoke test, **never** a
+>   metric, and it is the thing that would have caught `boss` → `manager` before the gate.
+>
+> ### E5.3 — The hand-map question, settled on `test2` with a rule written first (zero quota)
+> The declared rule, fixed here before `test2` exists. Arms are measured on dev (selector) and then
+> `test2` once: **S = ship** (hand + bridge), **B = bridge only** (`expand_query_hand` → identity),
+> **N = no expansion**.
+> * **Ship less code (B or N) only if** it is ≥ S on dev **and** ≥ S on `test2`, with no more
+>   questions down than up on `test2`. A tie favours *less code*, because the hand map's only
+>   positive evidence is on its fitted set.
+> * **Otherwise S stays**, now with held-out evidence.
+> * Report `vocab-mismatch` separately and the E5.1 columns for every arm. Run `calibrate_refusal`
+>   for any arm that would ship. **Removing `SYNONYMS` changes the probe set** (34 of the 106
+>   probes are its keys), so a B or N ship needs a re-derived calibration, not just a re-run.
+>
+> **The `beg` → `begging` gap is NOT folded into this.** It's a `_surface_forms` change, so it is
+> its own arm (S vs S + surface-form fix), measured the same way, **only after** E5.3's decision.
+> *Correction to E4.0 point 3, which said the fix "moves `calibrate_refusal.py` off 212":* the probe
+> **count** is unaffected, because `_surface_forms` isn't a key. What it changes is which probes
+> *expand*, so the calibration must be **re-run and must still show 0 disagreements**, not
+> re-derived.
+>
+> ### E5.4 — Archive the Phase E baseline (zero quota)
+> Once E5.3 (and the surface-form arm, if run) is decided and landed on local `main`, capture every
+> harness in the `CLAUDE.md` list into **`scripts/baseline_phaseE_<date>.txt`**, in the same
+> section format as `baseline_v2_2026-09-19.txt`. Include the E5.1 columns and the `test2` column.
+> Those are the numbers Phase G and any launch are judged against. That closes exit criterion 7.
+>
+> ### E5.5 — `probe_embed_quota.py`: price M2 (SPENDS QUOTA — bounded, and needs the user's go-ahead)
+> Its only purpose is to answer "what does the free tier give `gemini-embedding-001`?". That limit
+> is unpublished, and M2 cannot be costed without it.
+> * **Before running:** check `HANDOFF.md` for the day's spend. Embedding and generation are
+>   believed to be separate per-model pools, but that's **unverified**. Treat the run as possibly
+>   drawing on generation quota until the probe shows otherwise, so **never run it on a day Phase G
+>   needs**.
+> * **Design:** embed short fixed strings (never user questions or eval questions: M2's privacy
+>   concern starts here). Use one call at a time with backoff, a **hard cap of 60 calls**, and stop
+>   at the first 429. Record whether each 429 is per-minute or per-day (the `RESOURCE_EXHAUSTED`
+>   detail) and the counts, then write the result to `scripts/probe_embed_quota_<date>.json`.
+>   Zero calls on import. It needs `--i-understand-this-spends-quota`, equals-form flags only.
+> * **Also measure:** latency per call, and whether a batched `contents=[...]` counts as one call
+>   or N. That decides whether a query-time embed is viable at all.
+>
+> ### E5.6 — The M2 decision, written down (zero quota)
+> Decide **with these four inputs on the table**, then record the decision and its reasoning in
+> **Results** and `LEARNING_JOURNAL.md`, whichever way it goes:
+> 1. **Residual gain.** On `test2` (and on `test`, for continuity), how much is *absent from the
+>    60-pool* versus *in the pool but not displayed*. Dense retrieval can only buy the first part
+>    beyond what E1–E4 already reached.
+> 2. **Quota,** from E5.5, against G's roughly 30 calls and the 40/day budget.
+> 3. **Privacy.** Every legal question would be sent to Google, and these questions describe
+>    disability, abuse and begging coercion. M2 requires the visible notice, the hard-offline
+>    toggle and **amending `CLAUDE.md`'s offline invariant in the same commit**.
+> 4. **Deferral is now free.** There are no users and launch waits for all phases, so declining M2
+>    now doesn't strand anyone. "Decline for launch, revisit post-launch with real query logs"
+>    is a legitimate outcome.
+>
+> ### E5 exit, mapped to the Phase E exit criteria below
+> Criterion 1: `test` and `test2` strict both reported, with every arm attributable ·
+> criteria 2–3: 0 false refusals on every set, `calibrate_refusal` 0 disagreements, `MIN_SCORE` 0.10 ·
+> criterion 4: `requirements.txt` byte-identical unless M2 is taken, which amends it explicitly ·
+> criterion 5: every E5 arm ablated separately, declined arms recorded ·
+> criterion 6: the M2 decision recorded with `probe_embed_quota.py` actually run ·
+> criterion 7: `baseline_phaseE_<date>.txt` archived, suites 03/04/05/09 green.
+> **Then Phase E closes, and G is next** (with its multi-day quota plan written before its first call).
+>
+> **Session cost estimate.** E5.0–E5.4 and E5.6 are zero quota. E5.5 is at most 60 embedding calls,
+> once. E5.2 (authoring about 50 questions with corpus-verified refs) is the largest single piece of
+> work and deserves its own session.
 
 Zero quota to re-baseline.
 
