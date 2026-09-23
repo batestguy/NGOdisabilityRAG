@@ -247,8 +247,9 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   `vocab-mismatch`)**. **NEXT IS E4a** under the strict ship gate in the re-scope box on the E4
   step, which fixes its parameters in advance. **E4a MEASURED 2026-09-23 (`597a23b`) and PASSED
   that gate:** `test` strict 0.529 → **0.647** (+2 / −0), dev 0.573 → 0.613, frozen-10
-  unchanged, 0/212. **PORTED AND STAGED on `phase10/ship-e4a` (`d4d7653`), verified on that
-  tree, reviewer verdict SHIP WITH CAVEATS — NOT MERGED. Merging is the user's call.** Both
+  unchanged, 0/212. **PORTED (`d4d7653`), reviewer SHIP WITH CAVEATS, and MERGED TO LOCAL `main`
+  2026-09-23 (`f846ee9`) on the user's authorisation — re-verified on the merged tree. NOT
+  PUSHED: deployment is deferred until all phases are done (see Deploy below).** Both
   `eval_phase06` digests are unchanged, so nothing was re-pinned. Caveats: in `docs/phases/13`
   E4a-ship Results (dev in-corpus min top score 0.1369 → 0.1032; test r@3 0.324 → 0.294; one
   ad-hoc `boss` → `manager` regression).
@@ -325,6 +326,7 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
 - No LangChain — orchestration is custom `src/`. Justify any framework change in the
   learning journal.
 - Deploy: Render free tier auto-deploys on push to `main`
-  (https://ngodisabilityrag.onrender.com). `GOOGLE_API_KEY` is a Render env var — never
+  (https://ngodisabilityrag.onrender.com). **DEPLOYMENT IS DEFERRED (user, 2026-09-23):** there are no active users yet, and the app will be deployed only once all phases are built and the user is satisfied. Local `main` now runs **ahead of `origin/main`** — E4a is merged locally (`f846ee9`), NOT pushed, NOT deployed. **Do not push `main`** until the user says to deploy; the live site still serves the E1b build.
+  The site URL itself is unchanged: `GOOGLE_API_KEY` is a Render env var — never
   committed. Free instances sleep after 15 min idle (~1 min wake); a slow first load is
   normal, not breakage.

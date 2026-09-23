@@ -1,5 +1,16 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-23)
 
+> **LATEST (2026-09-23, final): E4a IS MERGED TO LOCAL `main` (`f846ee9`) AND NOT PUSHED.**
+> The user authorised the merge, then deferred deployment: **there are no active users yet, and
+> nothing is deployed until all phases are built and the user is satisfied.** Local `main` is
+> ahead of `origin/main`. **Do not push `main` until the user says to deploy.** The live site still
+> serves E1b.
+> Re-verified on the merged tree (identical to the branch tip, 0-line diff): port check 72/72 ·
+> `recall_strict` 0.734 / 0.613 / 0.647 · `eval_heldout` PASS · `calibrate_refusal` 0/212 · 03/04/
+> 05 (137/137)/09 ALL PASS · `eval_phase06` v2 digest `2429cafc…` unchanged · `import app` clean.
+> Captures are in `D:\ship_e4a\merged\`. **The live smoke is deferred with the deploy.**
+> **NEXT: E5** (re-baseline + the M2 decision), built on local `main`.
+
 > **LATEST (2026-09-23, end of session): E4a IS PORTED, VERIFIED AND STAGED ON `phase10/ship-e4a`.
 > IT IS NOT MERGED; THE MERGE IS THE USER'S CALL.** The port commit is `d4d7653`. Nothing is pushed.
 > Zero Gemini calls all day.

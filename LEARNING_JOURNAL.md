@@ -3028,3 +3028,12 @@ held-out set. Patching in place is neither.
 E1–E4. The bridge moved refs **into** the 60-candidate pool (test 14/17 → 15/17), because
 expansion changes which chunks are candidates, not just their order. The ceiling was a property of
 the query, not of the index.
+
+## 2026-09-23 — E4a merged locally; deployment deferred to the end of the build
+
+The user authorised the merge, then clarified that **the app has no active users yet** and will be
+deployed only when all phases are done. The docs had been framing every push as reaching "real
+users". That was true in intent, but it overstated the stakes now: the live site is a staging
+artefact until launch. **What changes:** E-phase work lands on local `main`; `origin/main` and the
+live site stay on E1b until a deliberate launch. **What doesn't:** the verification discipline, and
+the rule that the push to `main` is the user's decision.

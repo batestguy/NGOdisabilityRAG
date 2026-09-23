@@ -11,7 +11,9 @@ failing dev questions, and 1 of the 4 failing `vocab-mismatch` questions** (orac
 `test` 0.529 → **0.647** (2 up / 0 down), dev 0.573 → 0.613, frozen-10 unchanged, 0/212. **NOT
 SHIPPED. The ship decision is the user's.** See E4a in **Results**.
 **E4a PORTED AND STAGED 2026-09-23 on `phase10/ship-e4a` (`d4d7653`)**, verified on that tree, with
-reviewer verdict SHIP WITH CAVEATS. **Not merged.** See "E4a SHIP STAGING" in **Results**.
+reviewer verdict SHIP WITH CAVEATS. **MERGED TO LOCAL `main` 2026-09-23 (`f846ee9`), NOT PUSHED.**
+The user deferred deployment until all phases are done (no active users yet). See "E4a SHIP
+STAGING" in **Results**.
 *(This line read "NEXT IS E4 — and it MUST BE RE-SCOPED BEFORE IT IS RUN" until 2026-09-23.)*
 **E1b IS MERGED AND DEPLOYED 2026-09-20 (`b92e2f4`, merge of `phase10/ship-e1b`, on the user's
 explicit authorisation). Users moved from the `0.471` arm to the `0.529` arm** — confirmed by live
@@ -1229,3 +1231,8 @@ arm is now hand + bridge (a note was added).
 
 **Merge decision: the user's.** Pushing `main` deploys to real users. After a merge: live smoke
 (helplines lead; one legal query's tag list matches local; one NGO lookup), then E5.
+
+**Merged 2026-09-23 (`f846ee9`, local `main`), on explicit user authorisation. Not pushed.** The
+merged tree is byte-identical to the branch tip, and the key checks were re-run on it and all
+passed (`D:\ship_e4a\merged\`). The user then **deferred deployment until every phase is complete**;
+there are no active users yet. The live smoke runs with that deploy. **E5 builds on local `main`.**
