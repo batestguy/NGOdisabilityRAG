@@ -17,14 +17,16 @@
 >   done (user, 2026-09-23). The live site still serves E1b.
 > * `scripts/eval_tmp.json` is untracked scratch. Leave it alone.
 >
-> **Resume checklist: Phase G**
-> 1. Read M5 in `docs/phases/10_corpus_rebuild_and_dense.md` and `docs/phases/11_chat.md` (G's scope: fresh
->    transcripts + judge + cross-turn citation drift).
-> 2. **Write the multi-day quota plan BEFORE the first call.** The judge is about 30 calls and doesn't fit
->    in one day on one model. Split it across days and/or the flash + flash-lite pools (40/day total, 10/min
->    each). A half-finished judge run is wasted quota.
-> 3. Everything G measures is the E4a build (`baseline_phaseE_2026-09-24.txt`). Then **F** (re-examine M4
->    before scheduling).
+> **Resume checklist: Phase G. The playbook is `docs/phases/14_generation_eval.md` (written 2026-09-24).**
+> 1. **G0, zero quota, one session:** the answer-shape floor (`cite-strict-v3` / `chat-cite-strict-v2`),
+>    `--transcript=`/`--eval=` for `judge_phase06.py` with a sha-keyed checkpoint, a new
+>    `scripts/transcript_chat.py` (3×3, `chat_dev`, no failover), then the **freeze commit**, after which
+>    the zero-quota harnesses must match `baseline_phaseE_2026-09-24.txt`.
+> 2. **G1:** write the pre-declared measures into the playbook's Results **before any call**.
+> 3. **Quota calendar (Pacific days; reset 08:00 WAT under PDT):** Day 1 = G2 Phase 02 (flash 12) + judge
+>    first 16 (flash-lite). Day 2 = judge remainder (≤ 6) + drift transcript (flash 9). Day 3 is spare.
+>    **Never use `--failover`**: generator and judge must stay on different models.
+> 4. Spend recorded so far: **2026-09-24: 45 embedding requests (E5.5), 0 generation.**
 
 > **NEXT SESSION: E5. The playbook is written** (the box on the E5 step in
 > `docs/phases/13_retrieval_quality.md`, 2026-09-23). Work it in order:

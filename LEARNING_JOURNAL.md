@@ -3166,3 +3166,14 @@ the surface-form fix and M2. Two shipped, both offline and zero-quota, taking `t
 0.647. The rest were declined with their numbers on record. The discipline that paid off most was
 writing each rule before its measurement, and authoring `test2` when `test` got too small to settle
 anything.
+
+## 2026-09-24 — Phase G planned: the split judge run is safe only because of a freeze
+
+`CLAUDE.md` warns that "a half-finished judge run is wasted quota". Writing the plan showed that
+this holds only conditionally. The judge's dry run has 21–22 tasks, which don't fit in one
+flash-lite day, and failover can't be used because it would make the judge model grade its own
+output. So the judge *has* to be split. A split is safe as long as the transcript it judges can't
+change between days. So the plan makes two things mechanical: a checkpoint keyed on the
+transcript's sha256, and a freeze commit after which nothing feeding G2–G4 moves. The other
+finding: every LLM number on record predates corpus v2 and the 12-excerpt budget, so it
+describes a system that no longer ships. G re-measures; it doesn't extend.
