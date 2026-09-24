@@ -30,6 +30,8 @@ C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase10.py       # (k, top_n) 
 C:\conda-envs\drlca-rag\python.exe scripts\calibrate_refusal.py    # refusal invariance, 212 probes, 0 disagreements
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_oov_bridge.py    # E4a: hand vs hand+bridge + PORT CHECK (--read-test spends test)
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_handmap.py       # E5.3: S ship / B bridge-only / N none, dev (+ --read-test2)
+C:\conda-envs\drlca-rag\python.exe scripts\ablate_surface.py       # E5: beg->begging surface-form arm, dev only (declined 2026-09-24)
+C:\conda-envs\drlca-rag\python.exe scripts\probe_embed_quota.py    # E5.5: SPENDS QUOTA only with --i-understand-this-spends-quota
 C:\conda-envs\drlca-rag\python.exe scripts\build_oov_bridge.py     # rebuild data/processed/oov_bridge.json (needs D:\e4_vectors\)
 C:\conda-envs\drlca-rag\python.exe scripts\e4_reach.py             # E4.0 reach gate, dev only
 C:\conda-envs\drlca-rag\python.exe scripts\eval_phase06.py --out=scripts\eval_tmp.json

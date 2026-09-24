@@ -1,34 +1,30 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-23)
+# HANDOFF — start here (60 seconds, updated 2026-09-24)
 
-> **⏸ PAUSED 2026-09-23 by the user, after E5.3. Resume here.**
+> **▶ 2026-09-24: surface-form arm + E5.4 DONE. STOPPED AT E5.5, WHICH NEEDS THE USER'S GO-AHEAD.**
 >
 > **Where things stand**
-> * Phase E, step E5. **E5.0–E5.3 are DONE** on local `main` (head `7fc65b5` plus this doc commit). Zero
->   Gemini calls all phase.
-> * **Local `main` is about 12 commits ahead of `origin/main`. DO NOT PUSH.** Deployment is deferred until
->   every phase is done (user, 2026-09-23). The live site still serves the E1b build.
-> * `scripts/eval_tmp.json` is an untracked scratch output from before this work. Leave it alone.
-> * **E5.2:** `test2` (`data/eval/questions_test2.json`, 42 answerable + 8 off-corpus) is **sealed**: it loads
->   only through `load_eval_set("test2")`, and it is **v2-only**. The user-register smoke list is
->   `data/eval/smoke_user_register.json` (eyeball only, never a metric).
-> * **E5.3:** the hand map **STAYS**. recall_strict S / B / N: dev 0.613 / 0.540 / 0.500,
->   **test2 0.629 / 0.577 / 0.554**. `test2` has now been **read once**, so treat any further decision on it as
->   spending it; dev selects. `eval_heldout.py` reports `test2` on v2. Captures are in `D:\e5_3\`.
+> * Phase E, step E5. **E5.0–E5.4 are DONE** on local `main`. **Zero Gemini calls all phase; today's
+>   spend is 0.**
+> * **Local `main` is ahead of `origin/main`. DO NOT PUSH.** Deployment is deferred until every phase is
+>   done (user, 2026-09-23). The live site still serves the E1b build.
+> * `scripts/eval_tmp.json` is untracked scratch from before this work. Leave it alone.
+> * **Surface-form arm (`beg`→`begging`, `scripts/ablate_surface.py`): NOT SHIPPED.** It ties on dev
+>   (0.613), because H2 was already 1.0 via the bridge. `src/` is unchanged, and calibrate stays 0/212.
+>   `test2` was not read.
+> * **E5.4:** `scripts/baseline_phaseE_2026-09-24.txt`, every zero-quota harness, all exit 0: strict
+>   0.734 / 0.613 / 0.647 / test2 0.629 · 0/212 · 05 137/137 · eval_phase06 `2429cafc…`. Raw captures are in
+>   `D:\e5_surface\`.
+> * `test2` is sealed and has been **read once** (E5.3). Dev selects.
 >
-> **Resume checklist (next session)**
-> 1. Check `git log --oneline -3` shows the E5.3 commit, and that `git status` shows only `eval_tmp.json`.
-> 2. Optional sanity run (zero quota): `scriptsblate_handmap.py` should reproduce S 0.734 / 0.613 and
->    print PASS. Do **not** pass `--read-test2` again.
-> 3. **Optional arm: `_surface_forms` `beg`→`begging`** (playbook E5 box, the paragraph after E5.3; background
->    in the E4.0 point 3 amendment). Compare S vs S + fix, **judged on dev**, with `calibrate_refusal` re-run to
->    0 disagreements (the probe count stays 212). It's fine to skip it and record that it was skipped.
-> 4. **E5.4:** archive every `CLAUDE.md` harness into `scripts/baseline_phaseE_<date>.txt`, in
->    `baseline_v2_2026-09-19.txt`'s section format, including the E5.1 view and the `test2` column.
-> 5. **E5.5 needs the user's go-ahead** (it spends quota, ≤ 60 embedding calls). Check the day's spend here
->    first, and don't run it on a day Phase G needs.
-> 6. **E5.6:** the M2 decision, written down. Inputs include `test2` pool 38/42 (4 absent), plus quota,
->    privacy, and "deferral is free".
-> 7. Then Phase E closes, and **G** is next (write the multi-day quota plan before its first call).
+> **Resume checklist**
+> 1. **E5.5 (SPENDS QUOTA, needs the user's go-ahead):** `scripts/probe_embed_quota.py` is written, dry-run
+>    verified (zero calls without the flag), and **never run**. Run
+>    `C:\conda-envs\drlca-rag\python.exe scripts\probe_embed_quota.py --i-understand-this-spends-quota`
+>    with `GOOGLE_API_KEY` set. It makes ≤ 60 requests, stops at the first 429, and writes
+>    `scripts/probe_embed_quota_<date>.json`. Don't run it on a day Phase G needs. Record the spend here.
+> 2. **E5.6:** the M2 decision, written down (playbook box). Inputs: `test2` pool 38/42 (4 absent), the
+>    E5.5 quota, privacy, and "deferral is free".
+> 3. Then Phase E closes, and **G** is next (write the multi-day quota plan before its first call).
 
 > **NEXT SESSION: E5. The playbook is written** (the box on the E5 step in
 > `docs/phases/13_retrieval_quality.md`, 2026-09-23). Work it in order:

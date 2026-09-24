@@ -3120,3 +3120,22 @@ The first `test2` findings are also worth keeping. `toc-trap` scores 6/6, so the
 does not win at this budget. 4/42 questions have no correct chunk anywhere in the 60-pool, and
 that is the ceiling M2 is being priced against. All 8 off-corpus rows clear the 0.10 floor,
 which was expected and changes nothing.
+
+## 2026-09-24 — E5 surface-form arm + E5.4: a real bug whose fix measures zero
+
+The `beg` → `begging` gap is a genuine hand-map defect: the key is dead on the word a user
+would actually type. Fixing it narrowly (collapse a doubled final consonant on the key's stem)
+touches exactly one of 34 keys and reaches one dev question. That question was already at
+strict 1.0, because the E4a bridge maps `beg` → `begging` on its own. So the fix ties on the
+metric, and under a rule written before the run a tie doesn't ship.
+
+The lesson: **once a general mechanism (the bridge) covers a specific defect, the specific fix
+has no measurable margin left, even though it's "right".** It still shows up on the E5.1
+user-facing view (H2's chunk moves into the top 3), which is exactly the case E5.1 anticipated.
+Rank columns can see what set recall can't. They're findings, not gates, and one question
+isn't a reason to change that. The defect stays latent in the hand map, and a bridge-less
+build would expose it again. That's recorded in the playbook.
+
+E5.4 archived the whole zero-quota harness list in one capture, all green, with the
+`eval_phase06` digest unchanged. Practical note: `eval_phase06 --out=` was pointed at scratch
+rather than `scripts/eval_tmp.json`, so the untracked file the handoff protects was never touched.

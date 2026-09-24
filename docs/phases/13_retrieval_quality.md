@@ -1513,3 +1513,51 @@ findings, now reportable:
 **Next:** the optional `_surface_forms` (`beg` → `begging`) arm, S vs S + fix, measured the same
 way. Note that `test2` has now been read once, so a second decision on it spends it further; the
 arm should be judged on dev primarily. Then **E5.4**, archive `baseline_phaseE_<date>.txt`.
+
+### E5 optional arm — `beg` → `begging` surface-form fix: measured, NOT shipped — 2026-09-24, local `main`. Zero Gemini calls.
+
+**Harness:** `scripts/ablate_surface.py`. Its rule was written in the docstring and committed
+(`98c3620`) **before the first run**. **Arm F** is a key-side change only: a single-word key also
+matches when its stem, with a trailing doubled consonant collapsed, is among the query's surface
+forms (`stem("begging") == "begg"` → `beg`). `stem()`, the index, the bridge and `_HAND_KEYS` are
+untouched. The change affects the match form of **exactly one of the 34 keys (`begging`)**. Its
+reach across every eval set is **1 dev question (H2) plus 1 `test2` question**, counted without
+reading `test2` texts. **`test2` was not scored.**
+
+| | frozen-10 | dev (selector) | dev hit@3 · strict@3 · MRR (report-only) |
+|---|---|---|---|
+| S ship | 0.734 | 0.613 | 0.520 · 0.373 · 0.421 |
+| S+F | 0.734 | 0.613 (0 up / 0 down) | 0.560 · 0.413 · 0.461 |
+
+**Verdict under the declared rule: F DOES NOT SHIP.** The rule required a strict dev gain, and a
+tie favours less code. H2 was already at strict 1.0 under S, because the E4a bridge maps `beg` →
+`begging`. F only adds the hand terms `alms destitute`. Refusal invariance held: 0 false refusals,
+0 refuse-row flips. `SYNONYMS`, `_surface_forms` and `src/` are byte-identical, so
+`calibrate_refusal` stays 0/212 with no re-run needed.
+**Recorded, not acted on:** on the E5.1 user-facing view, F lifts H2's correct chunk into the
+top 3 (+1 question on hit@3, strict@3 and MRR). Those columns are findings, not gates (E5.1), and
+this is one question. If a future phase gates on rank, this arm is the first to re-run. The gap is
+now **covered in practice by the bridge**, but it is still **latent in the hand map**: any build
+without the bridge loses `beg` again.
+
+**Next: E5.4**, archive `scripts/baseline_phaseE_2026-09-24.txt`.
+
+### E5.4 — Phase E baseline archived — 2026-09-24, local `main`. Zero Gemini calls.
+
+**`scripts/baseline_phaseE_2026-09-24.txt`** is written in `baseline_v2_2026-09-19.txt`'s
+section format. It covers **every zero-quota harness in the `CLAUDE.md` list** (bench_phase01,
+test_phase03/04/05/09, audit_corpus, eval_heldout, eval_chat, ablate_phase08/10,
+calibrate_refusal, ablate_oov_bridge, ablate_handmap, ablate_surface, e4_reach, eval_phase06) plus
+the `import app` smoke. **All exit 0.** Left out on purpose: `test_phase02` (spends quota),
+`build_oov_bridge` (a builder), and the Streamlit server. No ablation was given `--read-test` or
+`--read-test2`. `test2` appears only through `eval_heldout`'s standing report.
+
+**The numbers Phase G and any launch are judged against:** recall_strict frozen-10 **0.734** · dev
+**0.613** · test **0.647** · test2 **0.629**. 0 false refusals on every set · `calibrate_refusal`
+0/212 · suites 03/04/05 (137/137)/09 ALL PASS · `eval_phase06` output sha256 **`2429cafc…`**
+(unchanged) · E5.1 user-facing columns and the `test2` column both included. **Exit criterion 7
+is closed.**
+
+**Next: E5.5**, which spends quota and needs the user's go-ahead. `scripts/probe_embed_quota.py`
+is now **written but NOT run**. Without the equals-form consent flag it prints its plan and
+makes zero calls, which was verified.
