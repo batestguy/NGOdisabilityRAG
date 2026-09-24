@@ -1,0 +1,222 @@
+[
+ {
+  "id": "Q1-faithfulness",
+  "qid": "Q1",
+  "kind": "faithfulness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "all_supported": true,
+   "n_claims": 8,
+   "n_unsupported": 0,
+   "unsupported": [],
+   "reason": "All factual claims in the answer are directly supported by the provided context excerpts."
+  },
+  "raw": "{\"all_supported\": true, \"n_claims\": 8, \"n_unsupported\": 0, \"unsupported\": [], \"reason\": \"All factual claims in the answer are directly supported by the provided context excerpts.\"}",
+  "attempts": 1,
+  "at": "2026-09-24T04:42:09"
+ },
+ {
+  "id": "Q1-relevancy",
+  "qid": "Q1",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses the question by explaining what the Act says about discrimination, including its prohibition, penalties, and definition."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses the question by explaining what the Act says about discrimination, including its prohibition, penalties, and definition.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:40:29"
+ },
+ {
+  "id": "Q10-cite",
+  "qid": "Q10",
+  "kind": "citation",
+  "skipped": "tag 'Constitution s. 39' absent from frozen answer"
+ },
+ {
+  "id": "Q10-relevancy",
+  "qid": "Q10",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses where one can get legal aid for disability rights violations by mentioning the Constitution, the Commission's functions, and its support for seeking redress."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses where one can get legal aid for disability rights violations by mentioning the Constitution, the Commission's functions, and its support for seeking redress.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:41:41"
+ },
+ {
+  "id": "Q2-faithfulness",
+  "qid": "Q2",
+  "kind": "faithfulness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "all_supported": true,
+   "n_claims": 7,
+   "n_unsupported": 0,
+   "unsupported": [],
+   "reason": "All factual claims in the answer are directly supported by the provided context."
+  },
+  "raw": "```json\n{\"all_supported\": true, \"n_claims\": 7, \"n_unsupported\": 0, \"unsupported\": [], \"reason\": \"All factual claims in the answer are directly supported by the provided context.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:42:16"
+ },
+ {
+  "id": "Q2-relevancy",
+  "qid": "Q2",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses whether public buildings are required to be accessible by stating 'Yes' and then providing supporting details and legal citations."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses whether public buildings are required to be accessible by stating 'Yes' and then providing supporting details and legal citations.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:40:36"
+ },
+ {
+  "id": "Q3-relevancy",
+  "qid": "Q3",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses the question by outlining specific employment protections for persons with disabilities, including quotas and rights to a hindrance-free environment."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses the question by outlining specific employment protections for persons with disabilities, including quotas and rights to a hindrance-free environment.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:40:43"
+ },
+ {
+  "id": "Q3-thinness",
+  "qid": "Q3",
+  "kind": "thinness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "verdict": "adequate",
+   "missed": "nothing",
+   "reason": "The answer comprehensively extracted all relevant information regarding employment protections for persons with disabilities from the provided context."
+  },
+  "raw": "```json\n{\n  \"verdict\": \"adequate\",\n  \"missed\": \"nothing\",\n  \"reason\": \"The answer comprehensively extracted all relevant information regarding employment protections for persons with disabilities from the provided context.\"\n}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:41:48"
+ },
+ {
+  "id": "Q4-relevancy",
+  "qid": "Q4",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly confirms the existence of a commission for persons with disabilities and provides supporting details, thus addressing the question asked."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly confirms the existence of a commission for persons with disabilities and provides supporting details, thus addressing the question asked.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:40:50"
+ },
+ {
+  "id": "Q5-relevancy",
+  "qid": "Q5",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly lists penalties for various violations of the Act, thus addressing the question asked."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly lists penalties for various violations of the Act, thus addressing the question asked.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:40:57"
+ },
+ {
+  "id": "Q6-relevancy",
+  "qid": "Q6",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses the question by stating that the Act covers access to vehicles and transport, and then provides specific details and provisions from the Act that support this claim."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses the question by stating that the Act covers access to vehicles and transport, and then provides specific details and provisions from the Act that support this claim.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:41:04"
+ },
+ {
+  "id": "Q7-relevancy",
+  "qid": "Q7",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly addresses the question by outlining the rights children with disabilities have to education, including non-discrimination, free education, appropriate communication modes, and inclusive school provisions."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly addresses the question by outlining the rights children with disabilities have to education, including non-discrimination, free education, appropriate communication modes, and inclusive school provisions.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:41:11"
+ },
+ {
+  "id": "Q8-relevancy",
+  "qid": "Q8",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly states the duration of the transitional compliance period as requested by the question."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly states the duration of the transitional compliance period as requested by the question.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:41:20"
+ },
+ {
+  "id": "Q8-thinness",
+  "qid": "Q8",
+  "kind": "thinness",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "verdict": "adequate",
+   "missed": "nothing",
+   "reason": "The answer correctly identifies the five-year transitional period and cites the relevant sections from both the Factsheet and the Act."
+  },
+  "raw": "```json\n{\"verdict\": \"adequate\", \"missed\": \"nothing\", \"reason\": \"The answer correctly identifies the five-year transitional period and cites the relevant sections from both the Factsheet and the Act.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:41:55"
+ },
+ {
+  "id": "Q9-cite",
+  "qid": "Q9",
+  "kind": "citation",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "verdict": "supported",
+   "correct_ref": "n/a",
+   "reason": "The cited Constitution section 34 explicitly states that every individual is entitled to respect for the dignity of his person."
+  },
+  "raw": "```json\n{\"verdict\": \"supported\", \"correct_ref\": \"n/a\", \"reason\": \"The cited Constitution section 34 explicitly states that every individual is entitled to respect for the dignity of his person.\"}\n```",
+  "attempts": 1,
+  "at": "2026-09-24T04:42:02"
+ },
+ {
+  "id": "Q9-relevancy",
+  "qid": "Q9",
+  "kind": "relevancy",
+  "judge_model": "gemini-2.5-flash-lite",
+  "verdict": {
+   "relevant": true,
+   "score": 1.0,
+   "reason": "The answer directly confirms the constitutional guarantees of dignity and equality and provides supporting section references from the Constitution."
+  },
+  "raw": "```json\n{\"relevant\": true, \"score\": 1.0, \"reason\": \"The answer directly confirms the constitutional guarantees of dignity and equality and provides supporting section references from the Constitution.\"}\n```",
+  "attempts": 2,
+  "at": "2026-09-24T04:41:34"
+ }
+]

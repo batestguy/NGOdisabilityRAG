@@ -195,3 +195,45 @@ failing after Day 3 is reported as PENDING, never inferred.
 0 drift, 0 R1/R2 failures, the Q3 floor met, and no fabricated section numbers
 (`number_ok` false on a tag the turn didn't retrieve). Otherwise it stays opt-in with its
 known defects listed next to it. The default is OFF either way.
+
+### Day 1 — 2026-09-24 (run 03:36 UTC, user-authorised). SPENT: flash 12, flash-lite 16.
+Generation pools had 0 spend before this; E5.5 that morning used the embedding metric only, and
+no call hit a daily cap, which supports (but does not prove) the separate-pool reading.
+
+**G2 — `test_phase02_results_cite-strict-v3_2026-09-24.json`, 12/12 generated**, every row
+`model_used = gemini-2.5-flash`, none cached, none PENDING. Against the G1 declarations:
+
+| check (declared in G1) | result |
+|---|---|
+| tags whose number the turn did not retrieve (`number_ok` false) | **0 on all 12 rows** |
+| **Q3 floor: `numbered_tags ≥ 2`** | **met: 4** (v2: 1) |
+| Q8 no-padding (flag > 2 claims) | 2 claims, same fact from Act + Factsheet: **not flagged** |
+| R1 / R2 fixed refusal text | **both verbatim**, via the LLM no-answer layer |
+| mixed model | none |
+
+numbered_tags v3 (v2): Q1 3 (3) · Q2 6 (4) · Q3 **4 (1)** · Q4 2 (2) · Q5 5 (**refused**) · Q6 3 (3) ·
+Q7 7 (4) · Q8 2 (1) · Q9 2 (1) · Q10 3 (2). **Q5 now answers** (penalties, cited to Act cl. 1 / 12 /
+16 and the factsheet); under v2 it was a refusal.
+
+**Offline, `eval_phase06 --transcript=<G2> --out=scripts/eval_g2.json`**: recall 0.734 **FAIL** ·
+faithfulness_audited **1.000 PASS** (the fixA2 transcript scored 0.692 on the same code) ·
+reverse_rel 0.633 **FAIL** (ceiling 0.767 by construction). FAIL stays FAIL.
+
+**G3 — judge, first 16 of 23** (the re-dry-run found 23, not the 21 planned: Q5 now answers, which
+adds 2 tasks; Q10-cite skips because no s.39 tag appears). 15 verdicts + 1 skip; one per-minute 429
+was absorbed by the backoff inside the 16. So far: **relevancy 10/10 relevant** (the proxy agrees
+on 2/10), **Q3 thinness `adequate`** (it was `thin` under v2, so the rule-8 floor fixed the confirmed
+defect), Q8 `adequate`, **Q9 `[Constitution s. 34]` supported** (v2 omitted s.34), Q1/Q2
+faithfulness all supported. **The 7 remaining tasks are Day 2**, leaving 13 in reserve. Checkpoint:
+`scripts/.judge_phase06_checkpoint_425f320532f6.json`. **Do not delete it.**
+
+**Finding outside G's scope: OCR garbage in the shipped corpus, in the Act's core clause.** The
+v2 chunk `[Act cl. 1]` reads "…shall not be discriminated against on the **o uuu Aun u uons o
+uosd Xue q aqes s go puno** circumstance." That's upside-down OCR ("puno" is "ground" rotated
+180°) of the phrase about discrimination on the ground of disability. The Q1 answer copied it
+verbatim, which is correct behaviour under the cite-verbatim rule, and the judge still rated Q1
+faithful. But **every user who retrieves the anti-discrimination clause sees it in the offline
+excerpt**, AI or not. It was not previously recorded anywhere. **Not fixed now:** G is frozen, and
+a corpus change forces an `oov_bridge.json` rebuild and a re-measure (the bridge is corpus-keyed).
+It is **a verified, human-signed corpus re-extraction** (`CLAUDE.md` distinguishes that from
+"cleaning up OCR quirks"). Queue it after G, before launch.

@@ -1,6 +1,6 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-24)
 
-> **■ 2026-09-24: PHASE E CLOSED; PHASE G0 + G1 DONE AND FROZEN (`e011e5a`). NEXT: G2 ON A FRESH PACIFIC DAY.**
+> **■ 2026-09-24: PHASE G DAY 1 DONE (flash 12, flash-lite 16). NEXT: DAY 2 ON THE NEXT PACIFIC DAY (after 08:00 WAT).**
 >
 > **Where things stand**
 > * **Phase E is closed** (exit criteria mapped at the end of `docs/phases/13_retrieval_quality.md`). Net
@@ -22,17 +22,19 @@
 >   (`src/`, `app.py`, the prompts, the three G scripts) until G4 is done, or the split runs straddle two
 >   systems. G0 found and fixed a shipping bug: `cross_turn_drift` always returned `[]`.
 > * **G1 (pre-declared measures) is written** in the playbook's Results. The first call can go ahead.
-> * **NEXT: Day 1 of the quota calendar, on a fresh Pacific day** (the reset is 08:00 WAT under PDT).
->   Record the spend here before and after.
->   1. `C:\conda-envs\drlca-rag\python.exe scripts\test_phase02.py --no-cache --out=scripts\test_phase02_results_cite-strict-v3_<date>.json`
->      (12 flash calls, **no `--failover`**)
->   2. `...eval_phase06.py --transcript=scripts\test_phase02_results_cite-strict-v3_<date>.json --out=scripts\eval_g2.json`
->      (offline)
->   3. `...judge_phase06.py --dry-run --transcript=<G2 file> --eval=scripts\eval_g2.json` (re-count), then the
->      same command with `--limit=16` instead of `--dry-run` (16 flash-lite calls)
-> * **Day 2:** resume the judge (same command, no limit; ≤ 6 calls), then
->   `...transcript_chat.py --i-understand-this-spends-quota` (≤ 9 flash calls). **Day 3** is spare.
-> * Spend so far: **2026-09-24: 45 embedding requests (E5.5), 0 generation.**
+> * **Day 1 DONE 2026-09-24:** G2 transcript `scripts/test_phase02_results_cite-strict-v3_2026-09-24.json`
+>   (12/12, 0 unretrieved tags, the Q3 floor met, R1/R2 verbatim) · `scripts/eval_g2.json` · judge 16 of 23.
+>   Results are in the playbook's Results. **Keep `scripts/.judge_phase06_checkpoint_425f320532f6.json`**
+>   (untracked on purpose; it's the Day 2 resume state).
+> * **NEXT: Day 2, after the 08:00 WAT reset** (the judge needs flash-lite, and today's flash-lite spend is 16):
+>   1. `C:\conda-envs\drlca-rag\python.exe scripts\judge_phase06.py --transcript=scripts\test_phase02_results_cite-strict-v3_2026-09-24.json --eval=scripts\eval_g2.json`
+>      (7 flash-lite calls; it resumes from the checkpoint)
+>   2. `C:\conda-envs\drlca-rag\python.exe scripts\transcript_chat.py --i-understand-this-spends-quota` (≤ 9 flash)
+>   Flash has 8 left today, so G4 won't fit today (9 calls). Keep G4 on Day 2 as planned.
+> * **Queued after G, before launch:** Act cl. 1 carries upside-down OCR garbage in the shipped corpus
+>   (playbook, Day 1 box). Fixing it needs a verified corpus re-extraction, an OOV-bridge rebuild and a
+>   re-measure.
+> * Spend so far: **2026-09-24: 45 embedding requests (E5.5) · gemini-2.5-flash 12 · gemini-2.5-flash-lite 16.**
 
 > **NEXT SESSION: E5. The playbook is written** (the box on the E5 step in
 > `docs/phases/13_retrieval_quality.md`, 2026-09-23). Work it in order:
