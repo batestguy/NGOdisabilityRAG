@@ -3177,3 +3177,22 @@ change between days. So the plan makes two things mechanical: a checkpoint keyed
 transcript's sha256, and a freeze commit after which nothing feeding G2–G4 moves. The other
 finding: every LLM number on record predates corpus v2 and the 12-excerpt budget, so it
 describes a system that no longer ships. G re-measures; it doesn't extend.
+
+## 2026-09-24 — G0: a metric that could only ever read zero
+
+`chat.cross_turn_drift()` has been in the UI since Phase 10 C and had a test. It could never
+fire. It compared the regex groups from `extract_citations()` ("Act cl. 28") with the bracketed
+tags from `cite_tag()` ("[Act cl. 28]"). The test only checked that `app.py`'s source *called*
+it. Phase G's declared bar was "0 drifted tags on 9 turns". Unfixed, the measurement would have
+met that bar whatever the model did, and quota would have been spent to certify a property
+nobody had observed.
+
+What caught it was running the quota-spending harness's **live path offline with the LLM stubbed**
+before spending anything: a planted answer that re-cites an earlier turn's tag has to come back
+as drift. **Rule: before a metric is spent against scarce quota, show it can fail.** A metric
+that has only ever been observed at its passing value hasn't been tested. The same session
+produced two smaller versions of the lesson. The answer-shape floor as first written (≥ 2
+distinct citations) would have passed the Q3 answer it was meant to fix, and a reviewer caught
+the new rule rendering out of order (7, 9, 8) in exactly the prompt about to be spent.
+I also claimed a judge retry bug that wasn't there: the loop already retried; only the forecast
+count was wrong. It's corrected in the playbook rather than left standing.

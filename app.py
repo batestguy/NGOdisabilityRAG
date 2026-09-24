@@ -715,7 +715,7 @@ def _run_ai_turn(payload, turn_index: int, plain: bool) -> bool:
 
     History reaches the prompt only through chat.history_for_prompt(), which
     trims prior turns to {question, answer}: no excerpts, no tags, no scores.
-    Under CHAT_PROMPT_VERSION rule 8 those turns are context, not evidence, and
+    Under CHAT_PROMPT_VERSION rule 9 those turns are context, not evidence, and
     the citable set stays this turn's hits alone -- which is exactly what
     verify_citations() and cross_turn_drift() are checked against below.
 

@@ -81,6 +81,11 @@ def run_question(ret: PerDocRetriever, q: str, use_llm: bool,
         "cached": res.get("cached"),
         "llm_error": res.get("llm_error"),
         "citations": res["citations"],
+        # Phase G0: the answer-shape floor (rule 9, cite-strict-v3) counts
+        # DISTINCT NUMBERED tags only -- a "... general" tag carries no legal
+        # claim, and the v2 Q3 answer passed a floor that counted it.
+        "numbered_tags": len({c for c in res["citations"] or []
+                              if not c.endswith("general")}),
         "cite_check": res.get("cite_check"),
         "answer_excerpt": one_line(res["answer"], 600) if res["answer"] else None,
         "answer_full": res["answer"],

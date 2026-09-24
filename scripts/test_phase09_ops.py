@@ -372,10 +372,33 @@ def main() -> int:
     check("You may cite ONLY the retrieved excerpts in THIS turn."
           in chat_prompt,
           "the chat-only per-turn citation rule is in the prompt")
-    check(rag.CHAT_PROMPT_VERSION == "chat-cite-strict-v1"
-          and rag.PROMPT_VERSION == "cite-strict-v2",
+    check(rag.CHAT_PROMPT_VERSION == "chat-cite-strict-v2"
+          and rag.PROMPT_VERSION == "cite-strict-v3",
           "chat gets its OWN prompt version, so single-turn transcripts stay "
           "comparable and the two can never share a cache key")
+    check("8. If the question asks broadly" in rag.SYSTEM_PROMPT
+          and 'Tags ending in "general" do not count' in rag.SYSTEM_PROMPT
+          and "8. If the question asks broadly" in chat_prompt,
+          "rule 8 (answer-shape floor, numbered tags only) is in BOTH the "
+          "single-turn and the chat prompt (Phase G0)")
+
+    print("\n== 8. CHAT: cross_turn_drift ACTUALLY FIRES (behavioural, zero network) ==")
+    # Until Phase G0 this function compared "Act cl. 28" (extract_citations'
+    # regex group) with "[Act cl. 28]" (cite_tag) and returned [] for EVERY
+    # answer; the only prior test checked that the call existed in app.py's
+    # source. G4's drift metric would have read 0 by construction.
+    import chat  # noqa: E402
+    prior = [{"question": Q, "answer": "x", "tags": [rag.cite_tag("act2018", "cl. 28")]}]
+    now = [Hit("act2018", "cl. 1", "", 0.3)]
+    check(chat.cross_turn_drift("You can't be fired. [Act cl. 28]", prior, now)
+          == ["[Act cl. 28]"],
+          "a tag shown in an EARLIER turn but not this one is reported as drift")
+    check(chat.cross_turn_drift("Fines apply. [Act cl. 1]", prior, now) == [],
+          "a tag this turn DID retrieve is not drift")
+    check(chat.cross_turn_drift("Something. [Act cl. 50]", prior, now) == [],
+          "a tag no turn retrieved is not drift (verify_citations owns that case)")
+    check(chat.cross_turn_drift(None, prior, now) == [],
+          "a pending answer (None) has no drift")
 
     if failures:
         print("\nFAILURES:")

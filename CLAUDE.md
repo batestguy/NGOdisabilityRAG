@@ -32,6 +32,7 @@ C:\conda-envs\drlca-rag\python.exe scripts\ablate_oov_bridge.py    # E4a: hand v
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_handmap.py       # E5.3: S ship / B bridge-only / N none, dev (+ --read-test2)
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_surface.py       # E5: beg->begging surface-form arm, dev only (declined 2026-09-24)
 C:\conda-envs\drlca-rag\python.exe scripts\probe_embed_quota.py    # E5.5: SPENDS QUOTA only with --i-understand-this-spends-quota
+C:\conda-envs\drlca-rag\python.exe scripts\transcript_chat.py      # G4 drift transcript: dry run by default; SPENDS QUOTA only with --i-understand-this-spends-quota
 C:\conda-envs\drlca-rag\python.exe scripts\build_oov_bridge.py     # rebuild data/processed/oov_bridge.json (needs D:\e4_vectors\)
 C:\conda-envs\drlca-rag\python.exe scripts\e4_reach.py             # E4.0 reach gate, dev only
 C:\conda-envs\drlca-rag\python.exe scripts\eval_phase06.py --out=scripts\eval_tmp.json
@@ -298,7 +299,10 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   saves nothing), daily cap unknown. **M2 (dense) DECLINED FOR LAUNCH, not rejected** (revisit with
   post-launch query logs; offline invariant unchanged). **NEXT IS PHASE G —
   `docs/phases/14_generation_eval.md`** (G0 code prep at zero quota, then a 2-day quota calendar;
-  never `--failover` on G runs).
+  never `--failover` on G runs). **G0 + G1 DONE AND FROZEN 2026-09-24**: prompt `cite-strict-v3` /
+  `chat-cite-strict-v2` (new rule 8 = answer-shape floor on NUMBERED tags; the chat rule is now 9);
+  `cross_turn_drift` bracket bug fixed (it always returned `[]`). **Do not change `src/`, `app.py` or
+  the G scripts until G4 is done.** Next: G2 on a fresh Pacific day (commands in HANDOFF).
   ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level lexical signal
   failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to differ in kind.
   A static-embedding blend is **also term-level association** — **E4's ship gate should be strict

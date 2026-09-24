@@ -3,6 +3,8 @@
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\eval_phase06.py [--out=FILE]
   (from D:\\NGORAG; default out scripts/eval_phase06_results_<date>.json)
   ... --corpus=<ver>  evaluate a specific corpus version. EQUALS FORM ONLY.
+  ... --transcript=<json>  score another Phase 02 transcript (Phase G). The
+                     results-digest gate applies to the default transcript only.
 
 Why custom first: RAGAS itself calls LLMs (~30+ calls for 10Q x 3 metrics),
 which exceeds the Gemini free-tier daily budget, and `ragas` is NOT installed
@@ -290,6 +292,14 @@ def main() -> None:
     # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
     corpus = next((a.split("=", 1)[1] for a in sys.argv[1:]
                    if a.startswith("--corpus=")), None)
+    # Phase G0: --transcript= scores a FRESH generation pass (G2) against the same
+    # ground truth. The digest gate below pins the DEFAULT transcript's output
+    # only, so it is skipped -- loudly -- for any other transcript.
+    transcript = next((Path(a.split("=", 1)[1]) for a in sys.argv[1:]
+                       if a.startswith("--transcript=")), TRANSCRIPT)
+    if not transcript.is_absolute():
+        transcript = ROOT / transcript
+    print("transcript: %s" % transcript.name)
     questions = load_questions()
     assert len(questions) == 10
     # Two independent sources of the frozen 10 must agree: the notebook literal
@@ -301,7 +311,7 @@ def main() -> None:
     verify_ground_truth(docs)
     ret = PerDocRetriever(docs)
     recs = {r["id"]: r for r in json.loads(
-        TRANSCRIPT.read_text(encoding="utf-8")) if r["id"].startswith("Q")}
+        transcript.read_text(encoding="utf-8")) if r["id"].startswith("Q")}
 
     # select_top, not [:12] -- the same merge ask() ships. A harness that slices
     # differently from ask() is measuring a system nobody ships. k=4/doc,
@@ -357,6 +367,10 @@ def main() -> None:
     got = hashlib.sha256(out.read_bytes()).hexdigest()
     print("wrote %s (%d records) sha256=%s" % (out, len(rows), got))
     stamp = corpus or CORPUS_VERSION
+    if transcript.resolve() != TRANSCRIPT.resolve():
+        print("digest gate SKIPPED: pinned for %s only; this run scored %s"
+              % (TRANSCRIPT.name, transcript.name))
+        return
     want = RESULTS_SHA256.get(stamp)
     if want is None:
         raise SystemExit(

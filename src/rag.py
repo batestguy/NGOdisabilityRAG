@@ -36,7 +36,13 @@ MODEL_NAME = "gemini-2.5-flash"
 # Failing over is opt-in (see generate_with_meta) because a flash-lite answer
 # is not a flash answer and must never be recorded as one.
 FALLBACK_MODEL = "gemini-2.5-flash-lite"
-PROMPT_VERSION = "cite-strict-v2"
+# v3 (Phase G0, 2026-09-24): rule 8, the answer-shape floor for the confirmed
+# Q3 defect (judge 2026-09-11: Q3 "thin" at recall 1.000). Scoped to NUMBERED
+# tags on purpose -- the v2 Q3 answer already had two claims with two distinct
+# tags, one of them [Factsheet general], so a floor that counted any tag would
+# have passed the very answer the judge flagged. Any SYSTEM_PROMPT change moves
+# the cache key (whole-prompt sha), so no v2 answer can replay as v3.
+PROMPT_VERSION = "cite-strict-v3"
 
 # Identifies WHICH corpus produced a number, stamped into every artifact
 # header from Phase 10 A onward. "v1" is the corpus every published baseline in
@@ -727,7 +733,8 @@ tags into one -- "[Act cl. 16 cl. 17 (1)]" and "[Factsheet Section 19 \
 Section 20]" are FORBIDDEN; write one tag per claim instead.
 7. Parenthesized subsection numbers like (1) or (2) are NOT clause numbers. \
 Cite the chunk's header tag (e.g. a chunk headed [Act cl. 10,11] is cited \
-exactly as [Act cl. 10,11]). Multi-number tags are cited whole, verbatim."""
+exactly as [Act cl. 10,11]). Multi-number tags are cited whole, verbatim.
+8. If the question asks broadly what rights, protections, duties or rules exist, and two or more RELEVANT excerpts carry DIFFERENT numbered tags, give at least two separate claims, each citing a different numbered tag -- cover each relevant provision instead of stopping at the first. Tags ending in "general" do not count toward this. If the question asks for one specific fact, state that fact only; do not pad."""
 
 PLAIN_SUFFIX = """\nWrite in plain, simple language for low-literacy readers: short \
 sentences, common words, one idea per sentence. Same facts, same citations."""
@@ -737,17 +744,19 @@ sentences, common words, one idea per sentence. Same facts, same citations."""
 # so a single-turn prompt is byte-identical to every one this project has ever
 # sent and every transcript and cache entry keeps its meaning.
 #
-# Rule 8 is the whole citation-safety story for multi-turn. Prior turns enter
+# Rule 9 (rule 8 until Phase G0) is the whole citation-safety story for multi-turn. Prior turns enter
 # the prompt so the model can UNDERSTAND an elliptical question ("so can they
 # fire me?"); they are not evidence. The citable set stays exactly this turn's
 # retrieved excerpts. verify_citations() is unchanged and therefore already
 # fails a tag re-cited from an earlier turn -- chat.cross_turn_drift() names
 # that specific case so it can be counted instead of merely failing.
 # ---------------------------------------------------------------------------
-CHAT_PROMPT_VERSION = "chat-cite-strict-v1"
+# v2 (Phase G0, 2026-09-24): no CHAT_SUFFIX change -- the chat prompt embeds
+# SYSTEM_PROMPT, so the new rule 8 changed it too (and pushed this rule to 9); the version must say so.
+CHAT_PROMPT_VERSION = "chat-cite-strict-v2"
 
 CHAT_SUFFIX = """
-8. This is an ongoing conversation. Earlier turns are shown below for CONTEXT \
+9. This is an ongoing conversation. Earlier turns are shown below for CONTEXT \
 ONLY -- to resolve what the user means by "it", "they" or "that". They are NOT \
 evidence. You may cite ONLY the retrieved excerpts in THIS turn. Never re-cite \
 a tag from an earlier turn that does not appear in this turn's excerpts, and \

@@ -123,4 +123,75 @@ after G0.4's freeze invalidates G) · M2 (declined for launch, E5.6) · pushing 
 (deployment deferred until all phases are done).
 
 ## Results
-*(empty; G1's pre-declaration goes here first)*
+
+### G0 — DONE 2026-09-24, local `main`. Zero Gemini calls.
+1. **Answer-shape floor.** It is **rule 8** of `SYSTEM_PROMPT`. `PROMPT_VERSION` is now
+   `cite-strict-v3` and `CHAT_PROMPT_VERSION` is `chat-cite-strict-v2`. The chat-only rule moves
+   8 → 9, so both prompts number contiguously (1–8 single-turn, 1–9 chat); the reviewer caught a
+   first draft that rendered 7, 9, 8 in every chat prompt. **Correction to M5 / 09's wording:**
+   the floor counts **distinct NUMBERED tags**. The v2 Q3 answer already had "≥ 2 claims with ≥ 2
+   distinct citations" (`[Act cl. 29,30]` + `[Factsheet general]`), so the floor as first written
+   would have passed the answer the judge called thin. `test_phase02` records now carry
+   `numbered_tags`.
+2. **Judge and eval re-pointed.** `eval_phase06.py --transcript=` scores a new transcript, and its
+   digest gate applies to the default transcript only (it says so when skipped). The default output
+   is still `2429cafc…`. `judge_phase06.py --transcript= --eval=` (both or neither) writes a
+   checkpoint named by, and storing, the transcript sha256, and refuses a mismatch. Tested with a
+   planted wrong-sha checkpoint. **Correction to this session's first reading:** the judge loop
+   *already* retried `llm_error` rows. Only the `pending` count (the dry-run plan and the quota
+   forecast) left them out, and that is fixed.
+3. **`scripts/transcript_chat.py`**: CD1, CD3 and CD10 (`chat_dev`), 9 planned calls, dry run by
+   default, no failover, `use_cache=False`, checkpoint on each successful call, stops on the first
+   failure. Its live path was exercised offline with `rag.ask` stubbed: stop at a planted 429 with 4
+   turns checkpointed, resume calling only the remaining 5, refuse a changed prompt key.
+   **That stub run found a shipping bug: `chat.cross_turn_drift()` could never report drift.**
+   It compared `extract_citations()`'s bracket-less groups (`Act cl. 28`) with bracketed
+   `cite_tag()` tags (`[Act cl. 28]`) and returned `[]` for every answer since Phase 10 C. The UI's
+   drift warning could never fire (`verify_citations` still flagged the tag), and **G4 would have
+   read 0 drift by construction, a false pass of its declared bar.** It's fixed in `src/chat.py`,
+   with a behavioural test in `test_phase09_ops.py` section 8. The only previous test checked the
+   call's presence in `app.py`'s source.
+4. **Freeze check.** Every zero-quota harness was re-run (`D:\e5_surface\freeze_g0_raw.txt`), and all
+   exit 0. Diffed against `baseline_phaseE_2026-09-24.txt`, the only differences are the new
+   `test_phase09_ops` lines and `eval_phase06`'s new `transcript:` line. **Every retrieval number is
+   byte-identical.** After the renumber: 03/04 ALL PASS, 05 137/137, 09 ALL PASS, `import app`
+   clean, digest `2429cafc…`.
+   **Reviewer: SHIP WITH FIXES.** One blocking item (the rule order), fixed. One nit (the checkpoint
+   wording), fixed. It independently confirmed the drift bug and the judge/eval plumbing.
+   **The freeze commit is the commit that records this box.** Nothing feeding G2–G4 changes until G4
+   is done.
+
+### G1 — Pre-declared measures, written 2026-09-24 BEFORE any G call
+Fixed now. Anything computed later that isn't listed here is reported as **exploratory**.
+
+**G2 (Phase 02 fresh transcript).** The command is exactly
+`test_phase02.py --no-cache --out=scripts/test_phase02_results_cite-strict-v3_<date>.json`, with
+**no `--failover`**. Per row, reported side by side with fixA2 (2026-09-10):
+* `cite_check`: every cited tag `number_ok`. Count the rows with any failure.
+* **Q3 floor:** `numbered_tags ≥ 2`. This is 09's green line, now counting numbered tags only.
+  **This is the one thing the G0 prompt change is for. If Q3 fails it, rule 8 did not work.**
+* **Q8 no-padding:** answers the single fact; `numbered_tags` reported, and a claim count > 2 is
+  flagged as padding.
+* **R1/R2** must return the fixed refusal text verbatim. Q5 is reported, whichever way it goes.
+* Mixed-model check: every row's `model_used` must be `gemini-2.5-flash`, or be PENDING.
+
+**Then, offline:** `eval_phase06.py --transcript=<G2 file> --out=scripts/eval_g2.json`. Recall,
+faithfulness_audited and reverse_rel against the spec targets. **FAIL stays FAIL.**
+
+**G3 (judge).** `judge_phase06.py --transcript=<G2 file> --eval=scripts/eval_g2.json`, split by
+`--limit=16` on Day 1 and resumed on Day 2. The judge replaces the proxy only on what it rules on:
+reverse_rel relevancy, thinness (Q3, Q8), citation dispositions, and faithfulness. Any row still
+failing after Day 3 is reported as PENDING, never inferred.
+
+**G4 (drift).** `transcript_chat.py --i-understand-this-spends-quota`, run on CD1, CD3 and CD10.
+* **Bar: 0 turns with drift** among the answered turns (`cross_turn_drift`, fixed in G0; see the
+  G0 results). Any drift is a chat-prompt defect.
+* `verify_citations` failures: counted, and reported separately.
+* CD10.t3 (off-corpus after legal) should come back as the fixed no-answer sentence. A cited
+  answer there is reported as a **false answer**. It passes the gate by design, so this tests
+  the prompt's refusal layer under chat history.
+
+**The launch reading.** AI prose is "recommendable, still opt-in" only if all of these hold:
+0 drift, 0 R1/R2 failures, the Q3 floor met, and no fabricated section numbers
+(`number_ok` false on a tag the turn didn't retrieve). Otherwise it stays opt-in with its
+known defects listed next to it. The default is OFF either way.

@@ -316,7 +316,7 @@ def history_for_prompt(turns, max_turns: int = CARRY_WINDOW) -> list:
     return out
 
 
-def cross_turn_drift(answer: str, turns, hits) -> list:
+def cross_turn_drift(answer: str | None, turns, hits) -> list:
     """Tags cited in `answer` that THIS turn did not retrieve but an earlier one did.
 
     rag.verify_citations() already fails a tag no current hit carries, so drift
@@ -332,5 +332,12 @@ def cross_turn_drift(answer: str, turns, hits) -> list:
     for t in (turns or []):
         tags = t.get("tags") if isinstance(t, dict) else getattr(t, "tags", None)
         earlier |= set(tags or [])
-    return [tag for tag in rag.extract_citations(answer or "")
-            if tag not in current and tag in earlier]
+    # extract_citations() returns the regex GROUP -- "Act cl. 28", no brackets --
+    # while cite_tag() and every stored turn's tags are "[Act cl. 28]". Until
+    # Phase G0 (2026-09-24) the two were compared raw, so this function could
+    # never report drift: it returned [] for every answer. Found by exercising
+    # scripts/transcript_chat.py's live path with a stubbed ask(), before the
+    # G4 run would have "measured" 0 drift by construction. Normalise to the
+    # bracketed form, which is also what the UI warning prints.
+    cited = ["[%s]" % t for t in rag.extract_citations(answer or "")]
+    return [tag for tag in cited if tag not in current and tag in earlier]

@@ -2,6 +2,10 @@
 
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\judge_phase06.py [--limit N] [--dry-run]
      (from D:\\NGORAG)
+     ... --transcript=<json> --eval=<json>   judge ANOTHER Phase 02 transcript
+         (Phase G). Both or neither; EQUALS FORM ONLY. The checkpoint is then
+         keyed on the transcript's sha256, so a split run can never resume
+         against a different transcript. Defaults reproduce the 2026-09-11 run.
 
 WHAT THIS SETTLES
 -----------------
@@ -333,14 +337,55 @@ def judge_call(prompt: str, model: str) -> tuple[str, int]:
     raise RuntimeError("unreachable")
 
 
+TRANSCRIPT_SHA = None  # set by configure() for a non-default transcript
+
+
+def configure(argv) -> Path:
+    """Apply --transcript= / --eval= (Phase G0). Returns the eval-rows path.
+
+    With the defaults every path is exactly what the 2026-09-11 run used. With a
+    new transcript, the checkpoint file is named by -- and stores -- the
+    transcript's sha256, and load_checkpoint() refuses a mismatch. That is what
+    makes a judge run split across two quota days safe: day 2 can only resume
+    against the byte-identical transcript day 1 judged.
+    """
+    global TRANSCRIPT, CHECKPOINT, OUT, TRANSCRIPT_SHA
+    import hashlib
+    arg = lambda k: next((a.split("=", 1)[1] for a in argv if a.startswith(k + "=")), None)
+    tr, ev = arg("--transcript"), arg("--eval")
+    if (tr is None) != (ev is None):
+        raise SystemExit("--transcript= and --eval= go together: the eval rows "
+                         "must be eval_phase06 run on that same transcript")
+    if tr is None:
+        return ROOT / "scripts" / "eval_m2.json"
+    TRANSCRIPT = Path(tr) if Path(tr).is_absolute() else ROOT / tr
+    TRANSCRIPT_SHA = hashlib.sha256(TRANSCRIPT.read_bytes()).hexdigest()
+    CHECKPOINT = ROOT / "scripts" / (".judge_phase06_checkpoint_%s.json"
+                                     % TRANSCRIPT_SHA[:12])
+    OUT = ROOT / "scripts" / ("judge_phase06_results_%s_%s.json"
+                              % (JUDGE_MODEL, TRANSCRIPT.stem.replace(
+                                  "test_phase02_results_", "")))
+    return Path(ev) if Path(ev).is_absolute() else ROOT / ev
+
+
 def load_checkpoint() -> dict:
-    if CHECKPOINT.exists():
-        return json.loads(CHECKPOINT.read_text(encoding="utf-8"))
-    return {}
+    if not CHECKPOINT.exists():
+        return {}
+    done = json.loads(CHECKPOINT.read_text(encoding="utf-8"))
+    if TRANSCRIPT_SHA is not None:
+        got = done.pop("_transcript_sha256", None)
+        if got != TRANSCRIPT_SHA:
+            raise SystemExit("checkpoint %s was written for transcript %s, not %s "
+                             "-- refusing to mix two transcripts in one judge run"
+                             % (CHECKPOINT.name, got, TRANSCRIPT_SHA))
+    return done
 
 
 def save_checkpoint(done: dict) -> None:
-    CHECKPOINT.write_text(json.dumps(done, indent=1), encoding="utf-8")
+    blob = dict(done)
+    if TRANSCRIPT_SHA is not None:
+        blob["_transcript_sha256"] = TRANSCRIPT_SHA
+    CHECKPOINT.write_text(json.dumps(blob, indent=1), encoding="utf-8")
 
 
 def main() -> None:
@@ -349,23 +394,30 @@ def main() -> None:
     for a in sys.argv[1:]:
         if a.startswith("--limit="):
             limit = int(a[len("--limit="):])
+    eval_path = configure(sys.argv[1:])
 
     questions = load_questions()
     assert len(questions) == 10
     recs = {r["id"]: r for r in json.loads(
         TRANSCRIPT.read_text(encoding="utf-8")) if r["id"].startswith("Q")}
-    eval_path = ROOT / "scripts" / "eval_m2.json"
     assert eval_path.exists(), (
-        "run eval_phase06.py --out=scripts/eval_m2.json first (post-fix-B rows)")
+        "missing %s -- run eval_phase06.py --out= (with --transcript= for a "
+        "non-default transcript) first" % eval_path)
     rows = json.loads(eval_path.read_text(encoding="utf-8"))
 
     ret = PerDocRetriever(build_corpus())
     tasks = build_tasks(questions, recs, rows, ret)
     done = load_checkpoint()
 
-    pending = [t for t in tasks if t["id"] not in done and "skipped" not in t]
+    # A row that FAILED (llm_error) is retried by the loop below, so it is
+    # pending too -- counting it keeps the dry-run plan and the quota
+    # forecast honest on a resumed (split-day) run.
+    pending = [t for t in tasks if "skipped" not in t
+               and (t["id"] not in done or "llm_error" in done[t["id"]])]
     print("judge model : %s   (generator was %s -- deliberately different)"
           % (JUDGE_MODEL, MODEL_NAME))
+    print("transcript  : %s%s" % (TRANSCRIPT.name, "" if TRANSCRIPT_SHA is None
+                                   else "  (sha256 %s...)" % TRANSCRIPT_SHA[:12]))
     print("tasks total : %d  | already checkpointed: %d  | to call: %d"
           % (len(tasks), len(done), len(pending)))
     for t in tasks:
