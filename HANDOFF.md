@@ -1,6 +1,6 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-24)
 
-> **■ 2026-09-24: PHASE E IS CLOSED. NEXT IS PHASE G.**
+> **■ 2026-09-24: PHASE E CLOSED; PHASE G0 + G1 DONE AND FROZEN (`e011e5a`). NEXT: G2 ON A FRESH PACIFIC DAY.**
 >
 > **Where things stand**
 > * **Phase E is closed** (exit criteria mapped at the end of `docs/phases/13_retrieval_quality.md`). Net
