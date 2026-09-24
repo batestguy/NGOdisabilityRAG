@@ -1,30 +1,30 @@
 # HANDOFF — start here (60 seconds, updated 2026-09-24)
 
-> **▶ 2026-09-24: surface-form arm + E5.4 DONE. STOPPED AT E5.5, WHICH NEEDS THE USER'S GO-AHEAD.**
+> **■ 2026-09-24: PHASE E IS CLOSED. NEXT IS PHASE G.**
 >
 > **Where things stand**
-> * Phase E, step E5. **E5.0–E5.4 are DONE** on local `main`. **Zero Gemini calls all phase; today's
->   spend is 0.**
+> * **Phase E is closed** (exit criteria mapped at the end of `docs/phases/13_retrieval_quality.md`). Net
+>   result: `test` strict 0.471 → 0.647, `test2` 0.629, 0/212, all offline. Baseline:
+>   `scripts/baseline_phaseE_2026-09-24.txt`.
+> * **Quota spent 2026-09-24:** 45 `gemini-embedding-001` requests (105 strings), E5.5, user-authorised.
+>   **0 generation calls.** The 429 hit the embedding-specific per-minute metric, so the generation
+>   pools (flash / flash-lite, 20/day each) should be untouched. That's inferred, not proven.
+> * **E5.5 finding:** the embedding free tier allows 100 strings/min, **counted per string** (batching
+>   saves no quota). The daily cap is unknown. Result file: `scripts/probe_embed_quota_2026-09-24.json`.
+> * **E5.6: M2 (dense retrieval) DECLINED FOR LAUNCH, not rejected.** Revisit post-launch with real query
+>   logs. The offline invariant and `requirements.txt` are unchanged.
 > * **Local `main` is ahead of `origin/main`. DO NOT PUSH.** Deployment is deferred until every phase is
->   done (user, 2026-09-23). The live site still serves the E1b build.
-> * `scripts/eval_tmp.json` is untracked scratch from before this work. Leave it alone.
-> * **Surface-form arm (`beg`→`begging`, `scripts/ablate_surface.py`): NOT SHIPPED.** It ties on dev
->   (0.613), because H2 was already 1.0 via the bridge. `src/` is unchanged, and calibrate stays 0/212.
->   `test2` was not read.
-> * **E5.4:** `scripts/baseline_phaseE_2026-09-24.txt`, every zero-quota harness, all exit 0: strict
->   0.734 / 0.613 / 0.647 / test2 0.629 · 0/212 · 05 137/137 · eval_phase06 `2429cafc…`. Raw captures are in
->   `D:\e5_surface\`.
-> * `test2` is sealed and has been **read once** (E5.3). Dev selects.
+>   done (user, 2026-09-23). The live site still serves E1b.
+> * `scripts/eval_tmp.json` is untracked scratch. Leave it alone.
 >
-> **Resume checklist**
-> 1. **E5.5 (SPENDS QUOTA, needs the user's go-ahead):** `scripts/probe_embed_quota.py` is written, dry-run
->    verified (zero calls without the flag), and **never run**. Run
->    `C:\conda-envs\drlca-rag\python.exe scripts\probe_embed_quota.py --i-understand-this-spends-quota`
->    with `GOOGLE_API_KEY` set. It makes ≤ 60 requests, stops at the first 429, and writes
->    `scripts/probe_embed_quota_<date>.json`. Don't run it on a day Phase G needs. Record the spend here.
-> 2. **E5.6:** the M2 decision, written down (playbook box). Inputs: `test2` pool 38/42 (4 absent), the
->    E5.5 quota, privacy, and "deferral is free".
-> 3. Then Phase E closes, and **G** is next (write the multi-day quota plan before its first call).
+> **Resume checklist: Phase G**
+> 1. Read M5 in `docs/phases/10_corpus_rebuild_and_dense.md` and `docs/phases/11_chat.md` (G's scope: fresh
+>    transcripts + judge + cross-turn citation drift).
+> 2. **Write the multi-day quota plan BEFORE the first call.** The judge is about 30 calls and doesn't fit
+>    in one day on one model. Split it across days and/or the flash + flash-lite pools (40/day total, 10/min
+>    each). A half-finished judge run is wasted quota.
+> 3. Everything G measures is the E4a build (`baseline_phaseE_2026-09-24.txt`). Then **F** (re-examine M4
+>    before scheduling).
 
 > **NEXT SESSION: E5. The playbook is written** (the box on the E5 step in
 > `docs/phases/13_retrieval_quality.md`, 2026-09-23). Work it in order:

@@ -292,6 +292,11 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   and committed before any measurement, E5.2) the hand map earns its place: ship S **0.629** vs
   bridge-only 0.577 vs none 0.554 (`vocab-mismatch` 0.450 / 0.283 / 0.283), agreeing with dev.
   The `test` +0.059 was noise. **S stays; `SYNONYMS` unchanged.**
+  **PHASE E CLOSED 2026-09-24.** Surface-form `beg`→`begging` arm declined (dev tie). Baseline
+  `scripts/baseline_phaseE_2026-09-24.txt` (strict 0.734 / 0.613 / test 0.647 / test2 0.629, 0/212).
+  E5.5 probe: `gemini-embedding-001` free tier = **100 strings/min, counted per string** (batching
+  saves nothing), daily cap unknown. **M2 (dense) DECLINED FOR LAUNCH, not rejected** (revisit with
+  post-launch query logs; offline invariant unchanged). **NEXT IS PHASE G.**
   ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level lexical signal
   failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to differ in kind.
   A static-embedding blend is **also term-level association** — **E4's ship gate should be strict

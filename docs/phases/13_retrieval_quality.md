@@ -1561,3 +1561,62 @@ is closed.**
 **Next: E5.5**, which spends quota and needs the user's go-ahead. `scripts/probe_embed_quota.py`
 is now **written but NOT run**. Without the equals-form consent flag it prints its plan and
 makes zero calls, which was verified.
+
+### E5.5 — Embedding quota probed — 2026-09-24, local `main`. SPENT: 45 embedding requests (105 strings), 0 generation calls.
+
+Authorised by the user on 2026-09-24. The run is `scripts/probe_embed_quota.py
+--i-understand-this-spends-quota`, and its result is committed as
+`scripts/probe_embed_quota_2026-09-24.json`.
+* **The limit is 100 per minute per model, counted PER EMBEDDED STRING, not per request.** 30
+  single requests and 15 batches of 5 went through, 45 requests carrying **105 strings** in 28 s.
+  Request 46 got a 429. 45 requests is well under 100, so the server was counting strings.
+  **Batching saves no quota.** It only saves round trips.
+* **The 429 was per-minute**, not per-day: `quotaId`
+  `EmbedContentRequestsPerMinutePerUserPerProjectPerModel-FreeTier`, metric
+  `generativelanguage.googleapis.com/embed_content_free_tier_requests`, limit 100, retry in ~44 s.
+  **The daily cap was not reached and is still unknown.** The metric is embedding-specific, so
+  this is strong evidence (**not proof** for the daily pool) that embeddings do not draw on the
+  generation budget that G needs.
+* **Latency:** single request median **497 ms** (min 441, max 1457), batch of 5 median 754 ms.
+  Vectors are **3072-d** by default.
+* **Falsified M2 premise:** `10_corpus_rebuild_and_dense.md` M2 says "2214 v1 chunks batched ≈ tens
+  of calls, not thousands". Because the counting is per string, embedding v2's **2134 chunks costs
+  2134 units**, which is at least ~22 minutes of paced calls **and could exceed an unknown daily
+  cap**. Every corpus change repeats that cost, because the artifact is keyed on the corpus sha256.
+
+### E5.6 — The M2 decision: DECLINED FOR LAUNCH, not rejected — 2026-09-24. Zero quota.
+
+The four inputs the box requires:
+1. **Residual gain (recall_strict, shipping `k=4/doc, top_n=12` vs the 60-pool):**
+   `test2` shown **0.629**, in pool **0.825**. That leaves **+0.196 in the pool but not displayed**
+   and **0.175 absent from the pool** (4/42 questions have no correct chunk anywhere in it). `test`
+   shows 0.647 and pools 0.794, so +0.147 is not displayed and 0.206 is absent. The headroom is
+   real, and dense retrieval is the one arm left that could reach both parts. **But the in-pool
+   part is the same headroom that E2 (BM25) and E3 (auto synonyms) were aimed at, and both lost.**
+   A headroom figure is not a forecast. The only way to know is to build the dense index and
+   measure it, and that costs the quota and privacy described next.
+2. **Quota:** the per-minute limit is workable for users (100 questions a minute). Building the
+   index takes about 2134 units and has to be redone on every corpus change, against a **daily cap
+   nobody has measured**. It probably doesn't compete with G's ~30 generation calls, but that's
+   unproven.
+3. **Privacy:** every legal question (about disability, abuse, begging coercion) would go to
+   Google, and **the default path would stop being offline.** That breaks a `CLAUDE.md` invariant,
+   and each answer would carry roughly +0.5 s of network latency and a new failure mode.
+4. **Deferral is free:** there are no users, and launch waits for all phases.
+
+**Decision: M2 is not built for launch.** The shipping retrieval stays fully offline at E4a
+(`test2` 0.629). **Revisit after launch, with real query logs.** Those would show whether real
+users' questions hit the absent-from-pool class that TF-IDF can't reach, which is what would
+justify the privacy trade. If revisited, the probe numbers above size the build: paced at
+≤ 90 strings/min, resumable, with the daily cap probed first on a day G doesn't need.
+`requirements.txt` and the offline invariant are unchanged.
+
+### Phase E — CLOSED 2026-09-24
+Exit criteria: **1** `test` 0.647 and `test2` 0.629 reported, every arm attributable · **2–3** 0 false
+refusals on every set, `calibrate_refusal` 0/212, `MIN_SCORE` 0.10 · **4** `requirements.txt`
+byte-identical (M2 not taken) · **5** every arm ablated separately; E2, E3, the surface-form arm and
+M2 are recorded as declined · **6** the M2 decision recorded, with `probe_embed_quota.py` actually
+run · **7** `baseline_phaseE_2026-09-24.txt` archived, suites 03/04/05/09 green.
+**Net Phase E: `test` strict 0.471 → 0.647 (E1b width + E4a OOV bridge), zero Gemini calls for any
+shipped change.** **Next: Phase G.** Its first task is the multi-day quota plan, written before the
+first call.

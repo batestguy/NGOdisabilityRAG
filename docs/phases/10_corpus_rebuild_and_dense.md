@@ -281,6 +281,11 @@ on screen · suites 03/04/05 green · `import app` clean.
 > headroom, and the 3/17 test refs that are *absent* from the pool may be out of dense
 > retrieval's reach too. Decide with E5's numbers in hand and record the decision either way.
 
+> **⛔ DECLINED FOR LAUNCH 2026-09-24 (E5.6, `13_retrieval_quality.md`). Not rejected: revisit
+> post-launch with real query logs.** The probe ran (`scripts/probe_embed_quota_2026-09-24.json`):
+> the free tier allows **100 strings/min, counted per string, not per request**, so the "tens of calls"
+> line below is **falsified**. A v2 build is about 2134 units against an unmeasured daily cap.
+
 Branch `phase10/dense-gemini`. This is the quality step.
 
 **Open with the probe.** `scripts/probe_embed_quota.py` (new): batch sizes, RPM and RPD for

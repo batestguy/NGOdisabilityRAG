@@ -3139,3 +3139,30 @@ build would expose it again. That's recorded in the playbook.
 E5.4 archived the whole zero-quota harness list in one capture, all green, with the
 `eval_phase06` digest unchanged. Practical note: `eval_phase06 --out=` was pointed at scratch
 rather than `scripts/eval_tmp.json`, so the untracked file the handoff protects was never touched.
+
+## 2026-09-24 — E5.5 + E5.6: the embedding free tier counts strings, and M2 waits for real users
+
+The probe answered the question M2 had carried unmeasured since Phase 10: `gemini-embedding-001` on
+the free tier allows **100 per minute, counted per embedded string.** 45 requests carrying 105
+strings tripped it in 28 s. M2's plan assumed batching would make the corpus build "tens of calls".
+It doesn't: a v2 build is ~2134 units, and nobody knows the daily cap. **An unpublished limit
+priced by assumption was wrong by two orders of magnitude, in the direction that matters.** The
+429, verbatim (truncated at 600 chars by the probe):
+
+```
+429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/embed_content_free_tier_requests, limit: 100, model: gemini-embedding-1.0\nPlease retry in 44.556372104s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn m
+```
+
+**M2 decision: declined for launch, not rejected.** There's real headroom (+0.196 on `test2` in the
+pool but not shown, and 0.175 absent from the pool entirely), and dense retrieval is the only
+remaining arm that could reach the absent part. Against it: every question, about disability,
+abuse and begging coercion, would go to a third party; the default path would stop being offline;
+the in-pool headroom has already defeated two arms that "should" have reached it; and with no users
+yet, waiting costs nothing. Real query logs after launch are the evidence that would justify the
+privacy trade, or show it isn't needed.
+
+**Phase E, in one line:** four arms measured (E1 width, E2 BM25, E3 auto-synonyms, E4 OOV bridge) plus
+the surface-form fix and M2. Two shipped, both offline and zero-quota, taking `test` from 0.471 to
+0.647. The rest were declined with their numbers on record. The discipline that paid off most was
+writing each rule before its measurement, and authoring `test2` when `test` got too small to settle
+anything.
