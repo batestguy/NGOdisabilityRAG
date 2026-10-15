@@ -1,5 +1,14 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-15)
 
+> **■ 2026-10-15 (final): F0 DECLINED, SO PHASE F IS CLOSED. ALL PHASES (E → G → F) ARE DONE. ZERO QUOTA.**
+> * Static-embedding arm: frozen-10 0.734 → 0.676 (−2 q), dev 0.613 → 0.620 (net 0). The gate needed
+>   dev ≥ +2 and frozen-10 0 down. **test2 was not read.** The harness is sound (a null arm reproduces
+>   S 35/35). The code is archived on `phase10/f0-static` (`27ed13d`). Details: `docs/phases/15` Results.
+> * Lay/Pidgin probes (`data/eval/register_probes.json`, report-only) went **0.650 → 0.750** under
+>   the arm. That's the only upward signal, and it's for a post-launch, register-routed revisit.
+> * **Before launch:** the generator-refusal probe set (~10 Gemini calls) and the user's call on the
+>   cl.12 / cl.20 OCR slips. **Then deployment is the user's decision. Do not push `main` until they say so.**
+
 > **■ 2026-10-15 (latest): PHASE F RE-EXAMINED, PLAYBOOK `docs/phases/15_phase_f_reexamined.md`. NEXT: F0.**
 > * M4 as written is dead: M2 was declined, so there's no dense arm to beat or distil from, and a
 >   transformer can't be served. What survives is an **offline static embedding table** (numpy-only).

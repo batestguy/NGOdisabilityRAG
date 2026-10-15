@@ -110,3 +110,42 @@ Fixed while reading the harness code, before measuring:
   would need a display change. That is a finding to record, not a reason to re-gate.
 * **Reach:** dev questions where S misses an expected ref and the static-only per-doc top-4
   contains it.
+
+### F0 — MEASURED AND DECLINED 2026-10-15. Zero quota. test2 NOT read. PHASE F CLOSED.
+Harness `scripts/ablate_static.py` with the `model2vec==0.10.0` dev pin lives **only** on branch
+`phase10/f0-static` at `27ed13d` (pushed as an archive; it does not deploy). Same precedent as E2a/E3a:
+declined code doesn't go on `main`. `model2vec` is installed in `drlca-rag` (dev env) and touched
+neither numpy (2.4.6) nor scikit-learn (1.9.0). The model is in `runs\f0_static\` (gitignored).
+
+| set | S (ship) | D (static RRF) | questions |
+|---|---|---|---|
+| frozen-10 recall_strict | **0.734** (reproduced) | 0.676 | 0 up / **2 down** (Q4, Q8) |
+| dev recall_strict (SELECTOR) | **0.613** (reproduced) | 0.620 | 1 up (H4) / 1 down (H17), **net 0** |
+| dev `vocab-mismatch` (n=8) | 0.625 | 0.688 | — |
+| dev `cross-document` (n=7) | 0.476 | 0.429 | — |
+| register probes, report-only (n=20) | 0.650 | 0.750 | 3 up (P03, P15, P16) / 1 down (P01) |
+| false refusals | none | none (by identity) | — |
+
+**Gate: dev net +0 (needed ≥ +2), frozen-10 down 2 (needed 0) → DECLINE.** The playbook's
+one retreat (`potion-retrieval-32M`) was conditioned on dev reach = 0. Reach was **3 of 11**
+(H4, H11, H14; oracle ceiling 0.720), so the retreat didn't apply and wasn't run.
+**Harness check:** with the static ranking replaced by the TF-IDF ranking, D reproduces S on
+35/35 questions, so the decline isn't a wiring bug.
+
+**What the numbers say.** The static arm does what a semantic signal should on vocabulary
+mismatch (dev 0.625 → 0.688) and on lay/Pidgin register (probes +3/−1). But fusing it costs
+precise lexical hits elsewhere (frozen-10 Q4/Q8, cross-document), and dev nets to zero. **Even a
+pass would have needed a display change for F1:** D's chunks carry lower TF-IDF scores, so today's
+per-hit trim shows **4.08** of D's 12 on dev against **6.92** for S, and the shown-path recall
+*falls* (0.473 → 0.460). Report-only, recorded so it doesn't have to be rediscovered.
+
+**For later (post-launch, not now).** The probe result is the one signal in this direction that
+points up, and it's on register, the gap the curated sets under-sample. With real query logs, a
+*register-routed* use (static arm only when the query is Pidgin / out-of-vocabulary-heavy) is the
+hypothesis worth testing. Pre-declare it then; it is **not** being tuned now, after the read.
+
+### Phase F exit (2026-10-15)
+Exit (a) holds: F0 declined and recorded with its numbers. F2 (fine-tune) isn't scheduled:
+its premise was "improve an arm that ships", and none does. **All phases in the E → G → F order are
+done.** Before launch: the generator-refusal probe set (~10 calls, the CD1.t2 class) and the user's
+call on cl.12 / cl.20. **Then deployment, which is the user's decision.**

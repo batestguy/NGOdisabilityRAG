@@ -313,7 +313,10 @@ artifact (10/10 relevant, Phase G 2026-10-15). Don't tune the yardstick to make 
   re-measured, shipping numbers unchanged). `parse_act_v2.py` now defaults to `--body-from=5`, which is what the shipped artifact was
   built with. **PHASE F RE-EXAMINED 2026-10-15 → `docs/phases/15_phase_f_reexamined.md`** (M4 superseded;
   F0 = offline static-embedding arm, dev-only, strict a-priori gate; F2 fine-tune only after launch).
-  **NEXT: F0.**
+  **F0 MEASURED AND DECLINED 2026-10-15 → PHASE F CLOSED** (frozen-10 −2 q, dev net 0; test2 unread;
+  harness archived on `phase10/f0-static` `27ed13d`, not on `main`; lay/Pidgin probes +0.100 is a
+  post-launch lead only). **All phases done. NEXT: the generator-refusal probes (~10 calls), then the user's
+  deploy decision.**
   ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level lexical signal
   failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to differ in kind.
   A static-embedding blend is **also term-level association** — **E4's ship gate should be strict

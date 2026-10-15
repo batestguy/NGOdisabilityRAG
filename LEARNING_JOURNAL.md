@@ -3271,3 +3271,22 @@ fine-tune can't rescue a signal that has no reach. It keeps E's discipline: the 
 advance, the test is dev-only, and a dev failure means test2 stays unread. The lay/Pidgin probe
 set is written before any measurement, because register is the one user-facing gap no harness
 has ever looked at.
+
+## 2026-10-15 — F0: a semantic arm that helps the users we under-sample and loses on the sets we gate on
+
+The static embedding arm did what a semantic signal should, in the places where one should help.
+Vocabulary-mismatch questions went up on dev, and the lay/Pidgin probes went from 0.650 to 0.750.
+It also cost precise lexical hits on frozen-10 and on cross-document questions. Dev netted to zero
+and frozen-10 lost two, so the gate set in advance declined it, and test2 stayed sealed. A null arm
+that reproduces S on 35 of 35 questions shows the decline isn't a wiring fault.
+
+Two things are worth keeping. First, the gated sets and the users are not the same distribution.
+The one direction that improved is the one the curated sets barely contain, which is exactly why
+the probes were written before measuring, and why they can't now be promoted to a gate after the
+fact. Second, the display trim is a hidden coupling. Any arm that picks chunks for reasons other
+than TF-IDF overlap gets its picks hidden by a per-hit TF-IDF floor. A future semantic arm has to
+budget for a display change, not just a retrieval change.
+
+That closes E → G → F. Four retrieval upgrades have now been measured against strict gates set in
+advance, and only one shipped (E4a). That isn't failure. The gates are the reason the shipped
+system's numbers can be believed.
