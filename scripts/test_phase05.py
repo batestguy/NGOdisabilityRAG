@@ -171,7 +171,9 @@ check("config-has-dark-sidebar", "[theme.dark.sidebar]" in toml)
 check("config-base-light", 'base = "light"' in toml)
 check("config-widget-border", "showWidgetBorder = true" in toml)
 check("config-sidebar-border", "showSidebarBorder = true" in toml)
-check("config-text-light", "#1F2328" in toml)
+# H2 (2026-10-15): #1F2328 -> #0d1117 on purpose; Streamlit's 60% caption tint of
+# #1F2328 was 4.24:1 on white (axe color-contrast, fails AA). See config.toml.
+check("config-text-light", "#0d1117" in toml and "#1F2328" not in toml)
 check("config-text-dark", "#e6edf3" in toml)
 check("config-no-remote-fonts", "fonts.googleapis" not in toml
       and "fonts.google.com" not in toml)
@@ -253,7 +255,9 @@ check("stacking-important", "position: relative !important" in css_plain
       and "z-index: 1 !important" in css_plain)
 check("sidebar-above-main-context",
       "section[data-testid='stSidebar']" in css_full
-      and "z-index: 2 !important" in css_full)
+      # H2 (2026-10-15): 2 -> 999991, above Streamlit's header (999990) as well
+      # as the main context (1); at 2 the header covered the sidebar close button.
+      and "z-index: 999991 !important" in css_full)
 check("sidebar-bg-important", "#f6f8fa !important" in css_full
       and "#010409 !important" in css_full)
 check("theme-watch-helper", "def theme_watch_html" in src
@@ -276,6 +280,30 @@ check("font-still-system-sans", 'font = "sans-serif"' in toml
 # Base CSS before the HC gate still token-only (scrims live after the gate):
 check("css-base-still-token-only-2", not hex_re.search(fn_src[:gate]),
       str(hex_re.findall(fn_src[:gate])[:5]))
+# H2 (2026-10-15, geometry pass): behind the open drawer (< 768 px) the page is
+# hidden INCLUDING descendants -- Streamlit's markdown wrapper re-declares
+# visibility:visible and escaped a parent-only rule (banner + answer stayed
+# readable behind the drawer). tools/a11y_audit break-test drawer_descendant_leak.
+check("drawer-hides-main-descendants",
+      "[aria-expanded='true'])\n    section.stMain *," in css_plain
+      and "[aria-expanded='true'])\n    [data-testid='stBottom'] *" in css_plain)
+# H2 (2026-10-15, keyboard pass, WCAG 2.4.7): Chrome makes the main scroll
+# container a tab stop; it had no focus indicator. currentColor keeps the base
+# block colour-free (the token-only check above still holds).
+# H2 (2026-10-15, contrast-over-image pass, WCAG 1.4.3): the .block-container
+# scrim never reached the photo (the watermark is emitted inside it). The scrim
+# rides on each top-level column block instead, skipping the watermark's own
+# block; HC pins the same blocks black. tools/a11y_audit --mode=contrast.
+check("column-blocks-scrimmed-above-photo",
+      "> :not(:has(.drlca-watermark)) { position: relative;\n"
+      "  background-color: rgba(255, 255, 255, 0.88); }" in css_full
+      and "body.drlca-dark .block-container > [data-testid='stVerticalBlock']"
+      in css_full
+      and "body:has(.drlca-hc-on) .block-container > [data-testid='stVerticalBlock']"
+      in css)
+check("scroll-container-focus-visible",
+      "[data-testid='stAppScrollToBottomContainer']:focus-visible" in css_plain
+      and "outline: 3px solid currentColor !important" in css_plain)
 
 # 14. Phase 10 C: the multi-turn chat UI ---------------------------------------
 # src/chat.py was built and measured headless in Phase B (+0.107 strict recall
