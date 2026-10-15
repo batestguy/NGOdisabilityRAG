@@ -232,6 +232,8 @@ artifact (10/10 relevant, Phase G 2026-10-15). Don't tune the yardstick to make 
 ## Working conventions
 
 - Work the active playbook in `docs/phases/` in order; each defines its own exit criteria.
+  **ACTIVE: post-launch roadmap — `docs/phases/16_post_launch_roadmap.md`, next H0 (CI).**
+  Everything below in this bullet is history up to launch (2026-10-15).
   **Phase D is COMPLETE and MERGED — D0–D6 DONE 2026-09-19, merged to `main` and deployed the
   same day (`8682869`, merge of `phase10/corpus-v2`).**
   `CORPUS_VERSION = "v2"` is the default (`src/rag.py:48`); v1 is retired as the default but
@@ -240,7 +242,7 @@ artifact (10/10 relevant, Phase G 2026-10-15). Don't tune the yardstick to make 
   **Pushing to `main` auto-deploys to Render and real users — that decision is ALWAYS the
   user's, never yours.** Phase D's merge was authorised explicitly on 2026-09-19; that
   authorisation covered that merge and does not carry forward to the next one.
-  **ACTIVE: Phase E — `docs/phases/13_retrieval_quality.md`.**
+  **Phase E (closed 2026-09-24) — `docs/phases/13_retrieval_quality.md`.**
   **E1 is DONE 2026-09-20 — `3d280fb` (measure-only) + `9748086` (shipped `k=4/doc, top_n=12`).
   Held-out `test` strict recall 0.471 → 0.529, dev 0.473 → 0.573, frozen-10 0.633 → 0.734, false
   refusals still 0/10 · 0/25 · 0/17, `MIN_SCORE` untouched. Zero Gemini calls.**

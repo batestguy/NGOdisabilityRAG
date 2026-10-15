@@ -1,5 +1,14 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-15)
 
+> **■ 2026-10-15 (post-launch): POST-LAUNCH ROADMAP WRITTEN → `docs/phases/16_post_launch_roadmap.md`. NEXT: H0 (CI).**
+> * Assessment in one line: the system is live, $0, offline by default and rigorously evaluated, but it isn't complete. There's no CI before
+>   auto-deploy, no assistive-tech testing, no legal-expert review, no offline off-topic refusal, the NGO DB sits at the 10-org
+>   minimum with no filter/sort, there are no local languages and no real-user signal.
+> * Order: **H0 CI → H1 bugs (relative 'that', duplicate excerpt) → H2 a11y → H3 NGO → H4 off-topic guard → H6 expert review
+>   (start in parallel, owner time) → H5 languages → H7 user signal → H8 corpus + maintainability.** Each step has its gate written in advance.
+> * Docs only, written on branch `phase11/roadmap` (local commit, not merged, not pushed). Zero quota spent.
+> * **Any push to `main` redeploys to real users. Ask the user first, every time.**
+
 > **■ 2026-10-15 (deploy): cl.12 / cl.20 OCR slips fixed and verified by Jerry (A103 / A105). DEPLOY AUTHORISED BY THE USER.**
 > * cl.12(3) fine `N1,0o0` → `N1,000`; cl.20 `selivere` → `is delivered`. Same corrections file. Every metric and
 >   the eval_phase06 digest are unchanged, and `V2_CORPUS_SHA256` is re-pinned to `1fbbbcda…`. Captures: `runs\ocr1220_after\`.

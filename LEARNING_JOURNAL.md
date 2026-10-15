@@ -3301,3 +3301,26 @@ nothing about disability on its own, and the chat prompt didn't bridge it. The l
 selection rule. Probes whose clause wasn't in context were excluded *before* spending, because
 refusing those is the correct behaviour. Ten calls went only to the questions that could actually
 fail.
+
+## 2026-10-15 — post-launch: what "complete" means
+
+Launch closed the E → G → F order, so the obvious next question is "more retrieval?" The record says no,
+at least not yet. Four rounds of lexical and static-semantic levers (E2a BM25, E3a corpus synonyms, E4a
+OOV bridge, F0 static embeddings) produced one ship worth +2 test questions. The levers that remain,
+dense retrieval and a fine-tune, were both deferred to "post-launch query logs", and nothing collects
+those logs. More retrieval work today would be tuning against the same curated sets that F0 showed
+under-sample the users most likely to struggle.
+
+So the roadmap (`docs/phases/16_post_launch_roadmap.md`) ranks **credibility** above capability. A CI
+gate comes first, because a push to `main` deploys whether or not anyone ran the suites. Real
+assistive-tech testing comes next: accessibility is a spec requirement, but it has only ever been
+asserted in code, never tested with NVDA, a keyboard-only run or a live microphone. A lawyer's read
+starts in parallel, because every "correct" in this repo so far is a ref match or an LLM judge, and
+neither one can tell you whether the advice is right.
+
+The other finding worth keeping is that the default path has no off-topic refusal at all. That's
+known, and it follows from the inverted cosine bands, so the fix has to be a **separate signal**
+with a pre-declared no-new-false-refusals gate, never a higher `MIN_SCORE`. The same discipline as
+Phase E applies: blind sets authored before measuring, a gate fixed in advance, and decline if it
+fails. Credibility work doesn't relax the rigour. It points the rigour at the questions a user would
+actually ask: is it safe to deploy, can I use it, and is it right?
