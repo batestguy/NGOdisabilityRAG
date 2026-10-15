@@ -316,7 +316,7 @@ artifact (10/10 relevant, Phase G 2026-10-15). Don't tune the yardstick to make 
   **F0 MEASURED AND DECLINED 2026-10-15 → PHASE F CLOSED** (frozen-10 −2 q, dev net 0; test2 unread;
   harness archived on `phase10/f0-static` `27ed13d`, not on `main`; lay/Pidgin probes +0.100 is a
   post-launch lead only). **All phases done. G6 generator-refusal probe DONE 2026-10-15** (10/10 answered, 0 refusals, 0
-  fabricated tags; CD1.t2 narrowed to the chat path). **NEXT: the user's deploy decision** (and their cl.12/cl.20 call).
+  fabricated tags; CD1.t2 narrowed to the chat path). cl.12/cl.20 OCR slips fixed and verified (Jerry). **DEPLOYED 2026-10-15 on the user's authorisation** (see Deploy below).
   ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level lexical signal
   failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to differ in kind.
   A static-embedding blend is **also term-level association** — **E4's ship gate should be strict
@@ -361,7 +361,7 @@ artifact (10/10 relevant, Phase G 2026-10-15). Don't tune the yardstick to make 
 - No LangChain — orchestration is custom `src/`. Justify any framework change in the
   learning journal.
 - Deploy: Render free tier auto-deploys on push to `main`
-  (https://ngodisabilityrag.onrender.com). **DEPLOYMENT IS DEFERRED (user, 2026-09-23):** there are no active users yet, and the app will be deployed only once all phases are built and the user is satisfied. Local `main` now runs **ahead of `origin/main`** — E4a is merged locally (`f846ee9`), NOT pushed, NOT deployed. **Do not push `main`** until the user says to deploy; the live site still serves the E1b build.
+  (https://ngodisabilityrag.onrender.com). **DEPLOYED 2026-10-15 on the user's explicit authorisation**, after all phases (E → G → F) and the three verified clause corrections: E4a bridge, `cite-strict-v3` prompts, the drift fix and the corpus corrections are now live. *(Deployment had been deferred since 2026-09-23.)* **The 2026-10-15 authorisation covered that push only. Every later push to `main` deploys to real users and is still the user's call, every time.**
   The site URL itself is unchanged: `GOOGLE_API_KEY` is a Render env var — never
   committed. Free instances sleep after 15 min idle (~1 min wake); a slow first load is
   normal, not breakage.

@@ -1,5 +1,5 @@
 {
- "_doc": "Verified text corrections applied by scripts/parse_act_v2.py AFTER clause location, to OCR text that is not law text at all. Each entry must match the parsed clause text EXACTLY ONCE or the parse fails. Each entry carries its evidence and must be signed in verified_by by a human who read the gazette scan. This file is NOT for OCR quirks (joined words, o-for-0, section numbering): CLAUDE.md forbids cleaning those up. It is for text the OCR invented.",
+ "_doc": "Verified text corrections applied by scripts/parse_act_v2.py AFTER clause location. Each entry must match the parsed clause text EXACTLY ONCE or the parse fails. Each entry carries its evidence and must be signed in verified_by by a human who read the gazette scan. Scope: (1) text the OCR invented or lost (show-through, garbled words); (2) OCR errors inside a LEGAL AMOUNT a user could misread (user decision 2026-10-15). NOT for joined words or section numbering: CLAUDE.md forbids cleaning those up, so each find/replace touches only the corrupted span and leaves joins as they are.",
  "corrections": [
   {
    "clause": 1,
@@ -11,6 +11,28 @@
    "evidence": "data/raw/disability_act_2018_gazette_FGP.pdf, PDF page 5 (printed A101), clause 1(1), lines 1-3. v1's web transcription (data/processed/disability_act_2018_full.txt:88) independently reads 'on the ground of his disability'.",
    "transcribed_by": "Claude Code, 2026-10-15, from a 150-dpi render of PDF page 5",
    "verified_by": "Jerry, 2026-10-15, against the gazette scan PDF p.5 (A101)"
+  },
+  {
+   "clause": 12,
+   "pdf_page": 7,
+   "gazette_page": "A103",
+   "find": "afineofN1,0o0foreachday",
+   "replace": "afineofN1,000foreachday",
+   "cause": "OCR read the middle zero of a fine amount as the letter o. Legal amount, so it is corrected (user decision 2026-10-15). The surrounding joined words are left as they are.",
+   "evidence": "data/raw/disability_act_2018_gazette_FGP.pdf, PDF page 7 (printed A103), clause 12(3), last line: 'a fine of N1, 000 for each day of default'.",
+   "transcribed_by": "Claude Code, 2026-10-15, from a 220-dpi render of the lower half of PDF page 7",
+   "verified_by": "Jerry, 2026-10-15, against the gazette scan PDF p.7 (A103)"
+  },
+  {
+   "clause": 20,
+   "pdf_page": 9,
+   "gazette_page": "A105",
+   "find": "multipledisabilities,selivere in",
+   "replace": "multipledisabilities, is delivered in",
+   "cause": "OCR garbled 'is delivered' into 'selivere', which drops the verb of the clause's only sentence. The surrounding joined words are left as they are.",
+   "evidence": "data/raw/disability_act_2018_gazette_FGP.pdf, PDF page 9 (printed A105), clause 20, line 2: '...with multiple disabilities, is delivered in the most appropriate language...'.",
+   "transcribed_by": "Claude Code, 2026-10-15, from a 150-dpi render of PDF page 9",
+   "verified_by": "Jerry, 2026-10-15, against the gazette scan PDF p.9 (A105)"
   }
  ]
 }
