@@ -3,7 +3,9 @@
 > **■ 2026-10-15 (deploy): cl.12 / cl.20 OCR slips fixed and verified by Jerry (A103 / A105). DEPLOY AUTHORISED BY THE USER.**
 > * cl.12(3) fine `N1,0o0` → `N1,000`; cl.20 `selivere` → `is delivered`. Same corrections file. Every metric and
 >   the eval_phase06 digest are unchanged, and `V2_CORPUS_SHA256` is re-pinned to `1fbbbcda…`. Captures: `runs\ocr1220_after\`.
-> * `main` pushed to `origin` → Render deploy. The live smoke result is in STATUS.
+> * **DEPLOYED (`ab5a0b6`) and live-smoked: PASS.** Helplines first, legal tags identical to local, cl.1 corrected text live, NGO lookup helplines-first.
+> * Post-launch leads: chat-path refusal probes (CD1.t2 class), relative-'that' contextualisation, register-routed static arm (F0 probes).
+> * **Any further push to `main` redeploys. Ask the user first.**
 
 > **■ 2026-10-15 (last): G6 GENERATOR-REFUSAL PROBE DONE: 10/10 ANSWERED, 0 REFUSALS, 0 FABRICATED TAGS.**
 > * **Spend, Pacific day 2026-10-14: flash 19 (G4 9 + G6 10), flash-lite 7.** Flash has 1 left until 08:00 WAT.
