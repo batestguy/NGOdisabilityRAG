@@ -3301,3 +3301,42 @@ nothing about disability on its own, and the chat prompt didn't bridge it. The l
 selection rule. Probes whose clause wasn't in context were excluded *before* spending, because
 refusing those is the correct behaviour. Ten calls went only to the questions that could actually
 fail.
+
+## 2026-10-15 — post-launch: what "complete" means
+
+Launch closed the E → G → F order, so the obvious next question is "more retrieval?" The record says no,
+at least not yet. Four rounds of lexical and static-semantic levers (E2a BM25, E3a corpus synonyms, E4a
+OOV bridge, F0 static embeddings) produced one ship worth +2 test questions. The levers that remain,
+dense retrieval and a fine-tune, were both deferred to "post-launch query logs", and nothing collects
+those logs. More retrieval work today would be tuning against the same curated sets that F0 showed
+under-sample the users most likely to struggle.
+
+So the roadmap (`docs/phases/16_post_launch_roadmap.md`) ranks **credibility** above capability. A CI
+gate comes first, because a push to `main` deploys whether or not anyone ran the suites. Real
+assistive-tech testing comes next: accessibility is a spec requirement, but it has only ever been
+asserted in code, never tested with NVDA, a keyboard-only run or a live microphone. A lawyer's read
+starts in parallel, because every "correct" in this repo so far is a ref match or an LLM judge, and
+neither one can tell you whether the advice is right.
+
+The other finding worth keeping is that the default path has no off-topic refusal at all. That's
+known, and it follows from the inverted cosine bands, so the fix has to be a **separate signal**
+with a pre-declared no-new-false-refusals gate, never a higher `MIN_SCORE`. The same discipline as
+Phase E applies: blind sets authored before measuring, a gate fixed in advance, and decline if it
+fails. Credibility work doesn't relax the rigour. It points the rigour at the questions a user would
+actually ask: is it safe to deploy, can I use it, and is it right?
+
+## 2026-10-15 — H0: the runtime requirements were already the CI requirements
+
+The playbook expected CI might need `requirements-ci.txt` (runtime plus whatever the suites import
+beyond it), and possibly to drop suites that read gitignored artifacts. Neither was needed. A fresh
+clone into a clean venv with only `requirements.txt` passes all six offline suites and the boot
+import. The reason is a design choice made back in Phase 07: the corpus ships prebuilt as committed
+TXT/JSON and the OOV bridge as a committed artifact. So nothing a suite reads is built at test time,
+and nothing it needs lives in `runs\`. That choice was made to keep the Render cold start cheap, and
+here it pays a second time, because the CI machine is the same "fresh box with the slim runtime"
+that Render is. The useful consequence is that a green CI run is also a weak proof that the deploy
+image can import and serve the offline path, which a heavier CI install would not have shown.
+
+I checked this by running it, not by reading imports. Reading would have flagged `bench_phase01`'s
+use of `load.py` (the OCR-repair module) as a possible heavy dependency; it only needs `re` and `difflib`.
+
