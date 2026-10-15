@@ -311,7 +311,9 @@ artifact (10/10 relevant, Phase G 2026-10-15). Don't tune the yardstick to make 
   default OFF; results in `docs/phases/14_generation_eval.md` G5). **Act cl. 1 fix DONE, verified by Jerry and merged
   locally from `phase10/act-cl1-fix`** (show-through, corrected via `data/processed/act2018_v2_corrections.json`;
   re-measured, shipping numbers unchanged). `parse_act_v2.py` now defaults to `--body-from=5`, which is what the shipped artifact was
-  built with. Then F.
+  built with. **PHASE F RE-EXAMINED 2026-10-15 → `docs/phases/15_phase_f_reexamined.md`** (M4 superseded;
+  F0 = offline static-embedding arm, dev-only, strict a-priori gate; F2 fine-tune only after launch).
+  **NEXT: F0.**
   ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level lexical signal
   failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to differ in kind.
   A static-embedding blend is **also term-level association** — **E4's ship gate should be strict

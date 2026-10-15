@@ -446,6 +446,11 @@ subsection split · false-refusal not worse than v1 · `act_ref` validator agree
 
 ### M4 — Fine-tune on free GPU, and distil the offline tier
 
+> **SUPERSEDED 2026-10-15 by [`15_phase_f_reexamined.md`](15_phase_f_reexamined.md).** M2 was declined,
+> so both M4 deliverables lost their premise. Phase F is now: measure an off-the-shelf static table
+> (F0, dev-only, strict gate) → port (F1) → optional fine-tune after launch (F2). Do not execute
+> the text below.
+
 > **⚠ RE-EXAMINE BEFORE SCHEDULING — recorded 2026-09-19, not yet resolved.**
 > M4 (= Phase F) is standing on the same wall that superseded `08_retrieval_upgrades.md` steps
 > 4/5: **Colab gives free *training*; it does not give free *serving*.** A fine-tuned transformer

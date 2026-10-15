@@ -1,5 +1,14 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-15)
 
+> **■ 2026-10-15 (latest): PHASE F RE-EXAMINED, PLAYBOOK `docs/phases/15_phase_f_reexamined.md`. NEXT: F0.**
+> * M4 as written is dead: M2 was declined, so there's no dense arm to beat or distil from, and a
+>   transformer can't be served. What survives is an **offline static embedding table** (numpy-only).
+> * **F0** (dev-only, zero quota): control → `pip install model2vec` (drlca-rag only) → author
+>   `register_probes.json` (lay + Pidgin) BEFORE measuring → reach → RRF selection arm. The gate is
+>   fixed in the playbook. **If dev fails, decline without reading test2 and close F.**
+> * F2 (fine-tune) is recommended only after launch, on real query logs.
+> * Pre-launch, not F: a generator-refusal probe set (~10 calls) for the CD1.t2 class.
+
 > **■ 2026-10-15 (later): ACT CL. 1 FIX VERIFIED (Jerry) AND MERGED TO LOCAL `main`. NOT PUSHED. NEXT: PHASE F (re-examine M4 first).**
 > *(The sign-off steps below are done: the flag is `CORRECTED`, the corpus sha is unchanged at `c4f7cfbb…`, and AUDIT PASS.)*
 > * The cause is show-through of the reverse page, not rotation. The corrected 1(1) reads: "A person with

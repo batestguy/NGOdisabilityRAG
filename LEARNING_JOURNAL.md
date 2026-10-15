@@ -3256,3 +3256,18 @@ output, not by reading its docstring.**
 The re-measure ran every Phase E harness before and after. Shipping recall, false refusals and
 calibration didn't move. The OOV bridge got slightly cleaner, because the garbage tokens had been
 valid bridge targets for Chinese and Spanish words.
+
+## 2026-10-15 — Phase F re-examined: the plan outlived both of its premises
+
+M4 was written when M2, a Gemini dense arm, looked likely. Its two deliverables, "beat M2" and
+"distil tier 2 from the dense arm", were both defined relative to that arm. E5.6 declined M2 for
+launch, so M4 had been measuring against something that no longer exists. Re-reading the plan
+before scheduling it, as the 2026-09-19 box asked, was the whole value of this session.
+
+The part that survives is the one that already met the serving constraint: a static embedding
+table, which is a numpy lookup with no new runtime package and no network call. The rewrite
+measures an off-the-shelf table first and fine-tunes only if that table earns it, because a
+fine-tune can't rescue a signal that has no reach. It keeps E's discipline: the gate is fixed in
+advance, the test is dev-only, and a dev failure means test2 stays unread. The lay/Pidgin probe
+set is written before any measurement, because register is the one user-facing gap no harness
+has ever looked at.
