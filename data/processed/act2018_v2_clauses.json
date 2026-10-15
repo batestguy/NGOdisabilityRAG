@@ -136,9 +136,11 @@
     7,
     8
    ],
-   "flags": [],
+   "flags": [
+    "CORRECTED_UNVERIFIED"
+   ],
    "title_ratio": 1.0,
-   "text": "12.\u2014-(1) At public parking lots, suitable spaces shall be properly marked andreservedforpersonswith disabilities. (2) For a personwith disability to be entitled to the use of the reserved space in subsection (1), his car shall have been properly identified with the necessary insignia. (3) A person, organisation or corporate body in control of a public parking lot who failstoprovidefor the reserved spaces in subsection (1),commits an offenceandisliableonconvictiontoafineofN1,0o0foreachdayofdefault. (4)Apersonwithout disabilitywhoparks avehicle in thereserved space in subsection (1), commits an offence and is liable on conviction to a fine of N5,000. (5) A person who intentionally obstructs the reserved space in subsection (l) commits an offence and is liable on conviction to a fine of N5,000. (6) Subsection (4) does not apply ifa person with disability is a passenger in the vehicle."
+   "text": "12.\u2014-(1) At public parking lots, suitable spaces shall be properly marked andreservedforpersonswith disabilities. (2) For a personwith disability to be entitled to the use of the reserved space in subsection (1), his car shall have been properly identified with the necessary insignia. (3) A person, organisation or corporate body in control of a public parking lot who failstoprovidefor the reserved spaces in subsection (1),commits an offenceandisliableonconvictiontoafineofN1,000foreachdayofdefault. (4)Apersonwithout disabilitywhoparks avehicle in thereserved space in subsection (1), commits an offence and is liable on conviction to a fine of N5,000. (5) A person who intentionally obstructs the reserved space in subsection (l) commits an offence and is liable on conviction to a fine of N5,000. (6) Subsection (4) does not apply ifa person with disability is a passenger in the vehicle."
   },
   {
    "n": 13,
@@ -225,9 +227,11 @@
    "pages": [
     9
    ],
-   "flags": [],
+   "flags": [
+    "CORRECTED_UNVERIFIED"
+   ],
    "title_ratio": 1.0,
-   "text": "20.Government shall ensure that the education of persons with disabilities, particularlychildren,whoareblind,deaforwithmultipledisabilities,selivere in the most appropriate language,mode and means of communication for the individual,and in environments which maximise academic and social development."
+   "text": "20.Government shall ensure that the education of persons with disabilities, particularlychildren,whoareblind,deaforwithmultipledisabilities, is delivered in the most appropriate language,mode and means of communication for the individual,and in environments which maximise academic and social development."
   },
   {
    "n": 21,

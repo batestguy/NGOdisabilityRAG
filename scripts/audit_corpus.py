@@ -145,7 +145,10 @@ V1_CORPUS_SHA256 = "25650238c3f2daf0523297680b41b3bd2318425c9690d9fa8a1e1caf1b42
 # text via data/processed/act2018_v2_corrections.json; that is the ONLY chunk
 # text that moved (parse_act_v2.py re-run, 57/58 clauses byte-identical).
 # Old value: 56e3e434cdfe7cf09fc28caeed337629d3fb3263d45071097929be2e76b9cef4
-V2_CORPUS_SHA256 = "c4f7cfbbb0d09902bdb0db0d122fd718a6e9e0cf1200e74ecad55367e481c8eb"
+# RE-PINNED AGAIN 2026-10-15: cl.12(3) fine 'N1,0o0' -> 'N1,000' and cl.20 'selivere' ->
+# 'is delivered' (same corrections file; only those two spans moved; every metric and the
+# eval_phase06 digest unchanged). Previous value: c4f7cfbbb0d09902bdb0db0d122fd718a6e9e0cf1200e74ecad55367e481c8eb
+V2_CORPUS_SHA256 = "1fbbbcda2359ae335e139f9aee4bf3adea63bbd565aba753f9a7035b22f04b7a"
 
 
 def corpus_sha256(docs: dict[str, list]) -> str:
