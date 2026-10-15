@@ -90,4 +90,23 @@ F is **closed** when either (a) F0 is declined and the decline is recorded with 
 the deploy decision goes to the user.** Every phase in the E → G → F order will be done.
 
 ## Results
-*(empty, F0 not started)*
+
+### F0 pre-measurement amendment (2026-10-15, written and committed before any F0 number)
+Fixed while reading the harness code, before measuring:
+* **The gated metric is budget-matched by construction.** `recall_strict` (`ablate_oov_bridge.measure`)
+  scores all 12 `select_top` hits *before* the display's per-hit `MIN_SCORE` trim. Arm D swaps
+  *which* 4 chunks each doc contributes, so both arms score exactly 12. The E1b "more chunks
+  inflates recall" trap can't apply to the gate.
+* **Arm D, exactly:** the TF-IDF side is the shipping effective query (hand map + OOV bridge, both
+  expansion gates), ranked over each doc's whole index. The static side is the **raw user
+  query** (no expansion) embedded by `potion-base-8M`, with cosine against each chunk's embedding,
+  per doc. Per doc, RRF `1/(60+r_tfidf) + 1/(60+r_static)`, top 4, ties broken by TF-IDF rank.
+  Each Hit keeps its **TF-IDF** score.
+* **Refusal is S's decision, verbatim.** D refuses iff S refuses, computed on S's hits. Refusal
+  invariance therefore holds by construction. The 0/212 requirement is met by the identity, and
+  the harness asserts it per row rather than re-running `calibrate_refusal`.
+* **Shown-on-page (report-only):** D's 12 after the current per-hit TF-IDF trim (what today's
+  display would render), and the untrimmed 12. If a gain lives only in the untrimmed set, F1
+  would need a display change. That is a finding to record, not a reason to re-gate.
+* **Reach:** dev questions where S misses an expected ref and the static-only per-doc top-4
+  contains it.
