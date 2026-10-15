@@ -278,3 +278,18 @@ Retired as descriptions of the current system: `reverse_rel 0.630` and its 0.852
 current is 0.633 / 0.767, judge-arbitrated) and the fixA2 per-question verdicts.
 **Phase G is CLOSED. Next, before launch: the Act cl. 1 re-extraction** (verified, human-signed,
 then an OOV-bridge rebuild and a full re-measure). **Then F** (M4, re-examine before scheduling).
+
+### G6 — Post-G generator-refusal probe (pre-declared 2026-10-15, committed BEFORE any call)
+**Why:** G4's exploratory CD1.t2 refusal. `calibrate_refusal` measures only the retrieval floor.
+**Set:** `scripts/probe_gen_refusal.py` selects, offline, the register probes whose expected Act
+clause is in the **prompt context** (`ask()`'s trimmed hits). The dry run selected 10: P01 P04 P05
+P07 P08 P10 P11 P13 P14 P17 (8 Pidgin, 2 lay). Single-turn `ask()`, `cite-strict-v3`,
+`gemini-2.5-flash`, no failover, no cache. **Quota:** ≤ 10 flash on Pacific day 2026-10-14, which
+already had flash 9 / flash-lite 7, so 11 flash are left and 1 is in reserve.
+**Measures:** (1) LLM-layer refusals with the clause in context; (2) tags not `number_ok`
+(fabrication). PENDING rows are reported as PENDING.
+**Decision rule (fixed now):** 0–1 refusals → the G5 launch reading stands ("recommendable, still
+opt-in"). **≥ 2 → downgrade** to "opt-in, with a known conservative-refusal defect listed beside it",
+and queue a prompt revision. A revision needs a fresh G2/G4 validation, so it is **not** tuned in
+this run. Any unretrieved tag → the expander is listed with a fabrication defect, whatever the count.
+Default OFF either way.
