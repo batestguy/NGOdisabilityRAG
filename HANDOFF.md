@@ -1,5 +1,12 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-15)
 
+> **■ 2026-10-15 (last): G6 GENERATOR-REFUSAL PROBE DONE: 10/10 ANSWERED, 0 REFUSALS, 0 FABRICATED TAGS.**
+> * **Spend, Pacific day 2026-10-14: flash 19 (G4 9 + G6 10), flash-lite 7.** Flash has 1 left until 08:00 WAT.
+> * The launch reading stands: the AI expander is recommendable, still opt-in, default OFF. CD1.t2 is narrowed to the
+>   **chat path** (an elliptical turn under `chat-cite-strict-v2`); single-turn lay/Pidgin answers correctly.
+> * **Everything is built and measured. The only open items are the user's:** cl.12 `N1,0o0` / cl.20 `selivere`
+>   (corrections file + sign-off), and **the deploy decision. Do not push `main` until they say so.**
+
 > **■ 2026-10-15 (final): F0 DECLINED, SO PHASE F IS CLOSED. ALL PHASES (E → G → F) ARE DONE. ZERO QUOTA.**
 > * Static-embedding arm: frozen-10 0.734 → 0.676 (−2 q), dev 0.613 → 0.620 (net 0). The gate needed
 >   dev ≥ +2 and frozen-10 0 down. **test2 was not read.** The harness is sound (a null arm reproduces

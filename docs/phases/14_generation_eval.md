@@ -293,3 +293,16 @@ opt-in"). **≥ 2 → downgrade** to "opt-in, with a known conservative-refusal 
 and queue a prompt revision. A revision needs a fresh G2/G4 validation, so it is **not** tuned in
 this run. Any unretrieved tag → the expander is listed with a fabrication defect, whatever the count.
 Default OFF either way.
+
+**G6 RESULTS — 2026-10-15 (run ~02:30 UTC, Pacific day 2026-10-14). SPENT: flash 10. Day total: flash 19 / flash-lite 7.**
+`scripts/probe_gen_refusal_cite-strict-v3_2026-10-15.json`: **10/10 answered, 0 LLM-layer refusals,
+0 unretrieved tags** (every tag `number_ok`), nothing PENDING. **By the pre-declared rule, the G5
+launch reading stands: the AI expander is "recommendable, still opt-in", default OFF.**
+P01 ("Dem fit sack me for work because say I dey use wheelchair?") is answered from `[Act cl. 28]`
+plus the damages, the same evidence CD1.t2 refused over. Pidgin questions get correct English
+answers (P08 queues → cl. 26, P13 certificate → cl. 22).
+**What this narrows, and what it doesn't.** The generator doesn't refuse in-context, lay-register
+single-turn questions. So CD1.t2 isn't a general threshold problem. It sits in the **chat path**:
+an elliptical turn ("so can they fire me?") that carries no disability term, under
+`chat-cite-strict-v2`. That path is **not covered by G6** and stays listed as one known
+conservative refusal beside the expander. A chat-path probe set is the post-launch follow-up.

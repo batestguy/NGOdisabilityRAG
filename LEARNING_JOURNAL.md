@@ -3290,3 +3290,14 @@ budget for a display change, not just a retrieval change.
 That closes E → G → F. Four retrieval upgrades have now been measured against strict gates set in
 advance, and only one shipped (E4a). That isn't failure. The gates are the reason the shipped
 system's numbers can be believed.
+
+## 2026-10-15 — G6: the refusal was the conversation's, not the generator's
+
+The worry was that the strict prompt refuses whenever the law doesn't use the user's exact words.
+Ten single-turn lay and Pidgin questions, each with its clause verified in context before any
+call, were all answered and all cited correctly, including the Pidgin form of "can they sack me
+for my wheelchair". So CD1.t2's refusal came from the conversation: "so can they fire me?" says
+nothing about disability on its own, and the chat prompt didn't bridge it. The lesson is in the
+selection rule. Probes whose clause wasn't in context were excluded *before* spending, because
+refusing those is the correct behaviour. Ten calls went only to the questions that could actually
+fail.

@@ -315,8 +315,8 @@ artifact (10/10 relevant, Phase G 2026-10-15). Don't tune the yardstick to make 
   F0 = offline static-embedding arm, dev-only, strict a-priori gate; F2 fine-tune only after launch).
   **F0 MEASURED AND DECLINED 2026-10-15 → PHASE F CLOSED** (frozen-10 −2 q, dev net 0; test2 unread;
   harness archived on `phase10/f0-static` `27ed13d`, not on `main`; lay/Pidgin probes +0.100 is a
-  post-launch lead only). **All phases done. NEXT: the generator-refusal probes (~10 calls), then the user's
-  deploy decision.**
+  post-launch lead only). **All phases done. G6 generator-refusal probe DONE 2026-10-15** (10/10 answered, 0 refusals, 0
+  fabricated tags; CD1.t2 narrowed to the chat path). **NEXT: the user's deploy decision** (and their cl.12/cl.20 call).
   ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level lexical signal
   failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to differ in kind.
   A static-embedding blend is **also term-level association** — **E4's ship gate should be strict

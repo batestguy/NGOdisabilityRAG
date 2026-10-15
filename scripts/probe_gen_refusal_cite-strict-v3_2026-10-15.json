@@ -1,0 +1,362 @@
+{
+ "date": "2026-10-15",
+ "prompt_version": "cite-strict-v3",
+ "model": "gemini-2.5-flash",
+ "rows": [
+  {
+   "id": "P01",
+   "lang": "pidgin",
+   "text": "Dem fit sack me for work because say I dey use wheelchair?",
+   "expected": {
+    "act2018": [
+     28
+    ]
+   },
+   "answer": "No, a person with disability has the right to work on an equal basis with others [Act cl. 28]. This includes the right to opportunity to gain a living by work freely chosen or accepted in a labour market and work environment that is open [Act cl. 28]. This also guarantees a person with disability the right to work and earn a living in a labour market/work environment free from hinderances to employment [Factsheet Section 28].\n\nA person who contravenes this commits an offence and is liable on conviction to nominal damages of a minimum of N250,000 payable to the affected person with disability [Act cl. 28]. Where a company contravenes this, the company commits an offence and is liable to nominal damages of a minimum of N500,000 payable to the affected person with disability [Act cl. 28]. Any principal officer of the company involved in the violation is liable to N50,000 damages payable to the affected person with disability [Act cl. 28].\n\nPersons and companies who breach this provision are liable on conviction to nominal damages of a minimum of N250,000 payable to the affected person (when an individual commits the offence) or N500,000 (when a company commits the offence) [Factsheet Section 28]. Principal officers of a company are also liable to pay N50,000 damages to the affected person with disability [Factsheet Section 28].",
+   "refused": false,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "llm_error": null,
+   "cite_check": [
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 28",
+     "number_ok": true
+    }
+   ],
+   "citations": [
+    "Act cl. 28",
+    "Act cl. 28",
+    "Factsheet Section 28",
+    "Act cl. 28",
+    "Act cl. 28",
+    "Act cl. 28",
+    "Factsheet Section 28",
+    "Factsheet Section 28"
+   ]
+  },
+  {
+   "id": "P04",
+   "lang": "pidgin",
+   "text": "My pikin wey deaf, school go dey free for am?",
+   "expected": {
+    "act2018": [
+     17
+    ]
+   },
+   "answer": "A person with disability is entitled to free education up to secondary level [Factsheet Section 17,18]. A person with disability shall have an unfettered right to education without discrimination or segregation in any form [Act cl. 17], and is entitled to free education to secondary school level [Act cl. 17]. For your deaf child, the education of persons with disabilities, especially children, is to be communicated in the most appropriate language and mode, irrespective of whether they are deaf [Factsheet Section 20]. Public schools from primary to tertiary levels are also mandated to be inclusive of and accessible to persons with disabilities, and this includes the incorporation of sign language as part of the curricula [Factsheet Section 17,18].",
+   "refused": false,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "llm_error": null,
+   "cite_check": [
+    {
+     "tag": "Factsheet Section 17,18",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 17",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 17",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 20",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 17,18",
+     "number_ok": true
+    }
+   ],
+   "citations": [
+    "Factsheet Section 17,18",
+    "Act cl. 17",
+    "Act cl. 17",
+    "Factsheet Section 20",
+    "Factsheet Section 17,18"
+   ]
+  },
+  {
+   "id": "P05",
+   "lang": "pidgin",
+   "text": "Dem dey use my blind uncle beg money for roadside, e legal?",
+   "expected": {
+    "act2018": [
+     16
+    ]
+   },
+   "answer": "No, it is not legal. A person shall not employ, use, or involve a person with disability in begging [Act cl. 16]. This also includes parading persons with disabilities in public with the intention of soliciting for alms [Act cl. 16]. A person who contravenes this commits an offence [Act cl. 16] and is liable on conviction to a fine of N100,000 or a term of six months imprisonment or both [Act cl. 16]. Similarly, a person shall not employ, use, or involve a person with disability in begging or parade them in public with the intention of soliciting for alms [Factsheet Section 16]. Persons who violate this are liable on conviction to a fine of N100,000, a term of 6 months imprisonment or both [Factsheet Section 16].",
+   "refused": false,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "llm_error": null,
+   "cite_check": [
+    {
+     "tag": "Act cl. 16",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 16",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 16",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 16",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 16",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 16",
+     "number_ok": true
+    }
+   ],
+   "citations": [
+    "Act cl. 16",
+    "Act cl. 16",
+    "Act cl. 16",
+    "Act cl. 16",
+    "Factsheet Section 16",
+    "Factsheet Section 16"
+   ]
+  },
+  {
+   "id": "P07",
+   "lang": "lay",
+   "text": "Someone who is not disabled keeps parking in the disabled space at the supermarket",
+   "expected": {
+    "act2018": [
+     12
+    ]
+   },
+   "answer": "A person without disability commits an offence if he/she also parks in a reserved space and could pay a fine of N5,000 on conviction [Factsheet Section 12]. A person without disability who parks a vehicle in the reserved space in subsection (1) commits an offence and is liable on conviction to a fine of N5,000 [Act cl. 12]. This does not apply if a person with disability is a passenger in the vehicle [Act cl. 12].",
+   "refused": false,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "llm_error": null,
+   "cite_check": [
+    {
+     "tag": "Factsheet Section 12",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 12",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 12",
+     "number_ok": true
+    }
+   ],
+   "citations": [
+    "Factsheet Section 12",
+    "Act cl. 12",
+    "Act cl. 12"
+   ]
+  },
+  {
+   "id": "P08",
+   "lang": "pidgin",
+   "text": "For bank queue, dem suppose allow me go front?",
+   "expected": {
+    "act2018": [
+     26
+    ]
+   },
+   "answer": "In queues, persons with disabilities shall be given first consideration and, as much as possible, be attended to outside the queue [Act cl. 26].",
+   "refused": false,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "llm_error": null,
+   "cite_check": [
+    {
+     "tag": "Act cl. 26",
+     "number_ok": true
+    }
+   ],
+   "citations": [
+    "Act cl. 26"
+   ]
+  },
+  {
+   "id": "P10",
+   "lang": "pidgin",
+   "text": "Government bus no get ramp, how I go take enter with my chair?",
+   "expected": {
+    "act2018": [
+     10
+    ]
+   },
+   "answer": "Government transport services providers shall make provisions for lifts, ramps and other accessibility aids to enhance the accessibility of their vehicles, parks and bus stop to persons with disabilities including those on wheel chairs [Act cl. 10]. This mandates government providers to make provisions for lifts, ramps and other accessibility aids that enhance the accessibility of their vehicles, parks and bus stops to persons with disabilities [Factsheet Section 10,11].",
+   "refused": false,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "llm_error": null,
+   "cite_check": [
+    {
+     "tag": "Act cl. 10",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 10,11",
+     "number_ok": true
+    }
+   ],
+   "citations": [
+    "Act cl. 10",
+    "Factsheet Section 10,11"
+   ]
+  },
+  {
+   "id": "P11",
+   "lang": "pidgin",
+   "text": "If flood or fighting happen for our area, who go protect disabled people?",
+   "expected": {
+    "act2018": [
+     25
+    ]
+   },
+   "answer": "In all situations of risk, violence, emergencies and the occurrences of natural disasters, the Government shall take all necessary steps to ensure the safety and protection of persons with disabilities taking cognisance of their peculiar vulnerability [Act cl. 25]. This provides for the safety and protection of persons with disabilities in disasters, emergencies, risks or violence by the Government with due regard to their peculiar vulnerabilities [Factsheet Section 25].",
+   "refused": false,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "llm_error": null,
+   "cite_check": [
+    {
+     "tag": "Act cl. 25",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 25",
+     "number_ok": true
+    }
+   ],
+   "citations": [
+    "Act cl. 25",
+    "Factsheet Section 25"
+   ]
+  },
+  {
+   "id": "P13",
+   "lang": "pidgin",
+   "text": "Where I go collect the paper wey show say my sister get mental disability?",
+   "expected": {
+    "act2018": [
+     22
+    ]
+   },
+   "answer": "A Permanent Certificate of Disability for a person with mental disability can be obtained from the Commission [Act cl. 22].",
+   "refused": false,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "llm_error": null,
+   "cite_check": [
+    {
+     "tag": "Act cl. 22",
+     "number_ok": true
+    }
+   ],
+   "citations": [
+    "Act cl. 22"
+   ]
+  },
+  {
+   "id": "P14",
+   "lang": "lay",
+   "text": "What happens to someone who buys a fake disability certificate?",
+   "expected": {
+    "act2018": [
+     23
+    ]
+   },
+   "answer": "A person who unlawfully obtains a Certificate of Disability commits an offence [Act cl. 23]. On conviction, they are liable to a fine of N200,000 or imprisonment for a term of one year or both [Act cl. 23]. Persons who unlawfully issue or obtain a certificate of Disability are liable on conviction to a fine of N200,000, an imprisonment term of one year or both [Factsheet Section 22,23,24].",
+   "refused": false,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "llm_error": null,
+   "cite_check": [
+    {
+     "tag": "Act cl. 23",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 23",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 22,23,24",
+     "number_ok": true
+    }
+   ],
+   "citations": [
+    "Act cl. 23",
+    "Act cl. 23",
+    "Factsheet Section 22,23,24"
+   ]
+  },
+  {
+   "id": "P17",
+   "lang": "pidgin",
+   "text": "My papa deaf, hospital no get person wey sabi sign language to talk with am",
+   "expected": {
+    "act2018": [
+     24
+    ]
+   },
+   "answer": "A public hospital where a person with communicational disabilities is medically attended to shall make provision for special communication [Act cl. 24]. \"Special communication\" includes special means such as sign language for communicating with a person with speech or hearing disability [Act cl. 57].",
+   "refused": false,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "llm_error": null,
+   "cite_check": [
+    {
+     "tag": "Act cl. 24",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 57",
+     "number_ok": true
+    }
+   ],
+   "citations": [
+    "Act cl. 24",
+    "Act cl. 57"
+   ]
+  }
+ ]
+}
