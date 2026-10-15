@@ -2,7 +2,7 @@
 
 > **■ 2026-10-15 (H2): AGENT PART DONE on `phase11/h2-a11y` (not merged, not pushed). OWNER CHECKLIST PENDING → GATE NOT YET MET.**
 > * axe after: **0 serious / 0 moderate / 0 minor**. 9 critical = one Streamlit-internal node (sidebar `aria-expanded`,
->   streamlit#17126, fixed in Streamlit 1.66.0; we pin 1.63.0, so the bump is a separate follow-up). Contrast over the
+>   streamlit#17126, fixed in Streamlit 1.66.0; we pin 1.63.0, so the bump is a separate follow-up — **not free**: 1.66 drops `aria-expanded` from the sidebar, so the H2 CSS selectors and audit.mjs must migrate with it). The node shows wherever the sidebar is open (1280 always; the phone drawer when opened), not only at 1280. Contrast over the
 >   photo 0/152 failing, keyboard clean, geometry clean with break-tests. Lighthouse 94 / 100.
 > * Next (owner): run `docs/accessibility.md` §7 (NVDA, keyboard, mic incl. denied permission, read-aloud) and sign.
 >   H1 is PR #14 (`phase11/h1-bugs`); H2 is cut from H1, so merge H1 first.

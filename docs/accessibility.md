@@ -7,7 +7,7 @@ every new turn" switch stayed OFF for every run.
 **Short version.** The agent-side part is done. axe reports **0 serious, 0 moderate and 0 minor**
 findings across the matrix, plus **one critical rule on one Streamlit-internal node**
 (`aria-allowed-attr` on the sidebar `<section>`). That node cannot be fixed from app code, and
-Streamlit fixed it upstream in 1.66.0 (justified below). The owner checklist at the end is **not
+a fix is available upstream in Streamlit 1.66.0, which DRLCA (pinned at 1.63.0) has not taken (justified below). The owner checklist at the end is **not
 signed yet**, so the H2 exit gate as a whole is **not met** until the owner signs it.
 
 ---
@@ -69,7 +69,9 @@ moderate, 0 minor.**
 * After, the only finding left is `aria-allowed-attr` on the sidebar `<section>`, and only at 1280,
   where the sidebar is open. At 360/768 the sidebar starts collapsed, and the H2 fix takes it out
   of the accessibility tree, so axe no longer sees the node. **Opening the drawer on a phone would
-  surface the same node**, so this is one finding, not a width-specific one.
+  surface the same node**, so this is one finding, not a width-specific one. The matrix does not scan the
+  open-drawer state below 1280; the reviewer scanned it at 360 and 768 (light, help turn) and got the same
+  single `aria-allowed-attr` critical, 0 serious and no new rules. Dark/HC with the drawer open are unscanned.
 
 ### Contrast over the background photo (`--mode=contrast`)
 
@@ -152,7 +154,7 @@ This step (second pass):
 
 | # | Fix | File | Finding it closes |
 |---|---|---|---|
-| 6 | The scrim moves from `.block-container` onto each top-level column block (`position:relative` + the token-derived 0.88 scrim; high contrast pins them black). The block holding the watermark is skipped. | `app.py` `accessibility_css()`, scrim block (`app.py:264-282`) and HC block (`app.py:196-199`) | Root cause: the watermark/veil divs are emitted **inside** `.block-container`, its own stacking context, so they painted *over* its scrim background, and every text in the column sat on the photo. NGO links measured 2.17:1 (light) and 3.56:1 (dark) at the 2nd percentile, 20 of 213 nodes failing. After: 0 of 152 fail (1.4.3). |
+| 6 | The scrim moves from `.block-container` onto each top-level column block (`position:relative` + the same 0.88 rgba literals the old `.block-container` scrim used; high contrast pins them black). The block holding the watermark is skipped. | `app.py` `accessibility_css()`, scrim block (`app.py:264-282`) and HC block (`app.py:196-199`) | Root cause: the watermark/veil divs are emitted **inside** `.block-container`, its own stacking context, so they painted *over* its scrim background, and every text in the column sat on the photo. NGO links measured 2.17:1 (light) and 3.56:1 (dark) at the 2nd percentile, 20 of 213 nodes failing. After: 0 of 152 fail (1.4.3). |
 | 7 | Drawer hide extended to **descendants** (`section.stMain *`, `stBottom *`) | `app.py:117-132` | Streamlit's markdown wrapper declares `visibility:visible`, so the banner and answer text escaped fix 4 and stayed readable behind the drawer (found by the geometry pass) |
 | 8 | Visible focus ring (`outline: 3px solid currentColor`) on the main scroll container | `app.py:142-150` | Chrome makes that scroll region a tab stop, and it had no focus indicator (2.4.7, keyboard pass) |
 
@@ -160,9 +162,12 @@ This step (second pass):
 margins and in the gaps between blocks, but no longer behind text. This is what the Phase 05
 scrim comment always said it did. The owner should look at it on the live site before merging.
 
-Three asserts were added to `scripts/test_phase05.py` (140 → 143), one per new rule. No colour
+Three asserts were added to `scripts/test_phase05.py` (140 → 143), one per new rule. **They are string
+matches: they prove the rule text exists, not that it works** (that is how the original scrim went
+unnoticed). The behavioural proof is `tools/a11y_audit`, which is not in CI, so 143/143 is not evidence
+that the scrim, drawer hide or focus ring render. No colour
 moved out of `config.toml`. The new rules either carry no colour literal (fixes 7, 8) or sit after
-the high-contrast gate with the existing token-derived scrims (fix 6), so the "base CSS is
+the high-contrast gate and reuse the existing scrim rgba literals (fix 6), so the "base CSS is
 token-only" assert still holds. Layout stays linear: no `st.columns` were added, and
 `render_turn` is untouched.
 
@@ -173,10 +178,12 @@ Streamlit puts `aria-expanded` on the sidebar's `<section>`, a role that does no
 code cannot remove the attribute. A DOM patch would fight React, and the app's own CSS keys on that
 attribute. Upstream issue: **https://github.com/streamlit/streamlit/issues/17126** (opened, read and
 confirmed; closed as completed 2026-10-06 by PRs #17293 and #17294, which move `aria-expanded` onto
-the collapse/expand buttons). **The fix ships in Streamlit 1.66.0** (PyPI, 2026-10-14). DRLCA pins
+the collapse/expand buttons). **A fix is available to bump to in Streamlit 1.66.0** (PyPI, 2026-10-14); the pinned 1.63.0 still has the defect. DRLCA pins
 1.63.0 in both requirements files. Upgrading is a dependency bump outside H2's scope, and 1.66.0 was
 one day old at audit time. **Recommended follow-up:** bump to ≥ 1.66 in its own branch, re-run
 `audit.mjs` and the suites, then re-check this row.
+
+**The bump is not a free follow-up (review, 2026-10-15):** PR #17293 removes `aria-expanded` from the sidebar `<section>` and uses `data-collapsed` instead. Every H2 selector keyed on `[aria-expanded=...]` (`app.py` collapsed-sidebar hide and drawer hide) and `tools/a11y_audit/audit.mjs` (`sidebarExpanded` / `openSidebar`) would silently stop matching, and `test_phase05` would still pass because its asserts are string matches. The bump branch must migrate those selectors and add a behavioural check (collapsed sidebar = zero focusable controls) before it is re-audited.
 
 **Not axe findings, recorded:**
 * *Incomplete, `aria-prohibited-attr` (2 nodes on every turn).* These are Streamlit's
@@ -202,7 +209,7 @@ judgement about meaning), so it stays open until signed. N/A = no such content.
 
 | SC | Name | Status | Evidence / note |
 |---|---|---|---|
-| 1.1.1 | Non-text content | Pass (auto) + owner-verified | axe `image-alt`/`button-name`/`frame-title` pass; the watermark and veil are `aria-hidden`. Whether emoji labels read sensibly is for NVDA. |
+| 1.1.1 | Non-text content | Pass (auto) + owner-verified | no axe violation in 33 scans (the saved JSON keeps pass *counts*, not pass IDs, so `image-alt` and `frame-title` are not shown to have applied; `button-name` was in the pass list of the reviewer's drawer-open scan); the watermark and veil are `aria-hidden`. Whether emoji labels read sensibly is for NVDA. |
 | 1.2.1–1.2.5 | Audio / video | N/A | No time-based media. |
 | 1.3.1 | Info and relationships | Pass (auto) + owner-verified | Headings, lists, labels pass axe; reading order under NVDA is in the checklist. |
 | 1.3.2 | Meaningful sequence | Owner-verified | DOM order is helplines → question → answer → excerpts (asserted in `test_phase05`), but the reading order must be heard. |
@@ -289,6 +296,9 @@ notes under each item, then sign it.
    conversation, the three route buttons, AI-answer every new turn.
 6. Ask a help question ("I need an organisation that can help me in Lagos"): helplines are read
    before the organisations.
+7. Listen for icon ligature text: the chat avatars expose `face` / `smart_toy` as text, and the sidebar
+   toggle and expander summaries may read `keyboard_double_arrow_left` / `keyboard_arrow_right`. Record
+   whether NVDA speaks these words.
 
 Signed: ____________________  Date: __________  Notes:
 

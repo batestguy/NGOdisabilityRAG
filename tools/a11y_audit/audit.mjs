@@ -172,6 +172,7 @@ async function scan(page) {
     })),
     incomplete: res.incomplete.map(v => ({ id: v.id, impact: v.impact, nodes: v.nodes.length })),
     passes: res.passes.length,
+    pass_ids: res.passes.map(p => p.id),
   };
 }
 

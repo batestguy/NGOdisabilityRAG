@@ -3373,3 +3373,13 @@ fixed upstream (streamlit#17126) in 1.66.0, released the day before this audit. 
 the day after its release, inside an accessibility step, is two changes in one. It is its own
 follow-up.
 
+
+### 2026-10-15 — H2 review follow-up (docs accuracy, no behaviour change)
+Reviewer verdict on H2: **SHIP WITH CAVEATS**, nothing blocking; numbers reproduced on a fresh server. Taken in place:
+the Streamlit 1.66 bump is **not** a free follow-up (it moves `aria-expanded` to `data-collapsed`, which would silently
+disarm the H2 sidebar/drawer CSS and the audit script while `test_phase05` stays green — string asserts again); the
+`aria-allowed-attr` node is present wherever the sidebar is open (open phone drawer scanned clean otherwise at 360/768
+light), not "1280 only"; "token-derived" scrim reworded (they are reused rgba literals); `image-alt`/`frame-title`
+"pass" claims softened because the JSON kept pass counts only — `audit.mjs` now also saves `pass_ids`; icon-ligature
+text (`face`, `smart_toy`, `keyboard_arrow_*`) added to owner check A. Lesson repeated from Phase 05: a string assert
+on CSS is not evidence the CSS renders.

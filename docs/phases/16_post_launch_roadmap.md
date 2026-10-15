@@ -449,7 +449,9 @@ is dropped; each one is checked off against the old file.
 >   scans, tags wcag2a…wcag22aa, iframes included). **Before (`9ade6ca`): 33 critical + 12 serious. After: 9 critical,
 >   0 serious, 0 moderate, 0 minor.** All 9 are the same Streamlit-internal node: `aria-allowed-attr`, `aria-expanded` on
 >   the sidebar `<section>`, seen at 1280, where the sidebar is open. Upstream: streamlit/streamlit#17126, fixed in **1.66.0**
->   (2026-10-14); DRLCA pins 1.63.0. **Follow-up: bump Streamlit in its own branch and re-audit.**
+>   (2026-10-14); DRLCA pins 1.63.0. **Follow-up: bump Streamlit in its own branch and re-audit; the bump must migrate every
+>   `[aria-expanded]` selector (app.py + audit.mjs), since 1.66 moves it to `data-collapsed`.** Reviewer (SHIP WITH CAVEATS):
+>   the node also shows in the open phone drawer (scanned at 360/768 light); new test_phase05 asserts are string matches only.
 > * **Contrast over the photo (new `--mode=contrast`):** axe files text over a background image as *incomplete*, so
 >   "0 serious" said nothing about it. Pixel-measured on the pre-H2 tree: **20 of 213 nodes failed**, all NGO record links (2nd percentile **2.17:1 light, 3.56:1 dark**). Root
 >   cause: the watermark divs live *inside* `.block-container`, so they painted over its scrim, and the Phase 05 scrim never
