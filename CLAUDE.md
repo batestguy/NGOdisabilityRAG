@@ -213,8 +213,9 @@ transients — retry with backoff.
 `scripts/eval_phase06.py` is a custom zero-LLM proxy for the RAGAS metrics (RAGAS itself
 is not installed — its langchain/openai tree would endanger the pinned env). Its expected
 refs are ground truth read from the corpus, never copied from LLM answers. Known metric
-artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending the judge
-— don't tune the yardstick to make them pass.
+artifacts (reverse_rel — 0.633 on the G2 transcript; the old 0.630/0.852 described v1 and is
+retired — and coverage misses) stay **recorded as FAIL**. The judge arbitrated reverse_rel as an
+artifact (10/10 relevant, Phase G 2026-10-15). Don't tune the yardstick to make them pass.
 
 ## CSS / Streamlit gotchas (learned the hard way)
 
@@ -305,8 +306,10 @@ artifacts (reverse_rel 0.630, coverage misses) stay **recorded as FAIL** pending
   `docs/phases/14_generation_eval.md`** (G0 code prep at zero quota, then a 2-day quota calendar;
   never `--failover` on G runs). **G0 + G1 DONE AND FROZEN 2026-09-24**: prompt `cite-strict-v3` /
   `chat-cite-strict-v2` (new rule 8 = answer-shape floor on NUMBERED tags; the chat rule is now 9);
-  `cross_turn_drift` bracket bug fixed (it always returned `[]`). **Do not change `src/`, `app.py` or
-  the G scripts until G4 is done.** Next: G2 on a fresh Pacific day (commands in HANDOFF).
+  `cross_turn_drift` bracket bug fixed (it always returned `[]`). **PHASE G CLOSED 2026-10-15**
+  (Day 2: judge 23/23, G4 0 drift / 0 cite failures; AI expander "recommendable, still opt-in",
+  default OFF; results in `docs/phases/14_generation_eval.md` G5). **NEXT: the Act cl. 1 OCR
+  re-extraction** (verified, human-signed → `build_oov_bridge.py` → full re-measure), then F.
   ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level lexical signal
   failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to differ in kind.
   A static-embedding blend is **also term-level association** — **E4's ship gate should be strict

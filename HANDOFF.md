@@ -1,4 +1,16 @@
-# HANDOFF — start here (60 seconds, updated 2026-09-24)
+# HANDOFF — start here (60 seconds, updated 2026-10-15)
+
+> **■ 2026-10-15: PHASE G CLOSED. SPENT (Pacific day 2026-10-14): flash-lite 7, flash 9.**
+> * Judge finished from the checkpoint: 23/23 + 1 skip. Relevancy 10/10, faithfulness 10/10.
+>   G4 `transcript_chat_chat-cite-strict-v2_2026-10-15.json`: 9/9 answered, **0 drift**, 0 cite
+>   failures, and CD10.t3 correctly refused. The launch reading holds: the AI expander is
+>   recommendable, still opt-in, and default OFF.
+> * Exploratory: CD1.t2 "so can they fire me?" got an LLM refusal over `[Act cl. 28]`. Recorded,
+>   not tuned. See the playbook's G5.
+> * `scripts/.judge_phase06_checkpoint_425f320532f6.json` is no longer needed; it can be deleted.
+> * **NEXT: Act cl. 1 upside-down OCR.** It needs a verified, human-signed re-extraction, then
+>   `build_oov_bridge.py`, then a full re-measure (every harness, `calibrate_refusal` 0/212).
+>   Then F (re-examine M4). **Still do not push `main`.**
 
 > **■ 2026-09-24: PHASE G DAY 1 DONE (flash 12, flash-lite 16). NEXT: DAY 2 ON THE NEXT PACIFIC DAY (after 08:00 WAT).**
 >

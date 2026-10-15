@@ -237,3 +237,44 @@ excerpt**, AI or not. It was not previously recorded anywhere. **Not fixed now:*
 a corpus change forces an `oov_bridge.json` rebuild and a re-measure (the bridge is corpus-keyed).
 It is **a verified, human-signed corpus re-extraction** (`CLAUDE.md` distinguishes that from
 "cleaning up OCR quirks"). Queue it after G, before launch.
+
+### Day 2 — 2026-10-15 (run 01:39 UTC, Pacific day 2026-10-14). SPENT: flash-lite 7, flash 9.
+No other quota use was logged on that Pacific day. The `runs/` path move was committed first as
+`4fdce0c`. It touched no G input, so the G0 freeze held.
+
+**G3 — judge complete, 23/23 judged + 1 skip** (`Q10-cite`: no s.39 tag in the frozen answer),
+from the checkpoint. 7 calls, 0 retries, 0 `llm_error`. Results file
+`scripts/judge_phase06_results_gemini-2.5-flash-lite_cite-strict-v3_2026-09-24.json` (24 records).
+* reverse_rel relevancy: **10/10 relevant** (the proxy agrees on 2/10). The `reverse_rel` FAIL
+  (0.633, ceiling 0.767) is now **arbitrated as a metric artifact on the current answers**, not on
+  v1's. It stays recorded as a proxy FAIL; it is not re-scored.
+* Faithfulness: **10/10 OK, 0 unsupported claims** (it corroborates the proxy's 1.000).
+* Thinness: Q3 `adequate`, Q8 `adequate`. Citation: Q9 `[Constitution s. 34]` supported.
+
+**G4 — `scripts/transcript_chat_chat-cite-strict-v2_2026-10-15.json`, 9/9 answered**,
+`gemini-2.5-flash`, no failover, nothing PENDING. Against the G1 declarations:
+
+| check (declared in G1) | result |
+|---|---|
+| **turns with drift** (bar: 0) | **0 / 9** (the detector's firing is covered by `test_phase09_ops.py` §8, ALL PASS today) |
+| `verify_citations` failures | **0** · every cited tag `number_ok` |
+| CD10.t3 off-corpus after legal → fixed no-answer | **refused** (`llm-no-answer`, helplines text), no false answer |
+
+**Exploratory (not declared in G1): CD1.t2 "so can they fire me?" was refused by the LLM layer**
+(`llm-no-answer`) with the same 7 excerpts as t1, including `[Act cl. 28]`. Cl. 28 grants an
+"equal right to work" and penalties, but says nothing explicit about dismissal. Under the
+strict-grounding prompt that refusal can be defended, but a PWD reading it gets helplines and no law.
+The offline excerpts still showed cl. 28, because that refusal is LLM-layer only. **Recorded, not
+tuned** (a post-hoc prompt change would invalidate G). It is a candidate input to F or to a
+post-launch prompt revision.
+
+### G5 — Phase G exit (2026-10-15)
+**The launch reading holds on every G1 condition:** 0 drift · 0 R1/R2 failures · the Q3 floor met ·
+0 fabricated section numbers (G2 12/12 and G4 9/9 rows, every tag `number_ok`). **The AI expander is
+"recommendable, still opt-in". The default stays OFF.** Known items listed beside it: one
+conservative chat refusal (CD1.t2, above) and the Act cl. 1 OCR scar (Day 1), which the AI quotes
+verbatim, as it is required to.
+Retired as descriptions of the current system: `reverse_rel 0.630` and its 0.852 ceiling (v1;
+current is 0.633 / 0.767, judge-arbitrated) and the fixA2 per-question verdicts.
+**Phase G is CLOSED. Next, before launch: the Act cl. 1 re-extraction** (verified, human-signed,
+then an OOV-bridge rebuild and a full re-measure). **Then F** (M4, re-examine before scheduling).

@@ -1,0 +1,430 @@
+{
+ "summary": {
+  "date": "2026-10-15",
+  "key": {
+   "chat_prompt_version": "chat-cite-strict-v2",
+   "prompt_version": "cite-strict-v3",
+   "model": "gemini-2.5-flash",
+   "conversations": [
+    "CD1",
+    "CD3",
+    "CD10"
+   ]
+  },
+  "calls_this_run": 9,
+  "answered": 9,
+  "pending": [],
+  "turns_with_drift": [],
+  "turns_failing_verify_citations": [],
+  "stopped": null
+ },
+ "turns": [
+  {
+   "id": "CD1.t1",
+   "class": "direct",
+   "expect_gate": "answer",
+   "question": "What does the Act say about my right to work?",
+   "retrieval_query": "What does the Act say about my right to work?",
+   "carried": false,
+   "gate_refused": false,
+   "shown_tags": [
+    "[Factsheet Section 28]",
+    "[Act cl. 28]",
+    "[Constitution s. 13]",
+    "[Constitution s. 13]",
+    "[Constitution general]",
+    "[Act cl. 58]",
+    "[Constitution s. 315]"
+   ],
+   "answer": "The Act states that a person with disability has the right to work on an equal basis with others [Act cl. 28]. This includes the right to opportunity to gain a living by work freely chosen or accepted in a labour market and work environment that is open [Act cl. 28].\n\nThe Act also specifies penalties for contravention of this right:\n*   A person who contravenes subsection (1) commits an offence and is liable on conviction to nominal damages of a minimum of N250,000 payable to the affected person with disability [Act cl. 28].\n*   Where a company contravenes subsection (1), the company commits an offence and is liable to nominal damages of a minimum of N500,000 payable to the affected person with disability [Act cl. 28].\n*   Any principal officer of the company involved in the violation is liable to N50,000 damages payable to the affected person with disability [Act cl. 28].",
+   "llm_used": true,
+   "llm_error": null,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "prompt": "cite-strict-v3",
+   "citations": [
+    "Act cl. 28",
+    "Act cl. 28",
+    "Act cl. 28",
+    "Act cl. 28",
+    "Act cl. 28"
+   ],
+   "cite_check": [
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    }
+   ],
+   "drift": []
+  },
+  {
+   "id": "CD1.t2",
+   "class": "ellipsis",
+   "expect_gate": "answer",
+   "question": "so can they fire me?",
+   "retrieval_query": "so can they fire me? so can they fire me? What does the Act say about my right to work?",
+   "carried": true,
+   "gate_refused": false,
+   "shown_tags": [
+    "[Factsheet Section 28]",
+    "[Act cl. 28]",
+    "[Constitution s. 13]",
+    "[Constitution s. 13]",
+    "[Constitution general]",
+    "[Act cl. 58]",
+    "[Constitution s. 315]"
+   ],
+   "answer": "I can't answer this from the Disability Act 2018, the 1999 Constitution, or the factsheet I have. For help with your question, please contact the DRAC Toll-Free helpline 08000-3000-100 or DRAC WhatsApp 08000-3000-10.",
+   "llm_used": true,
+   "llm_error": null,
+   "refusal_layer": "llm-no-answer",
+   "model_used": "gemini-2.5-flash",
+   "prompt": "chat-cite-strict-v2",
+   "citations": [],
+   "cite_check": [],
+   "drift": []
+  },
+  {
+   "id": "CD1.t3",
+   "class": "pronoun",
+   "expect_gate": "answer",
+   "question": "and what would they have to pay me?",
+   "retrieval_query": "and what would they have to pay me? and what would they have to pay me? What does the Act say about my right to work? so can they fire me?",
+   "carried": true,
+   "gate_refused": false,
+   "shown_tags": [
+    "[Act cl. 28]",
+    "[Factsheet Section 28]",
+    "[Constitution s. 13]",
+    "[Constitution s. 24]",
+    "[Constitution s. 17]",
+    "[Factsheet Section 1]",
+    "[Constitution s. 129]",
+    "[Act cl. 58]"
+   ],
+   "answer": "If the right to work is contravened, specific damages are outlined:\n*   A person who contravenes the right to work is liable on conviction to nominal damages of a minimum of N250,000 payable to the affected person with disability [Act cl. 28]. Similarly, individuals who breach the equal right to work provision are liable on conviction to nominal damages of a minimum of N250,000 payable to the affected person [Factsheet Section 28].\n*   Where a company contravenes the right to work, it commits an offence and is liable to nominal damages of a minimum of N500,000 payable to the affected person with disability [Act cl. 28]. When a company commits the offence of breaching the equal right to work, it is liable on conviction to nominal damages of a minimum of N500,000 payable to the affected person [Factsheet Section 28].\n*   Any principal officer of the company involved in the violation is liable to N50,000 damages payable to the affected person with disability [Act cl. 28]. Principal officers of a company are also liable to pay N50,000 damages to the affected person with disability [Factsheet Section 28].",
+   "llm_used": true,
+   "llm_error": null,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "prompt": "chat-cite-strict-v2",
+   "citations": [
+    "Act cl. 28",
+    "Factsheet Section 28",
+    "Act cl. 28",
+    "Factsheet Section 28",
+    "Act cl. 28",
+    "Factsheet Section 28"
+   ],
+   "cite_check": [
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 28",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 28",
+     "number_ok": true
+    }
+   ],
+   "drift": []
+  },
+  {
+   "id": "CD3.t1",
+   "class": "direct",
+   "expect_gate": "answer",
+   "question": "Do public buildings have to be wheelchair accessible?",
+   "retrieval_query": "Do public buildings have to be wheelchair accessible?",
+   "carried": false,
+   "gate_refused": false,
+   "shown_tags": [
+    "[Act cl. 4]",
+    "[Factsheet Section 3]",
+    "[Act cl. 3]",
+    "[Factsheet Section 6]",
+    "[Act cl. 11]",
+    "[Act cl. 7]",
+    "[Constitution s. 7]",
+    "[Constitution s. 7]",
+    "[Constitution s. 4]",
+    "[Factsheet Section 10,11]",
+    "[Factsheet Section 7,8]",
+    "[Constitution s. 4]"
+   ],
+   "answer": "Yes, public buildings do have to be wheelchair accessible.\n\nA public building must be constructed with necessary accessibility aids such as lifts (where necessary), ramps, and other facilities to make them accessible to and usable by persons with disabilities [Act cl. 4]. A person with disability has the right to access the physical environment and buildings on an equal basis with others [Act cl. 3]. This right of access to public premises is guaranteed [Factsheet Section 3]. Public facilities, including buildings, are required to be accessible and usable by persons with disabilities [Factsheet Section 3]. There is a five-year transitory period within which all public buildings or structures must be modified and accessible to persons with disabilities, including those on wheelchairs [Factsheet Section 6]. Before erecting any public structure, its plan must be scrutinized by the relevant authority to ensure it conforms with the building code [Act cl. 7]. A government or government agency, body or individual responsible for the approval of building plans shall not approve the plan of a public building if it does not make provision for accessibility facilities in line with the building code [Act cl. 7]. This procedure ensures public structures conform with a building code that includes accessibility features for persons with disabilities, including those on wheelchairs [Factsheet Section 7,8].",
+   "llm_used": true,
+   "llm_error": null,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "prompt": "cite-strict-v3",
+   "citations": [
+    "Act cl. 4",
+    "Act cl. 3",
+    "Factsheet Section 3",
+    "Factsheet Section 3",
+    "Factsheet Section 6",
+    "Act cl. 7",
+    "Act cl. 7",
+    "Factsheet Section 7,8"
+   ],
+   "cite_check": [
+    {
+     "tag": "Act cl. 4",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 3",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 3",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 3",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 6",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 7",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 7",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 7,8",
+     "number_ok": true
+    }
+   ],
+   "drift": []
+  },
+  {
+   "id": "CD3.t2",
+   "class": "pronoun",
+   "expect_gate": "answer",
+   "question": "how long do they have to fix them?",
+   "retrieval_query": "how long do they have to fix them? how long do they have to fix them? Do public buildings have to be wheelchair accessible?",
+   "carried": true,
+   "gate_refused": false,
+   "shown_tags": [
+    "[Act cl. 4]",
+    "[Factsheet Section 3]",
+    "[Act cl. 3]",
+    "[Act cl. 11]",
+    "[Factsheet Section 6]",
+    "[Act cl. 7]",
+    "[Constitution s. 11]",
+    "[Constitution s. 1]",
+    "[Constitution s. 7]",
+    "[Factsheet Section 10,11]",
+    "[Constitution s. 7]",
+    "[Factsheet Section 7,8]"
+   ],
+   "answer": "There is a five-year transitory period within which all public buildings or structures must be modified and accessible to persons with disabilities, including those on wheelchairs [Factsheet Section 6].",
+   "llm_used": true,
+   "llm_error": null,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "prompt": "chat-cite-strict-v2",
+   "citations": [
+    "Factsheet Section 6"
+   ],
+   "cite_check": [
+    {
+     "tag": "Factsheet Section 6",
+     "number_ok": true
+    }
+   ],
+   "drift": []
+  },
+  {
+   "id": "CD3.t3",
+   "class": "topic-shift",
+   "expect_gate": "answer",
+   "question": "What about free healthcare?",
+   "retrieval_query": "What about free healthcare? What about free healthcare? Do public buildings have to be wheelchair accessible? how long do they have to fix them?",
+   "carried": true,
+   "gate_refused": false,
+   "shown_tags": [
+    "[Act cl. 21]",
+    "[Constitution s. 18]",
+    "[Factsheet Section 3]",
+    "[Act cl. 4]",
+    "[Factsheet Section 21]",
+    "[Factsheet Section 6]",
+    "[Constitution s. 15]",
+    "[Act cl. 3]",
+    "[Act cl. 11]",
+    "[Factsheet Section 10,11]",
+    "[Constitution s. 7]",
+    "[Constitution s. 7]"
+   ],
+   "answer": "Government shall guarantee that persons with disabilities have unfettered access to adequate healthcare without discrimination on the basis of disability [Act cl. 21]. A person with mental disability shall be entitled to free medical and health service in all public institutions [Act cl. 21]. The Government is mandated to provide persons with disabilities free access to adequate health-care devoid of discrimination [Factsheet Section 21]. It also entitles persons with mental disability to free medical and health services in all public institutions [Factsheet Section 21].",
+   "llm_used": true,
+   "llm_error": null,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "prompt": "chat-cite-strict-v2",
+   "citations": [
+    "Act cl. 21",
+    "Act cl. 21",
+    "Factsheet Section 21",
+    "Factsheet Section 21"
+   ],
+   "cite_check": [
+    {
+     "tag": "Act cl. 21",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 21",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 21",
+     "number_ok": true
+    },
+    {
+     "tag": "Factsheet Section 21",
+     "number_ok": true
+    }
+   ],
+   "drift": []
+  },
+  {
+   "id": "CD10.t1",
+   "class": "direct",
+   "expect_gate": "answer",
+   "question": "Can someone without a disability park in a reserved space?",
+   "retrieval_query": "Can someone without a disability park in a reserved space?",
+   "carried": false,
+   "gate_refused": false,
+   "shown_tags": [
+    "[Factsheet Section 12]",
+    "[Act cl. 12]",
+    "[Constitution s. 40]",
+    "[Constitution s. 1]",
+    "[Constitution s. 42]",
+    "[Constitution s. 42]"
+   ],
+   "answer": "A person without disability who parks a vehicle in a reserved space commits an offence and is liable on conviction to a fine of N5,000 [Act cl. 12]. This rule does not apply if a person with disability is a passenger in the vehicle [Act cl. 12].",
+   "llm_used": true,
+   "llm_error": null,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "prompt": "cite-strict-v3",
+   "citations": [
+    "Act cl. 12",
+    "Act cl. 12"
+   ],
+   "cite_check": [
+    {
+     "tag": "Act cl. 12",
+     "number_ok": true
+    },
+    {
+     "tag": "Act cl. 12",
+     "number_ok": true
+    }
+   ],
+   "drift": []
+  },
+  {
+   "id": "CD10.t2",
+   "class": "ellipsis",
+   "expect_gate": "answer",
+   "question": "how much is the fine?",
+   "retrieval_query": "how much is the fine? how much is the fine? Can someone without a disability park in a reserved space?",
+   "carried": true,
+   "gate_refused": false,
+   "shown_tags": [
+    "[Factsheet Section 12]",
+    "[Constitution s. 4]",
+    "[Constitution s. 4]",
+    "[Act cl. 12]",
+    "[Constitution s. 3]",
+    "[Constitution s. 4]",
+    "[Act cl. 28]",
+    "[Factsheet Section 28]",
+    "[Act cl. 1]",
+    "[Act cl. 8]",
+    "[Factsheet Section 7,8]"
+   ],
+   "answer": "The fine is N5,000 [Act cl. 12].",
+   "llm_used": true,
+   "llm_error": null,
+   "refusal_layer": null,
+   "model_used": "gemini-2.5-flash",
+   "prompt": "chat-cite-strict-v2",
+   "citations": [
+    "Act cl. 12"
+   ],
+   "cite_check": [
+    {
+     "tag": "Act cl. 12",
+     "number_ok": true
+    }
+   ],
+   "drift": []
+  },
+  {
+   "id": "CD10.t3",
+   "class": "off-corpus-after-legal",
+   "expect_gate": "refuse",
+   "question": "and what does the law say about maritime shipping insurance?",
+   "retrieval_query": "and what does the law say about maritime shipping insurance?",
+   "carried": false,
+   "gate_refused": false,
+   "shown_tags": [
+    "[Constitution s. 36]",
+    "[Constitution s. 33]",
+    "[Constitution s. 315]"
+   ],
+   "answer": "I can't answer this from the Disability Act 2018, the 1999 Constitution, or the factsheet I have. For help with your question, please contact the DRAC Toll-Free helpline 08000-3000-100 or DRAC WhatsApp 08000-3000-10.",
+   "llm_used": true,
+   "llm_error": null,
+   "refusal_layer": "llm-no-answer",
+   "model_used": "gemini-2.5-flash",
+   "prompt": "chat-cite-strict-v2",
+   "citations": [],
+   "cite_check": [],
+   "drift": []
+  }
+ ]
+}

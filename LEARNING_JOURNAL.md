@@ -3213,3 +3213,24 @@ It was invisible to every retrieval metric, because recall only asks *which* chu
 whether its text is legible. It surfaced only because a generated answer quoted it verbatim, as the
 prompt requires. **Lesson: a read-through of what users actually see is an eval of its own, and no
 set-recall number substitutes for it.**
+
+## 2026-10-15 — G Day 2: zero drift, and a refusal that is right by the rules and wrong for the user
+
+The resume worked as designed. The judge's sha-keyed checkpoint carried 16 verdicts across a
+three-week gap, and the remaining 7 calls finished it with no retries. That is the payoff of
+G0's freeze: the transcript under judgement could not have changed in between, so splitting the
+run wasted nothing. Faithfulness 10/10 and relevancy 10/10 close the reverse_rel question on
+*current* answers. The proxy's 0.633 is a measurement artifact, and it stays recorded as a proxy
+FAIL rather than being re-scored.
+
+G4 cleared its bar: 0 drift across 9 chat turns, and the off-corpus probe after a legal turn was
+correctly refused. That zero only means something because G0 found the detector could never fire,
+and `test_phase09_ops.py` §8 now proves that it can.
+
+The finding worth keeping wasn't declared in advance, so it stays exploratory. "So can they fire
+me?" was refused, even though the equal-right-to-work clause sat in its context. Cl. 28 doesn't
+say "dismissal", so a strict-grounding model is *allowed* to refuse. But the user asked the most
+common real-world question in this domain and got no law back. **Lesson: refusal calibration
+(0/212) measures the retrieval floor. It says nothing about the generator's own threshold for
+"is this answered here", and that threshold needs its own probe set before the AI path is
+recommended to anyone.**
