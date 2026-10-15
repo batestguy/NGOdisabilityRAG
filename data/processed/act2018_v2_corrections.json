@@ -1,0 +1,16 @@
+{
+ "_doc": "Verified text corrections applied by scripts/parse_act_v2.py AFTER clause location, to OCR text that is not law text at all. Each entry must match the parsed clause text EXACTLY ONCE or the parse fails. Each entry carries its evidence and must be signed in verified_by by a human who read the gazette scan. This file is NOT for OCR quirks (joined words, o-for-0, section numbering): CLAUDE.md forbids cleaning those up. It is for text the OCR invented.",
+ "corrections": [
+  {
+   "clause": 1,
+   "pdf_page": 5,
+   "gazette_page": "A101",
+   "find": "on the o uuu Aun u uons o uosd Xue q aqes s go puno circumstance.",
+   "replace": "on the ground of his disability by any person or institution in any manner or circumstance.",
+   "cause": "Show-through: the reverse page's print shows through the paper on this scan, and the OCR read the mirrored text in place of the second line of 1(1).",
+   "evidence": "data/raw/disability_act_2018_gazette_FGP.pdf, PDF page 5 (printed A101), clause 1(1), lines 1-3. v1's web transcription (data/processed/disability_act_2018_full.txt:88) independently reads 'on the ground of his disability'.",
+   "transcribed_by": "Claude Code, 2026-10-15, from a 150-dpi render of PDF page 5",
+   "verified_by": null
+  }
+ ]
+}

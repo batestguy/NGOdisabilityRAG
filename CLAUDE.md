@@ -308,8 +308,11 @@ artifact (10/10 relevant, Phase G 2026-10-15). Don't tune the yardstick to make 
   `chat-cite-strict-v2` (new rule 8 = answer-shape floor on NUMBERED tags; the chat rule is now 9);
   `cross_turn_drift` bracket bug fixed (it always returned `[]`). **PHASE G CLOSED 2026-10-15**
   (Day 2: judge 23/23, G4 0 drift / 0 cite failures; AI expander "recommendable, still opt-in",
-  default OFF; results in `docs/phases/14_generation_eval.md` G5). **NEXT: the Act cl. 1 OCR
-  re-extraction** (verified, human-signed → `build_oov_bridge.py` → full re-measure), then F.
+  default OFF; results in `docs/phases/14_generation_eval.md` G5). **Act cl. 1 fix STAGED on
+  `phase10/act-cl1-fix`** (show-through, corrected via `data/processed/act2018_v2_corrections.json`;
+  re-measured, shipping numbers unchanged). **It needs the user's `verified_by` sign-off before the
+  merge.** `parse_act_v2.py` now defaults to `--body-from=5`, which is what the shipped artifact was
+  built with. Then F.
   ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level lexical signal
   failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to differ in kind.
   A static-embedding blend is **also term-level association** — **E4's ship gate should be strict
