@@ -602,6 +602,25 @@ def _render_excerpt(e):
                 % html.escape(e["text"][:700]), unsafe_allow_html=True)
 
 
+def dedupe_excerpts(excerpts) -> list:
+    """Drop an excerpt whose (doc_id, ref, text) equals one already kept; keep the first.
+
+    The corpus holds at least one byte-identical chunk pair ([Constitution s. 4],
+    recorded 2026-09-20), so a turn could show the same card twice. H1b fixes it
+    HERE, at display, rather than in the corpus: a corpus change re-keys the OOV
+    bridge and every pinned digest, while every retrieval metric scores the
+    retrieved set, which this leaves untouched. Applied before the inline/fold
+    split, so INLINE_EXCERPTS still means "3 distinct".
+    """
+    seen, out = set(), []
+    for e in excerpts:
+        key = (e.get("doc_id"), e.get("ref"), e.get("text"))
+        if key not in seen:
+            seen.add(key)
+            out.append(e)
+    return out
+
+
 def render_excerpts(excerpts, turn_index: int):
     """One turn's excerpt cards: INLINE_EXCERPTS inline, the rest behind one fold.
 
@@ -613,6 +632,7 @@ def render_excerpts(excerpts, turn_index: int):
     """
     st = _st()
     st.markdown("**Retrieved excerpts (offline, citations kept):**")
+    excerpts = dedupe_excerpts(excerpts)
     for e in excerpts[:INLINE_EXCERPTS]:
         _render_excerpt(e)
     rest = excerpts[INLINE_EXCERPTS:]

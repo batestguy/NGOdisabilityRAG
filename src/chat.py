@@ -100,11 +100,45 @@ def leading_marker(text: str) -> str:
     return best
 
 
+# Relative "that" (H1a, 2026-10-15). In "an organisation that can help me" the
+# word is a relative pronoun bound INSIDE the turn by the noun before it, not
+# evidence of ellipsis -- the live smoke saw it carry a legal turn into a help
+# query. Narrow on purpose: only "that" directly after a content word and
+# directly before a modal/auxiliary or one of a few listed verbs. The words in
+# _NOT_ANTECEDENT are content words by the stopword list but are verbs or
+# prepositions here ("does that cover", "a case like that"), so "that" after
+# them stays unbound.
+_RELATIVE_NEXT = frozenset({
+    "can", "could", "will", "would", "shall", "should", "may", "might", "must",
+    "is", "are", "was", "were", "has", "have", "had",
+    "helps", "works", "supports", "offers", "provides", "protects", "deals",
+    "handles", "covers", "gives", "assists", "says",
+})
+_NOT_ANTECEDENT = frozenset({
+    "does", "like", "said", "says", "mean", "means", "know", "think", "see",
+    "hear", "heard",
+})
+
+
+def _is_relative_that(toks: list, i: int) -> bool:
+    if toks[i] != "that" or i == 0 or i + 1 >= len(toks):
+        return False
+    prev, nxt = toks[i - 1], toks[i + 1]
+    return (prev not in _STOP and prev not in _NOT_ANTECEDENT and len(prev) > 1
+            and nxt in _RELATIVE_NEXT)
+
+
 def unbound_pronouns(text: str) -> list:
-    """Third-person/demonstrative pronouns present, in order of appearance."""
+    """Third-person/demonstrative pronouns present, in order of appearance.
+
+    A relative "that" (see _is_relative_that) is bound inside the turn and is
+    not reported.
+    """
     toks = re.findall(r"[a-zA-Z]+", (text or "").lower())
     seen, out = set(), []
-    for t in toks:
+    for i, t in enumerate(toks):
+        if _is_relative_that(toks, i):
+            continue
         if t in _UNBOUND and t not in seen:
             seen.add(t)
             out.append(t)

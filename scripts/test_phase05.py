@@ -428,4 +428,19 @@ check("plain-caption-takes-prior-not-index",
       "render_plain_caption(plain, prior)" in src
       and "from rag import _render_history" in src)
 
+# H1b (2026-10-15): a byte-identical chunk pair ([Constitution s. 4]) used to
+# render as two identical cards. Dedupe is display-level, keyed on
+# (doc_id, ref, text), keeps the first, and runs BEFORE the inline/fold split.
+_e = lambda ref, text, score: {"tag": "[Constitution s. %s]" % ref, "doc_id": "constitution1999",  # noqa: E731
+                               "ref": "s. %s" % ref, "text": text, "score": score}
+_dup = [_e("4", "Legislative powers.", 0.31), _e("4", "Legislative powers.", 0.31),
+        _e("4", "Different text, same ref.", 0.20), _e("13", "Fundamental objectives.", 0.19)]
+_dd = app.dedupe_excerpts(_dup)
+check("dedupe-drops-byte-identical-pair-keeps-first",
+      len(_dd) == 3 and _dd[0] is _dup[0] and _dd[1] is _dup[2] and _dd[2] is _dup[3])
+check("dedupe-keeps-same-ref-different-text", any(e["text"].startswith("Different") for e in _dd))
+_re_src = inspect.getsource(app.render_excerpts)
+check("dedupe-runs-before-inline-fold-split",
+      _re_src.index("dedupe_excerpts(excerpts)") < _re_src.index("excerpts[:INLINE_EXCERPTS]"))
+
 print("\nALL %d ASSERTS PASSED" % len(passed))
