@@ -1,0 +1,25 @@
+{
+ "_about": "Phase F0 register probes (authored 2026-10-15, BEFORE any static-embedding measurement). Nigerian lay English and Pidgin, each with ONE corpus-verified expected Act clause (read from data/processed/act2018_v2_clauses.json in the same session). REPORT-ONLY: never gates, never selects a parameter. It exists because no harness has ever been scored on Pidgin. Expected refs are Act-only on purpose: the factsheet mirrors Act numbering, but only the Act text was verified here.",
+ "probes": [
+  {"id": "P01", "lang": "pidgin", "text": "Dem fit sack me for work because say I dey use wheelchair?", "expected": {"act2018": [28]}, "note": "cl.28 equal right to work"},
+  {"id": "P02", "lang": "pidgin", "text": "Government office suppose employ people wey get disability?", "expected": {"act2018": [29]}, "note": "cl.29 5% of public employment"},
+  {"id": "P03", "lang": "pidgin", "text": "Hospital no wan treat my brother wey get mental problem unless we pay money", "expected": {"act2018": [21]}, "note": "cl.21(2) free medical service for mental disability"},
+  {"id": "P04", "lang": "pidgin", "text": "My pikin wey deaf, school go dey free for am?", "expected": {"act2018": [17]}, "note": "cl.17(2) free education to secondary level"},
+  {"id": "P05", "lang": "pidgin", "text": "Dem dey use my blind uncle beg money for roadside, e legal?", "expected": {"act2018": [16]}, "note": "cl.16(1)(a) involving a PWD in begging"},
+  {"id": "P06", "lang": "pidgin", "text": "Na only stairs for the ministry building, I no fit enter with my crutches", "expected": {"act2018": [3]}, "note": "cl.3 right of access to buildings"},
+  {"id": "P07", "lang": "lay", "text": "Someone who is not disabled keeps parking in the disabled space at the supermarket", "expected": {"act2018": [12]}, "note": "cl.12 reserved parking spaces"},
+  {"id": "P08", "lang": "pidgin", "text": "For bank queue, dem suppose allow me go front?", "expected": {"act2018": [26]}, "note": "cl.26 first consideration in queues"},
+  {"id": "P09", "lang": "lay", "text": "The airline staff refused to give me a wheelchair at the airport", "expected": {"act2018": [14]}, "note": "cl.14(1)(b) airline wheelchairs"},
+  {"id": "P10", "lang": "pidgin", "text": "Government bus no get ramp, how I go take enter with my chair?", "expected": {"act2018": [10]}, "note": "cl.10 government transport accessibility aids"},
+  {"id": "P11", "lang": "pidgin", "text": "If flood or fighting happen for our area, who go protect disabled people?", "expected": {"act2018": [25]}, "note": "cl.25 risk and humanitarian emergencies"},
+  {"id": "P12", "lang": "lay", "text": "I want to run for councillor but people say a cripple cannot hold office", "expected": {"act2018": [30]}, "note": "cl.30 participation in politics and public life"},
+  {"id": "P13", "lang": "pidgin", "text": "Where I go collect the paper wey show say my sister get mental disability?", "expected": {"act2018": [22]}, "note": "cl.22 Permanent Certificate of Disability"},
+  {"id": "P14", "lang": "lay", "text": "What happens to someone who buys a fake disability certificate?", "expected": {"act2018": [23]}, "note": "cl.23 unlawful procurement, N200,000 or one year"},
+  {"id": "P15", "lang": "pidgin", "text": "I fit sue the person for court even if police no charge am?", "expected": {"act2018": [1]}, "note": "cl.1(3) civil action notwithstanding prosecution"},
+  {"id": "P16", "lang": "lay", "text": "Who do I complain to when a public building is not accessible to me?", "expected": {"act2018": [8]}, "note": "cl.8 complaint of inaccessibility"},
+  {"id": "P17", "lang": "pidgin", "text": "My papa deaf, hospital no get person wey sabi sign language to talk with am", "expected": {"act2018": [24]}, "note": "cl.24 special communication at public hospitals"},
+  {"id": "P18", "lang": "lay", "text": "How many years did the government have to fix old buildings for disabled people?", "expected": {"act2018": [6]}, "note": "cl.6 five-year transitory period"},
+  {"id": "P19", "lang": "pidgin", "text": "The school hostel no gree give my son room because of im disability", "expected": {"act2018": [27]}, "note": "cl.27 accommodation by schools, employers, providers"},
+  {"id": "P20", "lang": "lay", "text": "Do I have to prove how much money I lost before the court will give me damages?", "expected": {"act2018": [55]}, "note": "cl.55 waiver of proof of special damages"}
+ ]
+}
