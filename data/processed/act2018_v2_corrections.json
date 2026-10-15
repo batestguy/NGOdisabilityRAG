@@ -21,7 +21,7 @@
    "cause": "OCR read the middle zero of a fine amount as the letter o. Legal amount, so it is corrected (user decision 2026-10-15). The surrounding joined words are left as they are.",
    "evidence": "data/raw/disability_act_2018_gazette_FGP.pdf, PDF page 7 (printed A103), clause 12(3), last line: 'a fine of N1, 000 for each day of default'.",
    "transcribed_by": "Claude Code, 2026-10-15, from a 220-dpi render of the lower half of PDF page 7",
-   "verified_by": null
+   "verified_by": "Jerry, 2026-10-15, against the gazette scan PDF p.7 (A103)"
   },
   {
    "clause": 20,
@@ -32,7 +32,7 @@
    "cause": "OCR garbled 'is delivered' into 'selivere', which drops the verb of the clause's only sentence. The surrounding joined words are left as they are.",
    "evidence": "data/raw/disability_act_2018_gazette_FGP.pdf, PDF page 9 (printed A105), clause 20, line 2: '...with multiple disabilities, is delivered in the most appropriate language...'.",
    "transcribed_by": "Claude Code, 2026-10-15, from a 150-dpi render of PDF page 9",
-   "verified_by": null
+   "verified_by": "Jerry, 2026-10-15, against the gazette scan PDF p.9 (A105)"
   }
  ]
 }
