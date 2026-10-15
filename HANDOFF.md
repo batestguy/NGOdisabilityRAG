@@ -1,5 +1,16 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-15)
 
+> **■ 2026-10-15 (END OF SESSION): H1 MERGED + DEPLOYED (PR #14 → `2876dbd`, on the user's call). H2 = PR on `phase11/h2-a11y`, NOT merged.**
+> * **H1 is live:** the relative 'that' fix and the excerpt dedupe. CI ran on `main` after the merge (verify it went green: `gh run list --branch main`).
+> * **H2 is not merged, deliberately.** Its gate needs the owner checklist (`docs/accessibility.md` §7: NVDA, keyboard, mic incl.
+>   denied permission, read-aloud, icon-ligature words), and the owner should SEE the new translucent column scrim first.
+>   Both can be done on a local run of `phase11/h2-a11y`. Then the user merges the H2 PR (merging redeploys).
+> * Reviewer: SHIP WITH CAVEATS, nothing blocking; caveats taken in `b7ee4aa`.
+> * **Next agent work: H3** (NGO filters/sort + grow `data/ngo.csv` to ~30 verified orgs). Branch it from `main` after H2
+>   merges, or from `phase11/h2-a11y` if H2 is still waiting. Separate follow-up: the Streamlit 1.63 → 1.66 bump, which must
+>   migrate every `[aria-expanded]` selector (see `docs/accessibility.md` §4). Open lead: "is that legal?" mid-chat gets clarify.
+> * **Any push to `main` redeploys. Ask the user first, every time.**
+
 > **■ 2026-10-15 (H2): AGENT PART DONE on `phase11/h2-a11y` (not merged, not pushed). OWNER CHECKLIST PENDING → GATE NOT YET MET.**
 > * axe after: **0 serious / 0 moderate / 0 minor**. 9 critical = one Streamlit-internal node (sidebar `aria-expanded`,
 >   streamlit#17126, fixed in Streamlit 1.66.0; we pin 1.63.0, so the bump is a separate follow-up — **not free**: 1.66 drops `aria-expanded` from the sidebar, so the H2 CSS selectors and audit.mjs must migrate with it). The node shows wherever the sidebar is open (1280 always; the phone drawer when opened), not only at 1280. Contrast over the
