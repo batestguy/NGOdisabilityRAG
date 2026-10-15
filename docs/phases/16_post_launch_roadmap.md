@@ -403,5 +403,6 @@ is dropped; each one is checked off against the old file.
 >     `test_phase04.py`), run [38675517320](https://github.com/batestguy/NGOdisabilityRAG/actions/runs/38675517320):
 >     **failure at the `test_phase04` step** with that `AssertionError`; the four later steps are skipped. The
 >     branch was then deleted on `origin` and locally.
-> * **Still the owner's:** merging PR #13 (that is a push to `main`, so it redeploys) and, optionally, branch
->   protection on `main` requiring the `offline` check.
+> * **MERGED 2026-10-15 on the user's call** (`b7552e9`, merge commit) and deployed. CI on `main`:
+>   [38675792472](https://github.com/batestguy/NGOdisabilityRAG/actions/runs/38675792472), success. Live
+>   `/_stcore/health` returns `ok`. Branch protection on `main` (requiring `offline`) is still open, and it is the owner's call.

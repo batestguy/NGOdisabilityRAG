@@ -1,6 +1,11 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-15)
 
-> **■ 2026-10-15 (H0): CI GATE DONE, EXIT GATE MET. PR #13 (`phase11/h0-ci` → `main`) IS OPEN AND NOT MERGED.**
+> **■ 2026-10-15 (H0 merged): PR #13 MERGED TO `main` ON THE USER'S CALL (`b7552e9`) AND DEPLOYED. NEXT: H1 on `phase11/h1-bugs`.**
+> * CI on `main` is green (run 38675792472). The app code didn't change. Live `/_stcore/health` returns `ok`.
+> * Branch protection on `main` is not set up (the owner's choice), so CI reports but can't block a merge.
+> * **Any further push to `main` redeploys. Ask the user first, every time.**
+
+> **■ 2026-10-15 (H0): CI GATE DONE, EXIT GATE MET. PR #13 (`phase11/h0-ci` → `main`).**
 > * Green on the PR (run 38675503148, 51 s), red at `test_phase04` on a throwaway `assert False` branch (run 38675517320;
 >   the branch is deleted). Links are in playbook 16 Results. **NEXT: the user merges #13 (that redeploys), then H1.**
 >   H1 should branch from `phase11/h0-ci` (or from `main` once #13 is merged).
