@@ -17,6 +17,7 @@ secrets*.json
 *api_key*
 
 # Local run traces / scratch
+runs/
 .playwright-mcp/
 *.log
 .DS_Store

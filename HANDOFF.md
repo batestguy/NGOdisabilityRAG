@@ -38,7 +38,7 @@
 
 > **NEXT SESSION: E5. The playbook is written** (the box on the E5 step in
 > `docs/phases/13_retrieval_quality.md`, 2026-09-23). Work it in order:
-> **E5.0** reproduce the control against `D:\ship_e4a\merged\` →
+> **E5.0** reproduce the control against `D:\NGORAG\runs\ship_e4a\merged\` →
 > **E5.1** add r@3 / shown-count / MRR columns (report-only) →
 > **E5.2** author `test2` (≥ 40 answerable + 8 off-corpus, `toc-trap` included; commit before any
 > measurement) plus a user-register smoke list →
@@ -56,7 +56,7 @@
 > Re-verified on the merged tree (identical to the branch tip, 0-line diff): port check 72/72 ·
 > `recall_strict` 0.734 / 0.613 / 0.647 · `eval_heldout` PASS · `calibrate_refusal` 0/212 · 03/04/
 > 05 (137/137)/09 ALL PASS · `eval_phase06` v2 digest `2429cafc…` unchanged · `import app` clean.
-> Captures are in `D:\ship_e4a\merged\`. **The live smoke is deferred with the deploy.**
+> Captures are in `D:\NGORAG\runs\ship_e4a\merged\`. **The live smoke is deferred with the deploy.**
 > **NEXT: E5** (re-baseline + the M2 decision), built on local `main`.
 
 > **LATEST (2026-09-23, end of session): E4a IS PORTED, VERIFIED AND STAGED ON `phase10/ship-e4a`.
@@ -103,7 +103,7 @@
 >   `locked`, H15 `differently`, H18 `reachable`), and **1 of the 4 failing `vocab-mismatch`**.
 >   H1, H4 and H8 are in-vocabulary register mismatches that OOV expansion can't touch.
 >   Oracle ceiling: dev ≤ 0.720.
-> * **E4a spec:** a GloVe 6B 100d neighbour map (build-time download to `D:\e4_vectors\`, never
+> * **E4a spec:** a GloVe 6B 100d neighbour map (build-time download to `D:\NGORAG\runs\e4_vectors\`, never
 >   in the repo) shipped as a ≤ 2 MB **dict** `data/processed/oov_bridge.json`. It fires only on
 >   OOV tokens the hand map doesn't bridge. `R=2000, m=2, τ=0.55`, ≤ 4 terms/query, **fixed
 >   before the first measurement**, with one dev-only retreat. `SYNONYMS` and `stem()` are
@@ -224,7 +224,7 @@
 > frozen-10 `0.633 → 0.734`.** False refusals still **0/10 · 0/25 · 0/17**. `MIN_SCORE` untouched.
 > `requirements.txt` byte-identical. `audit_corpus` stdout byte-identical. **Session 0's control
 > REPRODUCED** against `scripts/baseline_v2_2026-09-19.txt` before the first edit; raw captures are
-> in `D:\e0_baseline\` and should stay there until E5 archives its own baseline.
+> in `D:\NGORAG\runs\e0_baseline\` and should stay there until E5 archives its own baseline.
 >
 > **⚠ E1 DID NOT SHIP WHAT THE PLAYBOOK SPECIFIED, AND THAT IS THE THING TO KNOW BEFORE E2.**
 > The playbook's arm is `k=20/doc` (60 candidates). Measured, **it gains `+0.000` on test.** What
@@ -291,7 +291,7 @@
 > `phase10/retrieval-quality`.
 >
 > **NEXT: PHASE E — `docs/phases/13_retrieval_quality.md`**, which now opens with a **Session 0**
-> section: cut the branch off `main`, re-capture the five baselines to `D:\e0_baseline\` and
+> section: cut the branch off `main`, re-capture the five baselines to `D:\NGORAG\runs\e0_baseline\` and
 > confirm they reproduce `scripts/baseline_v2_2026-09-19.txt` *before* editing anything, then E1.
 > **Zero Gemini quota for E1–E4.** Two D6 findings bind on it and sit in that playbook's
 > amendment box — read them before judging E1: `CT4.t3` is at **rank 104 at k=200**, i.e. outside
@@ -412,7 +412,7 @@
 > premises box, the order of operations, the blast radius, the gate checklist and the exit
 > criteria. This banner is the index, that is the spec.
 >
-> **THREE PREMISES CORRECTED, all by diffing `D:\d5_baseline\chat_v1.txt` against `chat_v2.txt`.**
+> **THREE PREMISES CORRECTED, all by diffing `D:\NGORAG\runs\d5_baseline\chat_v1.txt` against `chat_v2.txt`.**
 >
 > **(1) The stamp bug is FIVE sites, not one.** D5 recorded `eval_heldout.py:438`. It is also
 > **`eval_heldout.py:244`, `:373`** and **`eval_chat.py:344`, `:411`**. `chat_v2.txt` prints
@@ -442,7 +442,7 @@
 > the **shipping** corpus would be less protected than the retired one. **Add `V2_CORPUS_SHA256`
 > in the same commit as the flip.**
 >
-> **`D:\d5_baseline\` IS THE LIVE "BEFORE" SET — DIFF IT BEFORE THE FIRST EDIT.** 18 stdout
+> **`D:\NGORAG\runs\d5_baseline\` IS THE LIVE "BEFORE" SET — DIFF IT BEFORE THE FIRST EDIT.** 18 stdout
 > captures, v1 and v2 arms for every suite (`chat_*`, `heldout_*`, `audit_*`, `ablate_*`, `bench`,
 > `ops`, `p03`–`p06`). It is **outside the repo and not backed up by git**; all three findings
 > above exist only because it was kept on disk rather than summarised into prose. Do not delete

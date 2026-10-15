@@ -1,7 +1,7 @@
 """Phase E4a -- build the OOV bridge: pretrained-vector neighbours for query words the corpus never uses.
 
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\build_oov_bridge.py  (from D:\\NGORAG)
-     ... --vectors=<path>   GloVe file (default D:\\e4_vectors\\glove-wiki-gigaword-100.gz)
+     ... --vectors=<path>   GloVe file (default D:\\NGORAG\\runs\\e4_vectors\\glove-wiki-gigaword-100.gz)
 
 SHIPPING ARTIFACT (since Phase E4a, 2026-09-23). Writes data/processed/oov_bridge.json,
 which src/retrieve.py loads at import and expand_query() consults on every query.
@@ -41,7 +41,7 @@ from rag import build_corpus  # noqa: E402
 from retrieve import (ENGLISH_STOP_WORDS, corpus_sha256, stem,  # noqa: E402
                       stem_preprocess)
 
-DEFAULT_VECTORS = Path(r"D:\e4_vectors\glove-wiki-gigaword-100.gz")
+DEFAULT_VECTORS = Path(r"D:\NGORAG\runs\e4_vectors\glove-wiki-gigaword-100.gz")
 OUT = ROOT / "data" / "processed" / "oov_bridge.json"
 
 # Fixed a priori in the playbook (E4 re-scope box, point 4).

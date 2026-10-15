@@ -33,12 +33,16 @@ C:\conda-envs\drlca-rag\python.exe scripts\ablate_handmap.py       # E5.3: S shi
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_surface.py       # E5: beg->begging surface-form arm, dev only (declined 2026-09-24)
 C:\conda-envs\drlca-rag\python.exe scripts\probe_embed_quota.py    # E5.5: SPENDS QUOTA only with --i-understand-this-spends-quota
 C:\conda-envs\drlca-rag\python.exe scripts\transcript_chat.py      # G4 drift transcript: dry run by default; SPENDS QUOTA only with --i-understand-this-spends-quota
-C:\conda-envs\drlca-rag\python.exe scripts\build_oov_bridge.py     # rebuild data/processed/oov_bridge.json (needs D:\e4_vectors\)
+C:\conda-envs\drlca-rag\python.exe scripts\build_oov_bridge.py     # rebuild data/processed/oov_bridge.json (needs D:\NGORAG\runs\e4_vectors\)
 C:\conda-envs\drlca-rag\python.exe scripts\e4_reach.py             # E4.0 reach gate, dev only
 C:\conda-envs\drlca-rag\python.exe scripts\eval_phase06.py --out=scripts\eval_tmp.json
 C:\conda-envs\drlca-rag\python.exe -c "import app"                 # boot-import smoke (must not start a server)
 C:\conda-envs\drlca-rag\python.exe -m streamlit run app.py         # local UI → http://localhost:8501
 ```
+
+Baseline captures and the GloVe file live in `runs\` (gitignored; moved there from the D:\
+root on 2026-10-10). Older journal and phase docs still cite `D:\d5_baseline\`, `D:\e0_baseline\`,
+`D:\ship_e4a\` etc. — read any `D:\<run>\` as `D:\NGORAG\runs\<run>\`.
 
 These are plain assert-and-print scripts, not pytest — there is no test runner and no
 "single test" selector. To narrow a run, read the script and comment out or copy the
@@ -183,7 +187,7 @@ that suite off **212 runs** and requires a fresh calibration. The full measureme
 - **`data/processed/oov_bridge.json` is corpus-keyed.** Its keys are "words absent from the v2
   index", so `rag.build_corpus("v2")` hard-fails on a missing or stale artifact (sha256 of the
   chunk stream). Any corpus change means rebuild (`scripts/build_oov_bridge.py`, needs the GloVe
-  file in `D:\e4_vectors\`, never committed) **and re-measure** — the bridge is not
+  file in `D:\NGORAG\runs\e4_vectors\`, never committed) **and re-measure** — the bridge is not
   re-validated by rebuilding it. `check_bridge=False` exists for the generator only.
 - **`data/processed/_SAMPLE_DO_NOT_CITE.txt` is a dev placeholder** — never loaded, never
   cited.
