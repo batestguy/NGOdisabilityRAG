@@ -280,6 +280,30 @@ check("font-still-system-sans", 'font = "sans-serif"' in toml
 # Base CSS before the HC gate still token-only (scrims live after the gate):
 check("css-base-still-token-only-2", not hex_re.search(fn_src[:gate]),
       str(hex_re.findall(fn_src[:gate])[:5]))
+# H2 (2026-10-15, geometry pass): behind the open drawer (< 768 px) the page is
+# hidden INCLUDING descendants -- Streamlit's markdown wrapper re-declares
+# visibility:visible and escaped a parent-only rule (banner + answer stayed
+# readable behind the drawer). tools/a11y_audit break-test drawer_descendant_leak.
+check("drawer-hides-main-descendants",
+      "[aria-expanded='true'])\n    section.stMain *," in css_plain
+      and "[aria-expanded='true'])\n    [data-testid='stBottom'] *" in css_plain)
+# H2 (2026-10-15, keyboard pass, WCAG 2.4.7): Chrome makes the main scroll
+# container a tab stop; it had no focus indicator. currentColor keeps the base
+# block colour-free (the token-only check above still holds).
+# H2 (2026-10-15, contrast-over-image pass, WCAG 1.4.3): the .block-container
+# scrim never reached the photo (the watermark is emitted inside it). The scrim
+# rides on each top-level column block instead, skipping the watermark's own
+# block; HC pins the same blocks black. tools/a11y_audit --mode=contrast.
+check("column-blocks-scrimmed-above-photo",
+      "> :not(:has(.drlca-watermark)) { position: relative;\n"
+      "  background-color: rgba(255, 255, 255, 0.88); }" in css_full
+      and "body.drlca-dark .block-container > [data-testid='stVerticalBlock']"
+      in css_full
+      and "body:has(.drlca-hc-on) .block-container > [data-testid='stVerticalBlock']"
+      in css)
+check("scroll-container-focus-visible",
+      "[data-testid='stAppScrollToBottomContainer']:focus-visible" in css_plain
+      and "outline: 3px solid currentColor !important" in css_plain)
 
 # 14. Phase 10 C: the multi-turn chat UI ---------------------------------------
 # src/chat.py was built and measured headless in Phase B (+0.107 strict recall

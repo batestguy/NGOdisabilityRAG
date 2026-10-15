@@ -41,3 +41,7 @@ scripts/.answer_cache.tmp
 # nothing in it worth versioning.
 scripts/.quota_log.json
 scripts/.quota_log.tmp
+
+# H2 accessibility audit tooling (tools/a11y_audit): package.json + lockfile are
+# committed so the audit is reproducible; the installed modules are not.
+tools/a11y_audit/node_modules/
