@@ -406,3 +406,25 @@ is dropped; each one is checked off against the old file.
 > * **MERGED 2026-10-15 on the user's call** (`b7552e9`, merge commit) and deployed. CI on `main`:
 >   [38675792472](https://github.com/batestguy/NGOdisabilityRAG/actions/runs/38675792472), success. Live
 >   `/_stcore/health` returns `ok`. Branch protection on `main` (requiring `offline`) is still open, and it is the owner's call.
+
+> **H1 — 2026-10-15, GATE MET (branch `phase11/h1-bugs`; zero quota). Captures: `runs\h1_before\`, `runs\h1_after\`.**
+> * **H1a (relative 'that').** Regression conversation **CD13** added to chat_dev (the exact live-smoke wording; inserted
+>   as text, +30 lines, no other line moved). Asserts in `test_phase09_ops.py` §9: the help turn is left unchanged, and
+>   five controls still carry on 'that' (incl. CD5.t2, CD6.t3, CT3.t2). Fix in `src/chat.py` `unbound_pronouns()`:
+>   'that' is skipped only after a content word (not in `_NOT_ANTECEDENT`: does / like / said …) and before a
+>   modal/auxiliary or one of 13 listed verbs. `eval_chat` before → after: **chat_test byte-identical**; on chat_dev's
+>   28 original scored turns no row changed; the only behaviour change is **CD7.t2** (`I need an organisation that can
+>   help`, a help turn with no legal ground truth), which is the same bug and now `self-sufficient`. The aggregate moves
+>   (0.786 → 0.793 ctx strict, r@3 0.571 → 0.552) are CD13 entering the denominator, not a change on any old turn.
+> * **H1b (duplicate excerpt).** `app.dedupe_excerpts()` keyed on (doc_id, ref, text), keep-first, called in
+>   `render_excerpts` before the inline/fold split. Three new `test_phase05` asserts (140/140). `eval_heldout`
+>   before/after **identical except one log-timestamp line**. Corpus untouched, so no bridge rebuild and no re-pin.
+> * **Live UI check (Playwright, local `streamlit run`, 1280 px):** "What are the penalties under the Act?" renders
+>   **9 cards (3 inline + 6 folded), down from 10**; the remaining two `[Constitution s. 4]` cards are distinct chunks.
+>   The CD13 help turn leads with the helplines and shows **no** "Read as a follow-up" caption; the positive control
+>   ("so can they fire me for that?") **does** show it (`unbound-pronoun:they,that`), so the check can fail.
+> * Every suite re-run: 03 · 04 · 05 (140) · 09_ops (63) · audit_corpus · bench · calibrate_refusal 0/212 · `import app` — all PASS.
+> * **Observed, not fixed (new lead):** "is that legal?" scores legal 0 / help 0 in `router.route_question()` (the word
+>   "legal" is not a legal cue), so mid-conversation it gets the **clarify** prompt instead of a legal answer, even though
+>   `contextualise()` would carry it. Routing is stateless by design and runs on the raw turn. Whether a carried turn
+>   should inherit the previous turn's route is a design change with its own gate, so it is not part of H1.

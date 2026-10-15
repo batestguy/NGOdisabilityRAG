@@ -20,11 +20,11 @@ root (`D:\NGORAG`), not via `conda activate`:
 C:\conda-envs\drlca-rag\python.exe scripts\bench_phase01.py        # Phase 01 retrieval bench (PASS)
 C:\conda-envs\drlca-rag\python.exe scripts\test_phase03.py         # NGO connector, 16/16 matrix + 7/7 statics
 C:\conda-envs\drlca-rag\python.exe scripts\test_phase04.py         # Intent router, 10/10
-C:\conda-envs\drlca-rag\python.exe scripts\test_phase05.py         # UI script-level asserts, 137/137
-C:\conda-envs\drlca-rag\python.exe scripts\test_phase09_ops.py     # ops/chat invariants, 51/51, zero network
+C:\conda-envs\drlca-rag\python.exe scripts\test_phase05.py         # UI script-level asserts, 140/140
+C:\conda-envs\drlca-rag\python.exe scripts\test_phase09_ops.py     # ops/chat invariants, 63/63, zero network
 C:\conda-envs\drlca-rag\python.exe scripts\audit_corpus.py         # corpus shape gate + v1 regression tripwire
 C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py         # held-out retrieval baseline (+ recall_strict, + E5.1 view, + test2 on v2)
-C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn set, 22 conv / 62 turns
+C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn set, 23 conv / 64 turns
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase08.py       # retrieval ablations
 C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase10.py       # (k, top_n) width ladder, measure-only, never gates
 C:\conda-envs\drlca-rag\python.exe scripts\calibrate_refusal.py    # refusal invariance, 212 probes, 0 disagreements

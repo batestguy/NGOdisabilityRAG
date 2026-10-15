@@ -376,6 +376,36 @@
   ]
  },
  {
+  "id": "CD13",
+  "set": "chat_dev",
+  "topic": "legal then help, relative 'that' (H1a regression)",
+  "note": "H1a regression, authored 2026-10-15 from the live smoke after the 2026-10-15 deploy. Turn 2's 'that' is a RELATIVE pronoun (noun + that + modal), not an unbound demonstrative, so it must not by itself carry turn 1 into the help query. The live smoke saw 'unbound-pronoun:that' here. Act cl.1 read from the v2 corpus ([Act cl. 1]: 'A person with disability shall not be discriminated against on the ground of his disability').",
+  "turns": [
+   {
+    "text": "What does the Act say about discrimination?",
+    "class": "direct",
+    "expect_gate": "answer",
+    "expected": {
+     "act2018": [
+      1
+     ]
+    },
+    "note": "Act cl.1(1) prohibits discrimination on the ground of disability (corrected text, verified by Jerry, A101). The live smoke returned [Act cl. 1] for this exact question."
+   },
+   {
+    "text": "I am deaf and I live in Lagos, is there an organisation that can help me?",
+    "class": "handoff",
+    "expect_gate": "help",
+    "expected": {},
+    "expect_slots": {
+     "disability": "deaf",
+     "location": "lagos"
+    },
+    "note": "THE H1a probe: the exact live-smoke wording. A self-sufficient help turn: contextualise() must record carried=False (no 'unbound-pronoun:that'); asserted in test_phase09_ops.py."
+   }
+  ]
+ },
+ {
   "id": "CT2",
   "set": "chat_test",
   "topic": "building plans and offences",

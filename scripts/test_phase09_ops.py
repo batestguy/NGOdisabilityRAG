@@ -400,6 +400,27 @@ def main() -> int:
     check(chat.cross_turn_drift(None, prior, now) == [],
           "a pending answer (None) has no drift")
 
+    print("\n== 9. CHAT: relative 'that' is NOT an unbound pronoun (H1a, zero network) ==")
+    # Seen on the live smoke after the 2026-10-15 deploy: "an organisation that
+    # can help me" was read as unbound 'that' and carried the previous legal
+    # turn into a help query. Regression conversation: CD13 (chat_dev).
+    legal = [{"question": "What does the Act say about discrimination?"}]
+    help_q = "I am deaf and I live in Lagos, is there an organisation that can help me?"
+    q_out, meta = chat.contextualise(legal, help_q)
+    check(q_out == help_q and meta["carried"] is False,
+          "relative 'that' (noun + that + modal) leaves the help turn unchanged: %r"
+          % meta["reason"])
+    check("that" not in chat.unbound_pronouns(help_q),
+          "unbound_pronouns() skips relative 'that'")
+    # Controls: a genuinely unbound 'that' must still resolve.
+    for q in ("what about that?", "is that legal?",
+              "do I need a certificate for that?",       # CD5.t2
+              "where do I take a case like that?",       # CD6.t3
+              "does that cover forced labour too?"):     # CT3.t2
+        _, m = chat.contextualise(legal, q)
+        check(m["carried"] and "that" in m["pronouns"],
+              "unbound 'that' still carries: %r -> %r" % (q, m["reason"]))
+
     if failures:
         print("\nFAILURES:")
         for f in failures:
