@@ -19,3 +19,6 @@ ipykernel==7.3.0
 Shapely==2.1.2
 pyclipper==1.4.0
 protobuf==7.36.1
+# Phase F0 (2026-10-15), reproduction of the DECLINED static arm only (scripts/ablate_static.py,
+# branch phase10/f0-static). Never in requirements.txt.
+model2vec==0.10.0
