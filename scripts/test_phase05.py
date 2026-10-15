@@ -171,7 +171,9 @@ check("config-has-dark-sidebar", "[theme.dark.sidebar]" in toml)
 check("config-base-light", 'base = "light"' in toml)
 check("config-widget-border", "showWidgetBorder = true" in toml)
 check("config-sidebar-border", "showSidebarBorder = true" in toml)
-check("config-text-light", "#1F2328" in toml)
+# H2 (2026-10-15): #1F2328 -> #0d1117 on purpose; Streamlit's 60% caption tint of
+# #1F2328 was 4.24:1 on white (axe color-contrast, fails AA). See config.toml.
+check("config-text-light", "#0d1117" in toml and "#1F2328" not in toml)
 check("config-text-dark", "#e6edf3" in toml)
 check("config-no-remote-fonts", "fonts.googleapis" not in toml
       and "fonts.google.com" not in toml)
@@ -253,7 +255,9 @@ check("stacking-important", "position: relative !important" in css_plain
       and "z-index: 1 !important" in css_plain)
 check("sidebar-above-main-context",
       "section[data-testid='stSidebar']" in css_full
-      and "z-index: 2 !important" in css_full)
+      # H2 (2026-10-15): 2 -> 999991, above Streamlit's header (999990) as well
+      # as the main context (1); at 2 the header covered the sidebar close button.
+      and "z-index: 999991 !important" in css_full)
 check("sidebar-bg-important", "#f6f8fa !important" in css_full
       and "#010409 !important" in css_full)
 check("theme-watch-helper", "def theme_watch_html" in src

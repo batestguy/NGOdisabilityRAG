@@ -428,3 +428,15 @@ is dropped; each one is checked off against the old file.
 >   "legal" is not a legal cue), so mid-conversation it gets the **clarify** prompt instead of a legal answer, even though
 >   `contextualise()` would carry it. Routing is stateless by design and runs on the raw turn. Whether a carried turn
 >   should inherit the previous turn's route is a design change with its own gate, so it is not part of H1.
+
+> **H2 — 2026-10-15, IN PROGRESS (branch `phase11/h2-a11y`, cut from `phase11/h1-bugs` at `9ade6ca`; zero quota). GATE NOT MET.**
+> * First-pass fixes from axe + Playwright spot checks, committed: light `textColor` `#1F2328` → `#0d1117` (caption tint
+>   4.24 → 4.96:1); sidebar z-index 2 → 999991 (header covered its close button at 360 px); collapsed sidebar and its
+>   descendants `visibility:hidden` (13 invisible tab stops); open drawer at < 768 px hides the page behind it;
+>   `scroll-padding` reserves the fixed chat bar (focused controls were fully hidden); high-contrast text fields pinned
+>   black/white (typed text was 1.06:1); component iframes named or `aria-hidden`; iframe follows the Text size slider;
+>   read-aloud button padding; chat message stacks the avatar at ≤ 480 px.
+> * Re-run on this tree: 03 · 04 · 05 (140) · 09_ops · audit_corpus · calibrate_refusal · `import app` — all PASS.
+> * **Still to do:** the full post-fix matrix (360/768/1280 × light/dark/HC, + 200% at 360; empty / legal / help) with
+>   axe counts and Lighthouse scores captured to `runs\h2_after\`; ui-geometry check; `docs/accessibility.md` (WCAG 2.2 AA
+>   table + owner checklist). Then the owner runs NVDA / keyboard / mic / read-aloud and signs.

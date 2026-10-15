@@ -4,6 +4,9 @@
 # defined so the in-app settings menu can switch modes and every element
 # (buttons, sidebar, inputs) stays readable in each mode.
 # Brand: Nigerian green. Body text pairs are WCAG AA on their backgrounds.
+# H2 (2026-10-15): light textColor (was hex 1F2328) -> #0d1117. Streamlit draws captions
+# at 60% of textColor, which measured #797b7e on white = 4.24:1 (axe, fails AA
+# 4.5); #0d1117 gives captions #6e7074 = 4.96:1 and body text 18.9:1.
 # Fonts: system stacks only (no downloads — free-tier cold-start stays lean).
 
 [server]
@@ -23,9 +26,9 @@ showSidebarBorder = true
 primaryColor = "#1a7f37"
 backgroundColor = "#ffffff"
 secondaryBackgroundColor = "#f6f8fa"
-textColor = "#1F2328"
+textColor = "#0d1117"
 linkColor = "#1a7f37"
-codeTextColor = "#1F2328"
+codeTextColor = "#0d1117"
 codeBackgroundColor = "#f6f8fa"
 borderColor = "#d0d7de"
 greenColor = "#1a7f37"
@@ -34,7 +37,7 @@ greenColor = "#1a7f37"
 backgroundColor = "#f6f8fa"
 secondaryBackgroundColor = "#eaeef2"
 codeBackgroundColor = "#eaeef2"
-textColor = "#1F2328"
+textColor = "#0d1117"
 borderColor = "#d0d7de"
 primaryColor = "#1a7f37"
 
@@ -42,9 +45,9 @@ primaryColor = "#1a7f37"
 primaryColor = "#1a7f37"
 backgroundColor = "#ffffff"
 secondaryBackgroundColor = "#f6f8fa"
-textColor = "#1F2328"
+textColor = "#0d1117"
 linkColor = "#1a7f37"
-codeTextColor = "#1F2328"
+codeTextColor = "#0d1117"
 codeBackgroundColor = "#f6f8fa"
 borderColor = "#d0d7de"
 greenColor = "#1a7f37"
@@ -54,7 +57,7 @@ chartCategoricalColors = ["#1a7f37", "#0969da", "#8250df", "#cf222e", "#bf8700",
 backgroundColor = "#f6f8fa"
 secondaryBackgroundColor = "#eaeef2"
 codeBackgroundColor = "#eaeef2"
-textColor = "#1F2328"
+textColor = "#0d1117"
 borderColor = "#d0d7de"
 primaryColor = "#1a7f37"
 

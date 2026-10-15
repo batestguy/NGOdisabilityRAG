@@ -1,5 +1,11 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-15)
 
+> **■ 2026-10-15 (H2 WIP): H1 DONE on `phase11/h1-bugs` (`9ade6ca`, not merged). H2 first-pass a11y fixes committed on
+> `phase11/h2-a11y` (cut from H1). All offline suites PASS. GATE NOT MET.**
+> * Next (agent): full post-fix axe/Lighthouse matrix → `runs\h2_after\`, ui-geometry check, write `docs/accessibility.md`.
+> * Next (owner): merge H1 (redeploys) when ready; later run the NVDA / keyboard / mic checklist and sign.
+> * **Any push to `main` redeploys. Ask the user first, every time.**
+
 > **■ 2026-10-15 (H0 merged): PR #13 MERGED TO `main` ON THE USER'S CALL (`b7552e9`) AND DEPLOYED. NEXT: H1 on `phase11/h1-bugs`.**
 > * CI on `main` is green (run 38675792472). The app code didn't change. Live `/_stcore/health` returns `ok`.
 > * Branch protection on `main` is not set up (the owner's choice), so CI reports but can't block a merge.
