@@ -3,7 +3,9 @@
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\parse_act_v2.py
      ... --json=<ckpt>     OCR checkpoint in  (default below)
      ... --out=<path>      clause manifest out (default below)
-     ... --body-from=5     first body page, 1-based (default: located, not assumed)
+     ... --body-from=5     first body page, 1-based (default 5: the shipped artifact
+                           was built with it; --body-from=0 disables the filter, and then
+                           cl.1/cl.2 anchor on the Arrangement pages -- found 2026-10-15)
      ... --report          print every clause's anchor decision
 
 STDLIB ONLY -- no pymupdf, no rapidocr, no numpy. That is the whole point of
@@ -46,6 +48,7 @@ from ocrlib import rows, x_left, x_right, y_top, y_bottom  # noqa: E402
 CKPT_IN = ROOT / "data" / "processed" / "gazette_rapidocr.json"
 MANIFEST = ROOT / "data" / "processed" / "gazette_arrangement.json"
 OUT = ROOT / "data" / "processed" / "act2018_v2_clauses.json"
+CORRECTIONS = ROOT / "data" / "processed" / "act2018_v2_corrections.json"
 
 ACT_CLAUSES = range(1, 59)
 TITLE_MATCH = 0.72          # SequenceMatcher on normalised titles
@@ -299,7 +302,7 @@ def main(argv: list[str] | None = None) -> int:
     assert sorted(titles) == list(ACT_CLAUSES), "manifest is not 1..58"
 
     ckpt = json.loads(ckpt_p.read_text(encoding="utf-8"))
-    body_from = int(opt("body-from", 0))
+    body_from = int(opt("body-from", 5))
     pages = {int(p): page_layout(ls) for p, ls in ckpt.items() if ls}
     if body_from:
         pages = {p: v for p, v in pages.items() if p >= body_from}
@@ -338,6 +341,24 @@ def main(argv: list[str] | None = None) -> int:
     print("  notes unmatched  : %d" % len(unmatched))
     for u in unmatched:
         print("      %s" % u)
+
+    # Verified corrections: text the OCR invented (show-through), never quirks.
+    # Exact-once match or the parse fails; the clause is flagged either way.
+    print("\n== VERIFIED CORRECTIONS (%s) ==" % CORRECTIONS.name)
+    corr = (json.loads(CORRECTIONS.read_text(encoding="utf-8"))["corrections"]
+            if CORRECTIONS.exists() else [])
+    for c in corr:
+        f = found[c["clause"]]
+        hits = f["text"].count(c["find"])
+        assert hits == 1, ("correction for cl.%d matches %d times, not once"
+                           % (c["clause"], hits))
+        f["text"] = f["text"].replace(c["find"], c["replace"])
+        f["flags"].append("CORRECTED" if c.get("verified_by")
+                          else "CORRECTED_UNVERIFIED")
+        print("  cl.%-2d p%d %-20s %r -> %r" % (c["clause"], c["pdf_page"],
+              f["flags"][-1], c["find"][:40], c["replace"][:40]))
+    if not corr:
+        print("  none")
 
     out_p.write_text(json.dumps(
         {"source": man["source"], "title_source": man["title_source"],

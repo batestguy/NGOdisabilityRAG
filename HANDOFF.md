@@ -1,5 +1,19 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-15)
 
+> **■ 2026-10-15 (later): ACT CL. 1 FIX VERIFIED (Jerry) AND MERGED TO LOCAL `main`. NOT PUSHED. NEXT: PHASE F (re-examine M4 first).**
+> *(The sign-off steps below are done: the flag is `CORRECTED`, the corpus sha is unchanged at `c4f7cfbb…`, and AUDIT PASS.)*
+> * The cause is show-through of the reverse page, not rotation. The corrected 1(1) reads: "A person with
+>   disability shall not be discriminated against on the ground of his disability by any person or
+>   institution in any manner or circumstance." (gazette PDF p.5 / A101).
+> * **To sign:** open `data/raw/disability_act_2018_gazette_FGP.pdf` page 5 and check the text. Then set
+>   `verified_by` in `data/processed/act2018_v2_corrections.json`, re-run `scripts/parse_act_v2.py`
+>   (the flag becomes `CORRECTED`), re-pin `V2_CORPUS_SHA256` if it moves (the flags aren't in the
+>   chunk text, so it shouldn't), commit, and merge to local `main`. **Do not push.**
+> * Re-measure: shipping numbers unchanged, all suites PASS (STATUS has the detail). Captures:
+>   `runs\cl1_before\`, `runs\cl1_after\`.
+> * For review, not fixed: cl.12 `N1,0o0` (N1,000) and cl.20 `selivere` ("is delivered").
+> * After the merge: Phase F (re-examine M4 first).
+
 > **■ 2026-10-15: PHASE G CLOSED. SPENT (Pacific day 2026-10-14): flash-lite 7, flash 9.**
 > * Judge finished from the checkpoint: 23/23 + 1 skip. Relevancy 10/10, faithfulness 10/10.
 >   G4 `transcript_chat_chat-cite-strict-v2_2026-10-15.json`: 9/9 answered, **0 drift**, 0 cite

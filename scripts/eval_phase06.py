@@ -282,8 +282,15 @@ V1_RESULTS_SHA256 = ("12BDEBA001D21E838A3747281A108BCB8C77A165EFA8932A4500D573"
 # became the default, leaving only the retired corpus guarded -- the same
 # inversion V2_CORPUS_SHA256 exists to prevent in audit_corpus.py. Re-measured
 # twice at E1b's budget and identical both times; same CRLF caveat as above.
-V2_RESULTS_SHA256 = ("2429CAFCD1385047385F7E990B931ECC81B9F40C5A0F5C9849D1FEF8"
-                     "4EEDC0B9").lower()
+#
+# RE-PINNED 2026-10-15 (Act cl. 1 show-through correction, branch
+# phase10/act-cl1-fix). The CORPUS moved this time, on purpose: cl. 1(1)'s OCR
+# garbage was replaced by the gazette text (data/processed/act2018_v2_corrections.json).
+# The gate fired first. The only record that changed is Q1 claims[4].overlap
+# 0.8 -> 1.0 (the claim is now supported by legible text). Old v2 value:
+#   2429cafcd1385047385f7e990b931ecc81b9f40c5a0f5c9849d1fef84eedc0b9
+V2_RESULTS_SHA256 = ("A46C3440F0FE764544CDEB1A99C09E693822A177AB2DE0BC974A2846"
+                     "CA675974").lower()
 
 RESULTS_SHA256 = {"v1": V1_RESULTS_SHA256, "v2": V2_RESULTS_SHA256}
 

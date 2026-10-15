@@ -3234,3 +3234,25 @@ common real-world question in this domain and got no law back. **Lesson: refusal
 (0/212) measures the retrieval floor. It says nothing about the generator's own threshold for
 "is this answered here", and that threshold needs its own probe set before the AI path is
 recommended to anyone.**
+
+## 2026-10-15 — Act cl. 1: the "upside-down" text was the back of the page
+
+Day 1 called the clause 1 garbage "upside-down OCR". Rendering the gazette page showed otherwise:
+the scan picks up the reverse page's print through the paper, and the OCR read that mirrored
+show-through in place of the real second line of 1(1). The diagnosis matters, because show-through
+can strike any scanned page. So the fix came after a scan of all 58 clauses for runs of non-words,
+and that scan found only clause 1. The other hits were the run-together words the repo deliberately
+leaves alone.
+
+The fix lives in data, not in a hand-edited artifact. A corrections file carries the exact garbage,
+its replacement, the evidence and a `verified_by` field that only a human may sign. The parser
+refuses to apply an entry unless it matches exactly once. That mechanism found a second problem
+straight away: the parser's default run didn't reproduce the shipped clauses at all. The artifact
+had been built with `--body-from=5`, which no doc recorded, and the docstring claimed the body page
+was "located, not assumed". **Lesson: a generated artifact is only reproducible if the command that
+made it is written down. Check a generator by diffing its default run against the committed
+output, not by reading its docstring.**
+
+The re-measure ran every Phase E harness before and after. Shipping recall, false refusals and
+calibration didn't move. The OOV bridge got slightly cleaner, because the garbage tokens had been
+valid bridge targets for Chinese and Spanish words.
