@@ -1,9 +1,12 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-15)
 
-> **■ 2026-10-15 (H2 WIP): H1 DONE on `phase11/h1-bugs` (`9ade6ca`, not merged). H2 first-pass a11y fixes committed on
-> `phase11/h2-a11y` (cut from H1). All offline suites PASS. GATE NOT MET.**
-> * Next (agent): full post-fix axe/Lighthouse matrix → `runs\h2_after\`, ui-geometry check, write `docs/accessibility.md`.
-> * Next (owner): merge H1 (redeploys) when ready; later run the NVDA / keyboard / mic checklist and sign.
+> **■ 2026-10-15 (H2): AGENT PART DONE on `phase11/h2-a11y` (not merged, not pushed). OWNER CHECKLIST PENDING → GATE NOT YET MET.**
+> * axe after: **0 serious / 0 moderate / 0 minor**. 9 critical = one Streamlit-internal node (sidebar `aria-expanded`,
+>   streamlit#17126, fixed in Streamlit 1.66.0; we pin 1.63.0, so the bump is a separate follow-up). Contrast over the
+>   photo 0/152 failing, keyboard clean, geometry clean with break-tests. Lighthouse 94 / 100.
+> * Next (owner): run `docs/accessibility.md` §7 (NVDA, keyboard, mic incl. denied permission, read-aloud) and sign.
+>   H1 is PR #14 (`phase11/h1-bugs`); H2 is cut from H1, so merge H1 first.
+> * Re-run the audit: `tools/a11y_audit` (`npm ci`, then `node audit.mjs --base=http://localhost:8501 --out=...`).
 > * **Any push to `main` redeploys. Ask the user first, every time.**
 
 > **■ 2026-10-15 (H0 merged): PR #13 MERGED TO `main` ON THE USER'S CALL (`b7552e9`) AND DEPLOYED. NEXT: H1 on `phase11/h1-bugs`.**
