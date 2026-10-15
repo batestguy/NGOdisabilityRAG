@@ -380,7 +380,7 @@ is dropped; each one is checked off against the old file.
 
 ## Results
 
-> **H0 — 2026-10-15, IN PROGRESS (branch `phase11/h0-ci`, local commit, not pushed; zero quota).**
+> **H0 — 2026-10-15, EXIT GATE MET (branch `phase11/h0-ci`, PR #13 open, NOT merged; zero quota).**
 > * **Step 1 (what the suites need on disk):** every input of the six CI suites is committed:
 >   `data/processed/*` (incl. `act2018_v2_clauses.json`, `oov_bridge.json`), `data/eval/*`,
 >   `data/ngo.csv`. None reads `runs\` or the GloVe file. Verified empirically, not by reading:
@@ -388,11 +388,20 @@ is dropped; each one is checked off against the old file.
 >   `import app` and test_phase03 / 04 / 05 (137/137) / 09_ops / audit_corpus / bench_phase01 **all exit 0**,
 >   with no API key set, and the clone's `git status` is clean afterwards (no suite writes tracked files).
 > * **Step 2 (install):** `requirements.txt` alone is sufficient, so **no `requirements-ci.txt`** was
->   written and `requirements.txt` is untouched. The local Windows install took ~4m50s cold; the
->   ubuntu runner time is to be read off the first run.
+>   written and `requirements.txt` is untouched. The local Windows install took ~4m50s cold; on the
+>   ubuntu runner it took **30 s** (first run, cold pip cache), and the whole job **51 s**.
 > * **Step 3–4:** `.github/workflows/offline-suites.yml`: `pull_request` + `push` (all branches), one job,
 >   one step per suite in the playbook's order, pip cache keyed on `requirements.txt`,
 >   `permissions: contents: read`, no secret referenced, no deploy step. The file's header records why
 >   the Gemini scripts and the measurement harnesses are excluded.
 > * **Step 5 + exit gate: PENDING the user's OK** to push the topic branch and open the PR (outward-facing).
->   Then: green run on the PR, a red run from a throwaway `assert False` branch, both linked here.
+>   **Done on the user's OK ("proceed"):**
+>   * **Green**: PR [#13](https://github.com/batestguy/NGOdisabilityRAG/pull/13), `pull_request` run
+>     [38675503148](https://github.com/batestguy/NGOdisabilityRAG/actions/runs/38675503148) (plus push run
+>     [38675499933](https://github.com/batestguy/NGOdisabilityRAG/actions/runs/38675499933)): all 7 suite steps succeed.
+>   * **Red**: throwaway branch `h0-ci-red-check` (`95cf21b`, one line `assert False` after `import router` in
+>     `test_phase04.py`), run [38675517320](https://github.com/batestguy/NGOdisabilityRAG/actions/runs/38675517320):
+>     **failure at the `test_phase04` step** with that `AssertionError`; the four later steps are skipped. The
+>     branch was then deleted on `origin` and locally.
+> * **Still the owner's:** merging PR #13 (that is a push to `main`, so it redeploys) and, optionally, branch
+>   protection on `main` requiring the `offline` check.
