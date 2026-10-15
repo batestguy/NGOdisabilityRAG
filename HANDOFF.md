@@ -1,5 +1,12 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-15)
 
+> **■ 2026-10-15 (H0): CI WORKFLOW BUILT ON `phase11/h0-ci` (branched from `phase11/roadmap`). LOCAL ONLY, NOT PUSHED.**
+> * `.github/workflows/offline-suites.yml`: six offline suites + `import app`, on PR and push, `requirements.txt` only
+>   (proven on a fresh clone + clean venv; no `requirements-ci.txt` needed). No secrets, no deploy step.
+> * **Waiting on the user:** OK to push `phase11/h0-ci` (a topic branch, which doesn't deploy) and open a PR. Then the
+>   exit gate: green on the PR, red on a throwaway `assert False` branch (delete it after), and both runs linked in playbook 16 Results.
+> * Merging is the user's call, and so is turning on branch protection for `main`. **Any push to `main` redeploys.**
+
 > **■ 2026-10-15 (post-launch): POST-LAUNCH ROADMAP WRITTEN → `docs/phases/16_post_launch_roadmap.md`. NEXT: H0 (CI).**
 > * Assessment in one line: the system is live, $0, offline by default and rigorously evaluated, but it isn't complete. There's no CI before
 >   auto-deploy, no assistive-tech testing, no legal-expert review, no offline off-topic refusal, the NGO DB sits at the 10-org

@@ -379,4 +379,20 @@ is dropped; each one is checked off against the old file.
 * **A push to `main` deploys. It is the user's decision, every time.**
 
 ## Results
-*(empty; each step appends its own dated box here)*
+
+> **H0 — 2026-10-15, IN PROGRESS (branch `phase11/h0-ci`, local commit, not pushed; zero quota).**
+> * **Step 1 (what the suites need on disk):** every input of the six CI suites is committed:
+>   `data/processed/*` (incl. `act2018_v2_clauses.json`, `oov_bridge.json`), `data/eval/*`,
+>   `data/ngo.csv`. None reads `runs\` or the GloVe file. Verified empirically, not by reading:
+>   fresh `git clone` of the branch + clean venv (Python 3.11.16, no site-packages) →
+>   `import app` and test_phase03 / 04 / 05 (137/137) / 09_ops / audit_corpus / bench_phase01 **all exit 0**,
+>   with no API key set, and the clone's `git status` is clean afterwards (no suite writes tracked files).
+> * **Step 2 (install):** `requirements.txt` alone is sufficient, so **no `requirements-ci.txt`** was
+>   written and `requirements.txt` is untouched. The local Windows install took ~4m50s cold; the
+>   ubuntu runner time is to be read off the first run.
+> * **Step 3–4:** `.github/workflows/offline-suites.yml`: `pull_request` + `push` (all branches), one job,
+>   one step per suite in the playbook's order, pip cache keyed on `requirements.txt`,
+>   `permissions: contents: read`, no secret referenced, no deploy step. The file's header records why
+>   the Gemini scripts and the measurement harnesses are excluded.
+> * **Step 5 + exit gate: PENDING the user's OK** to push the topic branch and open the PR (outward-facing).
+>   Then: green run on the PR, a red run from a throwaway `assert False` branch, both linked here.

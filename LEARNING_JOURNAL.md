@@ -3324,3 +3324,19 @@ with a pre-declared no-new-false-refusals gate, never a higher `MIN_SCORE`. The 
 Phase E applies: blind sets authored before measuring, a gate fixed in advance, and decline if it
 fails. Credibility work doesn't relax the rigour. It points the rigour at the questions a user would
 actually ask: is it safe to deploy, can I use it, and is it right?
+
+## 2026-10-15 — H0: the runtime requirements were already the CI requirements
+
+The playbook expected CI might need `requirements-ci.txt` (runtime plus whatever the suites import
+beyond it), and possibly to drop suites that read gitignored artifacts. Neither was needed. A fresh
+clone into a clean venv with only `requirements.txt` passes all six offline suites and the boot
+import. The reason is a design choice made back in Phase 07: the corpus ships prebuilt as committed
+TXT/JSON and the OOV bridge as a committed artifact. So nothing a suite reads is built at test time,
+and nothing it needs lives in `runs\`. That choice was made to keep the Render cold start cheap, and
+here it pays a second time, because the CI machine is the same "fresh box with the slim runtime"
+that Render is. The useful consequence is that a green CI run is also a weak proof that the deploy
+image can import and serve the offline path, which a heavier CI install would not have shown.
+
+I checked this by running it, not by reading imports. Reading would have flagged `bench_phase01`'s
+use of `load.py` (the OCR-repair module) as a possible heavy dependency; it only needs `re` and `difflib`.
+
