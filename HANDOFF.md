@@ -1,6 +1,7 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-15)
 
-> **■ 2026-10-15 (later): ACT CL. 1 FIX STAGED ON `phase10/act-cl1-fix`, NOT MERGED. IT NEEDS YOUR SIGN-OFF.**
+> **■ 2026-10-15 (later): ACT CL. 1 FIX VERIFIED (Jerry) AND MERGED TO LOCAL `main`. NOT PUSHED. NEXT: PHASE F (re-examine M4 first).**
+> *(The sign-off steps below are done: the flag is `CORRECTED`, the corpus sha is unchanged at `c4f7cfbb…`, and AUDIT PASS.)*
 > * The cause is show-through of the reverse page, not rotation. The corrected 1(1) reads: "A person with
 >   disability shall not be discriminated against on the ground of his disability by any person or
 >   institution in any manner or circumstance." (gazette PDF p.5 / A101).
