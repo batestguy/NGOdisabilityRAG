@@ -11,6 +11,7 @@ bottom only runs the UI under `streamlit run` / `__main__`.
 """
 
 import html
+import json
 import os
 import re
 import sys
@@ -93,16 +94,68 @@ def accessibility_css(high_contrast: bool = False, font_size: int = 18) -> str:
         "   order. The sidebar therefore needs z-index:2 to sit above the\n"
         "   full-viewport photo (element-screenshot proof of bleed-through,\n"
         "   2026-09-09). !important: Streamlit's own section rules otherwise\n"
-        "   win the cascade. */\n"
+        "   win the cascade.\n"
+        "   H2 (2026-10-15): the value was 2, which also put the OPEN sidebar\n"
+        "   below Streamlit's fixed header (z 999990), so at 360 px the header\n"
+        "   covered the sidebar's close button (Playwright, live site too).\n"
+        "   999991 is above the header and still above the main context (1). */\n"
         ".block-container { position: relative !important; z-index: 1 !important; }\n"
         "section[data-testid='stSidebar'] {\n"
-        "  position: relative !important; z-index: 2 !important; }\n"
+        "  position: relative !important; z-index: 999991 !important; }\n"
         ".drlca-veil { position: fixed; inset: 0; z-index: 0;\n"
         "  pointer-events: none; background:\n"
         "  linear-gradient(rgba(255, 255, 255, 0.10),\n"
         "    rgba(255, 255, 255, 0.10)),\n"
         "  linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18)); }\n"
+        "/* H2 (2026-10-15, WCAG 2.4.7 / 2.4.11). A collapsed sidebar is slid\n"
+        "   off-canvas but stayed in the tab order: 13 invisible tab stops before\n"
+        "   the main content at 360-768 px. visibility:hidden removes them.\n"
+        "   Descendants too: the close button and the 'Help for ...' tooltip\n"
+        "   icons set their own visibility and stayed focusable otherwise. */\n"
+        "section[data-testid='stSidebar'][aria-expanded='false'],\n"
+        "section[data-testid='stSidebar'][aria-expanded='false'] * {\n"
+        "  visibility: hidden !important; }\n"
+        "/* Below 768 px the OPEN sidebar is a drawer over the page (measured:\n"
+        "   overlay at <= 767, side-by-side at >= 768) and Tab walked into the\n"
+        "   covered page behind it. The page is already hidden by the drawer,\n"
+        "   so hide it properly: out of the tab order and the reading order.\n"
+        "   Descendants too (geometry pass, 2026-10-15): Streamlit's markdown\n"
+        "   wrapper declares visibility:visible, so the banner and answer text\n"
+        "   escaped a parent-only rule and stayed readable behind the drawer. */\n"
+        "@media (max-width: 767.98px) {\n"
+        "  body:has(section[data-testid='stSidebar'][aria-expanded='true'])\n"
+        "    section.stMain,\n"
+        "  body:has(section[data-testid='stSidebar'][aria-expanded='true'])\n"
+        "    section.stMain *,\n"
+        "  body:has(section[data-testid='stSidebar'][aria-expanded='true'])\n"
+        "    [data-testid='stBottom'],\n"
+        "  body:has(section[data-testid='stSidebar'][aria-expanded='true'])\n"
+        "    [data-testid='stBottom'] * { visibility: hidden !important; } }\n"
+        "/* Focus scrolling stopped at the scroll container's edge, which runs\n"
+        "   UNDER Streamlit's fixed chat bar: a focused control could be 100%%\n"
+        "   hidden (the Voice input expander was). scroll-padding is a\n"
+        "   RESERVATION, measured not guessed (Playwright, 2026-10-15): the bar\n"
+        "   is 8.11rem at 360-1280 px and 11.61rem at 360 px zoomed 200%%\n"
+        "   (placeholder wraps), so it covers the tallest case; the header is\n"
+        "   68px = 3.78rem. Changes scroll stops only, never layout. */\n"
+        "[data-testid='stAppScrollToBottomContainer'], html {\n"
+        "  scroll-padding-top: 4rem; scroll-padding-bottom: 11.75rem; }\n"
+        "/* H2 (2026-10-15, WCAG 2.4.7). Chrome makes a scrollable region with\n"
+        "   no focusable child a tab stop, so Streamlit's main scroll container\n"
+        "   takes focus between the header and the first link -- with no visible\n"
+        "   indicator (scripted keyboard pass, 360 + 1280 px). Give it one. No\n"
+        "   colour literal: the outline takes the text colour of whatever theme\n"
+        "   (or high-contrast overlay) is active. */\n"
+        "[data-testid='stAppScrollToBottomContainer']:focus-visible {\n"
+        "  outline: 3px solid currentColor !important;\n"
+        "  outline-offset: -3px !important; }\n"
         "@media (max-width: 480px) {\n"
+        "  /* H2 (2026-10-15): at 360 px and the largest text size, avatar column\n"
+        "     + message padding + alert icon left ~100 px for text and words broke\n"
+        "     mid-word. Stack the avatar ABOVE the message (DOM and reading order\n"
+        "     unchanged) and trim the padding. */\n"
+        "  [data-testid='stChatMessage'] { flex-direction: column;\n"
+        "    padding-left: 0.5rem; padding-right: 0.5rem; }\n"
         "  .block-container { padding-left: 1rem; padding-right: 1rem; }\n"
         "  div[data-testid='column'] { min-width: 100%%; }\n"
         "  div[data-testid='stButton'] > button { width: 100%%; } }\n"
@@ -141,8 +194,26 @@ def accessibility_css(high_contrast: bool = False, font_size: int = 18) -> str:
             "   black here so the forced palette stays intact. */\n"
             "body:has(.drlca-hc-on) .block-container,\n"
             "body:has(.drlca-hc-on) section[data-testid='stSidebar'],\n"
-            "body:has(.drlca-hc-on) .drlca-answer {\n"
+            "body:has(.drlca-hc-on) .drlca-answer,\n"
+            "body:has(.drlca-hc-on) .block-container > [data-testid='stVerticalBlock']\n"
+            "  > :not(:has(.drlca-watermark)) {\n"
             "  background-color: #000 !important; }\n"
+            "/* H2 (2026-10-15): text fields kept the themed #f6f8fa surface while\n"
+            "   their text was forced white -- axe measured 1.06:1 on the chat box,\n"
+            "   so typed questions were invisible. Pin fields (and the fixed chat\n"
+            "   bar around them) to the same black/white pair. */\n"
+            "body:has(.drlca-hc-on) textarea,\n"
+            "body:has(.drlca-hc-on) input[type='text'],\n"
+            "body:has(.drlca-hc-on) [data-testid='stChatInput'],\n"
+            "body:has(.drlca-hc-on) [data-testid='stChatInput'] > div,\n"
+            "body:has(.drlca-hc-on) [data-testid='stBottom'] > div {\n"
+            "  background-color: #000 !important; color: #fff !important;\n"
+            "  caret-color: #fff !important; }\n"
+            "body:has(.drlca-hc-on) textarea::placeholder,\n"
+            "body:has(.drlca-hc-on) input::placeholder {\n"
+            "  color: #fff !important; opacity: 1 !important; }\n"
+            "body:has(.drlca-hc-on) [data-testid='stChatInput'] {\n"
+            "  border: 2px solid #fff !important; }\n"
             "</style>"
             "<div class='drlca-hc-on' style='display:none;'></div>"
         )
@@ -191,6 +262,24 @@ def accessibility_css(high_contrast: bool = False, font_size: int = 18) -> str:
         "body.drlca-dark .block-container {\n"
         "  background-color: rgba(13, 17, 23, 0.88); }\n"
         "body.drlca-dark .drlca-answer { background-color: #0d1117; }\n"
+        "/* H2 (2026-10-15): the .block-container scrim above never reached the\n"
+        "   photo. The watermark/veil divs are emitted INSIDE .block-container,\n"
+        "   which is their stacking context, so they paint over its background.\n"
+        "   Pixel-measured over the photo (tools/a11y_audit --mode=contrast):\n"
+        "   NGO record links 10th-percentile 2.65:1 and the empty-page caption\n"
+        "   3.66:1 median in light, under AA 4.5. So the scrim moves onto each\n"
+        "   top-level block of the column: positioned, it joins the photo's\n"
+        "   layer AFTER it in tree order, so its background lands above the\n"
+        "   photo and below its own text. The block holding the watermark is\n"
+        "   skipped (it must not scrim itself). position:relative only, no\n"
+        "   z-index: no new stacking context. The photo stays visible in the\n"
+        "   margins and the gaps between blocks, where there is no text. */\n"
+        ".block-container > [data-testid='stVerticalBlock']\n"
+        "  > :not(:has(.drlca-watermark)) { position: relative;\n"
+        "  background-color: rgba(255, 255, 255, 0.88); }\n"
+        "body.drlca-dark .block-container > [data-testid='stVerticalBlock']\n"
+        "  > :not(:has(.drlca-watermark)) {\n"
+        "  background-color: rgba(13, 17, 23, 0.88); }\n"
         "</style>"
     )
     return base
@@ -308,7 +397,12 @@ def build_speech_text(legal: dict | None, help_payload: dict | None,
         elif legal.get("answer"):
             parts.append(str(legal["answer"]))
         else:
-            tags = ", ".join(legal.get("citations", []) or ["no citations yet"])
+            # The tags of the cards actually shown: H1's dedupe dropped the
+            # byte-identical pair from the cards but not from `citations`, so
+            # read-aloud spoke 10 tags against 9 cards (H2 owner pre-run).
+            shown = [e["tag"] for e in dedupe_excerpts(legal.get("excerpts") or [])]
+            tags = ", ".join(shown or legal.get("citations", [])
+                             or ["no citations yet"])
             parts.append("Legal excerpts retrieved. Citations: %s. "
                          "Open the AI expander for a generated answer." % tags)
     if help_payload is not None:
@@ -318,6 +412,194 @@ def build_speech_text(legal: dict | None, help_payload: dict | None,
             parts.append("Please confirm this matches your need. "
                          + str(help_payload.get("confirm_prompt", "")))
     return "\n".join(parts)
+
+
+def build_announcement(legal: dict | None, help_payload: dict | None,
+                       clarify: str = "", greeting: str = "") -> str:
+    """Short live-region summary of a NEW turn (WCAG 4.1.3, H2 owner pre-run).
+
+    NVDA said nothing when a turn arrived: focus stays in the chat box and the
+    page had no live region. This is the summary a screen-reader user hears
+    without moving; the turn itself, and Read aloud, carry the full text.
+    """
+    parts = ["New answer below.", HELPLINE_BANNER_TEXT + "."]
+    if greeting:
+        parts.append("Greeting.")
+    if clarify:
+        parts.append("One question first: " + clarify)
+    if legal is not None:
+        if legal.get("refused"):
+            parts.append(str(legal.get("answer", "")))
+        else:
+            n = len(dedupe_excerpts(legal.get("excerpts") or []))
+            if n:
+                parts.append("%d legal excerpt%s with citations."
+                             % (n, "" if n == 1 else "s"))
+            if legal.get("answer"):
+                parts.append("An AI answer is included.")
+    if help_payload is not None:
+        n = len(help_payload.get("records", []))
+        parts.append("%d help contact%s." % (n, "" if n == 1 else "s"))
+    return " ".join(parts)
+
+
+def _js_str(value) -> str:
+    """A JS string literal that is also safe inside an HTML <script>.
+
+    In memory only. JSONEncoder rather than the json module's dump helpers:
+    test_phase05's only-writer guard flags those names as possible disk
+    writes, and that guard should stay broad.
+    """
+    # Every "<" as <, not just "</": "<!--" + "<script" would otherwise
+    # change how the HTML parser finds the closing tag.
+    return json.JSONEncoder().encode(value).replace("<", "\\u003c")
+
+
+# H2 owner pre-run (2026-10-18): fixes Streamlit's DOM cannot take from Python.
+# theme_watch_html() injects this ONCE into the PARENT document as a real
+# <script> (so it lives in the page's realm and outlives the iframe that
+# carried it). Every part re-applies from a MutationObserver because Streamlit
+# re-renders freely. The drawer test reads the sidebar's aria-expanded, the
+# same hook as the H2 CSS: the Streamlit 1.66 bump must migrate both.
+A11Y_BRIDGE_JS = r"""
+(function () {
+  var D = document;
+  /* A2 / WCAG 4.1.3: one polite region, created at page load so it already
+     exists (empty) when the first announcement lands. */
+  var live = D.createElement('div');
+  live.id = 'drlca-live';
+  live.setAttribute('role', 'status');
+  live.setAttribute('aria-live', 'polite');
+  live.setAttribute('aria-atomic', 'true');
+  live.style.cssText = 'position:absolute;width:1px;height:1px;margin:-1px;' +
+    'padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;';
+  D.body.appendChild(live);
+  window.drlcaAnnounce = function (id, text) {
+    if (window.drlcaLastAnnounce === id) return;
+    window.drlcaLastAnnounce = id;
+    live.textContent = '';
+    setTimeout(function () { live.textContent = text; }, 150);
+  };
+
+  /* A7 / WCAG 1.1.1: Material icons are ligature TEXT, so NVDA read
+     "keyboard_arrow_right", "smart_toy", "face". Hide them; name what they
+     were standing in for. */
+  var ICON_NAMES = { keyboard_double_arrow_left: 'Close sidebar',
+                     keyboard_double_arrow_right: 'Open sidebar' };
+  function icons() {
+    D.querySelectorAll('[data-testid="stIconMaterial"]:not([aria-hidden])')
+      .forEach(function (e) {
+        e.setAttribute('aria-hidden', 'true');
+        var b = e.closest('button');
+        var name = ICON_NAMES[e.textContent.trim()];
+        if (b && name && !b.getAttribute('aria-label')) b.setAttribute('aria-label', name);
+      });
+    D.querySelectorAll('[data-testid^="stChatMessageAvatar"]:not([aria-label])')
+      .forEach(function (a) {
+        a.setAttribute('role', 'img');
+        a.setAttribute('aria-label', /User$/.test(a.getAttribute('data-testid'))
+          ? 'You asked' : 'Assistant answered');
+      });
+  }
+
+  /* C2: a blocked microphone only reached the console. Say it on the page. */
+  var micState = null;
+  function micNote() {
+    var note = D.getElementById('drlca-mic-note');
+    var frame = D.querySelector('iframe[title*="mic_recorder"]');
+    if (micState !== 'denied' || !frame) { if (note) note.remove(); return; }
+    var box = frame.closest('[data-testid="stElementContainer"]') || frame;
+    if (note && note.previousElementSibling === box) return;
+    if (note) note.remove();
+    note = D.createElement('p');
+    note.id = 'drlca-mic-note';
+    note.setAttribute('role', 'alert');
+    note.style.cssText = 'margin:0.25rem 0 0.5rem;font-weight:600;';
+    note.textContent = 'Voice input is unavailable: microphone access is ' +
+      'blocked for this site. Type your question in the box below, or allow ' +
+      'the microphone in your browser’s site settings and reload.';
+    box.insertAdjacentElement('afterend', note);
+  }
+  /* The Permissions API alone misses a dismissed prompt (state stays
+     'prompt' while Record fails), so also catch the real rejection inside
+     the same-origin mic iframe; re-hooked whenever that frame reloads. */
+  function hookMic() {
+    var frame = D.querySelector('iframe[title*="mic_recorder"]');
+    if (!frame) return;
+    if (!frame.drlcaHooked) {
+      frame.drlcaHooked = true;
+      frame.addEventListener('load', hookMic);
+    }
+    try {
+      var md = frame.contentWindow.navigator.mediaDevices;
+      if (!md || md.drlcaWrapped) return;
+      var orig = md.getUserMedia.bind(md);
+      md.getUserMedia = function (c) {
+        return orig(c).catch(function (e) {
+          if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) {
+            micState = 'denied'; micNote();
+          }
+          throw e;
+        });
+      };
+      md.drlcaWrapped = true;
+    } catch (e) {}
+  }
+  try {
+    navigator.permissions.query({ name: 'microphone' }).then(function (p) {
+      micState = p.state; micNote();
+      p.onchange = function () { micState = p.state; micNote(); };
+    }).catch(function () {});
+  } catch (e) {}
+
+  var queued = false;
+  function sweep() { queued = false; icons(); hookMic(); micNote(); }
+  new MutationObserver(function () {
+    if (!queued) { queued = true; requestAnimationFrame(sweep); }
+  }).observe(D.body, { childList: true, subtree: true });
+  sweep();
+
+  /* B3 / WCAG 2.1.2 + 2.4.3: below 768 px the open sidebar is a drawer over
+     the page. Esc closes it; Tab and Shift+Tab stay inside it. */
+  function sidebar() { return D.querySelector('section[data-testid="stSidebar"]'); }
+  function drawerOpen() {
+    var s = sidebar();
+    return !!s && window.innerWidth < 768 && s.getAttribute('aria-expanded') === 'true';
+  }
+  function tabbable(s) {
+    return Array.prototype.filter.call(
+      s.querySelectorAll('a[href],button,input,select,textarea,summary,[tabindex]'),
+      function (e) {
+        return e.tabIndex >= 0 && !e.disabled && e.getClientRects().length &&
+          getComputedStyle(e).visibility !== 'hidden';
+      });
+  }
+  D.addEventListener('keydown', function (ev) {
+    if (ev.isComposing || !drawerOpen()) return;
+    var s = sidebar();
+    if (ev.key === 'Escape') {
+      var close = s.querySelector('[data-testid="stSidebarCollapseButton"] button,' +
+                                  '[data-testid="stSidebarHeader"] button');
+      if (!close) return;
+      ev.preventDefault();
+      close.click();
+      setTimeout(function () {
+        var open = D.querySelector('[data-testid="stExpandSidebarButton"],' +
+                                   '[data-testid="stSidebarCollapsedControl"] button');
+        if (open) open.focus();
+      }, 400);
+      return;
+    }
+    if (ev.key !== 'Tab') return;
+    var f = tabbable(s);
+    if (!f.length) return;
+    var i = f.indexOf(D.activeElement);
+    if (i < 0) { ev.preventDefault(); f[ev.shiftKey ? f.length - 1 : 0].focus(); }
+    else if (!ev.shiftKey && i === f.length - 1) { ev.preventDefault(); f[0].focus(); }
+    else if (ev.shiftKey && i === 0) { ev.preventDefault(); f[f.length - 1].focus(); }
+  }, true);
+})();
+"""
 
 
 def theme_watch_html() -> str:
@@ -339,6 +621,21 @@ def theme_watch_html() -> str:
         "ready(function(){"
         "try{"
         "document.body.style.background='transparent';"
+        # H2 (2026-10-15): Streamlit names every component iframe "st.iframe".
+        # A frame with no control in it (the standalone 1px theme watch) is
+        # taken out of the tab order and the accessibility tree; a frame with
+        # one (read-aloud) is named after its button.
+        "var f=window.frameElement;"
+        "if(f){var c=document.querySelector('button,a,input,textarea,select');"
+        "if(c){f.setAttribute('title',c.getAttribute('aria-label')||c.textContent);}"
+        "else{f.setAttribute('tabindex','-1');f.setAttribute('aria-hidden','true');"
+        "f.setAttribute('title','Theme detector (no content)');}}"
+        # H2 owner pre-run: install A11Y_BRIDGE_JS into the parent, once.
+        "try{var P=window.parent.document;"
+        "if(P.body&&!P.getElementById('drlca-a11y-bridge')){"
+        "var s=P.createElement('script');s.id='drlca-a11y-bridge';"
+        "s.textContent=" + _js_str(A11Y_BRIDGE_JS) + ";"
+        "P.head.appendChild(s);}}catch(e){}"
         "var apply=function(){"
         "try{"
         "var app=window.parent.document.querySelector('.stApp');"
@@ -347,6 +644,9 @@ def theme_watch_html() -> str:
         "if(!m)return;"
         "var lum=(0.2126*+m[0]+0.7152*+m[1]+0.0722*+m[2])/255;"
         "window.parent.document.body.classList.toggle('drlca-dark',lum<0.4);"
+        # H2: follow the app's Text size slider (the frame has its own root).
+        "document.documentElement.style.fontSize=window.parent.getComputedStyle("
+        "window.parent.document.documentElement).fontSize;"
         "}catch(e){}"
         "};"
         "apply();"
@@ -358,17 +658,33 @@ def theme_watch_html() -> str:
     )
 
 
-def read_aloud_html(speech_text: str, button_label: str = "🔊 Read answer aloud") -> str:
+def read_aloud_html(speech_text: str, button_label: str = "🔊 Read answer aloud",
+                    announce: str = "") -> str:
     """Few-lines Web Speech API button (client-side synthesis, zero server cost).
 
     The iframe body is transparent (no white strip on dark app backgrounds);
     the shared theme watch (theme_watch_html) keeps body.drlca-dark correct so
     the dark-only alert override in accessibility_css() applies exactly when
     the user picks the dark theme.
+
+    `announce` is passed ONLY by render_turn(), i.e. for the newly computed
+    turn: it posts that text to the parent's live region (A11Y_BRIDGE_JS).
+    Replayed turns never announce, so a rerun does not repeat old answers.
     """
     safe = html.escape(speech_text or "No answer yet.", quote=True)
-    return (
-        ("<div><button type='button' id='drlca-speak' aria-label='%s'>%s</button>"
+    notify = ""
+    if announce:
+        import uuid
+        notify = (
+            "<script>(function(){var t=%s,id=%s,n=0;"
+            "function go(){try{var w=window.parent;"
+            "if(w.drlcaAnnounce){w.drlcaAnnounce(id,t);}"
+            "else if(n++<20){setTimeout(go,300);}}catch(e){}}"
+            "setTimeout(go,300);})();</script>"
+            % (_js_str(announce), _js_str(uuid.uuid4().hex)))
+    return notify + (
+        ("<div><button type='button' id='drlca-speak' aria-label='%s'"
+         " style='font-size:1rem;padding:0.3rem 0.8rem;'>%s</button>"
          + theme_watch_html() +
          "<script>"
          "document.getElementById('drlca-speak').onclick=function(){"
@@ -881,8 +1197,14 @@ def try_voice_input():
                 "sufficient. Voice input needs Chrome/Edge + microphone "
                 "permission.")
         return  # graceful degradation: text box stays primary (review 2026-09-08)
+    # Disclosure BEFORE recording (H2 review 2026-10-18): until the WAV fix
+    # no clip ever reached recognize_google, so no audio ever left the browser.
+    # Now it does, and this population may be describing abuse.
+    st.caption("🔒 Recording sends your voice to Google's speech service to be "
+               "turned into text. Typing sends nothing anywhere.")
     audio = mic_recorder(start_prompt="🎤 Record question",
                          stop_prompt="⏹ Stop recording",
+                         format="wav",  # sr.AudioFile reads WAV/AIFF/FLAC, never the webm default
                          key="drlca-mic")
     if not audio or not audio.get("bytes"):
         st.caption("🎤 Optional: record your question (Chrome/Edge + mic "
@@ -983,7 +1305,9 @@ def render_turn(question: str, explicit: str, plain: bool, history,
         # Pure greeting: friendly panel + guidance, no retrieval/LLM calls.
         render_greeting()
         speech = build_speech_text(None, None, greeting=GREETING_TEXT)
-        components.html(read_aloud_html(speech), height=60)
+        components.html(read_aloud_html(
+            speech, announce=build_announcement(None, None, greeting=GREETING_TEXT)),
+            height=60)
         return payload
     if mode == "clarify":
         clarify_text = routing.get("clarify_question", "")
@@ -1014,7 +1338,9 @@ def render_turn(question: str, explicit: str, plain: bool, history,
 
     # --- Read aloud (client-side Web Speech API, zero server cost) ---------
     speech = build_speech_text(legal_view, help_view, clarify_text)
-    components.html(read_aloud_html(speech), height=60)
+    components.html(read_aloud_html(
+        speech, announce=build_announcement(legal_view, help_view, clarify_text)),
+        height=60)
     return payload
 
 

@@ -3340,3 +3340,66 @@ image can import and serve the offline path, which a heavier CI install would no
 I checked this by running it, not by reading imports. Reading would have flagged `bench_phase01`'s
 use of `load.py` (the OCR-repair module) as a possible heavy dependency; it only needs `re` and `difflib`.
 
+## 2026-10-15 — H2: the scrim that never was, and the zero that did not mean zero
+
+The matrix came back with 0 serious findings and that looked like the end of it. It wasn't. axe
+cannot compute contrast for text on a background **image**, so it files those nodes as
+*incomplete*, not as violations: 1–14 nodes per scan, 152 across the after-matrix. Looking at the
+screenshots, rather than at the counts, showed the watermark photo plainly behind the answer text.
+Measuring it from pixels gave NGO record links at **2.16:1**, which is a clear AA failure that the
+"0 serious" headline was silently covering.
+
+The cause had been there since Phase 05. The watermark and veil divs are emitted by `st.markdown`
+*inside* `.block-container`, and `.block-container` is their stacking context (z-index 1). A
+positioned child paints over its stacking context's own background, so the translucent "readability
+scrim" on `.block-container` was always *under* the photo. The scrim was written, asserted on by
+string match in `test_phase05`, and described in comments as screenshot-verified. It never did
+anything. The string assert proved the rule existed, not that it worked. The fix moves the
+scrim onto each top-level column block. Those blocks are positioned and come after the watermark in
+tree order, so their background lands between the photo and the text. Moving the photo to z -1
+instead would have dropped it under `stApp`'s opaque background and deleted it.
+
+Two smaller lessons:
+* **Comparing rendered anti-aliased pixels is the wrong contrast test.** A 5:1 colour measures
+  ~2.6 at glyph edges. WCAG compares the text *colour* with the background. The pixel work is only
+  for finding the background under the glyphs.
+* **Parent-only `visibility:hidden` is not hiding.** Any descendant that declares `visible`
+  escapes it, and Streamlit's markdown wrapper does. The first-pass drawer fix therefore left the
+  banner readable behind the drawer. The geometry check found it, and a break-test proves the check
+  would find it again.
+
+The one remaining critical is Streamlit's own: `aria-expanded` on the sidebar `<section>`. It is
+fixed upstream (streamlit#17126) in 1.66.0, released the day before this audit. Bumping a dependency
+the day after its release, inside an accessibility step, is two changes in one. It is its own
+follow-up.
+
+
+### 2026-10-15 — H2 review follow-up (docs accuracy, no behaviour change)
+Reviewer verdict on H2: **SHIP WITH CAVEATS**, nothing blocking; numbers reproduced on a fresh server. Taken in place:
+the Streamlit 1.66 bump is **not** a free follow-up (it moves `aria-expanded` to `data-collapsed`, which would silently
+disarm the H2 sidebar/drawer CSS and the audit script while `test_phase05` stays green — string asserts again); the
+`aria-allowed-attr` node is present wherever the sidebar is open (open phone drawer scanned clean otherwise at 360/768
+light), not "1280 only"; "token-derived" scrim reworded (they are reused rgba literals); `image-alt`/`frame-title`
+"pass" claims softened because the JSON kept pass counts only — `audit.mjs` now also saves `pass_ids`; icon-ligature
+text (`face`, `smart_toy`, `keyboard_arrow_*`) added to owner check A. Lesson repeated from Phase 05: a string assert
+on CSS is not evidence the CSS renders.
+
+## 2026-10-18 — H2 owner pre-run: the feature nobody had ever exercised
+
+Driving the owner checklist with real assistive tech (NVDA started with `--log-level=12`, so every
+spoken string lands in its log; Chrome via Playwright; a TTS WAV as a fake microphone) found that
+**voice input had never transcribed a single clip since Phase 06.** `streamlit_mic_recorder`
+defaults to `format="webm"`, and `speech_recognition.AudioFile` reads WAV/AIFF/FLAC only, so every
+recording ended in the graceful "Could not transcribe (ValueError)" path. The graceful fallback is
+exactly what hid it: no crash, no traceback, a polite message that blamed the user's setup. The
+lesson: a degrade-gracefully path needs its own test that the *non*-degraded path is reachable.
+`test_phase05` asserted the import and the fallback text, never a round trip.
+
+Also learned: (1) axe's 0 serious/moderate/minor said nothing about what NVDA *speaks*: Material
+icon ligatures (`keyboard_arrow_right`, `smart_toy`) are ordinary text to a screen reader. (2)
+Streamlit gives Python no hook into its own DOM, so the A2/A7/B3/C2 fixes are one script that the
+theme-watch iframe injects into the parent document; it re-applies from a MutationObserver. It
+reads the sidebar's `aria-expanded`, which ties it to the Streamlit 1.66 migration. (3) OS-level
+keystrokes go to whichever window is focused. One NVDA run was invalidated when NVDA's usage-data
+dialog moved focus to another terminal. Only NVDA+Down and Ctrl reached it (they read and stop
+speech), but the probe must not run while the user is working in other windows.

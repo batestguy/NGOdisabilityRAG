@@ -1,0 +1,14 @@
+{
+  "name": "drlca-a11y-audit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "H2 accessibility audit for DRLCA: axe-core matrix, keyboard pass, geometry checks (Playwright).",
+  "type": "module",
+  "scripts": {
+    "audit": "node audit.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "playwright": "1.62.1"
+  }
+}

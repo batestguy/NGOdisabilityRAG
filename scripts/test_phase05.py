@@ -171,7 +171,9 @@ check("config-has-dark-sidebar", "[theme.dark.sidebar]" in toml)
 check("config-base-light", 'base = "light"' in toml)
 check("config-widget-border", "showWidgetBorder = true" in toml)
 check("config-sidebar-border", "showSidebarBorder = true" in toml)
-check("config-text-light", "#1F2328" in toml)
+# H2 (2026-10-15): #1F2328 -> #0d1117 on purpose; Streamlit's 60% caption tint of
+# #1F2328 was 4.24:1 on white (axe color-contrast, fails AA). See config.toml.
+check("config-text-light", "#0d1117" in toml and "#1F2328" not in toml)
 check("config-text-dark", "#e6edf3" in toml)
 check("config-no-remote-fonts", "fonts.googleapis" not in toml
       and "fonts.google.com" not in toml)
@@ -253,7 +255,9 @@ check("stacking-important", "position: relative !important" in css_plain
       and "z-index: 1 !important" in css_plain)
 check("sidebar-above-main-context",
       "section[data-testid='stSidebar']" in css_full
-      and "z-index: 2 !important" in css_full)
+      # H2 (2026-10-15): 2 -> 999991, above Streamlit's header (999990) as well
+      # as the main context (1); at 2 the header covered the sidebar close button.
+      and "z-index: 999991 !important" in css_full)
 check("sidebar-bg-important", "#f6f8fa !important" in css_full
       and "#010409 !important" in css_full)
 check("theme-watch-helper", "def theme_watch_html" in src
@@ -276,6 +280,30 @@ check("font-still-system-sans", 'font = "sans-serif"' in toml
 # Base CSS before the HC gate still token-only (scrims live after the gate):
 check("css-base-still-token-only-2", not hex_re.search(fn_src[:gate]),
       str(hex_re.findall(fn_src[:gate])[:5]))
+# H2 (2026-10-15, geometry pass): behind the open drawer (< 768 px) the page is
+# hidden INCLUDING descendants -- Streamlit's markdown wrapper re-declares
+# visibility:visible and escaped a parent-only rule (banner + answer stayed
+# readable behind the drawer). tools/a11y_audit break-test drawer_descendant_leak.
+check("drawer-hides-main-descendants",
+      "[aria-expanded='true'])\n    section.stMain *," in css_plain
+      and "[aria-expanded='true'])\n    [data-testid='stBottom'] *" in css_plain)
+# H2 (2026-10-15, keyboard pass, WCAG 2.4.7): Chrome makes the main scroll
+# container a tab stop; it had no focus indicator. currentColor keeps the base
+# block colour-free (the token-only check above still holds).
+# H2 (2026-10-15, contrast-over-image pass, WCAG 1.4.3): the .block-container
+# scrim never reached the photo (the watermark is emitted inside it). The scrim
+# rides on each top-level column block instead, skipping the watermark's own
+# block; HC pins the same blocks black. tools/a11y_audit --mode=contrast.
+check("column-blocks-scrimmed-above-photo",
+      "> :not(:has(.drlca-watermark)) { position: relative;\n"
+      "  background-color: rgba(255, 255, 255, 0.88); }" in css_full
+      and "body.drlca-dark .block-container > [data-testid='stVerticalBlock']"
+      in css_full
+      and "body:has(.drlca-hc-on) .block-container > [data-testid='stVerticalBlock']"
+      in css)
+check("scroll-container-focus-visible",
+      "[data-testid='stAppScrollToBottomContainer']:focus-visible" in css_plain
+      and "outline: 3px solid currentColor !important" in css_plain)
 
 # 14. Phase 10 C: the multi-turn chat UI ---------------------------------------
 # src/chat.py was built and measured headless in Phase B (+0.107 strict recall
@@ -442,5 +470,43 @@ check("dedupe-keeps-same-ref-different-text", any(e["text"].startswith("Differen
 _re_src = inspect.getsource(app.render_excerpts)
 check("dedupe-runs-before-inline-fold-split",
       _re_src.index("dedupe_excerpts(excerpts)") < _re_src.index("excerpts[:INLINE_EXCERPTS]"))
+
+# H2 owner pre-run (2026-10-18): mic_recorder defaults to webm, which
+# sr.AudioFile cannot read, so every clip since Phase 06 ended in ValueError.
+check("mic-recorder-asks-for-wav",
+      'format="wav"' in inspect.getsource(app.try_voice_input))
+# D1: read-aloud speaks the tags of the cards shown, so the dropped pair is not spoken.
+_sp = app.build_speech_text({"refused": False, "answer": None, "excerpts": _dup,
+                             "citations": [e["tag"] for e in _dup]}, None)
+check("speech-tags-follow-deduped-cards", _sp.count("[Constitution s. 4]") == 2
+      and "[Constitution s. 13]" in _sp)
+# A2 / 4.1.3: a NEW turn posts a summary to a parent live region; replays never do.
+_an = app.build_announcement({"refused": False, "answer": None, "excerpts": _dup}, None)
+check("announcement-helplines-and-shown-count",
+      _an.startswith("New answer below.") and "08000-3000-100" in _an
+      and "3 legal excerpts" in _an)
+check("announce-only-from-render-turn", "announce=build_announcement" in turn_body
+      and "announce=" not in replay_body
+      and "drlcaAnnounce" in app.read_aloud_html("x", announce="y")
+      and "drlcaAnnounce(" not in app.read_aloud_html("x").split("drlca-a11y-bridge")[0])
+# A7 / B3 / C2 live in the bridge the theme watch installs into the parent.
+_bj = app.A11Y_BRIDGE_JS
+check("bridge-installed-by-theme-watch", "drlca-a11y-bridge" in app.theme_watch_html()
+      and "</script" not in app._js_str(_bj))
+check("bridge-live-region", "aria-live', 'polite'" in _bj and "role', 'status'" in _bj)
+check("bridge-hides-icon-ligatures", 'stIconMaterial"]:not([aria-hidden])' in _bj
+      and "'Close sidebar'" in _bj and "stChatMessageAvatar" in _bj)
+check("bridge-drawer-escape-and-tab-loop", "ev.key === 'Escape'" in _bj
+      and "ev.key !== 'Tab'" in _bj and "window.innerWidth < 768" in _bj)
+check("bridge-mic-denied-note", "micState !== 'denied'" in _bj
+      and "Voice input is unavailable" in _bj
+      and "NotAllowedError" in _bj and "md.getUserMedia = function" in _bj)
+# H2 review: the bridge rides inside read_aloud_html's %-formatted string, so a
+# single "%" in it would raise on every read-aloud render.
+check("bridge-has-no-percent", "%" not in _bj)
+check("js-str-escapes-every-lt", "<" not in app._js_str("<!--<script></script>"))
+check("voice-disclosed-before-recording",
+      "Google's speech service" in (_tv := inspect.getsource(app.try_voice_input))
+      and _tv.index("Google's speech service") < _tv.index("audio = mic_recorder("))
 
 print("\nALL %d ASSERTS PASSED" % len(passed))

@@ -428,3 +428,45 @@ is dropped; each one is checked off against the old file.
 >   "legal" is not a legal cue), so mid-conversation it gets the **clarify** prompt instead of a legal answer, even though
 >   `contextualise()` would carry it. Routing is stateless by design and runs on the raw turn. Whether a carried turn
 >   should inherit the previous turn's route is a design change with its own gate, so it is not part of H1.
+
+> **H2 — 2026-10-15, first pass (branch `phase11/h2-a11y`, cut from `phase11/h1-bugs` at `9ade6ca`; zero quota).** *(Superseded by the box below.)*
+> * First-pass fixes from axe + Playwright spot checks, committed: light `textColor` `#1F2328` → `#0d1117` (caption tint
+>   4.24 → 4.96:1); sidebar z-index 2 → 999991 (header covered its close button at 360 px); collapsed sidebar and its
+>   descendants `visibility:hidden` (13 invisible tab stops); open drawer at < 768 px hides the page behind it;
+>   `scroll-padding` reserves the fixed chat bar (focused controls were fully hidden); high-contrast text fields pinned
+>   black/white (typed text was 1.06:1); component iframes named or `aria-hidden`; iframe follows the Text size slider;
+>   read-aloud button padding; chat message stacks the avatar at ≤ 480 px.
+> * Re-run on this tree: 03 · 04 · 05 (140) · 09_ops · audit_corpus · calibrate_refusal · `import app` — all PASS.
+> * **Still to do:** the full post-fix matrix (360/768/1280 × light/dark/HC, + 200% at 360; empty / legal / help) with
+>   axe counts and Lighthouse scores captured to `runs\h2_after\`; ui-geometry check; `docs/accessibility.md` (WCAG 2.2 AA
+>   table + owner checklist). Then the owner runs NVDA / keyboard / mic / read-aloud and signs.
+
+> **H2 — 2026-10-15, AGENT PART MET; OWNER CHECKLIST NOT SIGNED → EXIT GATE NOT YET MET.** Full record: `docs/accessibility.md`.
+> * **Tooling deviation:** a pinned Playwright script (`tools/a11y_audit/audit.mjs`, `playwright@1.62.1`,
+>   `@axe-core/playwright@4.13.0`, lockfile committed) replaces the playbook's manual chrome-devtools MCP clicking, so the
+>   audit can be re-run and diffed. Lighthouse via `npx lighthouse@13.4.1`. Outputs: `runs\h2_after\`, `runs\h2_before\`.
+> * **axe matrix** (360/768/1280 × light/dark/HC, + 200 % zoom at 360, + max Text size at 360; empty / legal / help = 33
+>   scans, tags wcag2a…wcag22aa, iframes included). **Before (`9ade6ca`): 33 critical + 12 serious. After: 9 critical,
+>   0 serious, 0 moderate, 0 minor.** All 9 are the same Streamlit-internal node: `aria-allowed-attr`, `aria-expanded` on
+>   the sidebar `<section>`, seen at 1280, where the sidebar is open. Upstream: streamlit/streamlit#17126, fixed in **1.66.0**
+>   (2026-10-14); DRLCA pins 1.63.0. **Follow-up: bump Streamlit in its own branch and re-audit; the bump must migrate every
+>   `[aria-expanded]` selector (app.py + audit.mjs), since 1.66 moves it to `data-collapsed`.** Reviewer (SHIP WITH CAVEATS):
+>   the node also shows in the open phone drawer (scanned at 360/768 light); new test_phase05 asserts are string matches only.
+> * **Contrast over the photo (new `--mode=contrast`):** axe files text over a background image as *incomplete*, so
+>   "0 serious" said nothing about it. Pixel-measured on the pre-H2 tree: **20 of 213 nodes failed**, all NGO record links (2nd percentile **2.17:1 light, 3.56:1 dark**). Root
+>   cause: the watermark divs live *inside* `.block-container`, so they painted over its scrim, and the Phase 05 scrim never
+>   worked. Fixed by scrimming each top-level column block. **After: 0 of 152 measured nodes fail.**
+> * **Keyboard:** 1280 = 25 stops, 360 = 13, 360 with the drawer open = 16. They cycle, there are no traps, and 0 stops
+>   lack a focus indicator (the main scroll region had none: fixed). The chat input, voice input (+ Record / draft / Send
+>   inside), read-aloud, AI expander, folded excerpts and sidebar are all reached, and the expanders open on Enter.
+> * **Geometry (ui-geometry-audit):** 14 checks at 360/480/481/767/768/1280 (light, + HC at 360), sidebar as loaded and
+>   toggled, all clean. Break-tests: no scroll-padding, veil on top, sidebar at z 2, and a drawer descendant leak are all
+>   **detected at 360**. The last two are expectedly invisible at 1280 (no drawer, header clear of the sidebar).
+> * **Lighthouse a11y:** 1280 light 90 → **94** (left: Streamlit `aria-allowed-attr`); 360 light 94 → **100**.
+> * **Fixes this pass** (`app.py` `accessibility_css()`): column-block scrim (+ HC black); drawer hide extended to
+>   descendants (Streamlit's markdown wrapper re-declared `visibility:visible`, so text stayed readable behind the drawer);
+>   focus ring on the main scroll region. `test_phase05` 140 → **143** asserts.
+> * Suites re-run on the final tree: 03 · 04 · 05 (143) · 09_ops · audit_corpus · calibrate_refusal · `import app`, all PASS.
+> * **Owner next:** run the checklist in `docs/accessibility.md` §7 (NVDA, keyboard, microphone, read-aloud, optional user
+>   session) and sign. Then merge (that redeploys; it is the owner's call).
+
