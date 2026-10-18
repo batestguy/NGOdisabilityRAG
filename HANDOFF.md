@@ -1,5 +1,10 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-18)
 
+> **■ 2026-10-18 (LATEST): H5a DECLINED** (Pidgin-dev net +1, needs +2). Shipping already gets 7/10 Pidgin dev questions. The Pidgin-test half,
+> the H4 blind set, `test` and `test2` are all **unread**. Archives: `phase11/h4-offtopic` `e884f85`, `phase11/h5a-pidgin` `5b28c07`.
+> Docs + both blind sets are on `phase11/docs-h4` (local; merging redeploys, so bundle with the next code merge).
+> **Next decisions belong to the owner:** H5b needs a 2-day Gemini quota plan and native Yoruba/Hausa/Igbo checkers; H6 needs outside legal reviewers.
+
 > **■ 2026-10-18 (LATEST): H4 DECLINED.** Dev gate 2/5 (needs 3). Legal-sounding off-topic questions score full corpus coverage, and
 > Pidgin `H26` binds the threshold. Held-out sets and the blind `offtopic_h4.json` are **unread** (still clean). Harness archived on
 > `phase11/h4-offtopic` `e884f85`, not on `main`. This docs record is on `phase11/docs-h4` (local). **Next: H5 / H6.**

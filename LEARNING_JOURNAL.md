@@ -3436,3 +3436,13 @@ has to be topical ("is this about disability at all?"), and it must clear the Pi
 probes before any held-out read. Process note: committing the blind set before measuring and
 gating held-out reads on dev means a decline costs nothing that matters. All three held-out sets
 are still clean.
+
+## 2026-10-18 — H5a: the baseline was already doing the work
+
+The Pidgin-routed static arm lifted 1 of 10 dev questions and was declined. The more useful
+number is the baseline: shipping retrieval scores 0.700 on fresh Pidgin, because Pidgin shares
+most of its content words with English ("hospital", "school fees", "wheelchair", "sack") and the
+hand map and OOV bridge cover the rest. The two misses neither arm reaches ("forge … paper",
+"contest election") are vocabulary gaps, not meaning gaps. A semantic arm was the wrong tool for
+them. The router behaved as specified (0 frozen-10 firings; its one dev firing did not drop),
+so the routing idea itself was sound and simply had little left to win.

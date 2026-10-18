@@ -323,6 +323,22 @@ OOV-heavy).
    0/212; serving numpy-only, artifact ≤ 40 MB. Static-arm serving still needs F1's port and parity
    test (`docs/phases/15`).
 
+> **H5a RESULT (2026-10-18): DEV GATE FAILED → DECLINED. Zero quota. Behaviour unchanged.**
+> * The blind set `data/eval/pidgin_h5a.json` (10 dev / 10 test, corpus-verified refs) was committed
+>   **together with the frozen router rule and arm parameters** before any number. **Pidgin-test is
+>   UNREAD.** The set was written by a non-native speaker; a native read is recommended before reuse.
+> * Pidgin-dev: **shipping 0.700 → routed 0.800, 1 up (PD05 free healthcare) / 0 down = net +1** (needs +2).
+>   The router fired on 0 frozen-10, 1 dev (H26, no drop), 1 test and 3 test2 rows (found by text
+>   only; those scores were not read). Model 29.3 MB.
+> * **Finding: shipping already serves Pidgin better than expected (7/10)**, because the hand map and
+>   OOV bridge carry much of it. The two misses neither arm reaches are vocabulary gaps: "forge …
+>   paper" (cl.23) and "contest election" (cl.30). They are not semantic. A `SYNONYMS` edit could
+>   close them, but it needs a fresh 212-probe calibration and must not be fitted to these dev rows.
+>   That is a lead, not done.
+> * Harness archived on `phase11/h5a-pidgin` at `5b28c07` (`ablate_h5a_pidgin.py` +
+>   `ablate_static.py` reproduced from F0), **not on `main`**. Dev output:
+>   `runs/h5a_pidgin/dev_2026-10-18.txt`.
+
 ### H5b — Yoruba / Hausa / Igbo: opt-in LLM path only (quota)
 * Behind its own opt-in control, default OFF. Gemini translates the question **in** to English, the
   normal pipeline answers, and Gemini translates the answer **out**. **Citation tags are never
