@@ -1,0 +1,30 @@
+{
+ "about": "H4 blind off-topic set. Authored 2026-10-18 BEFORE any H4 measurement and committed first (docs/phases/16_post_launch_roadmap.md H4 step 1). 20 off-corpus questions a Nigerian user might plausibly type that lie outside the three documents (Disability Act 2018, 1999 Constitution, Factsheet 2020), and 5 near-misses that ARE covered by the corpus but phrased in lay words. Written from the playbook's topic list and general knowledge; no corpus vocabulary or scores were consulted. Read ONCE, after the threshold is frozen on dev. Near-miss refs are NOT asserted ground truth: they are the author's expectation, recorded so a refusal on them is visible.",
+ "questions": [
+  {"id": "H4-01", "class": "off-corpus", "topic": "tenancy", "text": "My landlord wants to increase my rent by double in Lagos, is that allowed?"},
+  {"id": "H4-02", "class": "off-corpus", "topic": "tenancy", "text": "How many months notice must a landlord give before he can evict a tenant?"},
+  {"id": "H4-03", "class": "off-corpus", "topic": "tenancy", "text": "The landlord locked my shop because of unpaid rent, what can I do?"},
+  {"id": "H4-04", "class": "off-corpus", "topic": "land", "text": "How do I get a certificate of occupancy for my land?"},
+  {"id": "H4-05", "class": "off-corpus", "topic": "land", "text": "Omo onile are demanding money before I can build on land I bought, is that legal?"},
+  {"id": "H4-06", "class": "off-corpus", "topic": "land", "text": "My brothers sold our late father's land without telling me, what should I do?"},
+  {"id": "H4-07", "class": "off-corpus", "topic": "tax", "text": "How much personal income tax should I pay on a salary of 200,000 naira a month?"},
+  {"id": "H4-08", "class": "off-corpus", "topic": "tax", "text": "Do small business owners in Nigeria have to register for VAT?"},
+  {"id": "H4-09", "class": "off-corpus", "topic": "tax", "text": "How do I get a tax clearance certificate?"},
+  {"id": "H4-10", "class": "off-corpus", "topic": "divorce", "text": "How long does it take to get a divorce in a Nigerian court?"},
+  {"id": "H4-11", "class": "off-corpus", "topic": "divorce", "text": "Who gets custody of the children after divorce?"},
+  {"id": "H4-12", "class": "off-corpus", "topic": "divorce", "text": "Can my husband marry a second wife without my consent under customary law?"},
+  {"id": "H4-13", "class": "off-corpus", "topic": "police bail", "text": "The police are asking for money before they release my brother on bail, is bail free?"},
+  {"id": "H4-14", "class": "off-corpus", "topic": "police bail", "text": "How long can police keep someone in the cell before taking him to court?"},
+  {"id": "H4-15", "class": "off-corpus", "topic": "police bail", "text": "What should I do if my car is impounded by the police at a checkpoint?"},
+  {"id": "H4-16", "class": "off-corpus", "topic": "health", "text": "What are the symptoms of typhoid fever?"},
+  {"id": "H4-17", "class": "off-corpus", "topic": "health", "text": "Is it safe to take malaria drugs during pregnancy?"},
+  {"id": "H4-18", "class": "off-corpus", "topic": "health", "text": "How can I lower my blood pressure naturally?"},
+  {"id": "H4-19", "class": "off-corpus", "topic": "other", "text": "How do I renew my international passport?"},
+  {"id": "H4-20", "class": "off-corpus", "topic": "other", "text": "What documents do I need to register a business name with CAC?"},
+  {"id": "H4-N1", "class": "near-miss", "expect": "Act: employment of persons with disabilities (public employer quota)", "text": "Do government offices have to employ a certain number of people like me who cannot walk?"},
+  {"id": "H4-N2", "class": "near-miss", "expect": "Act: prohibition of using persons with disabilities to solicit alms", "text": "Is it legal for someone to carry a crippled child around the market to collect money from people?"},
+  {"id": "H4-N3", "class": "near-miss", "expect": "Act: free education for persons with disabilities", "text": "Should my deaf daughter be paying school fees in a government school?"},
+  {"id": "H4-N4", "class": "near-miss", "expect": "Act: accessible public transport", "text": "Can the bus company refuse to carry me because I use a wheelchair?"},
+  {"id": "H4-N5", "class": "near-miss", "expect": "Constitution: freedom from discrimination", "text": "Can the government treat me worse than other citizens because of where I come from or my condition?"}
+ ]
+}
