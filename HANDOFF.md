@@ -1,5 +1,12 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-18)
 
+> **■ 2026-10-18 (END): H3 MERGED + DEPLOYED (PR #16 → `9b7135a`, on the owner's "commit and proceed" after their 5-row spot-check).**
+> CI green on `main`. Live smoke (`tools/a11y_audit/live_smoke_h3.mjs`): "autism support … Owerri" returns OLG and Nene's with
+> helplines first; filter controls present; announcement fires; 0 page errors. Directory: 20 verified rows, 6/6 zones.
+> * **Next: H4 (offline off-topic guard)** on `phase11/h4-offtopic` (from `9b7135a`, local only). Open minor items: read-aloud ignores
+>   the active filter; Cedar is RECHECK (host certificate); the ~30-row target is deferred (no Facebook route available).
+> * **Any push to `main` redeploys. Ask the user first, every time.**
+
 > **■ 2026-10-18 (LATER): H3 BUILT on `phase11/h3-ngo` (`a9e1c94` H3a filters, `a0dad60` H3b 20 verified rows / 6 zones). NOT pushed, NOT merged.**
 > * **Owner spot-check DONE 2026-10-18** (5 rows, all OK). The H3 gate is met; PR #16 is merged on the owner's "commit and proceed".
 > * 20 rows, not the targeted ~30: most leads had no phone on an official source. The next source is official Facebook pages of state
