@@ -327,6 +327,11 @@ notes under each item, then sign it.
 > * **C2:** a blocked microphone (Permissions API) puts a visible `role=alert` note in the voice
 >   expander saying voice input is unavailable and to type instead. Verified in Chrome and Edge.
 >
+> **H2 review (reviewer agent, SHIP WITH CAVEATS) taken:** a voice-to-Google disclosure before
+> Record (the WAV fix made `recognize_google` live for the first time); `_js_str` escapes every
+> `<`; a test that the bridge has no `%`; Esc ignores IME composition; no "0 excerpts" wording; and
+> the dismissed-prompt case for C2.
+>
 > axe after: unchanged (0 serious / 0 moderate / 0 minor, plus the 9 known Streamlit-internal
 > critical nodes at 1280). `test_phase05` 152/152. Still open, minor: the slider is announced
 > "Text size Text size", the route buttons expose no selected state, and the sidebar is read
@@ -351,7 +356,7 @@ notes under each item, then sign it.
    toggle and expander summaries may read `keyboard_double_arrow_left` / `keyboard_arrow_right`. Record
    whether NVDA speaks these words.
 
-Signed: ____________________  Date: __________  Notes:
+Signed: Agent-run (Claude Opus 5.5) on the owner's instruction, NVDA IO log, not a human listening session. Date: 2026-10-18. Notes: A1–A7 pass after `7692a40` (A6 clean re-run with the focus guard). Open minor: sidebar read before H1 at 1280; slider name doubled.
 
 **B. Keyboard only** (no mouse).
 1. From the address bar, Tab reaches the chat input, the voice expander (Enter opens it; Tab reaches
@@ -362,7 +367,7 @@ Signed: ____________________  Date: __________  Notes:
 3. No trap. At 360 px (or a narrow window), with the drawer open, Tab stays in the drawer, and Esc
    or the close button returns you to the page.
 
-Signed: ____________________  Date: __________  Notes:
+Signed: Agent-run (Claude Opus 5.5) on the owner's instruction. Date: 2026-10-18. Notes: B1/B2 pass (chat-input cue is a thin border, weak but present); B3 pass after fix (Esc closes, Tab loops). The trap is not announced as a dialog, so nothing tells an SR user that Esc exits (H2 review caveat).
 
 **C. Live microphone** (Chrome, then Edge).
 1. Open Voice input, press Record, dictate "What are my rights to education?", stop. "Heard: …"
@@ -370,14 +375,14 @@ Signed: ____________________  Date: __________  Notes:
 2. Deny microphone permission (site settings → block), reload, and try again. The app must say
    voice is unavailable and leave the text box fully usable, with no error page.
 
-Signed: ____________________  Date: __________  Notes:
+Signed: Agent-run (Claude Opus 5.5) on the owner's instruction, using a fake microphone fed a TTS WAV, not a human voice. Date: 2026-10-18. Notes: C1 pass in Chrome and Edge after `4a07e8b` (was broken since Phase 06). C2 pass: a visible alert on blocked OR dismissed permission (the getUserMedia rejection is caught). A disclosure that recording goes to Google's speech service is shown before Record.
 
 **D. Read-aloud.**
 1. Legal turn: press **Read answer aloud**. The helplines are spoken **first**, then the
    citations.
 2. Help turn: same. The helplines come first, then the organisation names.
 
-Signed: ____________________  Date: __________  Notes:
+Signed: Agent-run (Claude Opus 5.5) on the owner's instruction (speech text intercepted, not heard). Date: 2026-10-18. Notes: D1/D2 helplines first; D1 9 tags = 9 cards.
 
 **E. Optional: one session with a blind or low-vision user** (for example via a JONAPWD contact),
 recorded as written notes, not audio. Note what they tried, where they got stuck and what they

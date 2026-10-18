@@ -432,8 +432,9 @@ def build_announcement(legal: dict | None, help_payload: dict | None,
             parts.append(str(legal.get("answer", "")))
         else:
             n = len(dedupe_excerpts(legal.get("excerpts") or []))
-            parts.append("%d legal excerpt%s with citations."
-                         % (n, "" if n == 1 else "s"))
+            if n:
+                parts.append("%d legal excerpt%s with citations."
+                             % (n, "" if n == 1 else "s"))
             if legal.get("answer"):
                 parts.append("An AI answer is included.")
     if help_payload is not None:
@@ -449,7 +450,9 @@ def _js_str(value) -> str:
     test_phase05's only-writer guard flags those names as possible disk
     writes, and that guard should stay broad.
     """
-    return json.JSONEncoder().encode(value).replace("</", "<\\/")
+    # Every "<" as <, not just "</": "<!--" + "<script" would otherwise
+    # change how the HTML parser finds the closing tag.
+    return json.JSONEncoder().encode(value).replace("<", "\\u003c")
 
 
 # H2 owner pre-run (2026-10-18): fixes Streamlit's DOM cannot take from Python.
@@ -517,6 +520,31 @@ A11Y_BRIDGE_JS = r"""
       'the microphone in your browser’s site settings and reload.';
     box.insertAdjacentElement('afterend', note);
   }
+  /* The Permissions API alone misses a dismissed prompt (state stays
+     'prompt' while Record fails), so also catch the real rejection inside
+     the same-origin mic iframe; re-hooked whenever that frame reloads. */
+  function hookMic() {
+    var frame = D.querySelector('iframe[title*="mic_recorder"]');
+    if (!frame) return;
+    if (!frame.drlcaHooked) {
+      frame.drlcaHooked = true;
+      frame.addEventListener('load', hookMic);
+    }
+    try {
+      var md = frame.contentWindow.navigator.mediaDevices;
+      if (!md || md.drlcaWrapped) return;
+      var orig = md.getUserMedia.bind(md);
+      md.getUserMedia = function (c) {
+        return orig(c).catch(function (e) {
+          if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) {
+            micState = 'denied'; micNote();
+          }
+          throw e;
+        });
+      };
+      md.drlcaWrapped = true;
+    } catch (e) {}
+  }
   try {
     navigator.permissions.query({ name: 'microphone' }).then(function (p) {
       micState = p.state; micNote();
@@ -525,7 +553,7 @@ A11Y_BRIDGE_JS = r"""
   } catch (e) {}
 
   var queued = false;
-  function sweep() { queued = false; icons(); micNote(); }
+  function sweep() { queued = false; icons(); hookMic(); micNote(); }
   new MutationObserver(function () {
     if (!queued) { queued = true; requestAnimationFrame(sweep); }
   }).observe(D.body, { childList: true, subtree: true });
@@ -547,7 +575,7 @@ A11Y_BRIDGE_JS = r"""
       });
   }
   D.addEventListener('keydown', function (ev) {
-    if (!drawerOpen()) return;
+    if (ev.isComposing || !drawerOpen()) return;
     var s = sidebar();
     if (ev.key === 'Escape') {
       var close = s.querySelector('[data-testid="stSidebarCollapseButton"] button,' +
@@ -1169,6 +1197,11 @@ def try_voice_input():
                 "sufficient. Voice input needs Chrome/Edge + microphone "
                 "permission.")
         return  # graceful degradation: text box stays primary (review 2026-09-08)
+    # Disclosure BEFORE recording (H2 review 2026-10-18): until the WAV fix
+    # no clip ever reached recognize_google, so no audio ever left the browser.
+    # Now it does, and this population may be describing abuse.
+    st.caption("🔒 Recording sends your voice to Google's speech service to be "
+               "turned into text. Typing sends nothing anywhere.")
     audio = mic_recorder(start_prompt="🎤 Record question",
                          stop_prompt="⏹ Stop recording",
                          format="wav",  # sr.AudioFile reads WAV/AIFF/FLAC, never the webm default

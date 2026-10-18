@@ -499,6 +499,14 @@ check("bridge-hides-icon-ligatures", 'stIconMaterial"]:not([aria-hidden])' in _b
 check("bridge-drawer-escape-and-tab-loop", "ev.key === 'Escape'" in _bj
       and "ev.key !== 'Tab'" in _bj and "window.innerWidth < 768" in _bj)
 check("bridge-mic-denied-note", "micState !== 'denied'" in _bj
-      and "Voice input is unavailable" in _bj)
+      and "Voice input is unavailable" in _bj
+      and "NotAllowedError" in _bj and "md.getUserMedia = function" in _bj)
+# H2 review: the bridge rides inside read_aloud_html's %-formatted string, so a
+# single "%" in it would raise on every read-aloud render.
+check("bridge-has-no-percent", "%" not in _bj)
+check("js-str-escapes-every-lt", "<" not in app._js_str("<!--<script></script>"))
+check("voice-disclosed-before-recording",
+      "Google's speech service" in (_tv := inspect.getsource(app.try_voice_input))
+      and _tv.index("Google's speech service") < _tv.index("audio = mic_recorder("))
 
 print("\nALL %d ASSERTS PASSED" % len(passed))
