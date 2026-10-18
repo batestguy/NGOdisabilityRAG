@@ -1,5 +1,9 @@
 """OS-level keystrokes via SendInput, so NVDA's keyboard hook sees them.
-usage: python oskeys.py "insert+down" "tab" "h" ...   (each arg = one chord)
+usage: python oskeys.py [--title=DRLCA] "insert+down" "tab" "h" ...   (each arg = one chord)
+
+--title: refuse to send ANY key unless the foreground window's title contains
+this text (exit 3). OS keys go to whatever window is focused; without the guard
+a dialog that steals focus sends the probe's keys into the user's other apps.
 """
 import ctypes, sys, time
 
@@ -18,7 +22,23 @@ def press(code, up=False):
     ctypes.windll.user32.keybd_event(code, scan, flags, 0)
 
 
-for chord in sys.argv[1:]:
+def foreground_title():
+    u = ctypes.windll.user32
+    h = u.GetForegroundWindow()
+    buf = ctypes.create_unicode_buffer(512)
+    u.GetWindowTextW(h, buf, 512)
+    return buf.value
+
+
+args = sys.argv[1:]
+need = next((a.split("=", 1)[1] for a in args if a.startswith("--title=")), None)
+args = [a for a in args if not a.startswith("--title=")]
+
+for chord in args:
+    if need and need not in foreground_title():
+        sys.stderr.write("oskeys: foreground is %r, not %r -- refusing\n"
+                         % (foreground_title(), need))
+        sys.exit(3)
     if chord.startswith("sleep:"):
         time.sleep(float(chord[6:]))
         continue

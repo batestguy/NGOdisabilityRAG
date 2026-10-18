@@ -18,7 +18,8 @@ const STEPS = args.steps ? String(args.steps).split(',') : null;
 fs.mkdirSync(OUT, { recursive: true });
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const os = (...chords) => execFileSync(PY, [KEYS, ...chords]);
+// --title guard: oskeys refuses (exit 3) unless the DRLCA window is focused
+const os = (...chords) => execFileSync(PY, [KEYS, '--title=DRLCA', ...chords]);
 const mark = () => fs.statSync(LOG).size;
 function spoken(from) {
   const fd = fs.openSync(LOG, 'r'); const len = fs.statSync(LOG).size - from;
@@ -42,7 +43,8 @@ await page.goto(BASE); await page.getByText('National helplines').first().waitFo
 await sleep(3000);
 await page.bringToFront();
 // real OS click on the page body so the Chrome window is foreground for NVDA
-const box = await page.locator('h1').boundingBox();
+await page.locator('h1').first().waitFor({ state: 'visible', timeout: 30000 });
+const box = await page.locator('h1').first().boundingBox();
 await page.mouse.click(box.x + 5, box.y + box.height + 120);
 await sleep(1500);
 
