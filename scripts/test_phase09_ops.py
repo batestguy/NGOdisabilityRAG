@@ -421,6 +421,61 @@ def main() -> int:
         check(m["carried"] and "that" in m["pronouns"],
               "unbound 'that' still carries: %r -> %r" % (q, m["reason"]))
 
+    # --- H7: counts-only telemetry (docs/phases/16 H7) ----------------------
+    print("\n== H7. TELEMETRY: STDOUT ONLY, NO TEXT WITHOUT OPT-IN ==")
+    import contextlib
+    import inspect
+    import io
+    import json as _json
+    import telemetry
+    secret = "My boss beat me because I am blind, what can I do?"
+
+    def captured(rec):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            telemetry.emit(rec)
+        return buf.getvalue()
+
+    out_off = captured(telemetry.turn_record("abc123", "legal", False, 0.27, 9, 0,
+                                             False, secret, share_text=False))
+    check(out_off.startswith(telemetry.PREFIX) and out_off.count("\n") == 1,
+          "telemetry is one prefixed stdout line")
+    rec_off = _json.loads(out_off[len(telemetry.PREFIX):])
+    check(secret not in out_off and "boss" not in out_off and "q" not in rec_off,
+          "no question text in the line without the opt-in")
+    check(set(rec_off) <= telemetry.TURN_FIELDS and rec_off["top"] == "0.20-0.30",
+          "turn line carries only allowed fields, score as a band: %s" % sorted(rec_off))
+    out_on = captured(telemetry.turn_record("abc123", "legal", False, 0.27, 9, 0,
+                                            False, secret, share_text=True))
+    check(_json.loads(out_on[len(telemetry.PREFIX):]).get("q") == secret,
+          "with the explicit opt-in, that turn's question text is included")
+    long_q = "x" * 1000
+    check(len(telemetry.turn_record("i", "legal", False, None, 0, 0, False, long_q,
+                                    True)["q"]) == telemetry.QUESTION_MAX,
+          "opted-in text is truncated to %d chars" % telemetry.QUESTION_MAX)
+    h = _json.loads(captured(telemetry.helpful_record("abc123", "Yes"))[len(telemetry.PREFIX):])
+    check(set(h) <= telemetry.HELPFUL_FIELDS and h["helpful"] == "yes",
+          "helpful line carries only allowed fields")
+    tsrc = inspect.getsource(telemetry).split('"""', 2)[2]  # code, not the docstring
+    check(not any(w in tsrc for w in ("import requests", "urllib", "http.client",
+                                      "socket", "open(", "session_state")),
+          "telemetry module: no network, no file, never reads session_state")
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    import app
+    run_src = inspect.getsource(app.run)
+    hist_src = inspect.getsource(app.render_history)
+    replay_src = inspect.getsource(app.replay_turn)
+    check("emit_turn_signal(" in run_src and "emit_turn_signal(" not in hist_src
+          and "emit_turn_signal(" not in replay_src,
+          "a turn line is emitted for a NEW turn only, never on replay")
+    check("render_helpful(stored, i)" in hist_src and "render_helpful(turn" in run_src,
+          "the helpful control renders on new and replayed turns alike")
+    check('key="share_text"' in run_src and "value=False" in run_src.split('key="share_text"')[0][-400:],
+          "text sharing is a separate sidebar opt-in, OFF by default")
+    check("TURN_WIDGET_PREFIXES" in run_src and "helpful-" in app.TURN_WIDGET_PREFIXES
+          and "ngo-" in app.TURN_WIDGET_PREFIXES,
+          "Clear conversation drops per-turn widget keys (helpful, NGO filters)")
+
     if failures:
         print("\nFAILURES:")
         for f in failures:

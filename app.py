@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
 import chat  # noqa: E402  (contextualise / merge_help_slots / drift -- offline, free)
 from chat import TurnPayload  # noqa: E402  (the stored unit of conversation)
+import telemetry  # noqa: E402  (H7: counts-only stdout lines; no network, no file)
 from ngo import DRAC_TOLLFREE, DRAC_WHATSAPP  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -1205,6 +1206,49 @@ def render_help_records(payload, turn_index: int = 0):
                    "in the list. The helplines always come first.")
 
 
+# Widget-key prefixes that carry a turn index; "Clear conversation" drops them.
+TURN_WIDGET_PREFIXES = ("ngo-", "helpful-")
+HELPFUL_PRIVACY_NOTE = (
+    "Your yes/no is counted with: which route answered (law or help), whether "
+    "it was refused, a score band, and how many excerpts or contacts were "
+    "shown. Not your question and not your conversation, unless you switch "
+    "on \"Also share the words of my questions\" in the sidebar.")
+
+
+def emit_turn_signal(payload, share_text: bool = False) -> None:
+    """H7: one counts-only line for a NEW turn. Called from run() only, never
+    on replay, so a rerun cannot double-count a turn."""
+    payload.signal_id = telemetry.new_id()
+    shown = dedupe_excerpts(payload.excerpts or [])
+    hp = payload.help_payload or {}
+    telemetry.emit(telemetry.turn_record(
+        payload.signal_id, payload.mode or "", payload.refused,
+        max((e.get("score", 0.0) for e in shown), default=None),
+        len(shown), max(len(hp.get("records", [])) - 2, 0),
+        bool(payload.answer), payload.question, share_text))
+
+
+def _helpful_changed(key: str, signal_id: str) -> None:
+    st = _st()
+    telemetry.emit(telemetry.helpful_record(signal_id, st.session_state.get(key)))
+
+
+def render_helpful(payload, turn_index: int) -> None:
+    """H7: optional "Was this answer helpful?" per assistant turn.
+
+    A native radio group (fieldset + legend), so keyboard and screen readers
+    get it for free. Nothing is selected until the user picks. The privacy
+    note sits next to it. The line is emitted from on_change, which runs once
+    per actual change, never on a plain rerun.
+    """
+    st = _st()
+    key = "helpful-%d" % turn_index
+    st.radio("Was this answer helpful?", list(telemetry.HELPFUL_VALUES), index=None,
+             horizontal=True, key=key, on_change=_helpful_changed,
+             args=(key, payload.signal_id or ""))
+    st.caption(HELPFUL_PRIVACY_NOTE)
+
+
 def render_help(question: str, turn_index: int = 0, slots=None):
     """Compute AND render one turn's help half. Returns the replayable payload.
 
@@ -1484,6 +1528,7 @@ def render_history(live_last: bool = True):
             st.markdown(stored.question)
         with st.chat_message("assistant"):
             replay_turn(stored, i, live=(live_last and i == last))
+            render_helpful(stored, i)
 
 
 def run():
@@ -1529,6 +1574,11 @@ def run():
         st.session_state["pending"] = ""
         st.session_state["explicit"] = "auto"
         st.session_state["submitted"] = False
+        # Per-turn widget keys are indexed by turn number, so a new turn 0
+        # would inherit the old turn 0's NGO filter and helpful answer.
+        for k in [k for k in st.session_state
+                  if str(k).startswith(TURN_WIDGET_PREFIXES)]:
+            del st.session_state[k]
         st.rerun()
     st.sidebar.markdown("**How should I handle your next question?**")
     if st.sidebar.button("⚖️ Ask about my rights", key="mode-legal",
@@ -1558,6 +1608,15 @@ def run():
         % (", ".join("`%s` %d" % (m, n) for m, n in sorted(counts.items()))
            or "none"))
 
+    # --- Sidebar: H7 improvement signal (text sharing is a separate opt-in) --
+    st.sidebar.header("📊 Help improve this service")
+    st.sidebar.checkbox("Also share the words of my questions", value=False,
+                        key="share_text",
+                        help="OFF by default. When off, only counts are "
+                             "recorded (see the note under each answer). When "
+                             "on, the text of each NEW question is also "
+                             "recorded, never your conversation history.")
+
     st.markdown(accessibility_css(high_contrast, font_size),
                 unsafe_allow_html=True)
 
@@ -1575,6 +1634,8 @@ def run():
         with st.chat_message("assistant"):
             turn = render_turn(pending, st.session_state["explicit"], plain,
                                history, len(history))
+            emit_turn_signal(turn, bool(st.session_state.get("share_text")))
+            render_helpful(turn, len(history))
         st.session_state["turns"].append(turn)
         st.session_state["explicit"] = "auto"  # an override is per-turn
         st.session_state["submitted"] = True

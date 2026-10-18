@@ -325,6 +325,10 @@ class TurnPayload:
     # here for the same reason `excerpts` does -- re-rendering a stored help
     # turn must not re-run the NGO lookup on every Streamlit rerun.
     help_payload: dict = field(default_factory=dict)
+    # H7: the random token that joins this turn's two telemetry lines. Opaque,
+    # per turn, not derived from anything about the user. Defaulted like the
+    # fields above, so no eval or constructor changes.
+    signal_id: str = ""
 
     @property
     def tags(self) -> list:
