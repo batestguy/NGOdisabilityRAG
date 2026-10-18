@@ -1,5 +1,18 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-18)
 
+> **■ 2026-10-18 (LATER): H3 BUILT on `phase11/h3-ngo` (`a9e1c94` H3a filters, `a0dad60` H3b 20 verified rows / 6 zones). NOT pushed, NOT merged.**
+> * **Owner spot-check DONE 2026-10-18** (5 rows, all OK). The H3 gate is met; PR #16 is merged on the owner's "commit and proceed".
+> * 20 rows, not the targeted ~30: most leads had no phone on an official source. The next source is official Facebook pages of state
+>   NAB/NNAD/JONAPWD chapters (needs a logged-in browser). Re-verify any row with `tools/a11y_audit/verify_ngo_sources.mjs`.
+
+> **■ 2026-10-18 (END): H2 MERGED + DEPLOYED (PR #15 → `0d7b092`, merged on the user's explicit "merge").** CI green on `main`; live smoke
+> (`tools/a11y_audit/live_smoke.mjs`) passed: new-turn announcement fires, 9 tags shown, helplines lead, voice disclosure visible,
+> 0 ligature leaks, 0 page errors. **Voice input works in production for the first time.** §7 is signed as agent-run (not a human listening session).
+> * **Next agent work: H3** on `phase11/h3-ngo` (branched from `0d7b092`, local only). Still open, minor: slider name doubled, route buttons
+>   expose no selected state, sidebar read before H1 at 1280, drawer trap not announced as a dialog. Streamlit 1.66 bump must migrate
+>   the `aria-expanded` hook in BOTH the H2 CSS and `A11Y_BRIDGE_JS`.
+> * **Any push to `main` redeploys. Ask the user first, every time.**
+
 > **■ 2026-10-18: H2 owner checklist PRE-RUN by the agent, and every fail it found is FIXED on `phase11/h2-a11y` (`4a07e8b`, `7692a40`). NOT pushed, NOT merged.**
 > * **Voice input never worked in production** (webm vs `sr.AudioFile`); `format="wav"` fixes it, verified end to end in Chrome + Edge. Merging H2 ships that fix.
 > * Also fixed: A2 live region, A7 icon ligatures, B3 drawer Esc/Tab, C2 mic-blocked note, D1 read-aloud tag count. axe unchanged, `test_phase05` 152/152.

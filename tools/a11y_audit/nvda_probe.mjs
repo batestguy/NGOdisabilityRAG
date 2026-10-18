@@ -3,6 +3,12 @@
 // (oskeys.py), and slices NVDA's IO log (--log-level=12) into per-step speech.
 //
 //   node nvda_probe.mjs --log=<nvda.log> --keys=<oskeys.py> --out=<dir> [--steps=a1,a2,...]
+//
+// AFTERWARDS, QUIT NVDA NORMALLY (NVDA+Q, then OK; or tray icon -> Exit). NEVER
+// Stop-Process / kill it: a killed NVDA leaves Windows' screen-reader flag
+// (SPI_GETSCREENREADER) set, and PSReadLine then turns off PowerShell's inline
+// predictions in every new terminal (happened 2026-10-18). `nvda -q` did not
+// exit it either.
 import { chromium } from 'playwright';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';

@@ -1124,23 +1124,85 @@ def render_legal(question: str, plain: bool, turn_index: int = 0,
     return payload
 
 
-def render_help_records(payload):
-    """Render a help payload -- shared by the live path and the replay path."""
+def help_directory(df, slots) -> list:
+    """The whole directory, ranked for this turn's slots, for H3a filtering.
+
+    Called ONLY by render_help() (a live turn). The result is stored in the
+    payload, so a replay re-filters stored rows and never looks anything up.
+    Rows the lookup ranked come first, then every other row in CSV order.
+    """
+    from ngo import SCHEMA, find_ngo_with_meta
+    frame, _ = find_ngo_with_meta(df, disability=(slots or {}).get("disability", ""),
+                                  location=(slots or {}).get("location", ""),
+                                  k=len(df))
+    ranked = frame.to_dict("records")[2:]
+    seen = {r["name"] for r in ranked}
+    rest = [{c: r[c] for c in SCHEMA} for r in df.to_dict("records")
+            if r["name"] not in seen]
+    return ranked + rest
+
+
+NGO_ANY_TYPE, NGO_ANY_STATE = "Any type", "Any state"
+NGO_SORTS = {"Relevance to your question": "relevance", "Name (A to Z)": "name"}
+
+
+def render_help_records(payload, turn_index: int = 0):
+    """Render a help payload -- shared by the live path and the replay path.
+
+    H3a: an optional, collapsed filter/sort over the payload's STORED
+    `directory` (no lookup, no router: replay rules). Keys carry the turn
+    index so turns never share filter state. The default view is unchanged.
+
+    The controls render AFTER the results (screen-reader users meet the
+    answer first, H3 review); their current values are read from
+    session_state, which Streamlit fills before the script reaches them.
+    """
     st = _st()
+    from ngo import filter_options, filter_records
     records = (payload or {}).get("records", [])
-    st.markdown("**Showing %d contact(s) (helplines first, then top-%d "
-                "organisations -- never top-1-only):**"
-                % (len(records), max(len(records) - 2, 0)))
-    if payload.get("needs_confirmation"):
+    directory = payload.get("directory") or records[2:]
+    types, states = filter_options(directory)
+    k_type, k_state, k_sort = ("ngo-type-%d" % turn_index, "ngo-state-%d" % turn_index,
+                               "ngo-sort-%d" % turn_index)
+    dtype = st.session_state.get(k_type, NGO_ANY_TYPE)
+    state = st.session_state.get(k_state, NGO_ANY_STATE)
+    sort = NGO_SORTS.get(st.session_state.get(k_sort), "relevance")
+    narrowed = dtype not in (None, NGO_ANY_TYPE) or state not in (None, NGO_ANY_STATE)
+    if narrowed:
+        records = filter_records(
+            directory, "" if dtype in (None, NGO_ANY_TYPE) else dtype,
+            "" if state in (None, NGO_ANY_STATE) else state, sort)
+        st.markdown("**Filtered: %s · %s · sorted by %s. Showing %d contact(s), "
+                    "helplines first:**"
+                    % (dtype, state, sort, len(records)))
+        if len(records) <= 2:
+            st.info("No organisation in this list matches those filters. The "
+                    "national helplines above can refer you.")
+    else:
+        if sort == "name":  # sort alone reorders THIS answer's top-k, nothing more
+            records = filter_records(records[2:], sort="name")
+        st.markdown("**Showing %d contact(s) (helplines first, then top-%d "
+                    "organisations -- never top-1-only):**"
+                    % (len(records), max(len(records) - 2, 0)))
+    confirm = payload.get("needs_confirmation") and not narrowed
+    if confirm:
         st.warning("🔍 " + payload.get("confirm_prompt", ""))
     for r in records[2:]:  # org rows; banner rows live in the pinned banner
-        badge = (" ⚠️ *please confirm this matches your need*"
-                 if payload.get("needs_confirmation") else "")
+        badge = " ⚠️ *please confirm this matches your need*" if confirm else ""
         st.markdown("**%s**%s" % (r.get("name", "?"), badge))
-        st.markdown("- Focus: %s | Location: %s\n- 📞 %s | ✉️ %s\n- %s\n- %s"
-                    % (r.get("disability_focus", ""), r.get("location", ""),
-                       r.get("phone", ""), r.get("email", ""),
-                       r.get("website", ""), r.get("description", "")))
+        contact = "📞 %s" % r.get("phone", "")
+        if r.get("email"):
+            contact += " | ✉️ %s" % r["email"]
+        lines = ["Focus: %s | Location: %s" % (r.get("disability_focus", ""),
+                                               r.get("location", "")), contact,
+                 r.get("website", ""), r.get("description", "")]
+        st.markdown("\n".join("- " + x for x in lines if x))
+    with st.expander("🔎 Filter or sort these organisations", expanded=False):
+        st.selectbox("Disability type", [NGO_ANY_TYPE] + types, key=k_type)
+        st.selectbox("State", [NGO_ANY_STATE] + states, key=k_state)
+        st.radio("Sort organisations by", list(NGO_SORTS), key=k_sort)
+        st.caption("National and all-disability organisations always stay "
+                   "in the list. The helplines always come first.")
 
 
 def render_help(question: str, turn_index: int = 0, slots=None):
@@ -1151,7 +1213,8 @@ def render_help(question: str, turn_index: int = 0, slots=None):
     """
     df = load_ngo_df()
     payload = help_display(question, df=df, k=3, slots=slots)
-    render_help_records(payload)
+    payload["directory"] = help_directory(df, payload.get("slots"))
+    render_help_records(payload, turn_index)
     return payload
 
 
@@ -1393,7 +1456,7 @@ def replay_turn(payload, turn_index: int, live: bool = False):
         if wants_help and payload.help_payload:
             st.subheader("🤝 Help near you (offline directory)")
             help_view = payload.help_payload
-            render_help_records(help_view)
+            render_help_records(help_view, turn_index)
         if live:
             render_routing_trap(payload.mode)
         render_context_note(payload)

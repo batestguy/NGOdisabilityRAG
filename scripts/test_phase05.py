@@ -509,4 +509,68 @@ check("voice-disclosed-before-recording",
       "Google's speech service" in (_tv := inspect.getsource(app.try_voice_input))
       and _tv.index("Google's speech service") < _tv.index("audio = mic_recorder("))
 
+# H3a (2026-10-18): filter/sort re-filters a turn's STORED directory. A replay
+# with every lookup patched to raise must still render, filters included.
+import ngo as _ngo  # noqa: E402
+_dir = _ngo.load_ngo(str(ROOT / "data" / "ngo.csv")).to_dict("records")
+_hl = [h["phone"] for h in _ngo.HELPLINES]
+_types, _states = _ngo.filter_options(_dir)
+check("h3a-options-from-stored-rows", "Hearing" in _types and "Lagos" in _states)
+_views = [_ngo.filter_records(_dir, t, s, o) for t in [""] + _types
+          for s in [""] + _states for o in ("relevance", "name")]
+check("h3a-helplines-lead-every-filtered-view",
+      all([r["phone"] for r in v[:2]] == _hl for v in _views), str(len(_views)))
+check("h3a-umbrella-and-national-never-filtered-out",
+      all(any("JONAPWD" in r["name"] for r in v) for v in _views))
+_local = [r for r in _dir if "*" not in _ngo.record_states(r)]
+_empty = _ngo.filter_records(_local, "Hearing", "Lagos")
+check("h3a-empty-result-is-helplines-only", [r["phone"] for r in _empty] == _hl)
+_byname = [r["name"] for r in _ngo.filter_records(_dir, sort="name")[2:]]
+check("h3a-sort-by-name", _byname == sorted(_byname, key=str.casefold))
+_hear = _ngo.filter_records(_dir, "Hearing")[2:]
+check("h3a-specialist-before-umbrella", "Deaf" in _hear[0]["name"], _hear[0]["name"])
+
+
+def _boom(*a, **k):
+    raise AssertionError("replay recomputed a lookup")
+
+
+_saved = (app.help_display, _ngo.find_ngo_with_meta, _router.route, _router._help_payload)
+app.help_display = _ngo.find_ngo_with_meta = _router.route = _router._help_payload = _boom
+try:
+    app.render_help_records({"records": _ngo.with_helplines(
+        _ngo.pd.DataFrame(_dir[:3])).to_dict("records"), "directory": _dir,
+        "needs_confirmation": False}, turn_index=7)
+    _replay_ok = True
+except AssertionError:
+    _replay_ok = False
+finally:
+    app.help_display, _ngo.find_ngo_with_meta, _router.route, _router._help_payload = _saved
+check("h3a-replay-filters-without-recompute", _replay_ok)
+_rhr = inspect.getsource(app.render_help_records)
+check("h3a-render-path-has-no-lookup", "find_ngo" not in _rhr and "help_display" not in _rhr
+      and "help_directory" not in _rhr and "route(" not in _rhr)
+check("h3a-directory-stored-only-by-live-turn",
+      "help_directory(" in inspect.getsource(app.render_help)
+      and "help_directory(" not in replay_body)
+check("h3a-filter-keys-carry-turn-index", '"ngo-type-%d" % turn_index' in _rhr
+      and '"ngo-state-%d" % turn_index' in _rhr and '"ngo-sort-%d" % turn_index' in _rhr)
+check("h3a-replay-passes-turn-index", "render_help_records(help_view, turn_index)" in replay_body)
+# H3 review (2026-10-18): regressions it found.
+_psy = [r["name"] for r in _ngo.filter_records(_dir, "Psychosocial / mental health")[2:]]
+check("h3-review-psychosocial-not-developmental",
+      all("Mentally Aware" in n or "*" in _ngo.record_types(next(r for r in _dir if r["name"] == n))
+          for n in _psy) and any("Mentally Aware" in n for n in _psy), "; ".join(_psy))
+check("h3-review-specific-slot-beats-aid",
+      _router.extract_help_slots("I have cerebral palsy and need a wheelchair")["disability"]
+      == "cerebral palsy"
+      and _router.extract_help_slots("my son has autism and is deaf")["disability"] == "autism")
+check("h3-review-location-word-boundary",
+      _router.extract_help_slots("is a buyout legal")["location"] == ""
+      and _router.extract_help_slots("help in Uyo please")["location"] == "uyo")
+check("h3-review-sort-alone-keeps-top-k",
+      'filter_records(records[2:], sort="name")' in _rhr and "confirm = payload.get" in _rhr)
+check("h3-review-controls-after-results",
+      _rhr.index("for r in records[2:]") < _rhr.index('st.expander("🔎 Filter or sort'))
+
 print("\nALL %d ASSERTS PASSED" % len(passed))

@@ -8,6 +8,24 @@ PRUNED from data/ngo.csv -- do NOT re-add without fresh verification:
 Medium confidence (kept; RECHECK before production reliance): NAB + NNAD --
 their contact pages 404'd on fetch day, values kept from agreeing
 official-domain snippets (scripts/test_phase03.py prints the RECHECK note).
+
+H3b growth 2026-10-18 (10 -> 20 rows; columns source_url + verified_on added;
+the original 10 carry source_url = their website and verified_on = 2026-09-08
+per the check above). Each new phone was confirmed in a REAL browser on the
+row's source_url (tools/a11y_audit/verify_ngo_sources.mjs matches the last 10
+digits in rendered text or tel:/wa.me links), because the research fetch tool
+paraphrases pages. KF Place Foundation's number is published only as tel: and
+WhatsApp links on its own homepage, not as visible text.
+Considered and NOT added (no official phone, or not disability-specific):
+TLP Centre (focus not stated on its own site), CHELD and Keeping It Real
+Foundation (general NGOs), Albinism Association of Nigeria (contact page timed
+out; numbers not confirmed), Lagos State Office for Disability Affairs (site
+down), Albino Foundation (expired certificate), and many state commissions and
+chapters with no official contact page.
+RECHECK: Cedar Foundation for Disability -- its site serves its host's shared
+certificate (*.web-hosting.com; Chrome: ERR_CERT_COMMON_NAME_INVALID), so the
+website field is left blank (no link into a browser warning); the phone was
+read from the organisation's own page content. Confirm by phone.
 """
 import difflib
 import re
@@ -62,6 +80,14 @@ _ALIASES = {
     "mentally aware": ["depression", "anxiety", "trauma", "suicide", "counselling",
                        "counseling", "therapy", "stress"],
     "taf africa": ["albino", "albinism", "skin"],
+    # H3b rows (2026-10-18): same mechanism, so lay phrasings reach them
+    # ("physical disability" is not a substring of "physical disabilities").
+    "visible disabilities": ["physical", "visible", "mobility", "rehabilitation", "amputee"],
+    "cedar foundation": ["children", "child", "youth", "education"],
+    "kf place": ["special", "needs", "children", "child", "therapy", "developmental", "learning"],
+    "cerebral palsy": ["cerebral", "palsy", "spastic"],
+    "patrick speech": ["autism", "autistic", "speech", "language"],
+    "facicp": ["women", "woman", "girls", "girl", "female"],
 }
 
 
@@ -298,3 +324,88 @@ def find_ngo_records(df: pd.DataFrame, disability: str = "", location: str = "",
     """List-of-dicts response shape -- same banner contract via with_helplines."""
     out, _ = find_ngo_with_meta(df, disability=disability, location=location, k=k)
     return out.to_dict("records")
+
+
+# --- H3a: filter + sort over STORED rows (pure; no lookup, no I/O) -----------
+# The UI re-filters a turn's stored directory on every rerun, so nothing here
+# may call find_ngo_with_meta() or touch the CSV. Types and states are parsed
+# from the free-text columns. Umbrella ("all disabilities") and national rows
+# match every filter: they serve everyone, so narrowing must never hide them.
+
+DISABILITY_TYPES = {  # label -> substrings of disability_focus (lower-cased)
+    "Visual": ["blind", "visual", "sight", "low vision"],
+    "Hearing": ["deaf", "hearing"],
+    "Physical / mobility": ["spinal", "physical", "mobility", "amput", "wheelchair",
+                            "polio", "limb"],
+    "Intellectual / developmental": ["down syndrome", "intellectual", "developmental",
+                                     "autism", "cerebral palsy", "learning"],
+    # Not bare "mental": it matched inside "developmental" and put autism and
+    # cerebral palsy centres under this label (H3 review).
+    "Psychosocial / mental health": ["mental health", "psychosocial", "psychiatric",
+                                     "depress", "anxiety"],
+    "Albinism": ["albin"],
+}
+UMBRELLA_FOCUS = "all disabilities"
+
+NIGERIAN_STATES = [
+    "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
+    "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo",
+    "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa",
+    "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba",
+    "Yobe", "Zamfara",
+]
+# City names that stand for a state in the location column.
+_STATE_ALIASES = {"abuja": "FCT", "port harcourt": "Rivers", "ibadan": "Oyo",
+                  "enugu": "Enugu", "jos": "Plateau", "calabar": "Cross River",
+                  "uyo": "Akwa Ibom", "benin city": "Edo", "maiduguri": "Borno",
+                  "ilorin": "Kwara", "abeokuta": "Ogun", "owerri": "Imo"}
+_STATE_RES = [(s, re.compile(r"\b%s\b" % re.escape(s.lower()))) for s in NIGERIAN_STATES]
+
+
+def record_types(rec: dict) -> set:
+    """Canonical disability types of a row; {'*'} for an umbrella body."""
+    focus = str(rec.get("disability_focus", "")).lower()
+    if UMBRELLA_FOCUS in focus:
+        return {"*"}
+    return {t for t, keys in DISABILITY_TYPES.items() if any(k in focus for k in keys)}
+
+
+def record_states(rec: dict) -> set:
+    """States named in a row's location; {'*'} also for a national body."""
+    loc = str(rec.get("location", "")).lower()
+    found = {s for s, rx in _STATE_RES if rx.search(loc)}
+    found |= {s for city, s in _STATE_ALIASES.items()
+              if re.search(r"\b%s\b" % re.escape(city), loc)}
+    if "national" in loc:
+        found.add("*")
+    return found
+
+
+def filter_options(rows: list) -> tuple:
+    """(types, states) that actually occur in `rows`, in canonical order."""
+    types, states = set(), set()
+    for r in rows:
+        types |= record_types(r)
+        states |= record_states(r)
+    return ([t for t in DISABILITY_TYPES if t in types],
+            [s for s in NIGERIAN_STATES if s in states])
+
+
+def filter_records(rows: list, disability_type: str = "", state: str = "",
+                   sort: str = "relevance") -> list:
+    """Filter + sort stored org rows; ALWAYS helplines first (with_helplines).
+
+    `rows` are org rows only, already in relevance order. An empty result is
+    the two helpline rows alone, never an empty list.
+    """
+    kept = [r for r in rows
+            if (not disability_type or record_types(r) & {disability_type, "*"})
+            and (not state or record_states(r) & {state, "*"})]
+    # Specialists before umbrellas: a "Hearing" filter must lead with the deaf
+    # association, not three all-disability bodies (stable: relevance kept
+    # within each group).
+    kept.sort(key=lambda r: (bool(disability_type) and disability_type not in record_types(r))
+              + (bool(state) and state not in record_states(r)))
+    if sort == "name":
+        kept = sorted(kept, key=lambda r: str(r.get("name", "")).casefold())
+    return with_helplines(pd.DataFrame(kept, columns=SCHEMA)).to_dict("records")

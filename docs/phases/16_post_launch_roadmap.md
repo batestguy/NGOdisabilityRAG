@@ -212,6 +212,35 @@ the owner has spot-checked at least 5 rows.
 **Do not.** Add an org without an official-source phone. Bypass `with_helplines()`. Recompute on
 replay.
 
+> **H3 RESULTS (2026-10-18, branch `phase11/h3-ngo`, `a9e1c94` + `a0dad60`; zero quota; NOT merged).**
+> * **H3a done.** A collapsed "Filter or sort" expander per help turn: disability type, state, and
+>   relevance/name sort. It works over a `directory` that only the live turn stores
+>   (`help_directory()`), so a replay re-filters stored rows; the test runs a replay with every
+>   lookup patched to raise. Umbrella and national bodies match every filter; specialists sort
+>   first. Browser: turn 2 is untouched when turn 1 is filtered; axe shows only the known
+>   Streamlit node.
+> * **H3b: 20 rows, not about 30.** Four research rounds proposed about 50 organisations. Most had
+>   no phone on an official source (news, directories and social posts are leads only), so they
+>   were not added. The 10 new rows are verified in a real browser (`verify_ngo_sources.mjs`),
+>   because the research fetch tool paraphrases pages. **6/6 zones, 6 types.** KF Place's number
+>   is published only as tel:/WhatsApp links on its own site.
+> * **Found on the way:** the router's slot scan did not know the new words, so "autism support
+>   in Owerri" returned umbrella bodies only. It now knows them, `eval_chat` output is
+>   byte-identical, and `test_phase03` pins 5 natural questions.
+> * **Exit gate:** tests green (03: 24/24 cells, 16/16 statics; 04: 10/10; 05: 166/166) ✅;
+>   ≥ 6 zones ✅; ≥ 5 types ✅; `source_url` + `verified_on` on every row ✅. **Owner spot-check of
+>   ≥ 5 rows: DONE 2026-10-18.** The owner reported all five OK: Cedar, KF Place, NCPWD, OLG Owerri, NAPVID. **H3 exit gate met.**
+> * **H3 review (reviewer, SHIP WITH CAVEATS), all taken:** the type keyword "mental" matched inside
+>   "developmental", so the psychosocial filter listed autism and CP centres (fixed + asserted); new
+>   specific slots now precede generic ones ("cerebral palsy … wheelchair" keeps cerebral palsy);
+>   place matching uses word boundaries; sort alone reorders only the answer's top-k and keeps the
+>   confirm warning; controls render after the results; blank emails are not rendered. **Cedar's site
+>   serves its host's certificate** (Chrome rejects it), so its website field is blank and the row is
+>   flagged RECHECK: confirm it by phone during the spot-check. `eval_chat` is still byte-identical.
+> * **To reach about 30:** official sites are thin outside Lagos and Abuja. Official Facebook pages
+>   of state NAB, NNAD and JONAPWD chapters are the likeliest next source; that needs a logged-in
+>   browser check by the owner.
+
 ---
 
 ## H4 — Offline off-topic guard

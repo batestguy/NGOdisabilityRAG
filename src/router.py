@@ -186,21 +186,31 @@ def route_question(question: str) -> dict:
 
 _DISABILITY_SCAN = [  # ordered: multi-word / specific forms first
     ("down syndrome", "Down syndrome"), ("mental health", "mental health"),
+    # H3b (2026-10-18): specific conditions BEFORE generic aids/body words, so
+    # "cerebral palsy ... wheelchair" keeps cerebral palsy (H3 review).
+    ("cerebral palsy", "cerebral palsy"), ("autis", "autism"), ("adhd", "ADHD"),
+    ("special needs", "special needs"),
     ("hearing", "hearing impairment"), ("deaf", "deaf"),
     ("visual", "visual impairment"), ("blind", "blindness"),
     ("albin", "albinism"), ("prosthetic", "prosthetic"),
     ("prosthesis", "prosthesis"), ("amput", "amputation"),
     ("limb", "limb loss"), ("spinal", "spinal cord injury"),
-    ("wheelchair", "wheelchair"),
+    ("wheelchair", "wheelchair"), ("physical disab", "physical disability"),
 ]
-_LOCATION_SCAN = ["lagos", "abuja", "kano", "kaduna"]
+# H3b: places the directory now has rows for (cities, and multi-word states
+# that cannot collide with ordinary words; "imo"/"edo" alone could).
+_LOCATION_SCAN = ["lagos", "abuja", "kano", "kaduna",
+                  "owerri", "imo state", "maiduguri", "borno", "uyo", "akwa ibom",
+                  "benin city", "edo state"]
 
 
 def extract_help_slots(question: str) -> dict:
     """Disability/location slot strings for find_ngo_with_meta ("" = no filter)."""
     q = (question or "").lower()
     disability = next((v for k, v in _DISABILITY_SCAN if k in q), "")
-    location = next((loc for loc in _LOCATION_SCAN if loc in q), "")
+    # Word boundaries (H3 review): "buyout" must not read as Uyo.
+    location = next((loc for loc in _LOCATION_SCAN
+                     if re.search(r"\b%s\b" % re.escape(loc), q)), "")
     return {"disability": disability, "location": location}
 
 
