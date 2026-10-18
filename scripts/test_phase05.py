@@ -471,4 +471,9 @@ _re_src = inspect.getsource(app.render_excerpts)
 check("dedupe-runs-before-inline-fold-split",
       _re_src.index("dedupe_excerpts(excerpts)") < _re_src.index("excerpts[:INLINE_EXCERPTS]"))
 
+# H2 owner pre-run (2026-10-18): mic_recorder defaults to webm, which
+# sr.AudioFile cannot read, so every clip since Phase 06 ended in ValueError.
+check("mic-recorder-asks-for-wav",
+      'format="wav"' in inspect.getsource(app.try_voice_input))
+
 print("\nALL %d ASSERTS PASSED" % len(passed))

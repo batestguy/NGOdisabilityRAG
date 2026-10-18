@@ -984,6 +984,7 @@ def try_voice_input():
         return  # graceful degradation: text box stays primary (review 2026-09-08)
     audio = mic_recorder(start_prompt="🎤 Record question",
                          stop_prompt="⏹ Stop recording",
+                         format="wav",  # sr.AudioFile reads WAV/AIFF/FLAC, never the webm default
                          key="drlca-mic")
     if not audio or not audio.get("bytes"):
         st.caption("🎤 Optional: record your question (Chrome/Edge + mic "
