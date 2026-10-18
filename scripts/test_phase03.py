@@ -66,7 +66,26 @@ CELLS = [
     # --- unknown -> helplines + JONAPWD, never empty ---
     ("U1", "xyzq martian disability", "Lagos", "JONAPWD", None, False),
     ("U2", "xyzq", "Atlantis", "JONAPWD", None, False),
+    # --- H3b (2026-10-18): new zones and types; existing cells unchanged ---
+    ("N1", "cerebral palsy", "Lagos", "CP Center", False, False),
+    ("N2", "autism", "Lagos", "Patrick Speech", False, False),
+    ("N3", "physical disability", "Benin", "NAPVID", False, False),
+    ("N4", "special needs", "Kano", "KF Place", False, False),
+    ("N5", "women with disabilities", "Uyo", "FACICP", True, False),
+    ("N6", "children with disabilities", "Maiduguri", "Cedar", False, False),
+    ("N7", "autism", "Owerri", "OLG Autism", False, False),
+    ("N8", "ADHD", "Imo", "Nene", False, False),
 ]
+
+# H3b exit gate: >= 6 geopolitical zones and >= 5 disability types in the CSV.
+ZONES = {
+    "North-Central": {"Benue", "Kogi", "Kwara", "Nasarawa", "Niger", "Plateau", "FCT"},
+    "North-East": {"Adamawa", "Bauchi", "Borno", "Gombe", "Taraba", "Yobe"},
+    "North-West": {"Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Sokoto", "Zamfara"},
+    "South-East": {"Abia", "Anambra", "Ebonyi", "Enugu", "Imo"},
+    "South-South": {"Akwa Ibom", "Bayelsa", "Cross River", "Delta", "Edo", "Rivers"},
+    "South-West": {"Ekiti", "Lagos", "Ogun", "Ondo", "Osun", "Oyo"},
+}
 
 
 def check_banner(res: pd.DataFrame):
@@ -92,11 +111,34 @@ def main() -> int:
         print("load_ngo: FAIL (%s)" % e)
         return 1
     statics = [
-        ("10 verified rows", len(df) == 10, "got %d" % len(df)),
+        # Was "== 10" until H3b (2026-10-18) grew the directory; a floor now,
+        # so a pruned row cannot silently shrink it below the Phase 03 base.
+        (">=10 verified rows", len(df) >= 10, "got %d" % len(df)),
+        ("every row has source_url",
+         bool(df["source_url"].str.startswith("http").all()), ""),
+        ("every row has ISO verified_on",
+         bool(df["verified_on"].str.fullmatch(r"\d{4}-\d{2}-\d{2}").all()), ""),
         ("cutoff>=0.5", FUZZY_CUTOFF >= 0.5, "FUZZY_CUTOFF=%s" % FUZZY_CUTOFF),
         ("Leprosy pruned", not df["name"].str.contains("Leprosy").any(), ""),
         ("Sightsavers pruned", not df["name"].str.contains("Sightsavers").any(), ""),
     ]
+    states = set().union(*(ngo.record_states(r) for r in df.to_dict("records")))
+    zones = sorted(z for z, ss in ZONES.items() if ss & states)
+    types = ngo.filter_options(df.to_dict("records"))[0]
+    statics += [
+        (">=6 zones (H3b gate)", len(zones) >= 6, "%d: %s" % (len(zones), ", ".join(zones))),
+        (">=5 disability types (H3b gate)", len(types) >= 5, "%d: %s" % (len(types), ", ".join(types))),
+    ]
+    # H3b: a natural question must REACH the new rows (router slot scan
+    # extended); before that fix "autism ... Owerri" got umbrella bodies only.
+    import router
+    for q, want in [("I need autism support for my son in Owerri", "OLG Autism"),
+                    ("my daughter has cerebral palsy, any help in Lagos?", "CP Center"),
+                    ("physical disability support in Benin City", "NAPVID"),
+                    ("help for children with special needs in Kano", "KF Place"),
+                    ("where can I get help in Maiduguri?", "Cedar")]:
+        got = [r["name"] for r in router._help_payload(q, df=df, k=3)["records"][2:]]
+        statics.append(("question reaches %s" % want, any(want in g for g in got), "; ".join(got)))
     # Guard must fire on each placeholder style; must NOT fire on real phones.
     for label, phone in [("0803-style", "0803 000 0000"), ("zeroed", "0000-000-111"), ("empty", "")]:
         trial = pd.DataFrame([{

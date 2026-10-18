@@ -192,8 +192,15 @@ _DISABILITY_SCAN = [  # ordered: multi-word / specific forms first
     ("prosthesis", "prosthesis"), ("amput", "amputation"),
     ("limb", "limb loss"), ("spinal", "spinal cord injury"),
     ("wheelchair", "wheelchair"),
+    # H3b (2026-10-18): types the grown directory now serves.
+    ("cerebral palsy", "cerebral palsy"), ("autis", "autism"), ("adhd", "ADHD"),
+    ("special needs", "special needs"), ("physical disab", "physical disability"),
 ]
-_LOCATION_SCAN = ["lagos", "abuja", "kano", "kaduna"]
+# H3b: places the directory now has rows for (cities, and multi-word states
+# that cannot collide with ordinary words; "imo"/"edo" alone could).
+_LOCATION_SCAN = ["lagos", "abuja", "kano", "kaduna",
+                  "owerri", "imo state", "maiduguri", "borno", "uyo", "akwa ibom",
+                  "benin city", "edo state"]
 
 
 def extract_help_slots(question: str) -> dict:

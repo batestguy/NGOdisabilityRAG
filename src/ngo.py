@@ -8,6 +8,20 @@ PRUNED from data/ngo.csv -- do NOT re-add without fresh verification:
 Medium confidence (kept; RECHECK before production reliance): NAB + NNAD --
 their contact pages 404'd on fetch day, values kept from agreeing
 official-domain snippets (scripts/test_phase03.py prints the RECHECK note).
+
+H3b growth 2026-10-18 (10 -> 20 rows; columns source_url + verified_on added;
+the original 10 carry source_url = their website and verified_on = 2026-09-08
+per the check above). Each new phone was confirmed in a REAL browser on the
+row's source_url (tools/a11y_audit/verify_ngo_sources.mjs matches the last 10
+digits in rendered text or tel:/wa.me links), because the research fetch tool
+paraphrases pages. KF Place Foundation's number is published only as tel: and
+WhatsApp links on its own homepage, not as visible text.
+Considered and NOT added (no official phone, or not disability-specific):
+TLP Centre (focus not stated on its own site), CHELD and Keeping It Real
+Foundation (general NGOs), Albinism Association of Nigeria (contact page timed
+out; numbers not confirmed), Lagos State Office for Disability Affairs (site
+down), Albino Foundation (expired certificate), and many state commissions and
+chapters with no official contact page.
 """
 import difflib
 import re
@@ -62,6 +76,14 @@ _ALIASES = {
     "mentally aware": ["depression", "anxiety", "trauma", "suicide", "counselling",
                        "counseling", "therapy", "stress"],
     "taf africa": ["albino", "albinism", "skin"],
+    # H3b rows (2026-10-18): same mechanism, so lay phrasings reach them
+    # ("physical disability" is not a substring of "physical disabilities").
+    "visible disabilities": ["physical", "visible", "mobility", "rehabilitation", "amputee"],
+    "cedar foundation": ["children", "child", "youth", "education"],
+    "kf place": ["special", "needs", "children", "child", "therapy", "developmental", "learning"],
+    "cerebral palsy": ["cerebral", "palsy", "spastic"],
+    "patrick speech": ["autism", "autistic", "speech", "language"],
+    "facicp": ["women", "woman", "girls", "girl", "female"],
 }
 
 
