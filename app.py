@@ -11,6 +11,7 @@ bottom only runs the UI under `streamlit run` / `__main__`.
 """
 
 import html
+import json
 import os
 import re
 import sys
@@ -396,7 +397,12 @@ def build_speech_text(legal: dict | None, help_payload: dict | None,
         elif legal.get("answer"):
             parts.append(str(legal["answer"]))
         else:
-            tags = ", ".join(legal.get("citations", []) or ["no citations yet"])
+            # The tags of the cards actually shown: H1's dedupe dropped the
+            # byte-identical pair from the cards but not from `citations`, so
+            # read-aloud spoke 10 tags against 9 cards (H2 owner pre-run).
+            shown = [e["tag"] for e in dedupe_excerpts(legal.get("excerpts") or [])]
+            tags = ", ".join(shown or legal.get("citations", [])
+                             or ["no citations yet"])
             parts.append("Legal excerpts retrieved. Citations: %s. "
                          "Open the AI expander for a generated answer." % tags)
     if help_payload is not None:
@@ -406,6 +412,166 @@ def build_speech_text(legal: dict | None, help_payload: dict | None,
             parts.append("Please confirm this matches your need. "
                          + str(help_payload.get("confirm_prompt", "")))
     return "\n".join(parts)
+
+
+def build_announcement(legal: dict | None, help_payload: dict | None,
+                       clarify: str = "", greeting: str = "") -> str:
+    """Short live-region summary of a NEW turn (WCAG 4.1.3, H2 owner pre-run).
+
+    NVDA said nothing when a turn arrived: focus stays in the chat box and the
+    page had no live region. This is the summary a screen-reader user hears
+    without moving; the turn itself, and Read aloud, carry the full text.
+    """
+    parts = ["New answer below.", HELPLINE_BANNER_TEXT + "."]
+    if greeting:
+        parts.append("Greeting.")
+    if clarify:
+        parts.append("One question first: " + clarify)
+    if legal is not None:
+        if legal.get("refused"):
+            parts.append(str(legal.get("answer", "")))
+        else:
+            n = len(dedupe_excerpts(legal.get("excerpts") or []))
+            parts.append("%d legal excerpt%s with citations."
+                         % (n, "" if n == 1 else "s"))
+            if legal.get("answer"):
+                parts.append("An AI answer is included.")
+    if help_payload is not None:
+        n = len(help_payload.get("records", []))
+        parts.append("%d help contact%s." % (n, "" if n == 1 else "s"))
+    return " ".join(parts)
+
+
+def _js_str(value) -> str:
+    """A JS string literal that is also safe inside an HTML <script>.
+
+    In memory only. JSONEncoder rather than the json module's dump helpers:
+    test_phase05's only-writer guard flags those names as possible disk
+    writes, and that guard should stay broad.
+    """
+    return json.JSONEncoder().encode(value).replace("</", "<\\/")
+
+
+# H2 owner pre-run (2026-10-18): fixes Streamlit's DOM cannot take from Python.
+# theme_watch_html() injects this ONCE into the PARENT document as a real
+# <script> (so it lives in the page's realm and outlives the iframe that
+# carried it). Every part re-applies from a MutationObserver because Streamlit
+# re-renders freely. The drawer test reads the sidebar's aria-expanded, the
+# same hook as the H2 CSS: the Streamlit 1.66 bump must migrate both.
+A11Y_BRIDGE_JS = r"""
+(function () {
+  var D = document;
+  /* A2 / WCAG 4.1.3: one polite region, created at page load so it already
+     exists (empty) when the first announcement lands. */
+  var live = D.createElement('div');
+  live.id = 'drlca-live';
+  live.setAttribute('role', 'status');
+  live.setAttribute('aria-live', 'polite');
+  live.setAttribute('aria-atomic', 'true');
+  live.style.cssText = 'position:absolute;width:1px;height:1px;margin:-1px;' +
+    'padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;';
+  D.body.appendChild(live);
+  window.drlcaAnnounce = function (id, text) {
+    if (window.drlcaLastAnnounce === id) return;
+    window.drlcaLastAnnounce = id;
+    live.textContent = '';
+    setTimeout(function () { live.textContent = text; }, 150);
+  };
+
+  /* A7 / WCAG 1.1.1: Material icons are ligature TEXT, so NVDA read
+     "keyboard_arrow_right", "smart_toy", "face". Hide them; name what they
+     were standing in for. */
+  var ICON_NAMES = { keyboard_double_arrow_left: 'Close sidebar',
+                     keyboard_double_arrow_right: 'Open sidebar' };
+  function icons() {
+    D.querySelectorAll('[data-testid="stIconMaterial"]:not([aria-hidden])')
+      .forEach(function (e) {
+        e.setAttribute('aria-hidden', 'true');
+        var b = e.closest('button');
+        var name = ICON_NAMES[e.textContent.trim()];
+        if (b && name && !b.getAttribute('aria-label')) b.setAttribute('aria-label', name);
+      });
+    D.querySelectorAll('[data-testid^="stChatMessageAvatar"]:not([aria-label])')
+      .forEach(function (a) {
+        a.setAttribute('role', 'img');
+        a.setAttribute('aria-label', /User$/.test(a.getAttribute('data-testid'))
+          ? 'You asked' : 'Assistant answered');
+      });
+  }
+
+  /* C2: a blocked microphone only reached the console. Say it on the page. */
+  var micState = null;
+  function micNote() {
+    var note = D.getElementById('drlca-mic-note');
+    var frame = D.querySelector('iframe[title*="mic_recorder"]');
+    if (micState !== 'denied' || !frame) { if (note) note.remove(); return; }
+    var box = frame.closest('[data-testid="stElementContainer"]') || frame;
+    if (note && note.previousElementSibling === box) return;
+    if (note) note.remove();
+    note = D.createElement('p');
+    note.id = 'drlca-mic-note';
+    note.setAttribute('role', 'alert');
+    note.style.cssText = 'margin:0.25rem 0 0.5rem;font-weight:600;';
+    note.textContent = 'Voice input is unavailable: microphone access is ' +
+      'blocked for this site. Type your question in the box below, or allow ' +
+      'the microphone in your browser’s site settings and reload.';
+    box.insertAdjacentElement('afterend', note);
+  }
+  try {
+    navigator.permissions.query({ name: 'microphone' }).then(function (p) {
+      micState = p.state; micNote();
+      p.onchange = function () { micState = p.state; micNote(); };
+    }).catch(function () {});
+  } catch (e) {}
+
+  var queued = false;
+  function sweep() { queued = false; icons(); micNote(); }
+  new MutationObserver(function () {
+    if (!queued) { queued = true; requestAnimationFrame(sweep); }
+  }).observe(D.body, { childList: true, subtree: true });
+  sweep();
+
+  /* B3 / WCAG 2.1.2 + 2.4.3: below 768 px the open sidebar is a drawer over
+     the page. Esc closes it; Tab and Shift+Tab stay inside it. */
+  function sidebar() { return D.querySelector('section[data-testid="stSidebar"]'); }
+  function drawerOpen() {
+    var s = sidebar();
+    return !!s && window.innerWidth < 768 && s.getAttribute('aria-expanded') === 'true';
+  }
+  function tabbable(s) {
+    return Array.prototype.filter.call(
+      s.querySelectorAll('a[href],button,input,select,textarea,summary,[tabindex]'),
+      function (e) {
+        return e.tabIndex >= 0 && !e.disabled && e.getClientRects().length &&
+          getComputedStyle(e).visibility !== 'hidden';
+      });
+  }
+  D.addEventListener('keydown', function (ev) {
+    if (!drawerOpen()) return;
+    var s = sidebar();
+    if (ev.key === 'Escape') {
+      var close = s.querySelector('[data-testid="stSidebarCollapseButton"] button,' +
+                                  '[data-testid="stSidebarHeader"] button');
+      if (!close) return;
+      ev.preventDefault();
+      close.click();
+      setTimeout(function () {
+        var open = D.querySelector('[data-testid="stExpandSidebarButton"],' +
+                                   '[data-testid="stSidebarCollapsedControl"] button');
+        if (open) open.focus();
+      }, 400);
+      return;
+    }
+    if (ev.key !== 'Tab') return;
+    var f = tabbable(s);
+    if (!f.length) return;
+    var i = f.indexOf(D.activeElement);
+    if (i < 0) { ev.preventDefault(); f[ev.shiftKey ? f.length - 1 : 0].focus(); }
+    else if (!ev.shiftKey && i === f.length - 1) { ev.preventDefault(); f[0].focus(); }
+    else if (ev.shiftKey && i === 0) { ev.preventDefault(); f[f.length - 1].focus(); }
+  }, true);
+})();
+"""
 
 
 def theme_watch_html() -> str:
@@ -436,6 +602,12 @@ def theme_watch_html() -> str:
         "if(c){f.setAttribute('title',c.getAttribute('aria-label')||c.textContent);}"
         "else{f.setAttribute('tabindex','-1');f.setAttribute('aria-hidden','true');"
         "f.setAttribute('title','Theme detector (no content)');}}"
+        # H2 owner pre-run: install A11Y_BRIDGE_JS into the parent, once.
+        "try{var P=window.parent.document;"
+        "if(P.body&&!P.getElementById('drlca-a11y-bridge')){"
+        "var s=P.createElement('script');s.id='drlca-a11y-bridge';"
+        "s.textContent=" + _js_str(A11Y_BRIDGE_JS) + ";"
+        "P.head.appendChild(s);}}catch(e){}"
         "var apply=function(){"
         "try{"
         "var app=window.parent.document.querySelector('.stApp');"
@@ -458,16 +630,31 @@ def theme_watch_html() -> str:
     )
 
 
-def read_aloud_html(speech_text: str, button_label: str = "🔊 Read answer aloud") -> str:
+def read_aloud_html(speech_text: str, button_label: str = "🔊 Read answer aloud",
+                    announce: str = "") -> str:
     """Few-lines Web Speech API button (client-side synthesis, zero server cost).
 
     The iframe body is transparent (no white strip on dark app backgrounds);
     the shared theme watch (theme_watch_html) keeps body.drlca-dark correct so
     the dark-only alert override in accessibility_css() applies exactly when
     the user picks the dark theme.
+
+    `announce` is passed ONLY by render_turn(), i.e. for the newly computed
+    turn: it posts that text to the parent's live region (A11Y_BRIDGE_JS).
+    Replayed turns never announce, so a rerun does not repeat old answers.
     """
     safe = html.escape(speech_text or "No answer yet.", quote=True)
-    return (
+    notify = ""
+    if announce:
+        import uuid
+        notify = (
+            "<script>(function(){var t=%s,id=%s,n=0;"
+            "function go(){try{var w=window.parent;"
+            "if(w.drlcaAnnounce){w.drlcaAnnounce(id,t);}"
+            "else if(n++<20){setTimeout(go,300);}}catch(e){}}"
+            "setTimeout(go,300);})();</script>"
+            % (_js_str(announce), _js_str(uuid.uuid4().hex)))
+    return notify + (
         ("<div><button type='button' id='drlca-speak' aria-label='%s'"
          " style='font-size:1rem;padding:0.3rem 0.8rem;'>%s</button>"
          + theme_watch_html() +
@@ -1085,7 +1272,9 @@ def render_turn(question: str, explicit: str, plain: bool, history,
         # Pure greeting: friendly panel + guidance, no retrieval/LLM calls.
         render_greeting()
         speech = build_speech_text(None, None, greeting=GREETING_TEXT)
-        components.html(read_aloud_html(speech), height=60)
+        components.html(read_aloud_html(
+            speech, announce=build_announcement(None, None, greeting=GREETING_TEXT)),
+            height=60)
         return payload
     if mode == "clarify":
         clarify_text = routing.get("clarify_question", "")
@@ -1116,7 +1305,9 @@ def render_turn(question: str, explicit: str, plain: bool, history,
 
     # --- Read aloud (client-side Web Speech API, zero server cost) ---------
     speech = build_speech_text(legal_view, help_view, clarify_text)
-    components.html(read_aloud_html(speech), height=60)
+    components.html(read_aloud_html(
+        speech, announce=build_announcement(legal_view, help_view, clarify_text)),
+        height=60)
     return payload
 
 

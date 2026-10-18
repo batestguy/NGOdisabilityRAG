@@ -475,5 +475,30 @@ check("dedupe-runs-before-inline-fold-split",
 # sr.AudioFile cannot read, so every clip since Phase 06 ended in ValueError.
 check("mic-recorder-asks-for-wav",
       'format="wav"' in inspect.getsource(app.try_voice_input))
+# D1: read-aloud speaks the tags of the cards shown, so the dropped pair is not spoken.
+_sp = app.build_speech_text({"refused": False, "answer": None, "excerpts": _dup,
+                             "citations": [e["tag"] for e in _dup]}, None)
+check("speech-tags-follow-deduped-cards", _sp.count("[Constitution s. 4]") == 2
+      and "[Constitution s. 13]" in _sp)
+# A2 / 4.1.3: a NEW turn posts a summary to a parent live region; replays never do.
+_an = app.build_announcement({"refused": False, "answer": None, "excerpts": _dup}, None)
+check("announcement-helplines-and-shown-count",
+      _an.startswith("New answer below.") and "08000-3000-100" in _an
+      and "3 legal excerpts" in _an)
+check("announce-only-from-render-turn", "announce=build_announcement" in turn_body
+      and "announce=" not in replay_body
+      and "drlcaAnnounce" in app.read_aloud_html("x", announce="y")
+      and "drlcaAnnounce(" not in app.read_aloud_html("x").split("drlca-a11y-bridge")[0])
+# A7 / B3 / C2 live in the bridge the theme watch installs into the parent.
+_bj = app.A11Y_BRIDGE_JS
+check("bridge-installed-by-theme-watch", "drlca-a11y-bridge" in app.theme_watch_html()
+      and "</script" not in app._js_str(_bj))
+check("bridge-live-region", "aria-live', 'polite'" in _bj and "role', 'status'" in _bj)
+check("bridge-hides-icon-ligatures", 'stIconMaterial"]:not([aria-hidden])' in _bj
+      and "'Close sidebar'" in _bj and "stChatMessageAvatar" in _bj)
+check("bridge-drawer-escape-and-tab-loop", "ev.key === 'Escape'" in _bj
+      and "ev.key !== 'Tab'" in _bj and "window.innerWidth < 768" in _bj)
+check("bridge-mic-denied-note", "micState !== 'denied'" in _bj
+      and "Voice input is unavailable" in _bj)
 
 print("\nALL %d ASSERTS PASSED" % len(passed))

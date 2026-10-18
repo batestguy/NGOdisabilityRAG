@@ -283,6 +283,57 @@ npx -y lighthouse@13.4.1 http://localhost:8501/ --only-categories=accessibility 
 Use the live site or a local run. Keep the AI expander OFF unless a step says otherwise. Write
 notes under each item, then sign it.
 
+> **Agent pre-run, 2026-10-18 (local `phase11/h2-a11y` @ `b59a160` + the mic fix below). Not a sign-off.**
+> Tooling: `tools/a11y_audit/nvda_probe.mjs` (NVDA 2024 started with `--log-level=12`, Playwright
+> Chrome, NVDA gestures sent as OS keys by `oskeys.py`, speech read back from the IO log) and
+> `owner_checks.mjs` (B/C/D; C uses a fake mic fed a TTS WAV). Zero Gemini calls.
+> * **A1** pass with a caveat: helplines come right after H1, but at 1280 the **sidebar is read
+>   first** (it precedes main in Streamlit's DOM), then Deploy / Main menu, then H1.
+> * **A2 FAIL (known 4.1.3 item):** after Send, NVDA only re-announces the empty chat input. The
+>   page has no live region at all.
+> * **A3** pass: `face` question → `smart_toy` **helplines** → Your rights → tagged excerpts → fold →
+>   AI expander → Switch → Read aloud (tail confirmed by Tab order).
+> * **A4, A5, A6** pass. A5: every sidebar control speaks name + role + state. Minor: the slider
+>   says "Text size Text size", and the route buttons expose no selected state.
+> * **A7: NVDA speaks `keyboard_arrow_right`, `smart_toy` and `face`.** Expander summaries are
+>   announced as e.g. "keyboard_arrow_right 📄 6 more excerpt(s)… button collapsed".
+> * **B1** pass (real Tab reaches the Read-aloud button inside its iframe; voice expander → mic,
+>   draft, Send). **B2** pass with the noted weak cue: the chat input's 1 px border turns green.
+>   **B3 partial:** the close button works and main is not reachable, but **Esc does not close the
+>   drawer** and Tab escapes to the header's Deploy / Main menu before wrapping.
+> * **C1 was FAIL on every build since Phase 06 and is fixed here:** `mic_recorder` defaulted to
+>   `format="webm"`, which `sr.AudioFile` cannot read, so every clip ended in "Could not transcribe
+>   (ValueError)". With `format="wav"` the clip transcribes, lands in the draft, is edited and sent,
+>   and a legal turn answers, in Chrome and Edge. **C2 partial:** denied permission gives no error
+>   page and the text box still answers, but **the app never says voice is unavailable** (the error
+>   only reaches the console: `NotAllowedError`).
+> * **D1** pass on order (helplines first) but it speaks **10 tags against 9 cards**:
+>   `build_speech_text` reads `legal["citations"]`, which skips H1's `dedupe_excerpts`. **D2** pass.
+> * Automation-only quirk: in Playwright windows the mic iframe sizes to 0 px (real Chrome 155:
+>   38 px, live site the same as local), so the script presses Record from inside the frame.
+>
+> **Fixed the same day on this branch, then re-verified.** C1 fix `4a07e8b`. The rest:
+> `build_speech_text` now speaks the tags of the deduped cards (**D1**: 9 tags / 9 cards), and
+> `A11Y_BRIDGE_JS`, which `theme_watch_html()` installs once into the parent document, adds:
+> * **A2:** a polite `role=status` live region. Only `render_turn` (a NEW turn) posts to it,
+>   never a replay. NVDA, focus still in the chat box: *"New answer below. National helplines
+>   (always first): DRAC Toll-Free … 9 legal excerpts with citations."*
+> * **A7:** `aria-hidden` on every `stIconMaterial`. Icon-only buttons are named ("Close
+>   sidebar" / "Open sidebar") and avatars are `role=img` "You asked" / "Assistant answered".
+>   NVDA now says "📄 6 more excerpt(s)… button collapsed", and Chrome's AX tree
+>   (`ax_names.mjs`) shows 0 ligature leaks at 1280 and 360.
+> * **B3:** at < 768 px Esc closes the drawer (focus goes to "Open sidebar"), and Tab / Shift+Tab
+>   loop inside it. Measured: 25/25 Tab stops stay inside.
+> * **C2:** a blocked microphone (Permissions API) puts a visible `role=alert` note in the voice
+>   expander saying voice input is unavailable and to type instead. Verified in Chrome and Edge.
+>
+> axe after: unchanged (0 serious / 0 moderate / 0 minor, plus the 9 known Streamlit-internal
+> critical nodes at 1280). `test_phase05` 152/152. Still open, minor: the slider is announced
+> "Text size Text size", the route buttons expose no selected state, and the sidebar is read
+> before H1 at 1280. **A6 needs a clean NVDA re-run:** the 2026-10-18 run was invalidated when
+> NVDA's usage-data dialog moved focus to another window. Never run `nvda_probe.mjs` while you
+> are typing elsewhere, because OS keys go to the focused window.
+
 **A. NVDA + Chrome (Windows).** NVDA on, browse mode, Chrome.
 1. Load the page. The reading order is: page title → **helplines banner** → instructions → voice
    expander → chat input.
