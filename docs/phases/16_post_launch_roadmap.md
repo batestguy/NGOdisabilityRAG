@@ -229,7 +229,7 @@ replay.
 >   byte-identical, and `test_phase03` pins 5 natural questions.
 > * **Exit gate:** tests green (03: 24/24 cells, 16/16 statics; 04: 10/10; 05: 166/166) ✅;
 >   ≥ 6 zones ✅; ≥ 5 types ✅; `source_url` + `verified_on` on every row ✅. **Owner spot-check of
->   ≥ 5 rows: PENDING (owner-only).** Suggested rows: Cedar, KF Place, NCPWD, OLG Owerri, NAPVID.
+>   ≥ 5 rows: DONE 2026-10-18.** The owner reported all five OK: Cedar, KF Place, NCPWD, OLG Owerri, NAPVID. **H3 exit gate met.**
 > * **H3 review (reviewer, SHIP WITH CAVEATS), all taken:** the type keyword "mental" matched inside
 >   "developmental", so the psychosocial filter listed autism and CP centres (fixed + asserted); new
 >   specific slots now precede generic ones ("cerebral palsy … wheelchair" keeps cerebral palsy);
