@@ -282,6 +282,28 @@ current behaviour. False refusals deny help to PWDs; this gate leans that way on
 **Do not.** Touch `MIN_SCORE` or the strict-prompt `NO_ANSWER_SENTENCE` path. Tune the threshold
 after reading test or test2. Hide the excerpts entirely when the guard fires.
 
+> **H4 RESULT (2026-10-18): DEV GATE FAILED → DECLINED. Current behaviour kept. Zero quota.**
+> * Blind set `data/eval/offtopic_h4.json` (20 off-corpus + 5 near-miss) committed **before** any
+>   measurement (`be6ceef`). **It is still UNREAD**, as are `test` and `test2` off-corpus: the dev
+>   gate failed first, so no held-out read happened. All three stay clean for a future attempt.
+> * Signal as pre-declared: the share of the query's content stems known to the v2 corpus after the
+>   shipping expansion. THETA was chosen on dev = **0.6667** (the largest value firing on no dev
+>   answerable row; dev answerable fired 0/25).
+> * **Dev off-corpus caught 2/5 (needs 3):** fertiliser/tomatoes 0.600 and Android password 0.000
+>   fired. Landlord eviction, drink-driving penalty and trade mark scored **1.000**: the
+>   Constitution's vocabulary covers general legal language, the same reason the cosine bands are
+>   inverted. The one retreat (top-hit chunk share) is allowed only at **0/5**, so it is not
+>   available.
+> * **The binding answerable row is Pidgin `H26` (0.667).** Any THETA strict enough to catch the
+>   legal-sounding off-topic questions refuses Pidgin speakers first. That is the failure this gate
+>   exists to prevent.
+> * **Generalises:** this is the fourth term-level lexical signal (E2 BM25, E3 synonym map, F0
+>   static embeddings, and now coverage) that cannot separate "legal but not disability" from
+>   "disability". A future attempt needs a *topical* signal (is the question about disability or
+>   PWD rights at all?), not a lexical one, and must clear the Pidgin and register probes.
+> * Harness archived on `phase11/h4-offtopic` at `e884f85` (`scripts/ablate_h4_offtopic.py`),
+>   **not on `main`**. Dev output: `runs/h4_offtopic/dev_2026-10-18.txt` (gitignored).
+
 ---
 
 ## H5 — Language support (spec Feature 1)

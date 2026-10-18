@@ -1,5 +1,9 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-18)
 
+> **■ 2026-10-18 (LATEST): H4 DECLINED.** Dev gate 2/5 (needs 3). Legal-sounding off-topic questions score full corpus coverage, and
+> Pidgin `H26` binds the threshold. Held-out sets and the blind `offtopic_h4.json` are **unread** (still clean). Harness archived on
+> `phase11/h4-offtopic` `e884f85`, not on `main`. This docs record is on `phase11/docs-h4` (local). **Next: H5 / H6.**
+
 > **■ 2026-10-18 (END): H3 MERGED + DEPLOYED (PR #16 → `9b7135a`, on the owner's "commit and proceed" after their 5-row spot-check).**
 > CI green on `main`. Live smoke (`tools/a11y_audit/live_smoke_h3.mjs`): "autism support … Owerri" returns OLG and Nene's with
 > helplines first; filter controls present; announcement fires; 0 page errors. Directory: 20 verified rows, 6/6 zones.
