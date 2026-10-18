@@ -1152,49 +1152,57 @@ def render_help_records(payload, turn_index: int = 0):
     H3a: an optional, collapsed filter/sort over the payload's STORED
     `directory` (no lookup, no router: replay rules). Keys carry the turn
     index so turns never share filter state. The default view is unchanged.
+
+    The controls render AFTER the results (screen-reader users meet the
+    answer first, H3 review); their current values are read from
+    session_state, which Streamlit fills before the script reaches them.
     """
     st = _st()
     from ngo import filter_options, filter_records
     records = (payload or {}).get("records", [])
     directory = payload.get("directory") or records[2:]
     types, states = filter_options(directory)
-    with st.expander("🔎 Filter or sort these organisations", expanded=False):
-        dtype = st.selectbox("Disability type", [NGO_ANY_TYPE] + types,
-                             key="ngo-type-%d" % turn_index)
-        state = st.selectbox("State", [NGO_ANY_STATE] + states,
-                             key="ngo-state-%d" % turn_index)
-        order = st.radio("Sort organisations by", list(NGO_SORTS),
-                         key="ngo-sort-%d" % turn_index)
-        st.caption("National and all-disability organisations always stay "
-                   "in the list. The helplines always come first.")
-    filtered = (dtype not in (None, NGO_ANY_TYPE) or state not in (None, NGO_ANY_STATE)
-                or NGO_SORTS.get(order, "relevance") != "relevance")
-    if filtered:
+    k_type, k_state, k_sort = ("ngo-type-%d" % turn_index, "ngo-state-%d" % turn_index,
+                               "ngo-sort-%d" % turn_index)
+    dtype = st.session_state.get(k_type, NGO_ANY_TYPE)
+    state = st.session_state.get(k_state, NGO_ANY_STATE)
+    sort = NGO_SORTS.get(st.session_state.get(k_sort), "relevance")
+    narrowed = dtype not in (None, NGO_ANY_TYPE) or state not in (None, NGO_ANY_STATE)
+    if narrowed:
         records = filter_records(
             directory, "" if dtype in (None, NGO_ANY_TYPE) else dtype,
-            "" if state in (None, NGO_ANY_STATE) else state,
-            NGO_SORTS.get(order, "relevance"))
+            "" if state in (None, NGO_ANY_STATE) else state, sort)
         st.markdown("**Filtered: %s · %s · sorted by %s. Showing %d contact(s), "
                     "helplines first:**"
-                    % (dtype, state, "name" if NGO_SORTS.get(order) == "name"
-                       else "relevance", len(records)))
+                    % (dtype, state, sort, len(records)))
         if len(records) <= 2:
             st.info("No organisation in this list matches those filters. The "
                     "national helplines above can refer you.")
     else:
+        if sort == "name":  # sort alone reorders THIS answer's top-k, nothing more
+            records = filter_records(records[2:], sort="name")
         st.markdown("**Showing %d contact(s) (helplines first, then top-%d "
                     "organisations -- never top-1-only):**"
                     % (len(records), max(len(records) - 2, 0)))
-    if payload.get("needs_confirmation") and not filtered:
+    confirm = payload.get("needs_confirmation") and not narrowed
+    if confirm:
         st.warning("🔍 " + payload.get("confirm_prompt", ""))
     for r in records[2:]:  # org rows; banner rows live in the pinned banner
-        badge = (" ⚠️ *please confirm this matches your need*"
-                 if payload.get("needs_confirmation") and not filtered else "")
+        badge = " ⚠️ *please confirm this matches your need*" if confirm else ""
         st.markdown("**%s**%s" % (r.get("name", "?"), badge))
-        st.markdown("- Focus: %s | Location: %s\n- 📞 %s | ✉️ %s\n- %s\n- %s"
-                    % (r.get("disability_focus", ""), r.get("location", ""),
-                       r.get("phone", ""), r.get("email", ""),
-                       r.get("website", ""), r.get("description", "")))
+        contact = "📞 %s" % r.get("phone", "")
+        if r.get("email"):
+            contact += " | ✉️ %s" % r["email"]
+        lines = ["Focus: %s | Location: %s" % (r.get("disability_focus", ""),
+                                               r.get("location", "")), contact,
+                 r.get("website", ""), r.get("description", "")]
+        st.markdown("\n".join("- " + x for x in lines if x))
+    with st.expander("🔎 Filter or sort these organisations", expanded=False):
+        st.selectbox("Disability type", [NGO_ANY_TYPE] + types, key=k_type)
+        st.selectbox("State", [NGO_ANY_STATE] + states, key=k_state)
+        st.radio("Sort organisations by", list(NGO_SORTS), key=k_sort)
+        st.caption("National and all-disability organisations always stay "
+                   "in the list. The helplines always come first.")
 
 
 def render_help(question: str, turn_index: int = 0, slots=None):

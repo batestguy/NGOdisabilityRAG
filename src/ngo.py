@@ -22,6 +22,10 @@ Foundation (general NGOs), Albinism Association of Nigeria (contact page timed
 out; numbers not confirmed), Lagos State Office for Disability Affairs (site
 down), Albino Foundation (expired certificate), and many state commissions and
 chapters with no official contact page.
+RECHECK: Cedar Foundation for Disability -- its site serves its host's shared
+certificate (*.web-hosting.com; Chrome: ERR_CERT_COMMON_NAME_INVALID), so the
+website field is left blank (no link into a browser warning); the phone was
+read from the organisation's own page content. Confirm by phone.
 """
 import difflib
 import re
@@ -335,7 +339,10 @@ DISABILITY_TYPES = {  # label -> substrings of disability_focus (lower-cased)
                             "polio", "limb"],
     "Intellectual / developmental": ["down syndrome", "intellectual", "developmental",
                                      "autism", "cerebral palsy", "learning"],
-    "Psychosocial / mental health": ["mental", "psychosocial", "depress", "anxiety"],
+    # Not bare "mental": it matched inside "developmental" and put autism and
+    # cerebral palsy centres under this label (H3 review).
+    "Psychosocial / mental health": ["mental health", "psychosocial", "psychiatric",
+                                     "depress", "anxiety"],
     "Albinism": ["albin"],
 }
 UMBRELLA_FOCUS = "all disabilities"
@@ -367,7 +374,8 @@ def record_states(rec: dict) -> set:
     """States named in a row's location; {'*'} also for a national body."""
     loc = str(rec.get("location", "")).lower()
     found = {s for s, rx in _STATE_RES if rx.search(loc)}
-    found |= {s for city, s in _STATE_ALIASES.items() if city in loc}
+    found |= {s for city, s in _STATE_ALIASES.items()
+              if re.search(r"\b%s\b" % re.escape(city), loc)}
     if "national" in loc:
         found.add("*")
     return found

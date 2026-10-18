@@ -230,6 +230,13 @@ replay.
 > * **Exit gate:** tests green (03: 24/24 cells, 16/16 statics; 04: 10/10; 05: 166/166) ✅;
 >   ≥ 6 zones ✅; ≥ 5 types ✅; `source_url` + `verified_on` on every row ✅. **Owner spot-check of
 >   ≥ 5 rows: PENDING (owner-only).** Suggested rows: Cedar, KF Place, NCPWD, OLG Owerri, NAPVID.
+> * **H3 review (reviewer, SHIP WITH CAVEATS), all taken:** the type keyword "mental" matched inside
+>   "developmental", so the psychosocial filter listed autism and CP centres (fixed + asserted); new
+>   specific slots now precede generic ones ("cerebral palsy … wheelchair" keeps cerebral palsy);
+>   place matching uses word boundaries; sort alone reorders only the answer's top-k and keeps the
+>   confirm warning; controls render after the results; blank emails are not rendered. **Cedar's site
+>   serves its host's certificate** (Chrome rejects it), so its website field is blank and the row is
+>   flagged RECHECK: confirm it by phone during the spot-check. `eval_chat` is still byte-identical.
 > * **To reach about 30:** official sites are thin outside Lagos and Abuja. Official Facebook pages
 >   of state NAB, NNAD and JONAPWD chapters are the likeliest next source; that needs a logged-in
 >   browser check by the owner.

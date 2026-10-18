@@ -556,5 +556,21 @@ check("h3a-directory-stored-only-by-live-turn",
 check("h3a-filter-keys-carry-turn-index", '"ngo-type-%d" % turn_index' in _rhr
       and '"ngo-state-%d" % turn_index' in _rhr and '"ngo-sort-%d" % turn_index' in _rhr)
 check("h3a-replay-passes-turn-index", "render_help_records(help_view, turn_index)" in replay_body)
+# H3 review (2026-10-18): regressions it found.
+_psy = [r["name"] for r in _ngo.filter_records(_dir, "Psychosocial / mental health")[2:]]
+check("h3-review-psychosocial-not-developmental",
+      all("Mentally Aware" in n or "*" in _ngo.record_types(next(r for r in _dir if r["name"] == n))
+          for n in _psy) and any("Mentally Aware" in n for n in _psy), "; ".join(_psy))
+check("h3-review-specific-slot-beats-aid",
+      _router.extract_help_slots("I have cerebral palsy and need a wheelchair")["disability"]
+      == "cerebral palsy"
+      and _router.extract_help_slots("my son has autism and is deaf")["disability"] == "autism")
+check("h3-review-location-word-boundary",
+      _router.extract_help_slots("is a buyout legal")["location"] == ""
+      and _router.extract_help_slots("help in Uyo please")["location"] == "uyo")
+check("h3-review-sort-alone-keeps-top-k",
+      'filter_records(records[2:], sort="name")' in _rhr and "confirm = payload.get" in _rhr)
+check("h3-review-controls-after-results",
+      _rhr.index("for r in records[2:]") < _rhr.index('st.expander("🔎 Filter or sort'))
 
 print("\nALL %d ASSERTS PASSED" % len(passed))
