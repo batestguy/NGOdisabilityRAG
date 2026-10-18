@@ -1,5 +1,52 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-18)
 
+> **■■ 2026-10-18 END OF SESSION: READ THIS BLOCK FIRST ■■**
+>
+> **Live on Render (`main` = `9b7135a`):** H2 (accessibility + voice fix, PR #15 → `0d7b092`) and H3 (NGO filter/sort + 20 verified
+> orgs, PR #16 → `9b7135a`). Both were merged on the owner's explicit word; CI green; live smoke passed after each deploy.
+>
+> **Declined today (zero quota, behaviour unchanged, held-out sets UNREAD):**
+> * **H4 off-topic guard:** dev 2/5 (needs 3). Archive `phase11/h4-offtopic` @ `e884f85`.
+> * **H5a Pidgin-routed static arm:** dev net +1 (needs +2). Archive `phase11/h5a-pidgin` @ `5b28c07`.
+> * Unread and still clean: `data/eval/offtopic_h4.json` (all 25), the `pidgin_test` half of `data/eval/pidgin_h5a.json`, and
+>   `test` / `test2` (not read for H4 or H5a).
+>
+> **Branches (all pushed as of this block; pushing a topic branch never deploys):**
+> * `phase11/docs-h4`: the record for H4 + H5a + the H3 deploy note + both blind sets. It has a PR to `main`. **Merging it
+>   redeploys** (docs only, harmless), so bundle it with the next code merge or merge it on the owner's word.
+> * `phase11/h4-offtopic`, `phase11/h5a-pidgin`: archives of declined code. **Never merge.** The same precedent as
+>   `phase10/retrieval-quality` and `phase10/f0-static`.
+>
+> **Next (both need the owner):**
+> * **H5b (Yoruba / Hausa / Igbo, opt-in LLM).** NOT started; no branch yet (create `phase11/h5b-lang` from `main`).
+>   Design notes from reading the code:
+>   * Hook point: `rag.generate_with_meta(prompt, model, use_cache, failover)` returns `(answer, cached, model_used)` and raises on
+>     quota errors. Catch them and record `llm_error`; never fake a row.
+>   * **Calls per question are 3, not the playbook's 2:** translate-in, the cite-strict answer (the offline path has no prose to
+>     translate), then translate-out. A 15-question blind set is ~45 calls, more than one day's 40 (20/day/model × 2 pools). Plan
+>     2 Pacific days before the first call, and log day spend here. Correct the playbook's "~30" when H5b starts.
+>   * Mask citation tags and helpline numbers as placeholders before translate-out, restore them verbatim, fail closed (show
+>     English + a note) if any placeholder is missing, and run `verify_citations` on the restored text.
+>   * Default OFF, its own control, no offline translation model in `requirements.txt`.
+>   * **Owner must supply native Yoruba/Hausa/Igbo checkers** (≥ 5 answers each: preserved / partial / wrong).
+> * **H6 expert legal review:** needs outside reviewers (a disability-rights lawyer / JONAPWD). The agent can prepare the review pack.
+>
+> **Open minor items:** read-aloud ignores the active NGO filter; **Cedar Foundation = RECHECK** (its site serves its host's
+> certificate, so the website field is blank); slider announced "Text size Text size"; route buttons expose no selected state;
+> sidebar read before H1 at 1280; Streamlit 1.66 bump must migrate the `aria-expanded` hook in BOTH the H2 CSS and
+> `A11Y_BRIDGE_JS` (`app.py`). Directory growth past 20 is deferred (no Facebook route).
+>
+> **Tooling / gotchas learned today:**
+> * `tools/a11y_audit/`: `owner_checks.mjs`, `ax_names.mjs`, `nvda_probe.mjs` + `oskeys.py`, `verify_ngo_sources.mjs`,
+>   `h3a_check.mjs`, `live_smoke.mjs`, `live_smoke_h3.mjs`.
+> * **Never kill NVDA:** a killed NVDA leaves Windows' screen-reader flag on, and PowerShell autocomplete breaks. Quit it with
+>   NVDA+Q → OK. `oskeys.py` refuses to type unless the DRLCA window is focused.
+> * Research fetch tools paraphrase pages, so re-verify every phone in a real browser (`verify_ngo_sources.mjs`).
+> * Scripted edits through bash heredocs can write raw control characters (`\b` became a backspace once). Scan changed files
+>   for control characters before committing.
+> * **Any push to `main` redeploys. Ask the user first, every time.**
+
+
 > **■ 2026-10-18 (LATEST): H5a DECLINED** (Pidgin-dev net +1, needs +2). Shipping already gets 7/10 Pidgin dev questions. The Pidgin-test half,
 > the H4 blind set, `test` and `test2` are all **unread**. Archives: `phase11/h4-offtopic` `e884f85`, `phase11/h5a-pidgin` `5b28c07`.
 > Docs + both blind sets are on `phase11/docs-h4` (local; merging redeploys, so bundle with the next code merge).
