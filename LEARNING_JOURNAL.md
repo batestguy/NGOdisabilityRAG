@@ -3383,3 +3383,23 @@ light), not "1280 only"; "token-derived" scrim reworded (they are reused rgba li
 "pass" claims softened because the JSON kept pass counts only — `audit.mjs` now also saves `pass_ids`; icon-ligature
 text (`face`, `smart_toy`, `keyboard_arrow_*`) added to owner check A. Lesson repeated from Phase 05: a string assert
 on CSS is not evidence the CSS renders.
+
+## 2026-10-18 — H2 owner pre-run: the feature nobody had ever exercised
+
+Driving the owner checklist with real assistive tech (NVDA started with `--log-level=12`, so every
+spoken string lands in its log; Chrome via Playwright; a TTS WAV as a fake microphone) found that
+**voice input had never transcribed a single clip since Phase 06.** `streamlit_mic_recorder`
+defaults to `format="webm"`, and `speech_recognition.AudioFile` reads WAV/AIFF/FLAC only, so every
+recording ended in the graceful "Could not transcribe (ValueError)" path. The graceful fallback is
+exactly what hid it: no crash, no traceback, a polite message that blamed the user's setup. The
+lesson: a degrade-gracefully path needs its own test that the *non*-degraded path is reachable.
+`test_phase05` asserted the import and the fallback text, never a round trip.
+
+Also learned: (1) axe's 0 serious/moderate/minor said nothing about what NVDA *speaks*: Material
+icon ligatures (`keyboard_arrow_right`, `smart_toy`) are ordinary text to a screen reader. (2)
+Streamlit gives Python no hook into its own DOM, so the A2/A7/B3/C2 fixes are one script that the
+theme-watch iframe injects into the parent document; it re-applies from a MutationObserver. It
+reads the sidebar's `aria-expanded`, which ties it to the Streamlit 1.66 migration. (3) OS-level
+keystrokes go to whichever window is focused. One NVDA run was invalidated when NVDA's usage-data
+dialog moved focus to another terminal. Only NVDA+Down and Ctrl reached it (they read and stop
+speech), but the probe must not run while the user is working in other windows.

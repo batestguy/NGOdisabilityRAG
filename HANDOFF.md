@@ -1,4 +1,10 @@
-# HANDOFF — start here (60 seconds, updated 2026-10-15)
+# HANDOFF — start here (60 seconds, updated 2026-10-18)
+
+> **■ 2026-10-18: H2 owner checklist PRE-RUN by the agent, and every fail it found is FIXED on `phase11/h2-a11y` (`4a07e8b`, `7692a40`). NOT pushed, NOT merged.**
+> * **Voice input never worked in production** (webm vs `sr.AudioFile`); `format="wav"` fixes it, verified end to end in Chrome + Edge. Merging H2 ships that fix.
+> * Also fixed: A2 live region, A7 icon ligatures, B3 drawer Esc/Tab, C2 mic-blocked note, D1 read-aloud tag count. axe unchanged, `test_phase05` 152/152.
+> * **Owner left to do:** look at the scrim, do a short NVDA pass (A6 needs a clean re-run), sign `docs/accessibility.md` §7, push the branch, merge PR #15 (merging redeploys, the user's call).
+> * Tooling: `tools/a11y_audit/{nvda_probe,owner_checks,ax_names}.mjs` + `oskeys.py`. **`nvda_probe` sends OS keys to the FOCUSED window: never run it while the user is typing elsewhere.**
 
 > **■ 2026-10-15 (END OF SESSION): H1 MERGED + DEPLOYED (PR #14 → `2876dbd`, on the user's call). H2 = PR on `phase11/h2-a11y`, NOT merged.**
 > * **H1 is live:** the relative 'that' fix and the excerpt dedupe. CI ran on `main` after the merge (verify it went green: `gh run list --branch main`).
