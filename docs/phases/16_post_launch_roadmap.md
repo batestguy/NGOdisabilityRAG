@@ -212,6 +212,28 @@ the owner has spot-checked at least 5 rows.
 **Do not.** Add an org without an official-source phone. Bypass `with_helplines()`. Recompute on
 replay.
 
+> **H3 RESULTS (2026-10-18, branch `phase11/h3-ngo`, `a9e1c94` + `a0dad60`; zero quota; NOT merged).**
+> * **H3a done.** A collapsed "Filter or sort" expander per help turn: disability type, state, and
+>   relevance/name sort. It works over a `directory` that only the live turn stores
+>   (`help_directory()`), so a replay re-filters stored rows; the test runs a replay with every
+>   lookup patched to raise. Umbrella and national bodies match every filter; specialists sort
+>   first. Browser: turn 2 is untouched when turn 1 is filtered; axe shows only the known
+>   Streamlit node.
+> * **H3b: 20 rows, not about 30.** Four research rounds proposed about 50 organisations. Most had
+>   no phone on an official source (news, directories and social posts are leads only), so they
+>   were not added. The 10 new rows are verified in a real browser (`verify_ngo_sources.mjs`),
+>   because the research fetch tool paraphrases pages. **6/6 zones, 6 types.** KF Place's number
+>   is published only as tel:/WhatsApp links on its own site.
+> * **Found on the way:** the router's slot scan did not know the new words, so "autism support
+>   in Owerri" returned umbrella bodies only. It now knows them, `eval_chat` output is
+>   byte-identical, and `test_phase03` pins 5 natural questions.
+> * **Exit gate:** tests green (03: 24/24 cells, 16/16 statics; 04: 10/10; 05: 166/166) ✅;
+>   ≥ 6 zones ✅; ≥ 5 types ✅; `source_url` + `verified_on` on every row ✅. **Owner spot-check of
+>   ≥ 5 rows: PENDING (owner-only).** Suggested rows: Cedar, KF Place, NCPWD, OLG Owerri, NAPVID.
+> * **To reach about 30:** official sites are thin outside Lagos and Abuja. Official Facebook pages
+>   of state NAB, NNAD and JONAPWD chapters are the likeliest next source; that needs a logged-in
+>   browser check by the owner.
+
 ---
 
 ## H4 — Offline off-topic guard

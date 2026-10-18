@@ -3403,3 +3403,21 @@ reads the sidebar's `aria-expanded`, which ties it to the Streamlit 1.66 migrati
 keystrokes go to whichever window is focused. One NVDA run was invalidated when NVDA's usage-data
 dialog moved focus to another terminal. Only NVDA+Down and Ctrl reached it (they read and stop
 speech), but the probe must not run while the user is working in other windows.
+
+## 2026-10-18 — H3: a verified directory grows slowly, and new rows can be unreachable
+
+H3a was mostly a storage decision. A help turn kept only the top 3 organisations, and filtering
+3 rows is theatre. The live turn now also stores the whole directory ranked for that question,
+so a filter on an old turn re-filters stored rows and the replay rule (no lookup on replay)
+holds. A test replays with every lookup patched to raise.
+
+H3b taught three things. (1) The research agents' fetch tool **paraphrases** pages, so a digit
+it "copied" is not evidence. Every phone was re-checked in a real browser on the source page
+(last-10-digit match in rendered text or tel:/wa.me links). All 13 survivors matched; one
+candidate (Albinism Association) could not be confirmed and was left out. (2) Official sources
+are thin outside Lagos and Abuja: about 50 leads gave 10 verifiable rows, so 20 rows is honest
+and 30 would not have been. (3) **A row that exists is not a row anyone reaches.** The directory
+answered "autism … Owerri" with umbrella bodies, because the router's slot scan had a fixed
+vocabulary that predated the new types and places. Only a browser check with a natural question
+showed it; the matrix, which calls `find_ngo_with_meta` with ready-made slots, never could.
+`test_phase03` now pins natural questions end to end.

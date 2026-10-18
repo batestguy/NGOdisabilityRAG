@@ -1,5 +1,11 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-18)
 
+> **■ 2026-10-18 (LATER): H3 BUILT on `phase11/h3-ngo` (`a9e1c94` H3a filters, `a0dad60` H3b 20 verified rows / 6 zones). NOT pushed, NOT merged.**
+> * **Owner-only before merge:** spot-check ≥ 5 rows against their `source_url` (suggested: Cedar, KF Place, NCPWD, OLG Owerri, NAPVID).
+>   Then push + PR + merge (merging redeploys; ask every time).
+> * 20 rows, not the targeted ~30: most leads had no phone on an official source. The next source is official Facebook pages of state
+>   NAB/NNAD/JONAPWD chapters (needs a logged-in browser). Re-verify any row with `tools/a11y_audit/verify_ngo_sources.mjs`.
+
 > **■ 2026-10-18 (END): H2 MERGED + DEPLOYED (PR #15 → `0d7b092`, merged on the user's explicit "merge").** CI green on `main`; live smoke
 > (`tools/a11y_audit/live_smoke.mjs`) passed: new-turn announcement fires, 9 tags shown, helplines lead, voice disclosure visible,
 > 0 ligature leaks, 0 page errors. **Voice input works in production for the first time.** §7 is signed as agent-run (not a human listening session).
