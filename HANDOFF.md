@@ -1,5 +1,10 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-18)
 
+> **■ 2026-10-18 (AFTER the end-of-session block below): H7 BUILT on `phase11/h7-signal`.** It is rebased on `phase11/docs-h4`, so
+> its PR carries the H4/H5a docs too; PR #17 is superseded by it. NOT merged.
+> * **Owner:** read `docs/telemetry.md` (what is and is not recorded), then decide the merge (it redeploys). After a week, copy the
+>   `DRLCA_SIGNAL` lines from Render → Logs and run `scripts/summarise_signal.py`; record the counts in the H7 results box.
+
 > **■■ 2026-10-18 END OF SESSION: READ THIS BLOCK FIRST ■■**
 >
 > **Live on Render (`main` = `9b7135a`):** H2 (accessibility + voice fix, PR #15 → `0d7b092`) and H3 (NGO filter/sort + 20 verified

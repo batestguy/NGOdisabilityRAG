@@ -403,6 +403,20 @@ pre-declared gate.
 
 **Do not.** Log text by default. Add analytics SDKs. Log `st.session_state` history.
 
+> **H7 BUILT (2026-10-18, branch `phase11/h7-signal`; zero quota; NOT merged).**
+> * A "Was this answer helpful?" native radio group per assistant turn, with the privacy note beside it.
+> * One counts-only `DRLCA_SIGNAL` stdout line per NEW turn (never on replay), plus one per helpful
+>   answer, joined by a random per-turn token. Question text is included only under the separate
+>   sidebar opt-in (default OFF), truncated to 300 characters. No session id, history or IP.
+> * The full record for review is `docs/telemetry.md`. Counts: `scripts/summarise_signal.py` on lines
+>   pasted from Render's logs.
+> * Asserts: `test_phase09_ops` (+11 H7) green; `test_phase05` 171/171. Browser: tokens join, a rerun
+>   emits nothing, clear resets. axe matrix 0 serious/moderate/minor.
+> * Fixed on the way: "Clear conversation" left per-turn widget keys behind, so a new turn 0
+>   inherited the old one's NGO filter (an H3 bug).
+> * **Exit gate:** asserts green ✅. **Owner review of `docs/telemetry.md`: PENDING.** First week of
+>   counts: needs the deploy, then a week of traffic.
+
 ---
 
 ## H8 — Corpus expansion and maintainability
