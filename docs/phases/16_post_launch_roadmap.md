@@ -396,7 +396,8 @@ decision, and the AI expander's "recommendable" status is re-confirmed or withdr
 >   `questions.json` filter on a field that does not exist (`split`; the real one is `set`), so the command
 >   printed all 60 entries, **including the 20 `test` ones**, into a harness tool-results file outside the
 >   repo. The agent saw only the 2 KB preview (frozen-10 Q1–Q5, not `test`) and nothing from it reached the
->   pack. No model is known to have read the `test` questions, but the file existed. **Owner's call** whether
+>   pack. No model is known to have read the `test` questions, but the file existed. **It was deleted
+>   unread (size/time checked only) on 2026-10-21 at the owner's request.** **Owner's call** whether
 >   `test` still counts as unread; `test2` is the cleaner held-out set either way.
 > * **Reviewer: SHIP WITH CAVEATS, nothing blocking.** It independently confirmed all 27 transcript answers
 >   byte-identical, tags verbatim, no network calls, determinism. Fixed after review: a self-checking
