@@ -1,5 +1,15 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-21)
 
+> **■ 2026-10-21 (LATEST): PR #19 MERGED + DEPLOYED** (`main` = `0eb8959`, on the owner's word "merge it when the reviewer passes"; reviewer SHIP,
+> CI green). This shipped the a11y leftover fixes, the H7 deploy record and the H6 review pack. Live smoke passed:
+> * `tools/a11y_audit/live_smoke_a11y.mjs` (asks NO question): slider has a single name, main + Settings landmarks, the skip link is topmost and focuses H1,
+>   the route radio keeps focus on ArrowUp.
+> * `live_smoke_h7.mjs`: helplines first, helpful control, privacy note, opt-in OFF. The first run read the turn text before the note
+>   painted on the slow free instance, so the script now waits for it. That was a timing issue, not a regression.
+> * **Telemetry lines to DISCOUNT in the first-week read (all agent smoke runs, 2026-10-21 UTC):** `b9be6975e327` 00:28,
+>   `7cba04a4cbd6` 00:29, `6c1d650bf360` 01:56, `cf37bfd78551` 01:58. All four are `turn` lines; there are no `helpful` lines.
+> * This record is on `phase11/docs-a11y-deploy` (docs only; bundle with the next code merge).
+
 > **■ 2026-10-21 (LATEST): A11Y LEFTOVERS FIXED** on `phase11/a11y-minor` (built on `phase11/docs-h7-deploy`, so one merge ships the
 > H7 deploy record, the H6 review pack and these fixes). The fixes: read-aloud follows the NGO filter, the route choice is a radio group with
 > stable focus, the slider has a single name, and there is a skip link plus named landmarks. Reviewer: BLOCK (focus loss) → fixed → SHIP. Record: `docs/accessibility.md` §4 box.

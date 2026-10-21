@@ -20,6 +20,7 @@ await ta.fill('What are the penalties under the Act?'); await ta.press('Enter');
 const t = p.locator('[data-testid="stChatMessage"]').nth(1);
 await t.locator('iframe[title*="Read answer aloud"]').waitFor({ timeout: 180000 });
 await p.waitForTimeout(2000);
+const noteSeen = await t.getByText('Not your question and not your conversation').first().waitFor({ timeout: 30000 }).then(() => true, () => false);
 const txt = await t.innerText();
 const radios = t.getByRole('radiogroup', { name: 'Was this answer helpful?' }).getByRole('radio');
 console.log(JSON.stringify({
@@ -27,7 +28,7 @@ console.log(JSON.stringify({
   actTags: (txt.match(/\[Act cl\. \d+\]/g) || []).length,
   helpfulRadios: await radios.count(),
   noneSelected: (await Promise.all((await radios.all()).map(r => r.isChecked()))).every(c => !c),
-  privacyNote: txt.includes('Not your question and not your conversation'),
+  privacyNote: txt.includes('Not your question and not your conversation'), noteSeen,
   optInPresent: await optIn.count(), optInOff: (await optIn.count()) ? !(await optIn.isChecked()) : null,
   pageErrors: errs,
 }, null, 1));
