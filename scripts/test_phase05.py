@@ -555,7 +555,8 @@ check("h3a-directory-stored-only-by-live-turn",
       and "help_directory(" not in replay_body)
 check("h3a-filter-keys-carry-turn-index", '"ngo-type-%d" % turn_index' in _rhr
       and '"ngo-state-%d" % turn_index' in _rhr and '"ngo-sort-%d" % turn_index' in _rhr)
-check("h3a-replay-passes-turn-index", "render_help_records(help_view, turn_index)" in replay_body)
+check("h3a-replay-passes-turn-index",
+      "render_help_records(payload.help_payload, turn_index)" in replay_body)
 # H3 review (2026-10-18): regressions it found.
 _psy = [r["name"] for r in _ngo.filter_records(_dir, "Psychosocial / mental health")[2:]]
 check("h3-review-psychosocial-not-developmental",
@@ -572,5 +573,55 @@ check("h3-review-sort-alone-keeps-top-k",
       'filter_records(records[2:], sort="name")' in _rhr and "confirm = payload.get" in _rhr)
 check("h3-review-controls-after-results",
       _rhr.index("for r in records[2:]") < _rhr.index('st.expander("🔎 Filter or sort'))
+
+# H2/H3 leftover minor items (2026-10-21).
+# 1. Read-aloud honours the active NGO filter: render_help_records returns the
+#    payload AS DISPLAYED, and the replay speaks that, not the stored payload.
+_st_mod = app._st()
+_full = _ngo.with_helplines(_ngo.pd.DataFrame(_dir[:3])).to_dict("records")
+_hp = {"records": _full, "directory": _dir, "needs_confirmation": False}
+_shown = app.render_help_records(_hp, turn_index=8)
+check("minor-help-returns-displayed-default", _shown["records"] == _full
+      and _hp["records"] is _full and _shown is not _hp)
+_filter_set = False
+try:
+    _st_mod.session_state["ngo-state-9"] = "Lagos"
+    _filter_set = True
+except Exception:  # noqa: BLE001 -- bare mode may not allow session writes
+    pass
+if _filter_set:
+    _shown_f = app.render_help_records(_hp, turn_index=9)
+    _want = _ngo.filter_records(_dir, "", "Lagos", "relevance")
+    check("minor-help-returns-filtered-records", _shown_f["records"] == _want
+          and app.build_speech_text(None, _shown_f).count("; ") == len(_want) - 1)
+    del _st_mod.session_state["ngo-state-9"]
+check("minor-replay-speaks-displayed-help",
+      "help_view = render_help_records(payload.help_payload, turn_index)" in replay_body
+      and replay_body.index("help_view = render_help_records")
+      < replay_body.index("build_speech_text(legal_view, help_view"))
+# 2. Route buttons expose their state in the accessible name, set by on_click
+#    so all three labels are right in the same rerun.
+_run_src = inspect.getsource(app.run)
+check("minor-route-buttons-selected-state",
+      [r for r, _, _ in app.ROUTE_BUTTONS] == ["legal", "help", "auto"]
+      and '" (selected)" if on else ""' in _run_src
+      and "on_click=_set_route" in _run_src and 'type="primary" if on' in _run_src)
+# 3. A used-up override resets BEFORE the sidebar draws (labels never stale),
+#    and the turn is answered on the route taken at the top of run().
+check("minor-override-reset-before-sidebar",
+      _run_src.index('turn_route = st.session_state["explicit"]')
+      < _run_src.index('st.session_state["explicit"] = "auto"')
+      < _run_src.index("for route, label, tip in ROUTE_BUTTONS")
+      and "render_turn(pending, turn_route," in _run_src
+      and _run_src.count('st.session_state["explicit"] = "auto"') == 2)  # + Clear conversation
+# 4. Slider name not doubled; skip link + named landmarks (bridge, no "%").
+check("minor-bridge-slider-single-name",
+      "removeAttribute('aria-labelledby')" in _bj and 'stSlider"] input[type="range"]' in _bj)
+check("minor-bridge-skip-link-and-landmarks",
+      "Skip to helplines and answers" in _bj and "setAttribute('role', 'main')" in _bj
+      and "'Settings'" in _bj and "D.body.insertBefore(a, D.body.firstChild)" in _bj
+      and "a.href = '#drlca-main'" in _bj and "m.id = 'drlca-main'" in _bj
+      and "'Ask a question'" in _bj
+      and "sliders(); landmarks();" in _bj and "%" not in _bj)
 
 print("\nALL %d ASSERTS PASSED" % len(passed))
