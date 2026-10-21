@@ -440,10 +440,12 @@ pre-declared gate.
 > Pre-merge: CI green; local `test_phase09_ops` ALL PASS, `test_phase05` 171/171, `test_phase04` ALL PASS,
 > `test_phase03` 24/24 + 16/16, boot import OK. Live smoke (`tools/a11y_audit/live_smoke_h7.mjs`, read-only,
 > one legal question, helpful NOT clicked): helplines lead the turn, 2 helpful radios with none selected,
-> privacy note present, sidebar opt-in present and OFF, no page errors. That smoke left exactly one
-> `turn` line (and no `helpful` line) in Render's logs on 2026-10-21; discount it when summarising.
+> privacy note present, sidebar opt-in present and OFF, no page errors. That smoke left **two**
+> `turn` lines (its first attempt also asked) and no `helpful` line: ids `b9be6975e327` (00:28:07 UTC) and
+> `7cba04a4cbd6` (00:29:31 UTC) on 2026-10-21; discount both when summarising. **Confirmed in Render's logs
+> 2026-10-21** via the Render CLI (v2.28.0): both lines carry exactly the documented fields, no `q`.
 > * **Exit gate:** asserts ✅ · owner review ✅ · deploy ✅ · **first week of counts: PENDING (read on/after
->   2026-10-28).** Not yet confirmed by eye: a `DRLCA_SIGNAL` line in Render → Logs (the agent has no log access).
+>   2026-10-28).** The production log line is confirmed (above).
 
 ---
 

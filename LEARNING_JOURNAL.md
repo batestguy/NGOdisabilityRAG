@@ -3453,5 +3453,7 @@ PR #18 merged on the owner's word after reviewing `docs/telemetry.md` (`main` = 
 the Claude Code auto-mode classifier blocks `gh pr merge` to `main` as a production deploy even with the owner's
 yes in chat, so the owner ran the merge with `!`; and merging a PR whose branch contains another open PR's commits
 marks that PR merged too (#17), so "close the superseded PR" is unnecessary there. The live smoke is read-only and
-does not click "helpful", so it adds exactly one `turn` line to production logs; that line must be discounted in
-the first week's counts. Signal read due on/after 2026-10-28.
+does not click "helpful", but its first attempt also asked, so it added TWO `turn` lines to production logs
+(`b9be6975e327`, `7cba04a4cbd6`); both must be discounted in the first week's counts. A retry loop around a
+smoke that writes to production multiplies its footprint; count attempts, not runs. Confirmed via the
+reinstalled Render CLI. Signal read due on/after 2026-10-28.
