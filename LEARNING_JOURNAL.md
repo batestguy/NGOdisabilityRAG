@@ -3457,3 +3457,18 @@ does not click "helpful", but its first attempt also asked, so it added TWO `tur
 (`b9be6975e327`, `7cba04a4cbd6`); both must be discounted in the first week's counts. A retry loop around a
 smoke that writes to production multiplies its footprint; count attempts, not runs. Confirmed via the
 reinstalled Render CLI. Signal read due on/after 2026-10-28.
+
+## 2026-10-21 — A11y leftovers: a fix that broke focus, caught by review
+
+I fixed four minor items (read-aloud vs NGO filter, route-button state, the doubled slider name, sidebar before H1). The first fix for
+the route state appended "(selected)" to the active button's label. It passed every source-text assert and the browser check,
+and the reviewer still blocked it: **changing a Streamlit button's label remounts it, so keyboard focus fell to `<body>` on
+every press.** My check verified the *state*. It never verified the *focus*. Lessons:
+1. When a control's identity changes, test the focus as well as the announced state. A native control (here a radio group) brings state, arrow keys and
+   focus for free, where a hand-rolled one has to rebuild each of them.
+2. A skip link that is focused but painted under a z-index-999990 header is worse than none: the first Tab stop becomes
+   invisible. `elementFromPoint` at the link's centre is a cheap, honest visibility check.
+3. Earlier axe baselines used WCAG tags only, so a full-rule run reporting `region` / `heading-order` was not a regression.
+   **Compare like with like before calling a regression.**
+4. My own heredoc wrote `\r` (a raw carriage return) into a Windows path in HANDOFF. The control-character scan
+   had skipped 0x0D, so the scan now also counts lone CRs.

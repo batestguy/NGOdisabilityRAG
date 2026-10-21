@@ -1,5 +1,11 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-21)
 
+> **■ 2026-10-21 (LATEST): A11Y LEFTOVERS FIXED** on `phase11/a11y-minor` (built on `phase11/docs-h7-deploy`, so one merge ships the
+> H7 deploy record, the H6 review pack and these fixes). The fixes: read-aloud follows the NGO filter, the route choice is a radio group with
+> stable focus, the slider has a single name, and there is a skip link plus named landmarks. Reviewer: BLOCK (focus loss) → fixed → SHIP. Record: `docs/accessibility.md` §4 box.
+> The owner authorised merging on reviewer pass. Still open: an NVDA listen-through of the radio and skip link; best-practice `heading-order`;
+> Cedar Foundation RECHECK; the Streamlit 1.66 `aria-expanded` migration.
+
 > **■ 2026-10-21 (LATEST): H7 MERGED + DEPLOYED.** PR #18 → `main` = `bf1f6ba` on the owner's word (the agent's merge was blocked by
 > auto mode; the owner ran `gh pr merge 18`). PR #17 auto-marked merged. Live smoke `tools/a11y_audit/live_smoke_h7.mjs` PASSED
 > (it left TWO `turn` lines, ids `b9be6975e327` + `7cba04a4cbd6`, no `helpful` line; discount both). This record is on `phase11/docs-h7-deploy`
@@ -48,9 +54,9 @@
 >   * **Owner must supply native Yoruba/Hausa/Igbo checkers** (≥ 5 answers each: preserved / partial / wrong).
 > * **H6 expert legal review:** needs outside reviewers (a disability-rights lawyer / JONAPWD). The agent can prepare the review pack.
 >
-> **Open minor items:** read-aloud ignores the active NGO filter; **Cedar Foundation = RECHECK** (its site serves its host's
-> certificate, so the website field is blank); slider announced "Text size Text size"; route buttons expose no selected state;
-> sidebar read before H1 at 1280; Streamlit 1.66 bump must migrate the `aria-expanded` hook in BOTH the H2 CSS and
+> **Open minor items:** ~~read-aloud ignores the active NGO filter~~ (fixed 2026-10-21); **Cedar Foundation = RECHECK** (its site serves its host's
+> certificate, so the website field is blank); ~~slider announced "Text size Text size"; route buttons expose no selected state;
+> sidebar read before H1 at 1280~~ (all fixed 2026-10-21); Streamlit 1.66 bump must migrate the `aria-expanded` hook in BOTH the H2 CSS and
 > `A11Y_BRIDGE_JS` (`app.py`). Directory growth past 20 is deferred (no Facebook route).
 >
 > **Tooling / gotchas learned today:**
