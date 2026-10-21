@@ -4,7 +4,7 @@
 > auto mode; the owner ran `gh pr merge 18`). PR #17 auto-marked merged. Live smoke `tools/a11y_audit/live_smoke_h7.mjs` PASSED
 > (it left TWO `turn` lines, ids `b9be6975e327` + `7cba04a4cbd6`, no `helpful` line; discount both). This record is on `phase11/docs-h7-deploy`
 > (docs only; merging redeploys, so bundle with the next code merge).
-> * **Production log confirmed 2026-10-21** with the Render CLI (reinstalled at `%LOCALAPPDATA%\Programsender-cliender.exe`,
+> * **Production log confirmed 2026-10-21** with the Render CLI (reinstalled at `%LOCALAPPDATA%/Programs/render-cli/render.exe`,
 >   v2.28.0, logged in): `render logs -r srv-dah26opt0dsc73e9a350 --text DRLCA_SIGNAL --limit 100 --direction backward -o text --confirm`.
 >   Render's log API can return a transient 503 ("log retrieval is currently unavailable"); retry after ~30 s.
 > * **On/after 2026-10-28:** paste the lines into a file, run `scripts/summarise_signal.py <file>`, record counts in the H7 box,
