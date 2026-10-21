@@ -553,8 +553,63 @@ A11Y_BRIDGE_JS = r"""
     }).catch(function () {});
   } catch (e) {}
 
+  /* WCAG 4.1.2: Streamlit's range input carries aria-label AND an
+     aria-labelledby naming itself plus its group (also labelled), so NVDA
+     said "Text size Text size". The aria-label alone is the right name. */
+  function sliders() {
+    D.querySelectorAll('[data-testid="stSlider"] input[type="range"][aria-labelledby]')
+      .forEach(function (i) {
+        if (i.getAttribute('aria-label')) i.removeAttribute('aria-labelledby');
+      });
+  }
+
+  /* WCAG 2.4.1 / 1.3.1: the sidebar precedes main in Streamlit's DOM and the
+     page had no main landmark, so at desktop width a screen reader met every
+     setting before the title. Reordering the DOM would fight React; instead
+     name both landmarks and put a skip link first in the page. */
+  function landmarks() {
+    var s = sidebar();
+    if (s && !s.getAttribute('aria-label')) s.setAttribute('aria-label', 'Settings');
+    var m = D.querySelector('[data-testid="stMainBlockContainer"]');
+    if (m && !m.getAttribute('role')) {
+      m.setAttribute('role', 'main');
+      m.setAttribute('aria-label', 'Helplines and answers');
+      m.id = 'drlca-main';  /* a real in-page target makes this a skip link to axe */
+    }
+    /* The chat box is pinned in its own container, outside main. */
+    var q = D.querySelector('[data-testid="stBottom"]');
+    if (q && !q.getAttribute('role')) {
+      q.setAttribute('role', 'region');
+      q.setAttribute('aria-label', 'Ask a question');
+    }
+    if (D.getElementById('drlca-skip')) return;
+    var a = D.createElement('a');
+    a.id = 'drlca-skip';
+    a.href = '#drlca-main';
+    a.textContent = 'Skip to helplines and answers';
+    /* Above Streamlit's header (z-index 999990), and !important so the
+       high-contrast link colour (gold) cannot land it on white (WCAG 2.4.7 /
+       2.4.11 / 1.4.3). White on black, gold ring: visible in every theme. */
+    a.style.cssText = 'position:fixed;left:-10000px;top:0.5rem;' +
+      'z-index:2147483647 !important;padding:0.6rem 1rem;font-weight:700;' +
+      'background:#000 !important;color:#fff !important;' +
+      'outline:3px solid #ffd700 !important;outline-offset:2px;' +
+      'text-decoration:underline;';
+    a.addEventListener('focus', function () { a.style.left = '0.5rem'; });
+    a.addEventListener('blur', function () { a.style.left = '-10000px'; });
+    a.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      var h = D.querySelector('[data-testid="stMainBlockContainer"] h1');
+      if (!h) return;
+      h.setAttribute('tabindex', '-1');
+      h.focus();
+      h.scrollIntoView();
+    });
+    D.body.insertBefore(a, D.body.firstChild);
+  }
+
   var queued = false;
-  function sweep() { queued = false; icons(); hookMic(); micNote(); }
+  function sweep() { queued = false; icons(); sliders(); landmarks(); hookMic(); micNote(); }
   new MutationObserver(function () {
     if (!queued) { queued = true; requestAnimationFrame(sweep); }
   }).observe(D.body, { childList: true, subtree: true });
@@ -1157,6 +1212,9 @@ def render_help_records(payload, turn_index: int = 0):
     The controls render AFTER the results (screen-reader users meet the
     answer first, H3 review); their current values are read from
     session_state, which Streamlit fills before the script reaches them.
+
+    Returns the payload AS DISPLAYED (filtered/sorted records, confirm flag)
+    so read-aloud speaks what is on screen. The stored payload is untouched.
     """
     st = _st()
     from ngo import filter_options, filter_records
@@ -1204,6 +1262,7 @@ def render_help_records(payload, turn_index: int = 0):
         st.radio("Sort organisations by", list(NGO_SORTS), key=k_sort)
         st.caption("National and all-disability organisations always stay "
                    "in the list. The helplines always come first.")
+    return dict(payload or {}, records=records, needs_confirmation=bool(confirm))
 
 
 # Widget-key prefixes that carry a turn index; "Clear conversation" drops them.
@@ -1499,8 +1558,8 @@ def replay_turn(payload, turn_index: int, live: bool = False):
                 render_ai_expander(payload, turn_index, plain)
         if wants_help and payload.help_payload:
             st.subheader("🤝 Help near you (offline directory)")
-            help_view = payload.help_payload
-            render_help_records(help_view, turn_index)
+            # Speak the records as DISPLAYED, so an active filter is honoured.
+            help_view = render_help_records(payload.help_payload, turn_index)
         if live:
             render_routing_trap(payload.mode)
         render_context_note(payload)
@@ -1531,6 +1590,23 @@ def render_history(live_last: bool = True):
             render_helpful(stored, i)
 
 
+ROUTE_BUTTONS = (
+    ("legal", "⚖️ Ask about my rights", "Force the legal route (overrides auto-routing)"),
+    ("help", "🤝 Find help near me", "Force the help route (overrides auto-routing)"),
+    ("auto", "✨ Auto-route", "Let the router decide (legal / help / clarify)"),
+)
+
+
+ROUTE_KEY = "route-choice"
+_ROUTE_BY_LABEL = {label: route for route, label, _ in ROUTE_BUTTONS}
+_LABEL_BY_ROUTE = {route: label for route, label, _ in ROUTE_BUTTONS}
+
+
+def _route_changed() -> None:
+    st = _st()
+    st.session_state["explicit"] = _ROUTE_BY_LABEL.get(st.session_state.get(ROUTE_KEY), "auto")
+
+
 def run():
     import streamlit as st
     import streamlit.components.v1 as components
@@ -1551,6 +1627,17 @@ def run():
     for k, v in {"explicit": "auto", "submitted": False, "last_q": "",
                  "turns": [], "pending": "", "ai_every_turn": False}.items():
         st.session_state.setdefault(k, v)
+    # An override is per-turn. Take this turn's route and reset the NEXT
+    # question's to auto BEFORE the sidebar draws, so the route buttons and
+    # the "Next question" caption never show a choice that has been used up.
+    # Every submit path (chat box, voice Send, routing trap) reruns first.
+    turn_route = st.session_state["explicit"]
+    if (st.session_state.get("pending") or "").strip():
+        st.session_state["explicit"] = "auto"
+    # `explicit` is the source of truth (the routing trap and Clear write it,
+    # then rerun); the radio is synced from it here, before it is drawn.
+    st.session_state[ROUTE_KEY] = _LABEL_BY_ROUTE.get(st.session_state["explicit"],
+                                                      _LABEL_BY_ROUTE["auto"])
 
     # --- Sidebar: accessibility controls ----------------------------------
     st.sidebar.header("♿ Accessibility")
@@ -1580,16 +1667,13 @@ def run():
                   if str(k).startswith(TURN_WIDGET_PREFIXES)]:
             del st.session_state[k]
         st.rerun()
-    st.sidebar.markdown("**How should I handle your next question?**")
-    if st.sidebar.button("⚖️ Ask about my rights", key="mode-legal",
-                         help="Force the legal route (overrides auto-routing)"):
-        st.session_state["explicit"] = "legal"
-    if st.sidebar.button("🤝 Find help near me", key="mode-help",
-                         help="Force the help route (overrides auto-routing)"):
-        st.session_state["explicit"] = "help"
-    if st.sidebar.button("✨ Auto-route", key="mode-auto",
-                         help="Let the router decide (legal / help / clarify)"):
-        st.session_state["explicit"] = "auto"
+    # A native radio group: checked state, arrow keys and stable focus for
+    # free (WCAG 4.1.2 / 2.4.3). Three buttons whose label changed on select
+    # remounted on every press and dropped keyboard focus to <body>.
+    st.sidebar.radio("How should I handle your next question?",
+                     [label for _, label, _ in ROUTE_BUTTONS], key=ROUTE_KEY,
+                     on_change=_route_changed,
+                     help=" · ".join(tip for _, _, tip in ROUTE_BUTTONS))
     st.sidebar.caption("Next question: **%s**. An override lasts one turn, "
                        "then resets." % st.session_state["explicit"].upper())
 
@@ -1632,12 +1716,10 @@ def run():
         with st.chat_message("user"):
             st.markdown(pending)
         with st.chat_message("assistant"):
-            turn = render_turn(pending, st.session_state["explicit"], plain,
-                               history, len(history))
+            turn = render_turn(pending, turn_route, plain, history, len(history))
             emit_turn_signal(turn, bool(st.session_state.get("share_text")))
             render_helpful(turn, len(history))
         st.session_state["turns"].append(turn)
-        st.session_state["explicit"] = "auto"  # an override is per-turn
         st.session_state["submitted"] = True
     elif not st.session_state["turns"]:
         st.caption("Ask your question in the box at the bottom of the page "

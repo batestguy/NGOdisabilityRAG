@@ -3446,3 +3446,29 @@ hand map and OOV bridge cover the rest. The two misses neither arm reaches ("for
 "contest election") are vocabulary gaps, not meaning gaps. A semantic arm was the wrong tool for
 them. The router behaved as specified (0 frozen-10 firings; its one dev firing did not drop),
 so the routing idea itself was sound and simply had little left to win.
+
+## 2026-10-21 — H7 merged and deployed
+
+PR #18 merged on the owner's word after reviewing `docs/telemetry.md` (`main` = `bf1f6ba`). Two process notes:
+the Claude Code auto-mode classifier blocks `gh pr merge` to `main` as a production deploy even with the owner's
+yes in chat, so the owner ran the merge with `!`; and merging a PR whose branch contains another open PR's commits
+marks that PR merged too (#17), so "close the superseded PR" is unnecessary there. The live smoke is read-only and
+does not click "helpful", but its first attempt also asked, so it added TWO `turn` lines to production logs
+(`b9be6975e327`, `7cba04a4cbd6`); both must be discounted in the first week's counts. A retry loop around a
+smoke that writes to production multiplies its footprint; count attempts, not runs. Confirmed via the
+reinstalled Render CLI. Signal read due on/after 2026-10-28.
+
+## 2026-10-21 — A11y leftovers: a fix that broke focus, caught by review
+
+I fixed four minor items (read-aloud vs NGO filter, route-button state, the doubled slider name, sidebar before H1). The first fix for
+the route state appended "(selected)" to the active button's label. It passed every source-text assert and the browser check,
+and the reviewer still blocked it: **changing a Streamlit button's label remounts it, so keyboard focus fell to `<body>` on
+every press.** My check verified the *state*. It never verified the *focus*. Lessons:
+1. When a control's identity changes, test the focus as well as the announced state. A native control (here a radio group) brings state, arrow keys and
+   focus for free, where a hand-rolled one has to rebuild each of them.
+2. A skip link that is focused but painted under a z-index-999990 header is worse than none: the first Tab stop becomes
+   invisible. `elementFromPoint` at the link's centre is a cheap, honest visibility check.
+3. Earlier axe baselines used WCAG tags only, so a full-rule run reporting `region` / `heading-order` was not a regression.
+   **Compare like with like before calling a regression.**
+4. My own heredoc wrote `\r` (a raw carriage return) into a Windows path in HANDOFF. The control-character scan
+   had skipped 0x0D, so the scan now also counts lone CRs.

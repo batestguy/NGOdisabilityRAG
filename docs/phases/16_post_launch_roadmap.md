@@ -377,6 +377,40 @@ cover it; otherwise a planned ≤ 20 calls.
 **Exit.** The sheet is returned, results are recorded, every `harmful` row has a fix or a written
 decision, and the AI expander's "recommendable" status is re-confirmed or withdrawn in writing.
 
+> **H6 STEP 1 DONE 2026-10-21 (agent; zero quota).** `docs/review/h6_review_sheet.csv` (UTF-8 with
+> BOM, for Excel) and `docs/review/h6_review_sheet.md` (printable, plain-English cover note), built
+> by `scripts/build_h6_review.py` (no network; two runs byte-identical; asserts row count, exactly 2
+> off-corpus, every category, verbatim tags, no forbidden source, no control characters).
+> * **30 rows:** Act 9 · Constitution 3 · Factsheet 4 · cross-document 2 · lay/Pidgin 10 · off-corpus 2.
+> * **Sources:** G2 `test_phase02_results_cite-strict-v3_2026-09-24.json` (12: frozen-10 + R1/R2),
+>   G4 `transcript_chat_chat-cite-strict-v2_2026-10-15.json` (6 turns, earlier turns given as context),
+>   G6 `probe_gen_refusal_cite-strict-v3_2026-10-15.json` (9), and 3 authored offline-only rows
+>   (`authored-h6`, Constitution / cross-document gap; no AI answer, to save quota).
+> * **Excerpts:** no transcript stores excerpt text, so all 30 were recomputed with
+>   `app.offline_legal_hits` (v2, k=4/doc, top_n=12). The 18 rows with a recorded tag list match it
+>   exactly. Some AI answers predate the Act text corrections (e.g. Q1 quotes the old cl. 1 garble);
+>   the cover note says so.
+> * **Held-out sets untouched:** `offtopic_h4`, `pidgin_h5a`, `test2`, and `questions.json` are not
+>   read by the generator.
+> * ⚠ **Held-out exposure risk (recorded, not hidden).** While inspecting inputs, the building agent ran a
+>   `questions.json` filter on a field that does not exist (`split`; the real one is `set`), so the command
+>   printed all 60 entries, **including the 20 `test` ones**, into a harness tool-results file outside the
+>   repo. The agent saw only the 2 KB preview (frozen-10 Q1–Q5, not `test`) and nothing from it reached the
+>   pack. No model is known to have read the `test` questions, but the file existed. **It was deleted
+>   unread (size/time checked only) on 2026-10-21 at the owner's request.** **Owner's call** whether
+>   `test` still counts as unread; `test2` is the cleaner held-out set either way.
+> * **Reviewer: SHIP WITH CAVEATS, nothing blocking.** It independently confirmed all 27 transcript answers
+>   byte-identical, tags verbatim, no network calls, determinism. Fixed after review: a self-checking
+>   row-level note on H6-01's stale cl. 1 garble (new `sheet_note` column / "Please note" line); a code
+>   assert that every AI answer equals its transcript; `assert rec is not None` narrowing (pyright 0 errors);
+>   `docs/review/*.csv -text` in `.gitattributes` so the CSV is committed as generated (CRLF records, LF in
+>   fields); the lay bucket relabelled "Everyday wording (plain English or Pidgin)", since 3 of its 10 rows
+>   are plain English. 14 checks, ALL PASS. Left as is: the off-corpus row H6-29 shows five weak excerpts
+>   under a correct refusal (verbatim retrieval behaviour); print the `.md` from a rendered view (raw text
+>   shows `58\.` escapes).
+> * **Next (step 2, owner):** recruit the reviewer and send the sheet. Nothing goes external without
+>   the owner.
+
 ---
 
 ## H7 — Real-user signal (privacy first)
@@ -416,6 +450,18 @@ pre-declared gate.
 >   inherited the old one's NGO filter (an H3 bug).
 > * **Exit gate:** asserts green ✅. **Owner review of `docs/telemetry.md`: PENDING.** First week of
 >   counts: needs the deploy, then a week of traffic.
+>
+> **H7 MERGED + DEPLOYED 2026-10-21 (PR #18 → `bf1f6ba`, on the owner's explicit word after reviewing
+> `docs/telemetry.md`).** PR #17 was marked merged automatically (its commits were contained in #18).
+> Pre-merge: CI green; local `test_phase09_ops` ALL PASS, `test_phase05` 171/171, `test_phase04` ALL PASS,
+> `test_phase03` 24/24 + 16/16, boot import OK. Live smoke (`tools/a11y_audit/live_smoke_h7.mjs`, read-only,
+> one legal question, helpful NOT clicked): helplines lead the turn, 2 helpful radios with none selected,
+> privacy note present, sidebar opt-in present and OFF, no page errors. That smoke left **two**
+> `turn` lines (its first attempt also asked) and no `helpful` line: ids `b9be6975e327` (00:28:07 UTC) and
+> `7cba04a4cbd6` (00:29:31 UTC) on 2026-10-21; discount both when summarising. **Confirmed in Render's logs
+> 2026-10-21** via the Render CLI (v2.28.0): both lines carry exactly the documented fields, no `q`.
+> * **Exit gate:** asserts ✅ · owner review ✅ · deploy ✅ · **first week of counts: PENDING (read on/after
+>   2026-10-28).** The production log line is confirmed (above).
 
 ---
 

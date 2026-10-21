@@ -202,6 +202,32 @@ one day old at audit time. **Recommended follow-up:** bump to ≥ 1.66 in its ow
   is visible (detected by the keyboard pass), but whether it is visible *enough* is a human
   judgement: see the owner checklist.
 
+> **2026-10-21: the four H2/H3 leftover minor items are FIXED (branch `phase11/a11y-minor`, `883fefe` +
+> `e0fdf0d`; reviewer BLOCK on the first pass, then SHIP).**
+> * **Read-aloud now follows the NGO filter.** `render_help_records` returns the payload as displayed, and the replay speaks
+>   that. Browser: after an FCT filter it speaks exactly the 9 contacts on screen. The stored payload is unchanged.
+> * **The route choice is a native radio group**, "How should I handle your next question?". It has a checked state, arrow keys and stable
+>   focus. The first attempt, buttons with a changing "(selected)" label, **dropped keyboard focus to `<body>`** on every
+>   press. The reviewer caught it (WCAG 2.4.3), so it was replaced. A used-up override now resets *before* the sidebar draws,
+>   so the control and the "Next question" caption are never stale.
+> * **The slider is announced once ("Text size").** The bridge drops the range input's redundant `aria-labelledby`.
+> * **Sidebar before H1:** the DOM is not reordered, because that would fight React. Instead there is a **skip link as the first Tab stop**
+>   ("Skip to helplines and answers" → focuses H1). It is fixed above Streamlit's header, white on black with a gold ring, `!important`,
+>   so high contrast cannot turn it gold-on-white. There are also named landmarks: `main` "Helplines and answers", region "Settings"
+>   (sidebar), and region "Ask a question" (the pinned chat box). The page previously had no `main` landmark.
+> * Verified by `tools/a11y_audit/minor_check.mjs` and the reviewer's own probes:
+>   * focus stays on the radio after arrow keys or a click;
+>   * the skip link is topmost when focused at 1280 and 390, in dark and in high contrast;
+>   * the B3 drawer trap and Esc are unaffected;
+>   * the routing trap and Clear behave;
+>   * axe (WCAG tags) finds 0 violations;
+>   * best-practice axe finds only the pre-existing `heading-order` (H1 → H3 "Conversation so far").
+>
+>   `test_phase05` 179/179.
+> * **Not verified:** NVDA/JAWS announcements of the radio group and the skip link (automation and axe only), and a voice-path turn that
+>   exercises an override. **New minor:** `heading-order` (best-practice, not WCAG). The skip link overlays the sidebar toggle
+>   while it holds focus (normal for skip links).
+
 ## 5. WCAG 2.2 AA criteria
 
 Pass = automated evidence above. Owner-verified = needs a human (screen reader, real microphone,
