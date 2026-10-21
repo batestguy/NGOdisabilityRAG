@@ -3446,3 +3446,12 @@ hand map and OOV bridge cover the rest. The two misses neither arm reaches ("for
 "contest election") are vocabulary gaps, not meaning gaps. A semantic arm was the wrong tool for
 them. The router behaved as specified (0 frozen-10 firings; its one dev firing did not drop),
 so the routing idea itself was sound and simply had little left to win.
+
+## 2026-10-21 — H7 merged and deployed
+
+PR #18 merged on the owner's word after reviewing `docs/telemetry.md` (`main` = `bf1f6ba`). Two process notes:
+the Claude Code auto-mode classifier blocks `gh pr merge` to `main` as a production deploy even with the owner's
+yes in chat, so the owner ran the merge with `!`; and merging a PR whose branch contains another open PR's commits
+marks that PR merged too (#17), so "close the superseded PR" is unnecessary there. The live smoke is read-only and
+does not click "helpful", so it adds exactly one `turn` line to production logs; that line must be discounted in
+the first week's counts. Signal read due on/after 2026-10-28.

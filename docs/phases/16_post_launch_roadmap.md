@@ -416,6 +416,16 @@ pre-declared gate.
 >   inherited the old one's NGO filter (an H3 bug).
 > * **Exit gate:** asserts green ✅. **Owner review of `docs/telemetry.md`: PENDING.** First week of
 >   counts: needs the deploy, then a week of traffic.
+>
+> **H7 MERGED + DEPLOYED 2026-10-21 (PR #18 → `bf1f6ba`, on the owner's explicit word after reviewing
+> `docs/telemetry.md`).** PR #17 was marked merged automatically (its commits were contained in #18).
+> Pre-merge: CI green; local `test_phase09_ops` ALL PASS, `test_phase05` 171/171, `test_phase04` ALL PASS,
+> `test_phase03` 24/24 + 16/16, boot import OK. Live smoke (`tools/a11y_audit/live_smoke_h7.mjs`, read-only,
+> one legal question, helpful NOT clicked): helplines lead the turn, 2 helpful radios with none selected,
+> privacy note present, sidebar opt-in present and OFF, no page errors. That smoke left exactly one
+> `turn` line (and no `helpful` line) in Render's logs on 2026-10-21; discount it when summarising.
+> * **Exit gate:** asserts ✅ · owner review ✅ · deploy ✅ · **first week of counts: PENDING (read on/after
+>   2026-10-28).** Not yet confirmed by eye: a `DRLCA_SIGNAL` line in Render → Logs (the agent has no log access).
 
 ---
 

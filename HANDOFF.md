@@ -1,4 +1,14 @@
-# HANDOFF — start here (60 seconds, updated 2026-10-18)
+# HANDOFF — start here (60 seconds, updated 2026-10-21)
+
+> **■ 2026-10-21 (LATEST): H7 MERGED + DEPLOYED.** PR #18 → `main` = `bf1f6ba` on the owner's word (the agent's merge was blocked by
+> auto mode; the owner ran `gh pr merge 18`). PR #17 auto-marked merged. Live smoke `tools/a11y_audit/live_smoke_h7.mjs` PASSED
+> (it left one `turn` line, no `helpful` line, in Render's logs today; discount it). This record is on `phase11/docs-h7-deploy`
+> (docs only; merging redeploys, so bundle with the next code merge).
+> * **Owner, now:** open Render → Logs, search `DRLCA_SIGNAL`, confirm today's line exists (the agent cannot see the logs).
+> * **On/after 2026-10-28:** paste the lines into a file, run `scripts/summarise_signal.py <file>`, record counts in the H7 box,
+>   then decide which of M2 / F2 / H5a to reopen with a new pre-declared gate.
+> * Still open: H5b (quota plan + native checkers), H6 (outside legal reviewers), the minor items below. Old PRs #10/#11 look
+>   superseded by Phase E; close them on the owner's word.
 
 > **■ 2026-10-18 (AFTER the end-of-session block below): H7 BUILT on `phase11/h7-signal`.** It is rebased on `phase11/docs-h4`, so
 > its PR carries the H4/H5a docs too; PR #17 is superseded by it. NOT merged.
