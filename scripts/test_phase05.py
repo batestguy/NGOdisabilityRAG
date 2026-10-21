@@ -599,19 +599,24 @@ check("minor-replay-speaks-displayed-help",
       "help_view = render_help_records(payload.help_payload, turn_index)" in replay_body
       and replay_body.index("help_view = render_help_records")
       < replay_body.index("build_speech_text(legal_view, help_view"))
-# 2. Route buttons expose their state in the accessible name, set by on_click
-#    so all three labels are right in the same rerun.
+# 2. The route choice is a native radio group (checked state, arrow keys,
+#    stable focus). The earlier buttons-with-"(selected)" remounted on every
+#    press and dropped keyboard focus to <body> (reviewer BLOCK, 2026-10-21).
 _run_src = inspect.getsource(app.run)
-check("minor-route-buttons-selected-state",
+check("minor-route-is-radio",
       [r for r, _, _ in app.ROUTE_BUTTONS] == ["legal", "help", "auto"]
-      and '" (selected)" if on else ""' in _run_src
-      and "on_click=_set_route" in _run_src and 'type="primary" if on' in _run_src)
-# 3. A used-up override resets BEFORE the sidebar draws (labels never stale),
-#    and the turn is answered on the route taken at the top of run().
+      and "st.sidebar.radio(\"How should I handle your next question?\"" in _run_src
+      and "on_change=_route_changed" in _run_src
+      and "st.sidebar.button(label" not in _run_src and "(selected)" not in _run_src)
+check("minor-route-radio-maps-back",
+      all(app._ROUTE_BY_LABEL[app._LABEL_BY_ROUTE[r]] == r for r in ("legal", "help", "auto")))
+# 3. A used-up override resets, and the radio is synced from `explicit`,
+#    BEFORE the sidebar draws; the turn is answered on the route taken first.
 check("minor-override-reset-before-sidebar",
       _run_src.index('turn_route = st.session_state["explicit"]')
       < _run_src.index('st.session_state["explicit"] = "auto"')
-      < _run_src.index("for route, label, tip in ROUTE_BUTTONS")
+      < _run_src.index("st.session_state[ROUTE_KEY] = _LABEL_BY_ROUTE")
+      < _run_src.index("st.sidebar.radio(")
       and "render_turn(pending, turn_route," in _run_src
       and _run_src.count('st.session_state["explicit"] = "auto"') == 2)  # + Clear conversation
 # 4. Slider name not doubled; skip link + named landmarks (bridge, no "%").
@@ -621,7 +626,8 @@ check("minor-bridge-skip-link-and-landmarks",
       "Skip to helplines and answers" in _bj and "setAttribute('role', 'main')" in _bj
       and "'Settings'" in _bj and "D.body.insertBefore(a, D.body.firstChild)" in _bj
       and "a.href = '#drlca-main'" in _bj and "m.id = 'drlca-main'" in _bj
-      and "'Ask a question'" in _bj
+      and "'Ask a question'" in _bj and "z-index:2147483647 !important" in _bj
+      and "color:#fff !important" in _bj and "outline:3px solid #ffd700 !important" in _bj
       and "sliders(); landmarks();" in _bj and "%" not in _bj)
 
 print("\nALL %d ASSERTS PASSED" % len(passed))

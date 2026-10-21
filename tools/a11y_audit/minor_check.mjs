@@ -24,17 +24,30 @@ res.sliderAria = (aria.match(/slider "[^"]*"/) || [null])[0];
 res.mainLandmark = /main "Helplines and answers"/.test(aria);
 res.settingsRegion = /region "Settings"/.test(aria);
 
+const skipOnTop = async () => p.evaluate(() => {
+  const a = document.getElementById('drlca-skip'); if (!a || document.activeElement !== a) return 'not-focused';
+  const r = a.getBoundingClientRect(); const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+  const cs = getComputedStyle(a);
+  return { onTop: top === a || a.contains(top), fg: cs.color, bg: cs.backgroundColor, outline: cs.outlineStyle + ' ' + cs.outlineWidth };
+});
 await p.keyboard.press('Tab');
+res.skipVisible1280 = await skipOnTop();
 res.firstTabStop = await p.evaluate(() => document.activeElement && document.activeElement.textContent);
 await p.keyboard.press('Enter');
 await p.waitForTimeout(500);
 res.skipFocusesH1 = await p.evaluate(() => document.activeElement && document.activeElement.tagName === 'H1');
 
 const sb = p.getByTestId('stSidebar');
-res.routeDefault = await sb.getByRole('button', { name: /\(selected\)/ }).allInnerTexts();
-await sb.getByRole('button', { name: /Find help near me/ }).click();
-await p.waitForTimeout(2000);
-res.routeAfterClick = await sb.getByRole('button', { name: /\(selected\)/ }).allInnerTexts();
+const checked = async () => (await sb.getByRole('radio', { checked: true }).first().getAttribute('aria-label'))
+  || (await sb.getByRole('radio', { checked: true }).first().evaluate(e => (e.closest('label') || e).innerText.trim()));
+res.routeDefault = await checked();
+// Keyboard: focus the checked radio, ArrowUp moves to "Find help near me"; focus must stay on a radio.
+await sb.getByRole('radio', { checked: true }).first().focus();
+await p.keyboard.press('ArrowUp');
+await p.waitForTimeout(2500);
+res.routeAfterKey = await checked();
+res.focusAfterKey = await p.evaluate(() => { const e = document.activeElement; return e ? e.tagName + ':' + (e.getAttribute('type') || '') : null; });
+res.routeAfterClick = res.routeAfterKey;
 res.captionAfterClick = (await sb.innerText()).match(/Next question: (\w+)/)?.[1];
 
 const ta = p.getByTestId('stChatInputTextArea');
@@ -42,7 +55,7 @@ await ta.fill('I need help in Lagos'); await ta.press('Enter');
 const t = p.locator('[data-testid="stChatMessage"]').nth(1);
 await t.locator('iframe[title*="Read answer aloud"]').waitFor({ timeout: 120000 });
 await p.waitForTimeout(2500);
-res.routeAfterTurn = await sb.getByRole('button', { name: /\(selected\)/ }).allInnerTexts();
+res.routeAfterTurn = await checked();
 res.captionAfterTurn = (await sb.innerText()).match(/Next question: (\w+)/)?.[1];
 res.turnWasHelp = (await t.innerText()).includes('Help near you');
 
@@ -75,6 +88,26 @@ res.axeWcag = axeW.violations.map(v => v.id + ':' + v.impact + ':' + v.nodes.len
 const axe = await new AxeBuilder({ page: p }).analyze();  // + best-practice, for information
 res.axe = axe.violations.map(v => v.id + ':' + v.impact + ':' + v.nodes.length);
 res.axeNodes = axe.violations.filter(v => v.impact !== 'critical').map(v => v.id + ' -> ' + v.nodes.map(n => n.target.join(' ') + ' :: ' + n.html.slice(0, 140)).join(' | '));
+// Routing trap: "Switch to legal" re-answers the last turn on LEGAL; the radio then shows Auto again.
+await p.getByRole('button', { name: /Switch to legal/ }).last().click();
+await p.waitForTimeout(6000);
+const lastTurn = p.locator('[data-testid="stChatMessage"]').last();
+res.trapReansweredLegal = (await lastTurn.innerText()).includes('Your rights');
+res.trapTurnCount = await p.locator('[data-testid="stChatMessage"]').count();
+res.routeAfterTrap = await checked();
+
+// Skip link at phone width and in high-contrast mode.
+await p.setViewportSize({ width: 390, height: 844 });
+await p.goto(BASE); await p.getByText('National helplines').first().waitFor({ timeout: 120000 }); await p.waitForTimeout(2500);
+await p.keyboard.press('Tab');
+res.skipVisible390 = await skipOnTop();
+await p.setViewportSize({ width: 1280, height: 900 });
+await p.goto(BASE); await p.getByText('National helplines').first().waitFor({ timeout: 120000 }); await p.waitForTimeout(2500);
+await p.getByTestId('stSidebar').getByText('High contrast mode').click(); await p.waitForTimeout(2500);
+await p.evaluate(() => document.activeElement && document.activeElement.blur());
+await p.evaluate(() => document.getElementById('drlca-skip').focus());
+res.skipVisibleHC = await skipOnTop();
+await p.screenshot({ path: path.join(process.env.TEMP || '.', 'drlca_skip_hc.png'), clip: { x: 0, y: 0, width: 500, height: 90 } });
 res.pageErrors = errs;
 console.log(JSON.stringify(res, null, 1));
 await b.close();

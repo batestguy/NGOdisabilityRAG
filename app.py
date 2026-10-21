@@ -587,8 +587,14 @@ A11Y_BRIDGE_JS = r"""
     a.id = 'drlca-skip';
     a.href = '#drlca-main';
     a.textContent = 'Skip to helplines and answers';
-    a.style.cssText = 'position:absolute;left:-10000px;top:0;z-index:1000;' +
-      'padding:0.5rem 1rem;background:#fff;color:#000;font-weight:600;';
+    /* Above Streamlit's header (z-index 999990), and !important so the
+       high-contrast link colour (gold) cannot land it on white (WCAG 2.4.7 /
+       2.4.11 / 1.4.3). White on black, gold ring: visible in every theme. */
+    a.style.cssText = 'position:fixed;left:-10000px;top:0.5rem;' +
+      'z-index:2147483647 !important;padding:0.6rem 1rem;font-weight:700;' +
+      'background:#000 !important;color:#fff !important;' +
+      'outline:3px solid #ffd700 !important;outline-offset:2px;' +
+      'text-decoration:underline;';
     a.addEventListener('focus', function () { a.style.left = '0.5rem'; });
     a.addEventListener('blur', function () { a.style.left = '-10000px'; });
     a.addEventListener('click', function (ev) {
@@ -1591,8 +1597,14 @@ ROUTE_BUTTONS = (
 )
 
 
-def _set_route(route: str) -> None:
-    _st().session_state["explicit"] = route
+ROUTE_KEY = "route-choice"
+_ROUTE_BY_LABEL = {label: route for route, label, _ in ROUTE_BUTTONS}
+_LABEL_BY_ROUTE = {route: label for route, label, _ in ROUTE_BUTTONS}
+
+
+def _route_changed() -> None:
+    st = _st()
+    st.session_state["explicit"] = _ROUTE_BY_LABEL.get(st.session_state.get(ROUTE_KEY), "auto")
 
 
 def run():
@@ -1622,6 +1634,10 @@ def run():
     turn_route = st.session_state["explicit"]
     if (st.session_state.get("pending") or "").strip():
         st.session_state["explicit"] = "auto"
+    # `explicit` is the source of truth (the routing trap and Clear write it,
+    # then rerun); the radio is synced from it here, before it is drawn.
+    st.session_state[ROUTE_KEY] = _LABEL_BY_ROUTE.get(st.session_state["explicit"],
+                                                      _LABEL_BY_ROUTE["auto"])
 
     # --- Sidebar: accessibility controls ----------------------------------
     st.sidebar.header("♿ Accessibility")
@@ -1651,16 +1667,13 @@ def run():
                   if str(k).startswith(TURN_WIDGET_PREFIXES)]:
             del st.session_state[k]
         st.rerun()
-    st.sidebar.markdown("**How should I handle your next question?**")
-    # on_click runs BEFORE the script, so all three labels already show the
-    # new choice in the same rerun. The selected state is in the accessible
-    # name ("(selected)") as well as the style: a Streamlit button cannot carry
-    # aria-pressed, and colour alone is not a state (WCAG 1.4.1 / 4.1.2).
-    for route, label, tip in ROUTE_BUTTONS:
-        on = st.session_state["explicit"] == route
-        st.sidebar.button(label + (" (selected)" if on else ""), key="mode-" + route,
-                          help=tip, type="primary" if on else "secondary",
-                          on_click=_set_route, args=(route,))
+    # A native radio group: checked state, arrow keys and stable focus for
+    # free (WCAG 4.1.2 / 2.4.3). Three buttons whose label changed on select
+    # remounted on every press and dropped keyboard focus to <body>.
+    st.sidebar.radio("How should I handle your next question?",
+                     [label for _, label, _ in ROUTE_BUTTONS], key=ROUTE_KEY,
+                     on_change=_route_changed,
+                     help=" · ".join(tip for _, _, tip in ROUTE_BUTTONS))
     st.sidebar.caption("Next question: **%s**. An override lasts one turn, "
                        "then resets." % st.session_state["explicit"].upper())
 
