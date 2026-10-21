@@ -377,6 +377,24 @@ cover it; otherwise a planned ≤ 20 calls.
 **Exit.** The sheet is returned, results are recorded, every `harmful` row has a fix or a written
 decision, and the AI expander's "recommendable" status is re-confirmed or withdrawn in writing.
 
+> **H6 STEP 1 DONE 2026-10-21 (agent; zero quota).** `docs/review/h6_review_sheet.csv` (UTF-8 with
+> BOM, for Excel) and `docs/review/h6_review_sheet.md` (printable, plain-English cover note), built
+> by `scripts/build_h6_review.py` (no network; two runs byte-identical; asserts row count, exactly 2
+> off-corpus, every category, verbatim tags, no forbidden source, no control characters).
+> * **30 rows:** Act 9 · Constitution 3 · Factsheet 4 · cross-document 2 · lay/Pidgin 10 · off-corpus 2.
+> * **Sources:** G2 `test_phase02_results_cite-strict-v3_2026-09-24.json` (12: frozen-10 + R1/R2),
+>   G4 `transcript_chat_chat-cite-strict-v2_2026-10-15.json` (6 turns, earlier turns given as context),
+>   G6 `probe_gen_refusal_cite-strict-v3_2026-10-15.json` (9), and 3 authored offline-only rows
+>   (`authored-h6`, Constitution / cross-document gap; no AI answer, to save quota).
+> * **Excerpts:** no transcript stores excerpt text, so all 30 were recomputed with
+>   `app.offline_legal_hits` (v2, k=4/doc, top_n=12). The 18 rows with a recorded tag list match it
+>   exactly. Some AI answers predate the Act text corrections (e.g. Q1 quotes the old cl. 1 garble);
+>   the cover note says so.
+> * **Held-out sets untouched:** `offtopic_h4`, `pidgin_h5a`, `test2`, and `questions.json` are not
+>   read by the generator.
+> * **Next (step 2, owner):** recruit the reviewer and send the sheet. Nothing goes external without
+>   the owner.
+
 ---
 
 ## H7 — Real-user signal (privacy first)
