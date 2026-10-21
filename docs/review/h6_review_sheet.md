@@ -88,6 +88,8 @@ You can fill in this printed copy, or the spreadsheet version of the same rows (
 
 ### AI answer (optional feature, off by default)
 
+**Please note:** This AI answer was recorded before the Act cl. 1 text was corrected, so it quotes scanning errors (garbled words). Please ignore the garbled words and judge the rest of the answer.
+
 The Act prohibits the discrimination of a person on the ground of his/her disability, as stated in section 1(1) [Factsheet Section 1]. A person with disability shall not be discriminated against on the o uuu Aun u uons o uosd Xue q aqes s go puno circumstance [Act cl. 1].
 
 If a body corporate discriminates on this ground, it is subject to a fine of N1,000,000, while an individual is liable to pay a N100,000 fine, face a six months imprisonment term or both, as per section 1(2) [Factsheet Section 1]. A person who contravenes subsection (l) commits an offence and is liable on conviction to a fine of N1,000,000 if a body corporate, and a fine of N100,000 or six months imprisonment or both if an individual [Act cl. 1].
@@ -1565,7 +1567,7 @@ The Act also specifies penalties for contravention of this right:
 
 ---
 
-## Question 15 of 30 — Everyday English / Pidgin
+## Question 15 of 30 — Everyday wording (plain English or Pidgin)
 
 *Internal ID (please ignore): H6-15 · G4 transcript_chat_chat-cite-strict-v2_2026-10-15.json#CD1.t2*
 
@@ -2152,7 +2154,7 @@ The fine is N5,000 [Act cl. 12].
 
 ---
 
-## Question 20 of 30 — Everyday English / Pidgin
+## Question 20 of 30 — Everyday wording (plain English or Pidgin)
 
 *Internal ID (please ignore): H6-20 · G6 probe_gen_refusal_cite-strict-v3_2026-10-15.json#P01*
 
@@ -2243,7 +2245,7 @@ Persons and companies who breach this provision are liable on conviction to nomi
 
 ---
 
-## Question 21 of 30 — Everyday English / Pidgin
+## Question 21 of 30 — Everyday wording (plain English or Pidgin)
 
 *Internal ID (please ignore): H6-21 · G6 probe_gen_refusal_cite-strict-v3_2026-10-15.json#P04*
 
@@ -2351,7 +2353,7 @@ A person with disability is entitled to free education up to secondary level [Fa
 
 ---
 
-## Question 22 of 30 — Everyday English / Pidgin
+## Question 22 of 30 — Everyday wording (plain English or Pidgin)
 
 *Internal ID (please ignore): H6-22 · G6 probe_gen_refusal_cite-strict-v3_2026-10-15.json#P05*
 
@@ -2447,7 +2449,7 @@ No, it is not legal. A person shall not employ, use, or involve a person with di
 
 ---
 
-## Question 23 of 30 — Everyday English / Pidgin
+## Question 23 of 30 — Everyday wording (plain English or Pidgin)
 
 *Internal ID (please ignore): H6-23 · G6 probe_gen_refusal_cite-strict-v3_2026-10-15.json#P07*
 
@@ -2513,7 +2515,7 @@ A person without disability commits an offence if he/she also parks in a reserve
 
 ---
 
-## Question 24 of 30 — Everyday English / Pidgin
+## Question 24 of 30 — Everyday wording (plain English or Pidgin)
 
 *Internal ID (please ignore): H6-24 · G6 probe_gen_refusal_cite-strict-v3_2026-10-15.json#P08*
 
@@ -2578,7 +2580,7 @@ In queues, persons with disabilities shall be given first consideration and, as 
 
 ---
 
-## Question 25 of 30 — Everyday English / Pidgin
+## Question 25 of 30 — Everyday wording (plain English or Pidgin)
 
 *Internal ID (please ignore): H6-25 · G6 probe_gen_refusal_cite-strict-v3_2026-10-15.json#P11*
 
@@ -2638,7 +2640,7 @@ In all situations of risk, violence, emergencies and the occurrences of natural 
 
 ---
 
-## Question 26 of 30 — Everyday English / Pidgin
+## Question 26 of 30 — Everyday wording (plain English or Pidgin)
 
 *Internal ID (please ignore): H6-26 · G6 probe_gen_refusal_cite-strict-v3_2026-10-15.json#P13*
 
@@ -2705,7 +2707,7 @@ A Permanent Certificate of Disability for a person with mental disability can be
 
 ---
 
-## Question 27 of 30 — Everyday English / Pidgin
+## Question 27 of 30 — Everyday wording (plain English or Pidgin)
 
 *Internal ID (please ignore): H6-27 · G6 probe_gen_refusal_cite-strict-v3_2026-10-15.json#P14*
 
@@ -2813,7 +2815,7 @@ A person who unlawfully obtains a Certificate of Disability commits an offence [
 
 ---
 
-## Question 28 of 30 — Everyday English / Pidgin
+## Question 28 of 30 — Everyday wording (plain English or Pidgin)
 
 *Internal ID (please ignore): H6-28 · G6 probe_gen_refusal_cite-strict-v3_2026-10-15.json#P17*
 

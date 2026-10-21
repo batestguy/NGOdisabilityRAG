@@ -392,6 +392,21 @@ decision, and the AI expander's "recommendable" status is re-confirmed or withdr
 >   the cover note says so.
 > * **Held-out sets untouched:** `offtopic_h4`, `pidgin_h5a`, `test2`, and `questions.json` are not
 >   read by the generator.
+> * ⚠ **Held-out exposure risk (recorded, not hidden).** While inspecting inputs, the building agent ran a
+>   `questions.json` filter on a field that does not exist (`split`; the real one is `set`), so the command
+>   printed all 60 entries, **including the 20 `test` ones**, into a harness tool-results file outside the
+>   repo. The agent saw only the 2 KB preview (frozen-10 Q1–Q5, not `test`) and nothing from it reached the
+>   pack. No model is known to have read the `test` questions, but the file existed. **Owner's call** whether
+>   `test` still counts as unread; `test2` is the cleaner held-out set either way.
+> * **Reviewer: SHIP WITH CAVEATS, nothing blocking.** It independently confirmed all 27 transcript answers
+>   byte-identical, tags verbatim, no network calls, determinism. Fixed after review: a self-checking
+>   row-level note on H6-01's stale cl. 1 garble (new `sheet_note` column / "Please note" line); a code
+>   assert that every AI answer equals its transcript; `assert rec is not None` narrowing (pyright 0 errors);
+>   `docs/review/*.csv -text` in `.gitattributes` so the CSV is committed as generated (CRLF records, LF in
+>   fields); the lay bucket relabelled "Everyday wording (plain English or Pidgin)", since 3 of its 10 rows
+>   are plain English. 14 checks, ALL PASS. Left as is: the off-corpus row H6-29 shows five weak excerpts
+>   under a correct refusal (verbatim retrieval behaviour); print the `.md` from a rendered view (raw text
+>   shows `58\.` escapes).
 > * **Next (step 2, owner):** recruit the reviewer and send the sheet. Nothing goes external without
 >   the owner.
 

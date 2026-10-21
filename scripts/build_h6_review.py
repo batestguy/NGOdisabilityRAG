@@ -64,8 +64,18 @@ CATEGORIES = {
     "constitution": "1999 Constitution",
     "factsheet": "2020 Factsheet",
     "cross-document": "More than one document",
-    "lay-pidgin": "Everyday English / Pidgin",
+    "lay-pidgin": "Everyday wording (plain English or Pidgin)",
     "off-corpus": "Outside the three documents",
+}
+
+# Row-level warnings for AI answers recorded before a corpus correction. Each is
+# self-checking: the quoted fragment must be in the recorded answer and absent
+# from today's excerpts, or the build fails (so a stale note cannot linger).
+STALE_ANSWER_NOTES = {
+    ("G2", "Q1"): ("o uuu Aun",
+                   "This AI answer was recorded before the Act cl. 1 text was corrected, so it "
+                   "quotes scanning errors (garbled words). Please ignore the garbled words and "
+                   "judge the rest of the answer."),
 }
 
 # (source, item id, category). Order here is the order in the pack.
@@ -164,11 +174,13 @@ def main() -> int:
     for n, (source, item, cat) in enumerate(ROWS, 1):
         rec = src[source][item] if source != "authored-h6" else None
         if source == "G2":
+            assert rec is not None
             question = rec["question"]
             rq = None
             recorded = [cite_tag(s["doc_id"], s["ref"]) for s in rec["scores"]
                         if s["score"] >= rec["min_score"]]
         elif source == "G4":
+            assert rec is not None
             conv = item.split(".")[0]
             prior = [t["question"] for t in src["G4_turns"]
                      if t["id"].split(".")[0] == conv
@@ -178,10 +190,11 @@ def main() -> int:
             rq = rec["retrieval_query"]
             recorded = list(rec["shown_tags"])
         elif source == "G6":
+            assert rec is not None
             question, rq, recorded = rec["text"], None, None
         else:
             question, rq, recorded = AUTHORED[item], None, None
-        ask_text = rec["question"] if source in ("G2", "G4") else question
+        ask_text = rec["question"] if rec is not None and source in ("G2", "G4") else question
         view = app.offline_legal_hits(ask_text, ret, retrieval_query=rq)
         excerpts = [(e["tag"], e["text"], e["doc_id"], e["ref"]) for e in view["excerpts"]]
         for tag, _, d, r in excerpts:
@@ -191,6 +204,7 @@ def main() -> int:
         if source == "authored-h6":
             ai_answer, ai_tags = OFFLINE_ONLY, []
         else:
+            assert rec is not None
             ans, err = answer_of(source, rec)
             if ans is None or err:
                 ai_answer, ai_tags = NO_AI, []
@@ -202,6 +216,11 @@ def main() -> int:
                     fails.append("%s: extracted citations != recorded citations" % item)
 
         shown = [t for t, _, _, _ in excerpts]
+        sheet_note = ""
+        if (source, item) in STALE_ANSWER_NOTES:
+            frag, sheet_note = STALE_ANSWER_NOTES[(source, item)]
+            if frag not in ai_answer or any(frag in txt for _, txt, _, _ in excerpts):
+                fails.append("%s: stale-answer note no longer applies (fragment %r)" % (item, frag))
         rows.append({
             "row_id": "H6-%02d" % n,
             "source": "authored-h6" if source == "authored-h6"
@@ -211,6 +230,7 @@ def main() -> int:
             "excerpts": excerpts,
             "ai_answer": ai_answer,
             "ai_tags": ai_tags,
+            "sheet_note": sheet_note,
             "recorded": recorded,
             "recorded_match": None if recorded is None else recorded == shown,
             "_src": source, "_item": item,
@@ -218,15 +238,16 @@ def main() -> int:
 
     # ---- CSV -----------------------------------------------------------------
     cols = ["row_id", "source", "category", "question", "offline_excerpts", "ai_answer",
-            "ai_tags", "correct", "partially", "wrong", "harmful", "reviewer_note",
-            "what_it_should_have_said"]
+            "ai_tags", "sheet_note", "correct", "partially", "wrong", "harmful",
+            "reviewer_note", "what_it_should_have_said"]
     buf = io.StringIO(newline="")
     w = csv.writer(buf)  # default dialect: CRLF, minimal quoting -- Excel-friendly
     w.writerow(cols)
     for r in rows:
         exc = CSV_SEP.join("%s %s" % (t, txt) for t, txt, _, _ in r["excerpts"]) or NO_EXCERPTS
         w.writerow([r["row_id"], r["source"], r["category"], r["question"], exc,
-                    r["ai_answer"], "; ".join(r["ai_tags"]), "", "", "", "", "", ""])
+                    r["ai_answer"], "; ".join(r["ai_tags"]), r["sheet_note"],
+                    "", "", "", "", "", ""])
     csv_text = buf.getvalue()
     for r in rows:
         r["csv_excerpts"] = CSV_SEP.join("%s %s" % (t, txt) for t, txt, _, _ in r["excerpts"])
@@ -326,6 +347,9 @@ def main() -> int:
             add("")
         add("### AI answer (optional feature, off by default)")
         add("")
+        if r["sheet_note"]:
+            add("**Please note:** %s" % r["sheet_note"])
+            add("")
         if r["ai_answer"] in (NO_AI, OFFLINE_ONLY):
             add("*%s*" % r["ai_answer"])
         else:
@@ -382,6 +406,17 @@ def main() -> int:
     check(all(r["ai_answer"] == OFFLINE_ONLY for r in rows if r["_src"] == "authored-h6")
           and all(r["ai_answer"] != OFFLINE_ONLY for r in rows if r["_src"] != "authored-h6"),
           "offline-only placeholder used exactly on authored rows")
+    unequal = []
+    for r in rows:
+        if r["_src"] != "authored-h6" and r["ai_answer"] != NO_AI:
+            ans, _ = answer_of(r["_src"], src[r["_src"]][r["_item"]])
+            if r["ai_answer"] != ans:
+                unequal.append(r["row_id"])
+    check(not unequal, "every AI answer byte-identical to its transcript%s"
+          % ("" if not unequal else ": %s" % unequal))
+    stale_fails = [f for f in fails if "stale-answer note" in f]
+    check(not stale_fails and sum(bool(r["sheet_note"]) for r in rows) == len(STALE_ANSWER_NOTES),
+          "every stale-answer note still applies and is attached (%d)" % len(STALE_ANSWER_NOTES))
     for name, text in (("csv", csv_text), ("md", md_text)):
         hits = CONTROL_RE.findall(text)
         check(not hits, "%s has no control characters%s" % (name, "" if not hits
