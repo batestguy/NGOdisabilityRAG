@@ -202,8 +202,8 @@ one day old at audit time. **Recommended follow-up:** bump to ≥ 1.66 in its ow
   is visible (detected by the keyboard pass), but whether it is visible *enough* is a human
   judgement: see the owner checklist.
 
-> **2026-10-21: the four H2/H3 leftover minor items are FIXED (branch `phase11/a11y-minor`, `883fefe` +
-> `e0fdf0d`; reviewer BLOCK on the first pass, then SHIP).**
+> **2026-10-21: the four H2/H3 leftover minor items are FIXED and DEPLOYED (branch `phase11/a11y-minor`, `883fefe` +
+> `e0fdf0d`; reviewer BLOCK on the first pass, then SHIP; merged as PR #19 → `0eb8959`; live smoke `live_smoke_a11y.mjs` passed).**
 > * **Read-aloud now follows the NGO filter.** `render_help_records` returns the payload as displayed, and the replay speaks
 >   that. Browser: after an FCT filter it speaks exactly the 9 contacts on screen. The stored payload is unchanged.
 > * **The route choice is a native radio group**, "How should I handle your next question?". It has a checked state, arrow keys and stable

@@ -1,5 +1,55 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-21)
 
+> **■■ 2026-10-21 END OF SESSION: READ THIS BLOCK FIRST ■■**
+>
+> **Live on Render (`main` = `0eb8959`).** Two deploys today, both on the owner's explicit word, both CI green and smoked live:
+> * **PR #18 → `bf1f6ba`:** H7 counts-only "Was this answer helpful?" signal. Production `DRLCA_SIGNAL` lines are confirmed in Render's
+>   logs. They carry only the documented fields and no question text.
+> * **PR #19 → `0eb8959`:** the four H2/H3 a11y leftovers fixed:
+>   * read-aloud follows the NGO filter;
+>   * the route choice is a native radio group;
+>   * the slider has a single name;
+>   * a skip link and named landmarks.
+>
+>   PR #19 also carried the H7 deploy record and the **H6 review pack** (`docs/review/h6_review_sheet.{csv,md}`, 30 rows, zero quota).
+>   The reviewer blocked the first a11y attempt (focus loss on the route buttons) and passed the fix.
+>
+> **Housekeeping done:**
+> * stale PRs #10 and #11 closed (all their commits were already in `main`);
+> * PR #17 auto-merged via #18;
+> * Render CLI reinstalled and logged in (`%LOCALAPPDATA%/Programs/render-cli/render.exe`, v2.28.0);
+> * the tool-results file that held the `test` questions deleted, unread.
+>
+> **Unmerged (docs only; merging redeploys, so bundle with the next code merge):** `phase11/docs-a11y-deploy` (this record).
+>
+> **Telemetry lines to DISCOUNT in the week-1 read:** `b9be6975e327`, `7cba04a4cbd6`, `6c1d650bf360`, `cf37bfd78551` (agent smoke
+> runs, all `turn`, no `helpful`).
+>
+> **Next:**
+> 1. **On/after 2026-10-28 (agent):** `render logs -r srv-dah26opt0dsc73e9a350 --text DRLCA_SIGNAL --limit 100 --direction backward -o text --confirm`
+>    → file → `scripts/summarise_signal.py` (minus the 4 ids) → H7 results box. Then decide which of M2 / F2 / H5a to reopen, each
+>    with a new pre-declared gate.
+> 2. **Owner decisions:**
+>    * Does `test` still count as unread? An agent command printed it into a temp file, which no model is known to have read; the file is now deleted.
+>    * Send the H6 sheet to a legal reviewer.
+>    * H5b needs 2 days of Gemini quota (about 45 calls) and native Yoruba, Hausa and Igbo checkers.
+> 3. **Agent, small, open:**
+>    * an NVDA listen-through of the new radio and skip link;
+>    * best-practice `heading-order` (H1 → H3 "Conversation so far");
+>    * Cedar Foundation RECHECK;
+>    * the Streamlit 1.66 `aria-expanded` migration (H2 CSS + bridge);
+>    * plan H8 (corpus expansion) as a playbook first.
+>
+> **Gotchas learned today:**
+> * Auto mode sometimes blocks `gh pr merge` to `main` even with the owner's yes (it allowed #19 and blocked #18). If it blocks,
+>   give the owner the exact `!` command.
+> * Changing a Streamlit button's label remounts it and drops keyboard focus. Prefer native widgets, and **test focus** as well as state.
+> * Smoke runs that ask a question write production telemetry, and retry loops multiply that. Count attempts, and record the ids.
+> * Earlier axe baselines use WCAG tags only, so best-practice findings are not regressions against them.
+> * The control-character scan must also count lone `\r`. A heredoc turned `\r` into a carriage return three times today. Write such text with the Edit tool, not a heredoc.
+> * Render's log API returns transient 503s; retry.
+> * The free instance paints the turn slowly, so smoke scripts must wait for elements and not use fixed sleeps.
+
 > **■ 2026-10-21 (LATEST): PR #19 MERGED + DEPLOYED** (`main` = `0eb8959`, on the owner's word "merge it when the reviewer passes"; reviewer SHIP,
 > CI green). This shipped the a11y leftover fixes, the H7 deploy record and the H6 review pack. Live smoke passed:
 > * `tools/a11y_audit/live_smoke_a11y.mjs` (asks NO question): slider has a single name, main + Settings landmarks, the skip link is topmost and focuses H1,

@@ -3472,3 +3472,18 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
    **Compare like with like before calling a regression.**
 4. My own heredoc wrote `\r` (a raw carriage return) into a Windows path in HANDOFF. The control-character scan
    had skipped 0x0D, so the scan now also counts lone CRs.
+
+## 2026-10-21 — Session close: two deploys, the review pack, and what the logs proved
+
+- **Two deploys, both on the owner's explicit word.** PR #18 (H7 signal) and PR #19 (a11y leftovers + H6 pack + records).
+  `main` = `0eb8959`. Both were smoked live. The H7 telemetry is proven in production: four agent smoke lines are in Render's
+  logs with exactly the documented fields and no `q`.
+- **Making the telemetry observable was a job in itself.** The Render CLI had vanished from the machine, and auto mode
+  blocked using its stale token, correctly. A checksum-verified reinstall and a fresh browser login did it. That gives
+  the week-1 read a one-command path.
+- **The H6 review pack is ready and nothing has gone external.** Its building agent made a held-out exposure slip:
+  a filter on the wrong field printed the `test` split into a temp file. It was recorded and the file deleted unread. Whether
+  `test` still counts as clean is the owner's call. `test2` is unaffected.
+- **Review earned its cost again.** The a11y fix passed 178 asserts and my own browser check, yet broke keyboard focus.
+  Only an independent look that tested *behaviour* (activeElement after Enter) caught it. Source-text asserts prove
+  presence, never behaviour.
