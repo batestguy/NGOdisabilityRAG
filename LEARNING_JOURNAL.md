@@ -3421,3 +3421,28 @@ answered "autism … Owerri" with umbrella bodies, because the router's slot sca
 vocabulary that predated the new types and places. Only a browser check with a natural question
 showed it; the matrix, which calls `find_ngo_with_meta` with ready-made slots, never could.
 `test_phase03` now pins natural questions end to end.
+
+## 2026-10-18 — H4: the fourth lexical signal, and why the Pidgin row decides
+
+The pre-declared vocabulary-coverage guard caught 2/5 dev off-corpus questions and was declined
+without touching a held-out set. The failure is structural, not a tuning miss. Questions about
+landlords, drink-driving and trade marks are fully covered by the Constitution's 4,439-stem
+vocabulary. They are legal, just not disability law, and no lexical signal over this corpus can
+tell those apart. On the other side, the lowest-coverage *answerable* question was Pidgin
+("Abeg, if person wey dey use wheelchair…", 0.667). So the users most likely to be refused by any
+lexical guard are the ones the service most needs to reach. That makes four term-level signals
+(BM25, corpus synonyms, static embeddings, coverage) that fail for the same reason. The next idea
+has to be topical ("is this about disability at all?"), and it must clear the Pidgin and register
+probes before any held-out read. Process note: committing the blind set before measuring and
+gating held-out reads on dev means a decline costs nothing that matters. All three held-out sets
+are still clean.
+
+## 2026-10-18 — H5a: the baseline was already doing the work
+
+The Pidgin-routed static arm lifted 1 of 10 dev questions and was declined. The more useful
+number is the baseline: shipping retrieval scores 0.700 on fresh Pidgin, because Pidgin shares
+most of its content words with English ("hospital", "school fees", "wheelchair", "sack") and the
+hand map and OOV bridge cover the rest. The two misses neither arm reaches ("forge … paper",
+"contest election") are vocabulary gaps, not meaning gaps. A semantic arm was the wrong tool for
+them. The router behaved as specified (0 frozen-10 firings; its one dev firing did not drop),
+so the routing idea itself was sound and simply had little left to win.

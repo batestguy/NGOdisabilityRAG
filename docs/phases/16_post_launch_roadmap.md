@@ -282,6 +282,28 @@ current behaviour. False refusals deny help to PWDs; this gate leans that way on
 **Do not.** Touch `MIN_SCORE` or the strict-prompt `NO_ANSWER_SENTENCE` path. Tune the threshold
 after reading test or test2. Hide the excerpts entirely when the guard fires.
 
+> **H4 RESULT (2026-10-18): DEV GATE FAILED → DECLINED. Current behaviour kept. Zero quota.**
+> * Blind set `data/eval/offtopic_h4.json` (20 off-corpus + 5 near-miss) committed **before** any
+>   measurement (`be6ceef`). **It is still UNREAD**, as are `test` and `test2` off-corpus: the dev
+>   gate failed first, so no held-out read happened. All three stay clean for a future attempt.
+> * Signal as pre-declared: the share of the query's content stems known to the v2 corpus after the
+>   shipping expansion. THETA was chosen on dev = **0.6667** (the largest value firing on no dev
+>   answerable row; dev answerable fired 0/25).
+> * **Dev off-corpus caught 2/5 (needs 3):** fertiliser/tomatoes 0.600 and Android password 0.000
+>   fired. Landlord eviction, drink-driving penalty and trade mark scored **1.000**: the
+>   Constitution's vocabulary covers general legal language, the same reason the cosine bands are
+>   inverted. The one retreat (top-hit chunk share) is allowed only at **0/5**, so it is not
+>   available.
+> * **The binding answerable row is Pidgin `H26` (0.667).** Any THETA strict enough to catch the
+>   legal-sounding off-topic questions refuses Pidgin speakers first. That is the failure this gate
+>   exists to prevent.
+> * **Generalises:** this is the fourth term-level lexical signal (E2 BM25, E3 synonym map, F0
+>   static embeddings, and now coverage) that cannot separate "legal but not disability" from
+>   "disability". A future attempt needs a *topical* signal (is the question about disability or
+>   PWD rights at all?), not a lexical one, and must clear the Pidgin and register probes.
+> * Harness archived on `phase11/h4-offtopic` at `e884f85` (`scripts/ablate_h4_offtopic.py`),
+>   **not on `main`**. Dev output: `runs/h4_offtopic/dev_2026-10-18.txt` (gitignored).
+
 ---
 
 ## H5 — Language support (spec Feature 1)
@@ -300,6 +322,22 @@ OOV-heavy).
    **0** frozen-10 / dev / test / test2 questions (or, if it fires, those questions don't drop);
    0/212; serving numpy-only, artifact ≤ 40 MB. Static-arm serving still needs F1's port and parity
    test (`docs/phases/15`).
+
+> **H5a RESULT (2026-10-18): DEV GATE FAILED → DECLINED. Zero quota. Behaviour unchanged.**
+> * The blind set `data/eval/pidgin_h5a.json` (10 dev / 10 test, corpus-verified refs) was committed
+>   **together with the frozen router rule and arm parameters** before any number. **Pidgin-test is
+>   UNREAD.** The set was written by a non-native speaker; a native read is recommended before reuse.
+> * Pidgin-dev: **shipping 0.700 → routed 0.800, 1 up (PD05 free healthcare) / 0 down = net +1** (needs +2).
+>   The router fired on 0 frozen-10, 1 dev (H26, no drop), 1 test and 3 test2 rows (found by text
+>   only; those scores were not read). Model 29.3 MB.
+> * **Finding: shipping already serves Pidgin better than expected (7/10)**, because the hand map and
+>   OOV bridge carry much of it. The two misses neither arm reaches are vocabulary gaps: "forge …
+>   paper" (cl.23) and "contest election" (cl.30). They are not semantic. A `SYNONYMS` edit could
+>   close them, but it needs a fresh 212-probe calibration and must not be fitted to these dev rows.
+>   That is a lead, not done.
+> * Harness archived on `phase11/h5a-pidgin` at `5b28c07` (`ablate_h5a_pidgin.py` +
+>   `ablate_static.py` reproduced from F0), **not on `main`**. Dev output:
+>   `runs/h5a_pidgin/dev_2026-10-18.txt`.
 
 ### H5b — Yoruba / Hausa / Igbo: opt-in LLM path only (quota)
 * Behind its own opt-in control, default OFF. Gemini translates the question **in** to English, the
@@ -364,6 +402,20 @@ and summarised in Results. Then re-open the M2 / F2 / H5a questions with real da
 pre-declared gate.
 
 **Do not.** Log text by default. Add analytics SDKs. Log `st.session_state` history.
+
+> **H7 BUILT (2026-10-18, branch `phase11/h7-signal`; zero quota; NOT merged).**
+> * A "Was this answer helpful?" native radio group per assistant turn, with the privacy note beside it.
+> * One counts-only `DRLCA_SIGNAL` stdout line per NEW turn (never on replay), plus one per helpful
+>   answer, joined by a random per-turn token. Question text is included only under the separate
+>   sidebar opt-in (default OFF), truncated to 300 characters. No session id, history or IP.
+> * The full record for review is `docs/telemetry.md`. Counts: `scripts/summarise_signal.py` on lines
+>   pasted from Render's logs.
+> * Asserts: `test_phase09_ops` (+11 H7) green; `test_phase05` 171/171. Browser: tokens join, a rerun
+>   emits nothing, clear resets. axe matrix 0 serious/moderate/minor.
+> * Fixed on the way: "Clear conversation" left per-turn widget keys behind, so a new turn 0
+>   inherited the old one's NGO filter (an H3 bug).
+> * **Exit gate:** asserts green ✅. **Owner review of `docs/telemetry.md`: PENDING.** First week of
+>   counts: needs the deploy, then a week of traffic.
 
 ---
 
