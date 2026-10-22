@@ -3556,3 +3556,12 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   redistribution and derivative works. It is also the riskiest for this audience: a treaty right a Nigerian court will not
   enforce directly reads as a right. Secondary sources disagreed on its ratification date (2007 vs 2010); the UN Treaty
   Collection settles it at 24 September 2010, with 30 March 2007 as the signature date.
+
+## 2026-10-22 — H8a.0 signed: Accessibility Regulations 2023
+
+- The owner chose the Persons with Disabilities (Accessibility) Regulations, 2023 and signed the reuse line in session.
+  The gazette PDF is filed in `data/raw/` with its hash and a `SOURCES.md` row. It is not parsed or in the corpus.
+- **Recorded as not stated, not assumed:** whether the signature also covers the Act gazette that is already live. A sign-off
+  is evidence only for what was actually said, so the box stays unticked until the owner answers.
+- `HANDOFF.md` now has one current block. The 2026-10-21 and earlier 2026-10-22 blocks moved verbatim to history; every
+  gotcha in them already had a durable home after H8c. Next is H8a.1: questions before parser.

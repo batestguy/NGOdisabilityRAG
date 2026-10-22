@@ -57,10 +57,16 @@ administrative penalty for non-compliance. The CRPD (B) has a real licence quest
 
 ## Owner sign-off
 
-- [ ] **Chosen document:** ______ (recommended: A, the Accessibility Regulations 2023)
-- [ ] **Reuse position:** "DRLCA may store and quote the chosen text verbatim with citation, non-commercially." Signed: ______ Date: ______
-- [ ] Also covers the Act gazette already in the corpus (`data/raw/disability_act_2018_gazette_FGP.pdf`): yes / no
+- [x] **Chosen document:** **A, Persons with Disabilities (Accessibility) Regulations, 2023 (S.I. No. 51 of 2023)**
+- [x] **Reuse position:** "DRLCA may store and quote the chosen text verbatim with citation, non-commercially."
+  **Signed: the owner (repo owner `batestguy`), 2026-10-22, in session:** *"go with the Accessibility Regulations, I sign off".*
+- [ ] Also covers the Act gazette already in the corpus (`data/raw/disability_act_2018_gazette_FGP.pdf`): **not stated in
+  the sign-off.** Ask the owner to confirm yes or no next session; until then the Act's reuse position stays unrecorded.
 - [ ] Optional: put the one-line reuse question to the H6 legal reviewer.
+
+**Filed after sign-off:** `data/raw/accessibility_regulations_2023_gazette_FGP.pdf`, sha256
+`04bb8bec217b6ca01fa3ac3e5b5893ed619b2970ea7cb4b81f4ba2c047f28b05` (identical to the dossier download), with a row in
+`data/raw/SOURCES.md`. Nothing in `data/raw/` is read at boot, and nothing has been parsed.
 
 **After signing:** H8a.1 (author dev + blind `test3` questions from the official text, committed before any parsing). It can
 start before the H6 review returns, because it changes nothing users see. **H8a.5's cut-over waits for H6.**

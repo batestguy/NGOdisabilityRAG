@@ -10,6 +10,7 @@
 | 2 alt | Constitution 1999 Cap. C23 (FREE PDF) | NHRC | https://nigeriarights.gov.ng/files/publications/1999%20CONSTITUTION%20OF%20THE%20FRN.pdf |
 | 3 | Disability Act Easy-to-Read Version | JONAPWD | https://jonapwdng.org/easy-to-read-version-of-the-disability-act-2018/ (also announced on JONAPWD LinkedIn, Apr 2023) |
 | 1 **authoritative** | Same Act as published — **Official Gazette No. 10, Vol. 106, Lagos, 21 January 2019, Act No. 2, pages A97–A122** | Federal Government Printer, Lagos (FGP 007/12019/700) | `data/raw/disability_act_2018_gazette_FGP.pdf` — 27 scanned pages, **no text layer**, filed Phase 10 D0 (2026-09-17) |
+| 4 (H8a) | **Persons with Disabilities (Accessibility) Regulations, 2023 — S.I. No. 51 of 2023**, Official Gazette No. 122, Vol. 110, Lagos, 7 July 2023, pages B1343–1513 (made 22 May 2023 under Act s. 56) | NCPWD, https://ncpwd.gov.ng/pdfs/44document.pdf (Federal Government Printer, FGP 110/52023/150) | `data/raw/accessibility_regulations_2023_gazette_FGP.pdf` — 173 pages, **born-digital text layer** (regs 1–172 on pp. 9–68; First Schedule figures pp. 69–172 are images), sha256 `04bb8bec…8b05`, downloaded 2026-10-22. Reuse signed by the owner 2026-10-22 (`docs/h8a_source_dossier.md`). **Not yet in the corpus.** |
 
 > **The gazette copy is the authoritative source for corpus v2** (Phase D). Rows 1 / 1 alt
 > above are the free web transcriptions v1 was built from; where they and the gazette

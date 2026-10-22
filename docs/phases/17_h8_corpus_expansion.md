@@ -219,8 +219,11 @@ question shows the same tags as the local measurement.
 
 ## Results
 
-> **H8a.0 — 2026-10-22, DOSSIER WRITTEN → `docs/h8a_source_dossier.md` (branch `phase11/h8a-sources`; zero quota).
-> Exit gate PENDING the owner's signature.**
+> **H8a.0 — 2026-10-22, EXIT GATE MET.** The owner chose **A (Accessibility Regulations 2023)** and signed the reuse line
+> in session ("go with the Accessibility Regulations, I sign off"). The PDF is filed at
+> `data/raw/accessibility_regulations_2023_gazette_FGP.pdf` (sha256 matches) with a `SOURCES.md` row. Whether the
+> signature also covers the Act gazette was not stated: ask next session. **Next: H8a.1.** Dossier:
+> `docs/h8a_source_dossier.md` (branch `phase11/h8a-sources`; zero quota).
 > * **A, Accessibility Regulations 2023 (recommended).** S.I. No. 51 of 2023, Gazette No. 122 Vol. 110 (7 July 2023), from
 >   https://ncpwd.gov.ng/pdfs/44document.pdf (the same NCPWD folder as the Act gazette). 173 pp, sha256 `04bb8bec…8b05`.
 >   Born-digital text: 172 regulations on pp. 9–68; the First Schedule is figures (images, to exclude). Made under s. 56 of

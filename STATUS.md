@@ -29,14 +29,14 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 
 ## Open
 
-- **Active: H8 — `docs/phases/17_h8_corpus_expansion.md`.** H8c + H8b DONE and live. H8a.0 dossier
-  written (`docs/h8a_source_dossier.md`, branch `phase11/h8a-sources`): recommends the Accessibility
-  Regulations 2023 (S.I. 51). **Waiting on the owner's pick + reuse sign-off**, then H8a.1 (questions first).
+- **Active: H8 — `docs/phases/17_h8_corpus_expansion.md`.** H8c + H8b DONE and live. H8a.0 DONE: the owner
+  chose + signed the **Accessibility Regulations 2023 (S.I. 51)** (`docs/h8a_source_dossier.md`; PDF in `data/raw/`).
+  **Next: H8a.1** (dev + blind `test3` questions, committed before any parser).
 - **H7 week-1 read on/after 2026-10-28** (command in `HANDOFF.md`; discount 4 smoke ids).
 - **Owner:** is `test` still clean? · send the H6 review sheet (`docs/review/h6_review_sheet.md`) to a
-  legal reviewer · H5b needs 2 quota days (~45 calls) + native Yoruba/Hausa/Igbo checkers · H8a source
-  pick + reuse sign-off (covers the Act gazette too; none was ever recorded).
+  legal reviewer · H5b needs 2 quota days (~45 calls) + native Yoruba/Hausa/Igbo checkers · does the H8a
+  reuse sign-off also cover the live Act gazette? (not stated; none was ever recorded).
 - **Deferred:** NGO directory growth past 20 (no Facebook route). Old owner items (demo GIF encode, LinkedIn) are in `docs/history/status_history.md`; still wanted?
 - **Small:** NVDA listen-through of radio + skip link · best-practice `heading-order` (H1 → H3) ·
   Cedar RECHECK · Streamlit 1.66 bump (`aria-expanded` migration).
-- **Unmerged docs branch:** `phase11/h8a-sources` (dossier + this record; merging redeploys, so bundle it).
+- **Unmerged branch:** `phase11/h8a-sources` (pushed; dossier + Regs PDF + records; merging redeploys, so bundle with H8a code).
