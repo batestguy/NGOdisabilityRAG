@@ -5,15 +5,15 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 
 ## Live
 
-- **https://ngodisabilityrag.onrender.com** (Render free, `srv-dah26opt0dsc73e9a350`), `main` = `0eb8959`
-  (PR #19, deployed and live-smoked 2026-10-21).
+- **https://ngodisabilityrag.onrender.com** (Render free, `srv-dah26opt0dsc73e9a350`), `main` = `94db479`
+  (PR #20: H8 playbook + H8c + H8b; deployed and live-smoked 2026-10-22).
 - Multi-turn chat; helplines first on the page and on every turn; offline by default; Gemini AI expander
   opt-in, default OFF (`cite-strict-v3` / `chat-cite-strict-v2`, "recommendable" per Phase G).
 - Corpus v2 (Act gazette-OCR, clause-aligned, cl.1/12/20 corrections signed; Constitution; Factsheet).
   Retrieval `k=4/doc, top_n=12`, hand `SYNONYMS` + OOV bridge, `MIN_SCORE = 0.10`.
 - NGO directory: 20 verified orgs, 6 zones, filter/sort (H3). Cedar Foundation = RECHECK (website blank).
 - Accessibility: WCAG 2.2 AA audit (H2) + leftovers fixed (skip link, landmarks, native route radio,
-  single-name slider, read-aloud follows NGO filter). Axe WCAG 0 except one Streamlit-internal node.
+  single-name slider, read-aloud follows NGO filter). Axe WCAG matrix 0 (local, 2026-10-22).
 - H7 counts-only "Was this answer helpful?" signal in Render logs (`DRLCA_SIGNAL`).
 - CI: `.github/workflows/offline-suites.yml` on every PR and push.
 
@@ -29,15 +29,14 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 
 ## Open
 
-- **Active: H8 — `docs/phases/17_h8_corpus_expansion.md`.** H8c (doc slimming) DONE on
-  `phase11/h8c-docs`; H8b (render helpers → `src/ui_render.py`) DONE on `phase11/h8b-split`, not
-  merged, reviewer pending; next H8a (new legal source; H8a.0 dossier first).
+- **Active: H8 — `docs/phases/17_h8_corpus_expansion.md`.** H8c + H8b DONE and live. H8a.0 dossier
+  written (`docs/h8a_source_dossier.md`, branch `phase11/h8a-sources`): recommends the Accessibility
+  Regulations 2023 (S.I. 51). **Waiting on the owner's pick + reuse sign-off**, then H8a.1 (questions first).
 - **H7 week-1 read on/after 2026-10-28** (command in `HANDOFF.md`; discount 4 smoke ids).
 - **Owner:** is `test` still clean? · send the H6 review sheet (`docs/review/h6_review_sheet.md`) to a
-  legal reviewer · H5b needs 2 quota days (~45 calls) + native Yoruba/Hausa/Igbo checkers · H8a source pick.
+  legal reviewer · H5b needs 2 quota days (~45 calls) + native Yoruba/Hausa/Igbo checkers · H8a source
+  pick + reuse sign-off (covers the Act gazette too; none was ever recorded).
 - **Deferred:** NGO directory growth past 20 (no Facebook route). Old owner items (demo GIF encode, LinkedIn) are in `docs/history/status_history.md`; still wanted?
 - **Small:** NVDA listen-through of radio + skip link · best-practice `heading-order` (H1 → H3) ·
   Cedar RECHECK · Streamlit 1.66 bump (`aria-expanded` migration).
-- **Unmerged docs branches** (merging redeploys; bundle with the next code merge):
-  `phase11/docs-a11y-deploy` (`2325e29`, includes the H8 playbook), `phase11/h8c-docs`.
-- **Unmerged code branch:** `phase11/h8b-split` (stacks on the docs branches; H8b, no behaviour change).
+- **Unmerged docs branch:** `phase11/h8a-sources` (dossier + this record; merging redeploys, so bundle it).

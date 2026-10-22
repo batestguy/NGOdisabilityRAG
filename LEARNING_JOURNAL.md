@@ -3539,3 +3539,20 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
 - "Same counts" was checked like for like: HEAD in a detached worktree and the branch, on two local ports, through the
   same axe matrix and focus probes. Comparing against counts recorded on another day would have mixed in Streamlit and
   bridge changes.
+
+## 2026-10-22 — PR #20 deployed; H8a.0: the source question turned into a licence question
+
+- PR #20 (H8 playbook + H8c + H8b) was merged on the owner's word: `main` = `94db479`. CI was green and the read-only live
+  smoke passed. Because that smoke asks no question, it writes nothing to production telemetry. Prefer it for refactor
+  deploys.
+- **The best new source was already on the NCPWD's own site.** The Accessibility Regulations 2023 (S.I. 51) sit in the
+  same `/pdfs/` folder that supplied the Act gazette in Phase D. Unlike that gazette, this copy is born-digital, so no OCR
+  is needed. Its 172 regulations are text; the First Schedule is figures to exclude. It was made under Act s. 56, which the
+  corpus already holds, so the authority chain is citable from inside the corpus.
+- **The dossier's licence column exposed a gap in the live system:** no reuse position was ever written down for the Act
+  gazette that has served users since 2026-09-19. Federal statutes are public law and published by the regulator, so this is
+  probably fine, but "probably" was never signed. The owner sign-off now covers both documents.
+- The CRPD looked like the clean choice (stable, article-numbered). It is the hardest on licence: un.org's terms forbid
+  redistribution and derivative works. It is also the riskiest for this audience: a treaty right a Nigerian court will not
+  enforce directly reads as a right. Secondary sources disagreed on its ratification date (2007 vs 2010); the UN Treaty
+  Collection settles it at 24 September 2010, with 30 March 2007 as the signature date.

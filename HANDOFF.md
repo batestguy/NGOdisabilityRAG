@@ -1,5 +1,17 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-22)
 
+> **■■ 2026-10-22 END STATE: READ THIS FIRST ■■**
+> * **Live: `main` = `94db479`** (PR #20 = H8 playbook + H8c + H8b, merged on the owner's word "merge"). CI green; Render
+>   `dep-dbcrr8k9v7es73bse4u0` live 07:41 UTC. Live smoke `live_smoke_a11y.mjs` PASSED; it asks no question, so there are **no new
+>   telemetry lines to discount**.
+> * **H8a.0 dossier → `docs/h8a_source_dossier.md`** on `phase11/h8a-sources` (docs, not pushed). It recommends the
+>   **Accessibility Regulations 2023** (S.I. 51, from `ncpwd.gov.ng/pdfs/44document.pdf`, born-digital, 172 regs). The PDF
+>   is at `runs\h8a0\dl_regs\regs2023.pdf`, not in `data/raw/` yet. CRPD: licence obstacle. Lagos law: no official text.
+> * **Owner next:** tick the sign-off box in the dossier (the document + a reuse line that also covers the Act gazette).
+>   Then **H8a.1:** author dev + blind `test3` questions from the official text and commit them BEFORE any parsing.
+> * Still open: H7 week-1 read on/after 2026-10-28; H6 reviewer; `test` decision; H5b.
+> * The H8b/H8c blocks below are superseded by this one (both are now on `main`).
+
 > **■ 2026-10-22 (latest): H8b DONE → `ef9ae90` + `3b02875` on `phase11/h8b-split`** (stacked on `phase11/h8c-docs`;
 > not pushed, not merged). 11 render helpers moved verbatim to `src/ui_render.py` (`app.py` 1,748 → 1,352). The other 3
 > stay in `app.py` because they compute with app state. Reviewer SHIP: AST-identical move, test_phase05 179/179 with the

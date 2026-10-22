@@ -219,6 +219,22 @@ question shows the same tags as the local measurement.
 
 ## Results
 
+> **H8a.0 — 2026-10-22, DOSSIER WRITTEN → `docs/h8a_source_dossier.md` (branch `phase11/h8a-sources`; zero quota).
+> Exit gate PENDING the owner's signature.**
+> * **A, Accessibility Regulations 2023 (recommended).** S.I. No. 51 of 2023, Gazette No. 122 Vol. 110 (7 July 2023), from
+>   https://ncpwd.gov.ng/pdfs/44document.pdf (the same NCPWD folder as the Act gazette). 173 pp, sha256 `04bb8bec…8b05`.
+>   Born-digital text: 172 regulations on pp. 9–68; the First Schedule is figures (images, to exclude). Made under s. 56 of
+>   the Act, which is cross-checked against `act2018_v2_clauses.json` cl. 56.
+> * **B, CRPD.** Ratified 24 Sep 2010 (UN Treaty Collection). un.org's terms bar redistribution and derivative works, so
+>   it needs a legal answer, and it is not domestically enforceable (Constitution s. 12).
+> * **C, Lagos law 2011.** No free official text found. Blocked on LASODA.
+> * **Found on the way:** the project has never recorded a reuse position for the Act gazette already in the corpus.
+>   The owner sign-off is drafted to cover both.
+> * Also 2026-10-22: **PR #20 (H8 playbook + H8c + H8b) MERGED on the owner's word → `main` = `94db479`, deployed** (Render
+>   `dep-dbcrr8k9v7es73bse4u0`, live 07:41 UTC). CI green on both runs. The live smoke `live_smoke_a11y.mjs` (asks no question,
+>   so no telemetry) PASSED: helplines on the page, slider has a single name, landmarks present, skip link on top and focusing
+>   H1, route radio keeps focus, 0 page errors. `/_stcore/health` returns `ok`.
+
 > **H8c — 2026-10-22, EXIT GATE MET (branch `phase11/h8c-docs`, not merged; zero quota).**
 > * `CLAUDE.md` 369 → **210 lines**. Retrieval/corpus/eval detail is in `.claude/rules/retrieval.md` (paths: `src/`
 >   retrieval modules, `data/processed/**`, `data/eval/**`, `scripts/**/*.py`). UI/CSS/a11y detail is in
