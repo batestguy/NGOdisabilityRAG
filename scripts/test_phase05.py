@@ -126,7 +126,9 @@ check("help-banner-first", hp["records"][0]["phone"] == "08000-3000-100"
 check("help-confirm-gated-or-clean", (not hp["needs_confirmation"]) or bool(hp["confirm_prompt"]))
 # H8b: the badge is rendered by render_help_records, now in ui_render.
 check("help-badge-text-in-src", "please confirm this matches your need" in ui_src)
-check("help-confirm-prompt-rendered", 'payload.get("confirm_prompt"' in src or "confirm_prompt" in src)
+# H8b review: the render path moved to ui_render, so the strict clause now reads ui_src (the old
+# loose `"confirm_prompt" in src` was satisfiable by app.py docstrings alone).
+check("help-confirm-prompt-rendered", 'payload.get("confirm_prompt"' in ui_src)
 
 # 6. Routing trap ------------------------------------------------------------
 # H8b: render_routing_trap moved to ui_render (its call sites stay in app.py).
