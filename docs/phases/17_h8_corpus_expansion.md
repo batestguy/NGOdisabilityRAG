@@ -221,8 +221,8 @@ question shows the same tags as the local measurement.
 
 > **H8a.0 — 2026-10-22, EXIT GATE MET.** The owner chose **A (Accessibility Regulations 2023)** and signed the reuse line
 > in session ("go with the Accessibility Regulations, I sign off"). The PDF is filed at
-> `data/raw/accessibility_regulations_2023_gazette_FGP.pdf` (sha256 matches) with a `SOURCES.md` row. Whether the
-> signature also covers the Act gazette was not stated: ask next session. **Next: H8a.1.** Dossier:
+> `data/raw/accessibility_regulations_2023_gazette_FGP.pdf` (sha256 matches) with a `SOURCES.md` row. The owner then
+> confirmed the signature also covers the live Act gazette ("yes it covers the Act gazette too"). **Next: H8a.1.** Dossier:
 > `docs/h8a_source_dossier.md` (branch `phase11/h8a-sources`; zero quota).
 > * **A, Accessibility Regulations 2023 (recommended).** S.I. No. 51 of 2023, Gazette No. 122 Vol. 110 (7 July 2023), from
 >   https://ncpwd.gov.ng/pdfs/44document.pdf (the same NCPWD folder as the Act gazette). 173 pp, sha256 `04bb8bec…8b05`.

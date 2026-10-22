@@ -16,8 +16,7 @@
 >
 > **Next session, in this order:**
 > 1. **Run `/context` once.** Confirm `.claude/rules/retrieval.md` and `ui.md` do NOT load at startup (H8c check, never run).
-> 2. **Ask the owner:** does the reuse sign-off also cover the Act gazette already live (`data/raw/disability_act_2018_gazette_FGP.pdf`)?
->    It was not stated. Record the answer in the dossier's sign-off box.
+> 2. ~~Ask about the Act gazette~~ **Answered 2026-10-22: the reuse sign-off covers the live Act gazette too** (recorded in the dossier).
 > 3. **H8a.1 (zero quota), branch from `phase11/h8a-sources`.** Spec: `docs/phases/17_h8_corpus_expansion.md` H8a.1.
 >    * Author **~20 questions from the official PDF text**, before any parser exists: **dev ~8** and a blind **`test3` ~12**,
 >      plus **~6 status probes**. For the Regulations a status probe asks things like "what law lets the Commission make these

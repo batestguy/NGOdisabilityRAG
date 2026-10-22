@@ -3565,3 +3565,5 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   is evidence only for what was actually said, so the box stays unticked until the owner answers.
 - `HANDOFF.md` now has one current block. The 2026-10-21 and earlier 2026-10-22 blocks moved verbatim to history; every
   gotcha in them already had a durable home after H8c. Next is H8a.1: questions before parser.
+- Later the same day, the owner confirmed the reuse signature also covers the Act gazette. The live corpus now has a
+  recorded reuse position for every document.

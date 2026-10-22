@@ -60,8 +60,8 @@ administrative penalty for non-compliance. The CRPD (B) has a real licence quest
 - [x] **Chosen document:** **A, Persons with Disabilities (Accessibility) Regulations, 2023 (S.I. No. 51 of 2023)**
 - [x] **Reuse position:** "DRLCA may store and quote the chosen text verbatim with citation, non-commercially."
   **Signed: the owner (repo owner `batestguy`), 2026-10-22, in session:** *"go with the Accessibility Regulations, I sign off".*
-- [ ] Also covers the Act gazette already in the corpus (`data/raw/disability_act_2018_gazette_FGP.pdf`): **not stated in
-  the sign-off.** Ask the owner to confirm yes or no next session; until then the Act's reuse position stays unrecorded.
+- [x] Also covers the Act gazette already in the corpus (`data/raw/disability_act_2018_gazette_FGP.pdf`): **YES.**
+  The owner confirmed this in session on 2026-10-22: *"yes it covers the Act gazette too".*
 - [ ] Optional: put the one-line reuse question to the H6 legal reviewer.
 
 **Filed after sign-off:** `data/raw/accessibility_regulations_2023_gazette_FGP.pdf`, sha256
