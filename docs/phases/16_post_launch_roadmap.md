@@ -461,11 +461,18 @@ pre-declared gate.
 > `7cba04a4cbd6` (00:29:31 UTC) on 2026-10-21; discount both when summarising. **Confirmed in Render's logs
 > 2026-10-21** via the Render CLI (v2.28.0): both lines carry exactly the documented fields, no `q`.
 > * **Exit gate:** asserts ✅ · owner review ✅ · deploy ✅ · **first week of counts: PENDING (read on/after
->   2026-10-28).** The production log line is confirmed (above).
+>   2026-10-28).** Discount 4 agent smoke `turn` lines: `b9be6975e327`, `7cba04a4cbd6`, `6c1d650bf360`,
+>   `cf37bfd78551` (2026-10-21; the last two are from the PR #19 deploy smoke). The production log line is confirmed (above).
 
 ---
 
 ## H8 — Corpus expansion and maintainability
+
+> **EXPANDED 2026-10-22 → `docs/phases/17_h8_corpus_expansion.md`. Work from that file, not this stub.**
+> Reading the code found the three-document assumption hard-coded in ≥10 places. Three of those
+> change behaviour or spend quota: `top_n == 3k` becomes `4k`, the prompt needs `cite-strict-v4`, and the
+> OOV bridge must become version-keyed or v2 stops reproducing. The order is now **H8c → H8b → H8a**,
+> and H8a ships only after the H6 review returns.
 
 ### H8a — new legal sources
 * Candidates: **NCPWD regulations**, and the **Lagos State Special People's Law 2011** (state-level,

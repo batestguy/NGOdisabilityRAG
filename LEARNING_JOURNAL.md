@@ -3472,3 +3472,70 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
    **Compare like with like before calling a regression.**
 4. My own heredoc wrote `\r` (a raw carriage return) into a Windows path in HANDOFF. The control-character scan
    had skipped 0x0D, so the scan now also counts lone CRs.
+
+## 2026-10-21 — Session close: two deploys, the review pack, and what the logs proved
+
+- **Two deploys, both on the owner's explicit word.** PR #18 (H7 signal) and PR #19 (a11y leftovers + H6 pack + records).
+  `main` = `0eb8959`. Both were smoked live. The H7 telemetry is proven in production: four agent smoke lines are in Render's
+  logs with exactly the documented fields and no `q`.
+- **Making the telemetry observable was a job in itself.** The Render CLI had vanished from the machine, and auto mode
+  blocked using its stale token, correctly. A checksum-verified reinstall and a fresh browser login did it. That gives
+  the week-1 read a one-command path.
+- **The H6 review pack is ready and nothing has gone external.** Its building agent made a held-out exposure slip:
+  a filter on the wrong field printed the `test` split into a temp file. It was recorded and the file deleted unread. Whether
+  `test` still counts as clean is the owner's call. `test2` is unaffected.
+- **Review earned its cost again.** The a11y fix passed 178 asserts and my own browser check, yet broke keyboard focus.
+  Only an independent look that tested *behaviour* (activeElement after Enter) caught it. Source-text asserts prove
+  presence, never behaviour.
+
+## 2026-10-22 — H8 planned: "add a document" was a Phase D in disguise
+
+- The roadmap's H8a stub read like data entry: a new `doc_id`, a citation scheme, then rebuild and re-measure. Reading the code
+  before writing the playbook found **the three-document assumption hard-coded in at least ten places**. Three of them matter:
+  1. **`top_n == 3 × k`** (E1b's load-bearing property) silently becomes a cut at 4 docs. The fix, `top_n=16`, enlarges the
+     display, so the budget is now a measured arm.
+  2. **The prompt lists three tag shapes.** A new shape means `cite-strict-v4`, and the Phase G evidence does not transfer.
+     So H8a ships offline first, with new-doc chunks kept out of the LLM context until a fresh ~30-call check passes.
+  3. **The OOV bridge is one artifact keyed on one corpus sha.** Rebuilding it for v3 would make `build_corpus("v2")`
+     hard-fail and break the "v2 reproduces from the same commit" rule. It has to become version-keyed first.
+- Also: two separate `DOC_IDS` tuples (`src/retrieve.py`, `scripts/evalset.py`), and `verify_citations` cannot see an
+  unknown tag shape. So the regexes must change in the same commit as the corpus, or fabricated new-doc tags would pass.
+- A source search found no free official full text for either the NCPWD Accessibility Regulations 2023 or the Lagos
+  Special People's Law 2011. The playbook therefore starts with a docs-only source dossier and an owner licence sign-off.
+- **Order changed to H8c → H8b → H8a:** the cheap, zero-risk items first, and the corpus change after the H6 lawyer review
+  returns, so the reviewer does not read a system that is about to change.
+
+## 2026-10-22 — H8c: splitting CLAUDE.md, and the drift a move introduces
+
+- `CLAUDE.md` went from 369 to 210 lines by lifecycle, not by topic. Durable rules stay in root. Retrieval and UI detail
+  went to path-scoped `.claude/rules/*.md`, with a root stub naming each danger. History moved verbatim to `docs/history/`.
+  `HANDOFF.md` went from 1,530 lines to 78.
+- **A "move" still rewrote rules.** My own 76-phrase checklist passed. The reviewer then found four rules whose meaning
+  had shifted while being moved:
+  - `SYNONYMS` "not casually" had become "frozen";
+  - `MIN_SCORE` had gained an unattributed "never up";
+  - "no `--failover` on G runs" had widened to all measurement runs;
+  - "two" quota-flag scripts was really three.
+  A phrase checklist proves presence, not meaning. It is the same lesson as source-text asserts against behaviour,
+  one level up.
+- Operating rules that lived only in HANDOFF's dated blocks (never kill NVDA; the answer cache is not evidence) would
+  have been archived out of sight. HANDOFF had become a second, unindexed CLAUDE.md. **Durable lessons now go
+  straight to `CLAUDE.md` or a rules file. HANDOFF holds only what expires.**
+
+## 2026-10-22 — H8b: moving render code without moving behaviour
+
+- `app.py` 1,748 → 1,352 lines. Eleven of the fourteen listed helpers, plus their private helpers and constants, went verbatim to `src/ui_render.py`, and
+  `app.py` re-exports every name. Three helpers on the list stayed: `render_legal`, `render_help` and
+  `render_ai_expander`. Each one *computes* (retriever, NGO loader, `_run_ai_turn` and the quota log), so moving it
+  would have needed `import app` or a callback. A smaller, honest move beat a forced one.
+- **A re-export does not carry a monkeypatch.** `app._st = fake` reaches code that looks `_st` up in `app`'s globals.
+  The moved helpers look it up in `ui_render`'s, so a fake on `app._st` alone silently stopped reaching them. A probe
+  proved it both ways. The suite's one fake now patches both modules. Any future test that patches an `app.<name>`
+  must ask which module's globals the caller reads.
+- Source-text asserts split three ways. Content that moved reads the new module. Placement asserts stay on `app.py`,
+  where the functions stayed. Negative asserts (no writer, no `st.form`) were **widened** to both files: left on
+  `app.py` alone, they would have passed vacuously for code that was no longer there. The count stayed 179 with the
+  same names, and three mutation break-tests confirmed the repointed asserts still bite.
+- "Same counts" was checked like for like: HEAD in a detached worktree and the branch, on two local ports, through the
+  same axe matrix and focus probes. Comparing against counts recorded on another day would have mixed in Streamlit and
+  bridge changes.
