@@ -1,6 +1,7 @@
 ---
 paths:
   - "app.py"
+  - "src/ui_render.py"
   - ".streamlit/**"
   - "static/**"
   - "tools/a11y_audit/**"

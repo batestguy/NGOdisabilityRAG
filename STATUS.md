@@ -23,12 +23,15 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
   test 0.647 · test2 0.629. False refusals 0 on every set. `calibrate_refusal` 0/212.
 - Generation (Phase G, 2026-10-15): judge 23/23, G4 0 cross-turn drift, G6 10/10 answered, 0 fabricated tags.
 - Suites (2026-10-22): `test_phase03` matrix 24/24 + statics 16/16 · `test_phase04` ALL PASS ·
-  `test_phase05` 179/179 · `test_phase09_ops` ALL PASS · `import app` OK.
+  `test_phase05` 179/179 · `test_phase09_ops` ALL PASS · `import app` + `import ui_render` OK.
+- UI code: `app.py` (run / render_turn / replay_turn / history / banner / loaders) 1,352 lines +
+  `src/ui_render.py` (shared render helpers, re-exported by `app`) 437 lines (H8b).
 
 ## Open
 
 - **Active: H8 — `docs/phases/17_h8_corpus_expansion.md`.** H8c (doc slimming) DONE on
-  `phase11/h8c-docs`; then H8b (split `app.py` helpers); then H8a (new legal source).
+  `phase11/h8c-docs`; H8b (render helpers → `src/ui_render.py`) DONE on `phase11/h8b-split`, not
+  merged, reviewer pending; next H8a (new legal source; H8a.0 dossier first).
 - **H7 week-1 read on/after 2026-10-28** (command in `HANDOFF.md`; discount 4 smoke ids).
 - **Owner:** is `test` still clean? · send the H6 review sheet (`docs/review/h6_review_sheet.md`) to a
   legal reviewer · H5b needs 2 quota days (~45 calls) + native Yoruba/Hausa/Igbo checkers · H8a source pick.
@@ -36,4 +39,5 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 - **Small:** NVDA listen-through of radio + skip link · best-practice `heading-order` (H1 → H3) ·
   Cedar RECHECK · Streamlit 1.66 bump (`aria-expanded` migration).
 - **Unmerged docs branches** (merging redeploys; bundle with the next code merge):
-  `phase11/docs-a11y-deploy` (`2325e29`, includes the H8 playbook), `phase11/h8c-docs` (this work).
+  `phase11/docs-a11y-deploy` (`2325e29`, includes the H8 playbook), `phase11/h8c-docs`.
+- **Unmerged code branch:** `phase11/h8b-split` (stacks on the docs branches; H8b, no behaviour change).

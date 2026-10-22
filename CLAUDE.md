@@ -66,7 +66,7 @@ app.py (Streamlit chat UI)
   │ run()            sidebar → title → banner → render_history() → voice draft → st.chat_input
   │ render_turn()    computes AND renders ONE NEW turn -> TurnPayload (fused on purpose, see below)
   │ replay_turn()    renders a STORED TurnPayload — no retrieval, no router, no network (asserted)
-  │ render_* helpers shared by both paths; helplines banner at page top + leading every assistant turn
+  │ render_* shared by both paths: src/ui_render.py (H8b, re-exported by app); banner leads page + every turn
   ▼
 src/chat.py      contextualise() (ellipsis / unbound pronouns), merge_help_slots(), TurnPayload, cross_turn_drift()
 src/router.py    keyword scorer, is_greeting(), clarify policy, extract_help_slots(), route(). STATELESS —

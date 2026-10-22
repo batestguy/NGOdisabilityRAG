@@ -245,3 +245,55 @@ question shows the same tags as the local measurement.
 >   session should run `/context` once and confirm neither rules file loads at startup.
 > * Suites: `test_phase03` 24/24 + 16/16 · `test_phase04` · `test_phase05` 179/179 · `test_phase09_ops` · `import app`,
 >   all PASS (nothing reads these files).
+
+> **H8b — 2026-10-22, EXIT GATE MET (branch `phase11/h8b-split`, not merged; zero quota). Reviewer pending.**
+> * **Moved to `src/ui_render.py`** (verbatim, 437 lines): `render_routing_trap` (+ `_requeue_last`, `_switch_label`),
+>   `render_greeting` + `GREETING_TEXT`, `render_clarify`, `dedupe_excerpts`, `render_excerpts` (+ `_render_excerpt`,
+>   `INLINE_EXCERPTS`), `render_plain_caption` (+ `_multi_turn`, `_prompt_id`), `render_context_note`, `render_defects`,
+>   `render_help_records` (+ `NGO_ANY_TYPE`, `NGO_ANY_STATE`, `NGO_SORTS`), `render_helpful` (+ `_helpful_changed`,
+>   `HELPFUL_PRIVACY_NOTE`), `render_voice_draft` (+ `try_voice_input`, `_import_mic_recorder`). `app.py` re-exports
+>   every moved name, so `app.<name>` and `inspect.getsource(app.<name>)` still work. `ui_render` never imports `app`.
+> * **Deviation: three listed helpers stayed in `app.py`**, because each computes as well as renders and calls app-level
+>   state: `render_legal` (`load_retriever`, `offline_legal_hits`), `render_help` (`load_ngo_df`, `help_display`,
+>   `help_directory`; `test_phase05` monkeypatches `app.help_display`), and `render_ai_expander` (its button calls
+>   `_run_ai_turn`, which needs `answer_legal`, `load_retriever` and `quota_log_record`). Moving them would need a
+>   callback or an `import app`, which is a design change and not a move.
+> * One expression changed: `_import_mic_recorder`'s src entry is now `Path(__file__).resolve().parent` (the file is
+>   inside `src/`). It resolves to the same directory; `mic-import-keeps-repo-chunk` passes.
+> * `_st`: `ui_render` has its own `_st()`. It returns the same `streamlit` module object as `app._st()` (checked), so
+>   session state written through either is read by both. **Patching `app._st` alone does NOT reach the moved helpers**
+>   (checked: a fake on `app._st` left `render_help_records` reading real state; a fake on `ui_render._st` reached it).
+>   The suite's one fake (around `quota_log_record`) now patches both.
+> * Lines: `app.py` 1,748 → **1,352**; `src/ui_render.py` **437** (total 1,789: re-export block + module docstring).
+> * **`test_phase05` 179/179, the same 179 check names in the same order** (diffed against HEAD). Changed asserts, each
+>   commented in place:
+>   * content now in `ui_render`, so it reads `ui_src`: `clarify-render-fn` (button keys; the `render_clarify` call is
+>     still checked in `app.py`), `greeting-render-fn` (the `def`), `help-badge-text-in-src`, `routing-trap-text`,
+>     `mic-fallback-text`, `drift-surfaced-not-absorbed`, `plain-caption-takes-prior-not-index` (the
+>     `_render_history` import; the call sites are still checked in `app.py`);
+>   * negatives widened to `src + ui_src` (stricter): `llm-quota-explained`, `no-top-level-generate`,
+>     `no-form-widget`, `only-writer-is-quota-log`;
+>   * no PLACEMENT assert changed: banner order in `render_turn` / `replay_turn` / `run`, and 4-space banner call sites,
+>     still read `app.py`.
+>   * `help-confirm-prompt-rendered` is unchanged and still passes through its pre-existing loose `or` clause
+>     (`"confirm_prompt" in src`, now satisfied by `build_speech_text`).
+> * **Break tests** (`ui_render` mutated, then restored and checked byte-identical): badge text removed →
+>   `help-badge-text-in-src` FAIL; filter state ignored → `minor-help-returns-filtered-records` FAIL; a `write_text(`
+>   added → `only-writer-is-quota-log` FAIL.
+> * `eval_heldout.py` and `eval_chat.py` stdout, before vs after (`runs\h8b\before|after\`): `eval_chat` **byte-identical**;
+>   `eval_heldout` differs only on one line, a timestamped Streamlit bare-mode warning.
+> * `test_phase03` 24/24 + 16/16 · `test_phase04` ALL PASS · `test_phase09_ops` ALL PASS · `audit_corpus` PASS ·
+>   `bench_phase01` PASS · `calibrate_refusal` PASS 0/212 · `import app` OK · `import ui_render` OK (it does not
+>   import streamlit at import time).
+> * **Browser, local only** (HEAD in a detached worktree on :8503 vs the branch on :8502; nothing ran against the live site):
+>   * `audit.mjs --mode=matrix`: 33 cells, **0 critical / 0 serious / 0 moderate / 0 minor, before and after,
+>     line-identical** (WCAG tags). The Streamlit-internal `aria-allowed-attr` node did not appear in either run.
+>   * `minor_check.mjs`: identical before/after except a React-generated id. Skip link is the first Tab stop and moves
+>     focus to H1, and is topmost at 1280, at 390 and in HC. Route radio keeps focus on ArrowUp. The NGO filter read-aloud
+>     follows the filter. The routing trap re-answers on legal. WCAG axe `[]`; best-practice only the known `heading-order`.
+>   * Scratch probe (ArrowDown ×2, ArrowUp ×3): focus stays on the checked radio on 5/5 presses, before and after.
+>   * Scratch probe: a legal turn (banner before "Your rights", valid tags, fold, AI expander) and a help turn (banner
+>     before "Help near you", 3 Lagos orgs, filter, routing trap). The replayed legal turn keeps its banner and the same
+>     tags. JSON is identical before/after.
+> * Also: `.claude/rules/ui.md` now path-scopes `src/ui_render.py` too, because the focus/widget-key rules apply to the
+>   moved widgets. `CLAUDE.md` architecture line updated (still 210 lines).

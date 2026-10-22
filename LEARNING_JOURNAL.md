@@ -3521,3 +3521,21 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
 - Operating rules that lived only in HANDOFF's dated blocks (never kill NVDA; the answer cache is not evidence) would
   have been archived out of sight. HANDOFF had become a second, unindexed CLAUDE.md. **Durable lessons now go
   straight to `CLAUDE.md` or a rules file. HANDOFF holds only what expires.**
+
+## 2026-10-22 — H8b: moving render code without moving behaviour
+
+- `app.py` 1,748 → 1,352 lines. Eleven of the fourteen listed helpers, plus their private helpers and constants, went verbatim to `src/ui_render.py`, and
+  `app.py` re-exports every name. Three helpers on the list stayed: `render_legal`, `render_help` and
+  `render_ai_expander`. Each one *computes* (retriever, NGO loader, `_run_ai_turn` and the quota log), so moving it
+  would have needed `import app` or a callback. A smaller, honest move beat a forced one.
+- **A re-export does not carry a monkeypatch.** `app._st = fake` reaches code that looks `_st` up in `app`'s globals.
+  The moved helpers look it up in `ui_render`'s, so a fake on `app._st` alone silently stopped reaching them. A probe
+  proved it both ways. The suite's one fake now patches both modules. Any future test that patches an `app.<name>`
+  must ask which module's globals the caller reads.
+- Source-text asserts split three ways. Content that moved reads the new module. Placement asserts stay on `app.py`,
+  where the functions stayed. Negative asserts (no writer, no `st.form`) were **widened** to both files: left on
+  `app.py` alone, they would have passed vacuously for code that was no longer there. The count stayed 179 with the
+  same names, and three mutation break-tests confirmed the repointed asserts still bite.
+- "Same counts" was checked like for like: HEAD in a detached worktree and the branch, on two local ports, through the
+  same axe matrix and focus probes. Comparing against counts recorded on another day would have mixed in Streamlit and
+  bridge changes.

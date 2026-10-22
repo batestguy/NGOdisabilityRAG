@@ -29,6 +29,13 @@ md = app.helpline_banner_markdown()
 check("banner-has-tollfree", "08000-3000-100" in md)
 check("banner-has-whatsapp", "08000-3000-10" in md)
 src = (ROOT / "app.py").read_text(encoding="utf-8")
+# H8b (2026-10-22): the shared render helpers moved to src/ui_render.py. Asserts
+# about CONTENT that now lives there read ui_src; every PLACEMENT assert (banner
+# order inside render_turn/replay_turn/run, 4-space banner call sites) still
+# reads app.py, where those functions stayed. NEGATIVE asserts (no writer, no
+# st.form, no traceback, no generate) read src + ui_src so the move cannot hide
+# a violation in the new module.
+ui_src = (ROOT / "src" / "ui_render.py").read_text(encoding="utf-8")
 # --- Phase 10 C RESCOPE (2026-09-16) ------------------------------------------
 # The five asserts below used to .index() into the WHOLE module. That was only
 # ever correct because run() held the entire answer flow. The flow now lives in
@@ -86,7 +93,8 @@ r = app.resolve_mode("where", explicit="auto")
 check("clarify-singleton", r["mode"] == "clarify", str(r))
 check("clarify-has-question", bool(r["routing"].get("clarify_question")))
 check("explicit-overrides-router", app.resolve_mode("where", explicit="legal")["mode"] == "legal")
-check("clarify-render-fn", "render_clarify" in src and "clarify-legal" in src and "clarify-help" in src)
+# H8b: the call stays in app.py (render_turn); the keyed buttons moved to ui_render.
+check("clarify-render-fn", "render_clarify" in src and "clarify-legal" in ui_src and "clarify-help" in ui_src)
 
 # 3b. Greeting path (2026-09-10 hello fix: greet, never the refusal wall) ----
 g = app.resolve_mode("hello", explicit="auto")
@@ -96,7 +104,8 @@ check("greeting-beats-explicit",
       and app.resolve_mode("hi", explicit="help")["mode"] == "greeting")
 check("greeting-content-not-question",
       app.resolve_mode("hello, what are my rights?", explicit="auto")["mode"] == "legal")
-check("greeting-render-fn", "def render_greeting" in src and "GREETING_TEXT" in src)
+# H8b: the def moved to ui_render; app.py still USES GREETING_TEXT (render_turn, replay_turn).
+check("greeting-render-fn", "def render_greeting" in ui_src and "GREETING_TEXT" in src)
 check("greeting-text-guidance", "citations" in app.GREETING_TEXT and "helplines" in app.GREETING_TEXT)
 check("greeting-speech", "greeting" in src and "Greeting. " in src)
 
@@ -115,11 +124,13 @@ check("help-topk", len(hp_full["records"]) == 5, str(len(hp_full["records"])))  
 check("help-banner-first", hp["records"][0]["phone"] == "08000-3000-100"
       and hp["records"][1]["phone"] == "08000-3000-10")
 check("help-confirm-gated-or-clean", (not hp["needs_confirmation"]) or bool(hp["confirm_prompt"]))
-check("help-badge-text-in-src", "please confirm this matches your need" in src)
+# H8b: the badge is rendered by render_help_records, now in ui_render.
+check("help-badge-text-in-src", "please confirm this matches your need" in ui_src)
 check("help-confirm-prompt-rendered", 'payload.get("confirm_prompt"' in src or "confirm_prompt" in src)
 
 # 6. Routing trap ------------------------------------------------------------
-check("routing-trap-text", "I treated this as a" in src and "Switch to" in src)
+# H8b: render_routing_trap moved to ui_render (its call sites stay in app.py).
+check("routing-trap-text", "I treated this as a" in ui_src and "Switch to" in ui_src)
 
 # 7. cache_resource -----------------------------------------------------------
 check("cache-resource-x2", src.count("st.cache_resource") >= 2 or src.count("cache_resource") >= 2,
@@ -128,8 +139,10 @@ check("cache-resource-x2", src.count("st.cache_resource") >= 2 or src.count("cac
 # 8. LLM path opt-in, default OFF, no traceback -------------------------------
 check("llm-expander-collapsed", 'st.expander("🤖 Answer with AI' in src and "expanded=False" in src)
 check("llm-default-offline", "use_llm=False" in src)
-check("llm-quota-explained", "quota" in src and "traceback." not in src and "st.exception" not in src)
-check("no-top-level-generate", "generate(" not in src.replace("Generate AI answer", ""))
+# H8b: negatives widened to src + ui_src (stricter, never weaker).
+check("llm-quota-explained", "quota" in src and "traceback." not in src + ui_src
+      and "st.exception" not in src + ui_src)
+check("no-top-level-generate", "generate(" not in (src + ui_src).replace("Generate AI answer", ""))
 
 # 9. Voice read-aloud (Web Speech API, client-side) -----------------------------
 speech = app.build_speech_text(pay, hp, "")
@@ -144,7 +157,8 @@ if mr is not None:
     check("mic-import-keeps-repo-chunk",
           hasattr(_ck, "constitution_aware_split") or hasattr(_ck, "recursive_split"),
           str(getattr(_ck, "__file__", "?")))
-check("mic-fallback-text", "fully sufficient" in src and "Chrome/Edge" in src)
+# H8b: try_voice_input (the fallback text) moved to ui_render.
+check("mic-fallback-text", "fully sufficient" in ui_src and "Chrome/Edge" in ui_src)
 
 # 10. Accessibility + theme architecture ---------------------------------------
 css = app.accessibility_css(high_contrast=True, font_size=22)
@@ -322,8 +336,9 @@ check("turn-threads-retrieval-query", "retrieval_query=retrieval_query" in turn_
       and "slots=slots" in turn_body)
 check("ai-turn-uses-history-for-prompt", "chat.history_for_prompt(prior)" in src
       and "chat.cross_turn_drift(" in src)
-check("drift-surfaced-not-absorbed", "Cross-turn citation drift" in src
-      and "context, not evidence" in src)
+# H8b: render_defects (the drift warning) moved to ui_render.
+check("drift-surfaced-not-absorbed", "Cross-turn citation drift" in ui_src
+      and "context, not evidence" in ui_src)
 
 # Replay must NOT recompute. Streamlit reruns the whole script on every
 # interaction; a history loop that re-queried each turn would cost N retrievals
@@ -356,7 +371,7 @@ check("ai-every-turn-defaults-off", '"ai_every_turn": False' in run_body
 
 # Chat surface: chat_input in, the single-turn form out.
 check("chat-input-present", 'st.chat_input("Type your question here"' in src)
-check("no-form-widget", "st.form" not in src)
+check("no-form-widget", "st.form" not in src + ui_src)  # H8b: both modules
 check("chat-message-bubbles", 'st.chat_message("user")' in hist_body
       and 'st.chat_message("assistant")' in hist_body)
 check("clear-conversation-control",
@@ -387,13 +402,16 @@ class _FakeSt:
                      "last_q": _sentinel}
 
 
-_orig_st = app._st
-app._st = lambda: _FakeSt()
+# H8b: two modules now look streamlit up (app._st, ui_render._st); fake both, so
+# ANY streamlit access during the quota write still sees only sentinel text.
+import ui_render as _ui  # noqa: E402
+_orig_st, _orig_ui_st = app._st, _ui._st
+app._st = _ui._st = lambda: _FakeSt()
 try:
     app.quota_log_record("gemini-2.5-flash", path=_qlog)
     app.quota_log_record("gemini-2.5-flash", path=_qlog)
 finally:
-    app._st = _orig_st
+    app._st, _ui._st = _orig_st, _orig_ui_st
 _blob = _qlog.read_text(encoding="utf-8")
 check("quota-log-holds-no-conversation", _sentinel not in _blob, _blob.strip())
 check("quota-log-counts-only",
@@ -407,9 +425,10 @@ check("quota-log-fails-open",
       and app.quota_log_counts(path=_bad) == {})
 # The ONLY writer in app.py is quota_log_record, and its body never sees turns.
 _qbody = src.split("def quota_log_record")[1].split("\ndef ")[0]
+# H8b: also scans ui_render, so the split cannot open a second writer unseen.
 check("only-writer-is-quota-log",
       not re.search(r"write_text\(|json\.dump|to_csv\(|to_json\(|pickle\.",
-                    src.replace(_qbody, "")))
+                    src.replace(_qbody, "") + ui_src))
 check("quota-log-never-sees-turns",
       "turns" not in _qbody and "session_state" not in _qbody)
 check("history-is-session-state-only", 'st.session_state["turns"]' in src)
@@ -453,8 +472,8 @@ check("multi-turn-is-asks-own-condition",
       and app._multi_turn([_TP(question="   ")]) is False   # blank -> no history
       and app._multi_turn([_TP(question="what are my rights?")]) is True)
 check("plain-caption-takes-prior-not-index",
-      "render_plain_caption(plain, prior)" in src
-      and "from rag import _render_history" in src)
+      "render_plain_caption(plain, prior)" in src  # call sites stay in app.py
+      and "from rag import _render_history" in ui_src)  # H8b: _multi_turn moved
 
 # H1b (2026-10-15): a byte-identical chunk pair ([Constitution s. 4]) used to
 # render as two identical cards. Dedupe is display-level, keyed on
@@ -577,6 +596,8 @@ check("h3-review-controls-after-results",
 # H2/H3 leftover minor items (2026-10-21).
 # 1. Read-aloud honours the active NGO filter: render_help_records returns the
 #    payload AS DISPLAYED, and the replay speaks that, not the stored payload.
+# H8b: app._st() and ui_render._st() return the same streamlit module object, so
+# state written here is what the moved render_help_records reads.
 _st_mod = app._st()
 _full = _ngo.with_helplines(_ngo.pd.DataFrame(_dir[:3])).to_dict("records")
 _hp = {"records": _full, "directory": _dir, "needs_confirmation": False}
