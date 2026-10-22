@@ -3567,3 +3567,18 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   gotcha in them already had a durable home after H8c. Next is H8a.1: questions before parser.
 - Later the same day, the owner confirmed the reuse signature also covers the Act gazette. The live corpus now has a
   recorded reuse position for every document.
+
+## 2026-10-22 — H9 planned: "a deterministic chatbot in case quota runs out" mostly already exists
+
+- The owner asked whether to build a deterministic chatbot with follow-ups as a quota fallback. Reading the code first
+  changed the question. The default path is already deterministic and multi-turn: `contextualise()` resolves follow-ups,
+  `merge_help_slots()` carries help details, the router asks clarifying questions, and quota exhaustion leaves `answer=None`
+  with excerpts and helplines intact. **Quota exhaustion only affects the opt-in AI prose.**
+- What is actually missing is a *written answer*, and a deterministic one is where the danger is. `MIN_SCORE` cannot reject
+  legal-sounding off-topic questions (H4), so composed prose would turn mis-retrieval into confident advice. Partial quotes
+  also drop "subject to" exceptions. H9 therefore plans only what cannot misstate the law:
+  - H9a, suggested questions from the gazette's own clause titles, with a self-consistency gate: never suggest a question
+    the system cannot answer;
+  - H9b, verbatim cited key lines behind an exception guard and a human "misleading" check.
+- `conversations.json` gives a zero-quota yardstick for suggestions: did a suggestion name the clause the user asked
+  about next? Measure that against a random-neighbour baseline.

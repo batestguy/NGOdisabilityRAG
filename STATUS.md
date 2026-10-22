@@ -32,6 +32,8 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 - **Active: H8 — `docs/phases/17_h8_corpus_expansion.md`.** H8c + H8b DONE and live. H8a.0 DONE: the owner
   chose + signed the **Accessibility Regulations 2023 (S.I. 51)** (`docs/h8a_source_dossier.md`; PDF in `data/raw/`).
   **Next: H8a.1** (dev + blind `test3` questions, committed before any parser).
+- **Queued: H9 deterministic follow-ups** (`docs/phases/18_h9_deterministic_followups.md`): H9a suggested questions
+  (low risk, can run while H8a waits on H6); H9b extractive key lines (after H6 + the H7 read). Owner approval pending.
 - **H7 week-1 read on/after 2026-10-28** (command in `HANDOFF.md`; discount 4 smoke ids).
 - **Owner:** is `test` still clean? · send the H6 review sheet (`docs/review/h6_review_sheet.md`) to a
   legal reviewer · H5b needs 2 quota days (~45 calls) + native Yoruba/Hausa/Igbo checkers

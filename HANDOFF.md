@@ -33,6 +33,12 @@
 > 4. **H8a.2 onward:** start only after H8a.1 is committed. Read playbook 17's F1–F10 first; the OOV bridge must become
 >    version-keyed before anything else (F7). **H8a.5 cut-over waits for the H6 legal review to return.**
 >
+> **Queued after H8a: H9, deterministic follow-ups → `docs/phases/18_h9_deterministic_followups.md`** (planned 2026-10-22,
+> zero quota). **H9a** adds suggested follow-up questions built from gazette clause titles; it is low risk and can run while
+> H8a waits on H6. **H9b** adds extractive cited "key lines"; it is moderate risk and comes after the H6 review + H7 read.
+> A composed rule-based answer was considered and rejected (reasons are in the playbook). **Owner:** approve H9a; decide
+> whether to allow a counts-only `via=suggestion` telemetry field.
+>
 > **Still open (unchanged):**
 > * **H7 week-1 signal read on/after 2026-10-28:** command in Standing facts → file → `scripts/summarise_signal.py` minus the
 >   4 smoke ids → H7 results box (`docs/phases/16_post_launch_roadmap.md`). Then decide which of M2 / F2 / H5a to reopen,

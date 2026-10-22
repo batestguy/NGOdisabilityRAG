@@ -498,6 +498,13 @@ is dropped; each one is checked off against the old file.
 
 ---
 
+## H9 — Deterministic follow-ups (added 2026-10-22)
+
+> **Playbook: `docs/phases/18_h9_deterministic_followups.md`.** Suggested follow-up questions (H9a) and extractive cited
+> key lines (H9b) for the offline path. A composed rule-based answer is rejected there, with reasons.
+
+---
+
 ## Invariants that bind every H step (from `CLAUDE.md`, restated)
 * **Helplines first, always**: DRAC Toll-Free `08000-3000-100`, WhatsApp `08000-3000-10`, above
   every answer and leading every NGO result, via `ngo.with_helplines()`.
