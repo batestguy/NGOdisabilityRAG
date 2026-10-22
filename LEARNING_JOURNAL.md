@@ -3487,3 +3487,20 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
 - **Review earned its cost again.** The a11y fix passed 178 asserts and my own browser check, yet broke keyboard focus.
   Only an independent look that tested *behaviour* (activeElement after Enter) caught it. Source-text asserts prove
   presence, never behaviour.
+
+## 2026-10-22 — H8 planned: "add a document" was a Phase D in disguise
+
+- The roadmap's H8a stub read like data entry: a new `doc_id`, a citation scheme, then rebuild and re-measure. Reading the code
+  before writing the playbook found **the three-document assumption hard-coded in at least ten places**. Three of them matter:
+  1. **`top_n == 3 × k`** (E1b's load-bearing property) silently becomes a cut at 4 docs. The fix, `top_n=16`, enlarges the
+     display, so the budget is now a measured arm.
+  2. **The prompt lists three tag shapes.** A new shape means `cite-strict-v4`, and the Phase G evidence does not transfer.
+     So H8a ships offline first, with new-doc chunks kept out of the LLM context until a fresh ~30-call check passes.
+  3. **The OOV bridge is one artifact keyed on one corpus sha.** Rebuilding it for v3 would make `build_corpus("v2")`
+     hard-fail and break the "v2 reproduces from the same commit" rule. It has to become version-keyed first.
+- Also: two separate `DOC_IDS` tuples (`src/retrieve.py`, `scripts/evalset.py`), and `verify_citations` cannot see an
+  unknown tag shape. So the regexes must change in the same commit as the corpus, or fabricated new-doc tags would pass.
+- A source search found no free official full text for either the NCPWD Accessibility Regulations 2023 or the Lagos
+  Special People's Law 2011. The playbook therefore starts with a docs-only source dossier and an owner licence sign-off.
+- **Order changed to H8c → H8b → H8a:** the cheap, zero-risk items first, and the corpus change after the H6 lawyer review
+  returns, so the reviewer does not read a system that is about to change.

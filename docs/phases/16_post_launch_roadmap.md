@@ -468,6 +468,12 @@ pre-declared gate.
 
 ## H8 — Corpus expansion and maintainability
 
+> **EXPANDED 2026-10-22 → `docs/phases/17_h8_corpus_expansion.md`. Work from that file, not this stub.**
+> Reading the code found the three-document assumption hard-coded in ≥10 places. Three of those
+> change behaviour or spend quota: `top_n == 3k` becomes `4k`, the prompt needs `cite-strict-v4`, and the
+> OOV bridge must become version-keyed or v2 stops reproducing. The order is now **H8c → H8b → H8a**,
+> and H8a ships only after the H6 review returns.
+
 ### H8a — new legal sources
 * Candidates: **NCPWD regulations**, and the **Lagos State Special People's Law 2011** (state-level,
   so answers need a jurisdiction note).

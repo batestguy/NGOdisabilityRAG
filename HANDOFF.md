@@ -1,4 +1,14 @@
-# HANDOFF — start here (60 seconds, updated 2026-10-21)
+# HANDOFF — start here (60 seconds, updated 2026-10-22)
+
+> **■ 2026-10-22: H8 PLAYBOOK WRITTEN → `docs/phases/17_h8_corpus_expansion.md`** (docs only, zero quota,
+> uncommitted on `phase11/docs-a11y-deploy`). Main finding: a 4th legal document is a Phase-D-sized
+> change. `top_n == 3k` must become `4k` (a measured arm); the prompt needs `cite-strict-v4`, so the G evidence
+> lapses until a ~30-call re-run; and the OOV bridge must become version-keyed or v2 stops reproducing.
+> * **Order:** H8c (slim CLAUDE.md / STATUS / HANDOFF) → H8b (split `app.py` helpers) → H8a.0 (source dossier) →
+>   H8a.1–7 after the H7 week-1 read and the H6 return.
+> * **Owner:** approve the order; for H8a.0, pick ONE document (candidates: NCPWD Accessibility Regulations 2023,
+>   UN CRPD, Lagos Special People's Law 2011; none verified yet) and sign its licence line.
+> * Everything in the 2026-10-21 block below still stands (signal read on/after 2026-10-28).
 
 > **■■ 2026-10-21 END OF SESSION: READ THIS BLOCK FIRST ■■**
 >
