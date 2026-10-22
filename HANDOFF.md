@@ -1,5 +1,10 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-22)
 
+> **■ 2026-10-22 (later): H8c DONE → `fc168ae` on `phase11/h8c-docs`** (stacked on `phase11/docs-a11y-deploy`; not
+> pushed, not merged). `CLAUDE.md` is 210 lines plus `.claude/rules/{retrieval,ui}.md`, and history is in `docs/history/`.
+> **First thing next session: run `/context` and confirm neither rules file loads at startup.** Next: H8b (split
+> `app.py` helpers, branch from `phase11/h8c-docs`).
+
 > **■ 2026-10-22: H8 PLAYBOOK WRITTEN → `docs/phases/17_h8_corpus_expansion.md`** (docs only, zero quota,
 > committed `2325e29` on `phase11/docs-a11y-deploy`). Main finding: a 4th legal document is a Phase-D-sized
 > change. `top_n == 3k` must become `4k` (a measured arm); the prompt needs `cite-strict-v4`, so the G evidence
