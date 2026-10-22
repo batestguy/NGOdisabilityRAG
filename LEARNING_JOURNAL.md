@@ -3504,3 +3504,20 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   Special People's Law 2011. The playbook therefore starts with a docs-only source dossier and an owner licence sign-off.
 - **Order changed to H8c → H8b → H8a:** the cheap, zero-risk items first, and the corpus change after the H6 lawyer review
   returns, so the reviewer does not read a system that is about to change.
+
+## 2026-10-22 — H8c: splitting CLAUDE.md, and the drift a move introduces
+
+- `CLAUDE.md` went from 369 to 210 lines by lifecycle, not by topic. Durable rules stay in root. Retrieval and UI detail
+  went to path-scoped `.claude/rules/*.md`, with a root stub naming each danger. History moved verbatim to `docs/history/`.
+  `HANDOFF.md` went from 1,530 lines to 78.
+- **A "move" still rewrote rules.** My own 76-phrase checklist passed. The reviewer then found four rules whose meaning
+  had shifted while being moved:
+  - `SYNONYMS` "not casually" had become "frozen";
+  - `MIN_SCORE` had gained an unattributed "never up";
+  - "no `--failover` on G runs" had widened to all measurement runs;
+  - "two" quota-flag scripts was really three.
+  A phrase checklist proves presence, not meaning. It is the same lesson as source-text asserts against behaviour,
+  one level up.
+- Operating rules that lived only in HANDOFF's dated blocks (never kill NVDA; the answer cache is not evidence) would
+  have been archived out of sight. HANDOFF had become a second, unindexed CLAUDE.md. **Durable lessons now go
+  straight to `CLAUDE.md` or a rules file. HANDOFF holds only what expires.**

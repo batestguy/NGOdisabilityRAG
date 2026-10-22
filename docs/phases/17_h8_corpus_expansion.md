@@ -52,9 +52,9 @@ redeploy).
    journal; move only what is not already there). Path-scoped detail may go to `.claude/rules/*.md`.
 3. **`STATUS.md` = current state only**: one line per live capability, the current numbers
    (`baseline_phaseE_2026-09-24.txt` + H-step deltas), open items. History moves to
-   `docs/status_history.md` verbatim (moved, not rewritten).
+   `docs/history/status_history.md` verbatim (moved, not rewritten).
 4. **`HANDOFF.md` = the latest end-of-session block + standing facts.** Older blocks move verbatim to
-   `docs/handoff_history.md`.
+   `docs/history/handoff_history.md`.
 5. **Invariant checklist (the gate).** Before deleting any line from `CLAUDE.md`, list every invariant,
    number and "do not" in the old file in `runs\h8c\invariants.txt`, and tick each one off against its new
    home (new `CLAUDE.md`, a rule file, a playbook, or the journal). **Zero unticked lines.**
@@ -219,4 +219,29 @@ question shows the same tags as the local measurement.
 
 ## Results
 
-*(empty — no step started)*
+> **H8c — 2026-10-22, EXIT GATE MET (branch `phase11/h8c-docs`, not merged; zero quota).**
+> * `CLAUDE.md` 369 → **210 lines**. Retrieval/corpus/eval detail is in `.claude/rules/retrieval.md` (paths: `src/`
+>   retrieval modules, `data/processed/**`, `data/eval/**`, `scripts/**/*.py`). UI/CSS/a11y detail is in
+>   `.claude/rules/ui.md` (paths: `app.py`, `.streamlit/**`, `static/**`, `tools/a11y_audit/**`). Root keeps a stub per
+>   file that names the danger. The original is verbatim at `docs/history/claude_md_2026-10-22.md`.
+> * `STATUS.md` → current state only (38 lines); the old lines are verbatim in `docs/history/status_history.md`.
+> * `HANDOFF.md` 1,530 → 78 lines: the latest blocks plus a "Standing facts (still true)" section; original line 62
+>   onward is verbatim in `docs/history/handoff_history.md`.
+> * **Invariant checklist:** 76 phrases (`runs\h8c\invariants.txt`), **76/76** present in root + rules.
+> * **Reviewer: SHIP WITH CAVEATS, no blocking findings.** It confirmed the archives are byte-verbatim, the hashes and
+>   `main` are right, and the suites reproduce. Its fixes were applied:
+>   * "two" quota-flag scripts → three (`probe_gen_refusal.py`);
+>   * the `SYNONYMS` rule restored to "not casually … requires a fresh calibration" (it had hardened to "frozen");
+>   * `MIN_SCORE` "never up" now attributed to its source (the `src/retrieve.py` calibration comment and
+>     `calibrate_refusal` gate 3) instead of reading as a new invariant;
+>   * `--failover` scoped back to generation/judge runs, with the reason;
+>   * call-count anchors and the answer-cache rule restored to the quota section;
+>   * NVDA kill hazard and the `offline_legal_hits` ↔ `ask()` parity rule moved to `ui.md`; the ref-based citation-check
+>     crash trap moved to `retrieval.md`;
+>   * the `verify_ngo_sources.mjs` pointer added to the verified-contacts invariant;
+>   * E4a no longer miscounted as a failure;
+>   * this playbook's history paths corrected.
+> * Not done by design: `/context` verification that the rules files defer. That needs a fresh session, so the next
+>   session should run `/context` once and confirm neither rules file loads at startup.
+> * Suites: `test_phase03` 24/24 + 16/16 · `test_phase04` · `test_phase05` 179/179 · `test_phase09_ops` · `import app`,
+>   all PASS (nothing reads these files).

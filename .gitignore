@@ -45,3 +45,7 @@ scripts/.quota_log.tmp
 # H2 accessibility audit tooling (tools/a11y_audit): package.json + lockfile are
 # committed so the audit is reproducible; the installed modules are not.
 tools/a11y_audit/node_modules/
+
+# Claude Code: per-machine permission state stays local (also in the user's global ignore).
+# .claude/rules/*.md IS committed -- it is shared, path-scoped project guidance (H8c).
+.claude/settings.local.json

@@ -3,11 +3,15 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 DRLCA — Nigerian disability-rights legal Q&A (Disability Act 2018 + 1999 Constitution)
-plus a verified NGO/helpline connector. Free tier only ($0.00).
+plus a verified NGO/helpline connector. Free tier only ($0.00). **Live** on Render.
 
 Spec (source of truth): `RAGNGO.txt` · Session entry: `HANDOFF.md` · Current snapshot:
 `STATUS.md` · Phase playbooks: `docs/phases/` · Research log: `LEARNING_JOURNAL.md` ·
-Repo conventions: `AGENTS.md` · Machine/env routing: `ENVIRONMENTS.md`.
+Repo conventions: `AGENTS.md` · Machine/env routing: `ENVIRONMENTS.md` · Archived history
+(the pre-2026-10-22 CLAUDE/STATUS/HANDOFF, verbatim): `docs/history/`.
+
+<!-- H8c (2026-10-22): split by lifecycle. Durable rules here; detail in .claude/rules/ (path-scoped);
+     history in docs/history/. Before adding a note, ask which tier it belongs to. -->
 
 ## Environment
 
@@ -18,149 +22,93 @@ root (`D:\NGORAG`), not via `conda activate`:
 
 ```powershell
 C:\conda-envs\drlca-rag\python.exe scripts\bench_phase01.py        # Phase 01 retrieval bench (PASS)
-C:\conda-envs\drlca-rag\python.exe scripts\test_phase03.py         # NGO connector, 16/16 matrix + 7/7 statics
-C:\conda-envs\drlca-rag\python.exe scripts\test_phase04.py         # Intent router, 10/10
-C:\conda-envs\drlca-rag\python.exe scripts\test_phase05.py         # UI script-level asserts, 140/140
-C:\conda-envs\drlca-rag\python.exe scripts\test_phase09_ops.py     # ops/chat invariants, 63/63, zero network
+C:\conda-envs\drlca-rag\python.exe scripts\test_phase03.py         # NGO connector
+C:\conda-envs\drlca-rag\python.exe scripts\test_phase04.py         # Intent router
+C:\conda-envs\drlca-rag\python.exe scripts\test_phase05.py         # UI script-level + source-text asserts
+C:\conda-envs\drlca-rag\python.exe scripts\test_phase09_ops.py     # ops/chat/telemetry invariants, zero network
 C:\conda-envs\drlca-rag\python.exe scripts\audit_corpus.py         # corpus shape gate + v1 regression tripwire
-C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py         # held-out retrieval baseline (+ recall_strict, + E5.1 view, + test2 on v2)
-C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn set, 23 conv / 64 turns
-C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase08.py       # retrieval ablations
-C:\conda-envs\drlca-rag\python.exe scripts\ablate_phase10.py       # (k, top_n) width ladder, measure-only, never gates
+C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py         # held-out retrieval baseline (+ recall_strict, + test2 on v2)
+C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn set
 C:\conda-envs\drlca-rag\python.exe scripts\calibrate_refusal.py    # refusal invariance, 212 probes, 0 disagreements
-C:\conda-envs\drlca-rag\python.exe scripts\ablate_oov_bridge.py    # E4a: hand vs hand+bridge + PORT CHECK (--read-test spends test)
-C:\conda-envs\drlca-rag\python.exe scripts\ablate_handmap.py       # E5.3: S ship / B bridge-only / N none, dev (+ --read-test2)
-C:\conda-envs\drlca-rag\python.exe scripts\ablate_surface.py       # E5: beg->begging surface-form arm, dev only (declined 2026-09-24)
-C:\conda-envs\drlca-rag\python.exe scripts\probe_embed_quota.py    # E5.5: SPENDS QUOTA only with --i-understand-this-spends-quota
-C:\conda-envs\drlca-rag\python.exe scripts\transcript_chat.py      # G4 drift transcript: dry run by default; SPENDS QUOTA only with --i-understand-this-spends-quota
-C:\conda-envs\drlca-rag\python.exe scripts\build_oov_bridge.py     # rebuild data/processed/oov_bridge.json (needs D:\NGORAG\runs\e4_vectors\)
-C:\conda-envs\drlca-rag\python.exe scripts\e4_reach.py             # E4.0 reach gate, dev only
 C:\conda-envs\drlca-rag\python.exe scripts\eval_phase06.py --out=scripts\eval_tmp.json
+C:\conda-envs\drlca-rag\python.exe scripts\summarise_signal.py <file>   # H7 counts from pasted Render log lines
 C:\conda-envs\drlca-rag\python.exe -c "import app"                 # boot-import smoke (must not start a server)
 C:\conda-envs\drlca-rag\python.exe -m streamlit run app.py         # local UI → http://localhost:8501
 ```
 
-Baseline captures and the GloVe file live in `runs\` (gitignored; moved there from the D:\
-root on 2026-10-10). Older journal and phase docs still cite `D:\d5_baseline\`, `D:\e0_baseline\`,
-`D:\ship_e4a\` etc. — read any `D:\<run>\` as `D:\NGORAG\runs\<run>\`.
+Assert counts live in `STATUS.md`; measurement harnesses in `.claude/rules/retrieval.md`. **Three scripts spend Gemini quota only behind
+`--i-understand-this-spends-quota`** (`probe_embed_quota.py`, `transcript_chat.py`,
+`probe_gen_refusal.py`); never pass it without a quota plan.
+
+Baselines and the GloVe file live in `runs\` (gitignored); read any older `D:\<run>\` as `D:\NGORAG\runs\<run>\`.
 
 These are plain assert-and-print scripts, not pytest — there is no test runner and no
 "single test" selector. To narrow a run, read the script and comment out or copy the
-relevant `check(...)` block; each script exits nonzero on any failure.
+relevant `check(...)` block; each script exits nonzero on any failure. CI
+(`.github/workflows/offline-suites.yml`) runs the zero-network suites on every PR and push.
 
-`scripts/test_phase02.py` is the only suite that spends Gemini quota. Dry runs need
-`--no-llm` **and** `--out=<temp path>` (the `--out=` equals form only — the space form
-is silently ignored), so a dry run can never overwrite a versioned LLM transcript.
+`scripts/test_phase02.py` spends Gemini quota. Dry runs need `--no-llm` **and**
+`--out=<temp path>` (the `--out=` equals form only — the space form is silently ignored), so a
+dry run can never overwrite a versioned LLM transcript.
 
 Rebuild the env from `requirements-rag.txt` (full dev stack: OCR/ONNX/FAISS/PyMuPDF).
-`requirements.txt` is the deliberately slim **runtime** for Render — OCR/ONNX/FAISS must
-never be added to it; the corpus ships prebuilt as TXT and is never re-OCRed at boot.
+`requirements.txt` is the deliberately slim **runtime** for Render — OCR/ONNX/FAISS, and any
+translation or embedding model, must never be added to it; the corpus ships prebuilt as TXT and is
+never re-OCRed at boot.
 
 ## Architecture
 
-**DRLCA is a multi-turn chatbot** (Phase 10 C, 2026-09-16) — `st.chat_input`, persisted
-conversation history, per-turn read-aloud. Not a single-turn form.
+**DRLCA is a multi-turn chatbot** — `st.chat_input`, history in `st.session_state` only (never
+written to disk), per-turn read-aloud.
 
 ```
 app.py (Streamlit chat UI)
   │ run()            sidebar → title → banner → render_history() → voice draft → st.chat_input
-  │                  a submitted question goes to session_state["pending"] and reruns,
-  │                  so the new turn paints in position at the end of the thread
-  │ render_turn()    computes AND renders ONE NEW turn -> TurnPayload
-  │                  fused on purpose: test_phase05.py asserts the banner invariant on the
-  │                  LITERAL source adjacency of render_helpline_banner() inside this body
-  │ replay_turn()    renders a STORED TurnPayload — no retrieval, no router, no network
-  │                  (asserted; Streamlit reruns the whole script on every interaction)
-  │ render_history() · render_excerpts / render_ai_expander / render_defects /
-  │                  render_help_records / render_plain_caption  (shared by both paths)
-  │ helplines banner (page top + leading every assistant turn), a11y CSS, voice, read-aloud
-  │ history lives in st.session_state ONLY — never written to disk
-  │ theme colors live ONLY in .streamlit/config.toml
+  │ render_turn()    computes AND renders ONE NEW turn -> TurnPayload (fused on purpose, see below)
+  │ replay_turn()    renders a STORED TurnPayload — no retrieval, no router, no network (asserted)
+  │ render_* helpers shared by both paths; helplines banner at page top + leading every assistant turn
   ▼
-src/chat.py     contextualise() resolves ellipsis / unbound pronouns against prior turns,
-                merge_help_slots() carries help slots, TurnPayload, cross_turn_drift()
-  ▼
-src/router.py   keyword scorer (legal vs help cues), is_greeting(), clarify policy,
-                extract_help_slots(), route() = wired offline dispatch. STATELESS —
-                accumulated slots arrive as an argument, never stored
+src/chat.py      contextualise() (ellipsis / unbound pronouns), merge_help_slots(), TurnPayload, cross_turn_drift()
+src/router.py    keyword scorer, is_greeting(), clarify policy, extract_help_slots(), route(). STATELESS —
+                 accumulated slots arrive as an argument, never stored
   ├─ legal ─► src/rag.py  ask(history=) → build_corpus() → PerDocRetriever → MIN_SCORE gate
-  │             → optional Gemini (cite-strict-v2 / chat-cite-strict-v1) → refusal layer
-  │             → cite check.  corpus built from src/load.py (OCR repair) + src/chunk.py
+  │             → optional Gemini (cite-strict-v3 / chat-cite-strict-v2) → refusal layer → cite check
   └─ help ──► src/ngo.py  load_ngo() → find_ngo_with_meta() → with_helplines()
+src/telemetry.py counts-only DRLCA_SIGNAL stdout lines (H7; see docs/telemetry.md)
 ```
 
-`app.py` imports its own `src/` via `sys.path.insert`; `src/router.py` does the same so
-`import rag` / `import ngo` work either way. Module names are flat (`rag`, `ngo`,
+`app.py` imports its own `src/` via `sys.path.insert`; module names are flat (`rag`, `ngo`,
 `retrieve`, not `src.rag`).
 
-`app.py` is **import-safe by contract**: every Streamlit call lives inside `run()` or a
-render helper, and the bottom guard only boots under `streamlit run`/`__main__`.
-`scripts/test_phase05.py` imports `app` directly and also asserts on the *source text* of
-`app.py` (e.g. that `render_helpline_banner()` appears before the legal/help/greeting
-branches **inside `render_turn`'s body**, and that every call site sits at 4-space top
-level, never inside a `with col:`) — renaming those functions or reordering `run()` /
-`render_turn()` will break the suite by design.
+**`app.py` is import-safe by contract**: every Streamlit call lives inside `run()` or a render
+helper, and the bottom guard only boots under `streamlit run`/`__main__`. `scripts/test_phase05.py`
+imports `app` and also asserts on the **source text** of `app.py` — that `render_helpline_banner()`
+appears before the legal/help/greeting branches inside `render_turn`'s body, and that every banner
+call site sits at 4-space top level, never inside a `with col:`. **Renaming those functions or
+reordering `run()` / `render_turn()` breaks the suite by design.**
 
-### Three-doc corpus, three numbering schemes
+## Editing retrieval, the corpus or the eval harnesses
 
-`doc_id ∈ {act2018, constitution1999, factsheet2020}`. Act clause N, Constitution
-section N, and Factsheet Section N are different things and must never be conflated;
-every `Chunk`/`Hit` carries `(doc_id, ref)` and `cite_tag()` is the only place tags are
-built. Chunk sizes are pinned by Phase 01 measurement: Act section-aware 800,
-Constitution chapter-aware 400, Factsheet recursive 500/50.
+Retrieval numbers move **silently**: a reordered dict, a widened `k`, an edited synonym or a
+rebuilt artifact all produce plausible output and different published figures. **Read
+`.claude/rules/retrieval.md` before touching `src/retrieve.py`, `src/rag.py`, `src/chunk.py`,
+`src/load.py`, `data/processed/` or any eval script.** It loads automatically when you read one of
+those files, but not after a `/compact`, and not if you create a new file there without reading an
+existing one. The core rules, which must not be lost:
 
-`PerDocRetriever` merges top-k from *each* doc rather than one joint index, because the
-Constitution is ~95% of the joint index and floods Act-specific queries. Consequence:
-context **precision is low by design** — never gate or "fix" it. *(This line read
-"precision 0.333" until 2026-09-20; at Phase E1's budget it is **0.217**. Same relevant
-chunks over twice as many shown chunks — arithmetic, not degradation. The design point
-never changed; only the figure was stale.)* Its `docs` dict is
-iterated in **insertion order** and hits are sorted by score alone
-(`src/retrieve.py:331-338`), so **insertion order breaks ties** — reordering the dict in
-`build_corpus()` silently moves published numbers.
-
-**The shipping retrieval budget is `k=4/doc, top_n=12` (Phase E1b, 2026-09-20 —
-`src/rag.py` `ask()`, `app.py` `offline_legal_hits()`).** It was `k=3/doc, top_n=6` from
-Phase 01 to E1b, so **any baseline or comment predating 2026-09-20 was measured at 3/6.**
-`top_n == 3 × k` is load-bearing, not incidental: it means `select_top` returns every
-candidate retrieved, so the cross-doc cosine cut — the comparison `PerDocRetriever`'s own
-docstring calls invalid — never discards anything. Widening `k` *without* holding
-`top_n == 3k` measured **worse on all three sets**, because the spare slots go to the
-global top and the Constitution owns it. Neither `k` nor `top_n` can move a refusal: the
-top-score vector is byte-identical from k=3 to k=20.
-
-> **`top_n` is a CEILING, not a count — recorded 2026-09-20 from the live smoke.**
-> `app.py:256` says "the display is 3 inline + 9 folded" as though unconditional. It is not:
-> `MIN_SCORE` trims below `top_n`, so the shown count varies. Measured over six realistic
-> queries: **7 · 12 · 9 · 7 · 7 · 6 — mean 8 of a max 12.** `INLINE_EXCERPTS` stays 3, so the
-> fold holds *the rest*, which is often 4, not 9. Do not write a test or a doc that assumes 12.
-> Separately: a query can surface **two byte-identical excerpt cards** (same tag, same text,
-> same score — e.g. `[Constitution s. 4]` on the penalties query). That is a **duplicate pair in
-> the corpus and is pre-existing** — it reproduces identically at the old `k=3/doc, top_n=6`
-> budget, so E1b did not cause it. Unfixed, and a real (small) accessibility cost.
-
-**Two retrieval upgrades were built, measured and DECLINED — their code is deliberately NOT in
-this tree.** A BM25/RRF re-rank inside the gate (Phase E2a) and a corpus-derived query-expansion
-map (Phase E3a) both lost on every arm; the implementations, their harnesses and both
-`synonyms_auto*.json` artifacts live on branch `phase10/retrieval-quality` at `a6016e4` and are
-kept there for reproduction only. **Do not re-implement either here.** **The shipping expander
-is now two stages (Phase E4a, branch `phase10/ship-e4a`, 2026-09-23):** `expand_query()` =
-`expand_query_hand()` (the hand-written `SYNONYMS`, unchanged) **followed by the OOV bridge**
-(`oov_bridge_terms()`, a 393 KB dict built from GloVe at build time). **The bridge code is the
-measured function verbatim — do not "tidy" its loose hand-key skip or its cap-before-dedupe;**
-`scripts/ablate_oov_bridge.py`'s PORT CHECK asserts it. **`SYNONYMS` must not be edited casually**:
-`calibrate_refusal.py:150` builds 34 of its 106 probes from that map's keys, so touching it moves
-that suite off **212 runs** and requires a fresh calibration. The full measurement record is in
-`docs/phases/13_retrieval_quality.md` **Results** and in the amendment boxes on steps E2/E3/E4.
-
-> **"Act section-aware 800" is misleading — recorded 2026-09-17.** `chunk.SECTION_RE`
-> (`Section \d+.*`) matches only **4 times** in the entire cleaned Act text, and all four
-> sit at 89.8%+ of the document (Second Schedule + Forms). So `section_aware_split` yields
-> one unit for the whole operative body and v1's Act split is effectively
-> **`recursive_split(text, 800)`** for clauses 1–58. This is **not a bug to fix** — it is
-> part of the byte-identical v1 path every published baseline depends on. It does mean
-> Phase D's clause-aligned chunking is a **total replacement** of the Act splitter, not a
-> refinement.
+- **Three docs, three numbering schemes.** `doc_id ∈ {act2018, constitution1999, factsheet2020}`.
+  Act clause N, Constitution section N and Factsheet Section N are different things and must never
+  be conflated. `cite_tag()` is the only place tags are built.
+- **Shipping budget `k=4/doc, top_n=12`, and `top_n == 3 × k` is load-bearing.** Widening `k`
+  without holding it measured worse on all three sets. `top_n` is a ceiling, not a count.
+- **`build_corpus()` dict insertion order breaks score ties.** Reordering it moves published numbers.
+- **Context precision is low by design** (per-doc merging). Never gate or "fix" it.
+- **Declined arms stay declined.** BM25/RRF re-rank (E2a), the auto synonym map (E3a), the static
+  embedding arm (F0), the off-topic guard (H4) and the Pidgin-routed arm (H5a) live on archive
+  branches only. **Do not re-implement them here**, and do not re-run them without a new reason.
+- **`SYNONYMS` must not be edited casually**: touching it moves `calibrate_refusal` off its 212 runs
+  and requires a fresh calibration. **The OOV-bridge code is the measured function verbatim** — do not
+  "tidy" it (its PORT CHECK asserts it).
 
 ## Invariants (violating these is a spec break, not a style choice)
 
@@ -169,12 +117,15 @@ that suite off **212 runs** and requires a fresh calibration. The full measureme
   response shape must go through `ngo.with_helplines()`.
 - **Every legal claim carries a citation tag**, copied verbatim from the chunk header —
   `[Act cl. N]`, `[Constitution s. N]`, `[Factsheet Section N]`. Never strip, renumber,
-  or "clean up" OCR quirks in section numbers.
+  or "clean up" OCR quirks in section numbers (fixes go only through the human-signed
+  `data/processed/act2018_v2_corrections.json`).
 - **Two refusal layers, both preserved.** `MIN_SCORE = 0.10` is a weak-overlap *floor*,
   not a semantic filter (the in-corpus/off-corpus cosine bands are inverted — see the
   calibration comment in `src/retrieve.py`); the strict-prompt `NO_ANSWER_SENTENCE` path
-  in `src/rag.py` is the semantic one. False refusals deny help to PWDs, so the gate errs
-  low on purpose. Do not nudge `MIN_SCORE` upward to fix a precision number.
+  in `src/rag.py` is the semantic one. **False refusals deny help to PWDs**, so the gate errs
+  low on purpose. Do not nudge `MIN_SCORE` upward to fix a precision number. (The calibration
+  comment in `src/retrieve.py` adds: it may move down on evidence and never up —
+  `calibrate_refusal.py` gate 3 enforces that.)
 - **The default user path is fully offline.** Retrieval, excerpts, NGO lookup, and the
   router make zero network calls. Gemini generation sits behind an opt-in expander that
   defaults OFF. `ask(use_llm=False)` returns `answer=None` meaning *pending*, never a
@@ -183,14 +134,17 @@ that suite off **212 runs** and requires a fresh calibration. The full measureme
   pending. LLM runs write to versioned files (`test_phase02_results_<prompt>_<date>.json`).
 - **Verified contacts only.** `ngo.load_ngo()` hard-fails on placeholder/blank phones.
   Pruned orgs listed in the `src/ngo.py` docstring must not be re-added without fresh
-  verification against the official site.
-- **`data/processed/oov_bridge.json` is corpus-keyed.** Its keys are "words absent from the v2
-  index", so `rag.build_corpus("v2")` hard-fails on a missing or stale artifact (sha256 of the
-  chunk stream). Any corpus change means rebuild (`scripts/build_oov_bridge.py`, needs the GloVe
-  file in `D:\NGORAG\runs\e4_vectors\`, never committed) **and re-measure** — the bridge is not
-  re-validated by rebuilding it. `check_bridge=False` exists for the generator only.
-- **`data/processed/_SAMPLE_DO_NOT_CITE.txt` is a dev placeholder** — never loaded, never
-  cited.
+  verification against the official site. Research fetch tools paraphrase pages, so re-verify every
+  phone in a real browser (`tools/a11y_audit/verify_ngo_sources.mjs`).
+- **`data/processed/oov_bridge.json` is corpus-keyed.** `rag.build_corpus("v2")` hard-fails on a
+  missing or stale artifact (sha256 of the chunk stream). Any corpus change means rebuild
+  (`scripts/build_oov_bridge.py`, needs the GloVe file in `D:\NGORAG\runs\e4_vectors\`, never
+  committed) **and re-measure** — rebuilding does not re-validate it. `check_bridge=False` is for
+  the generator only.
+- **`data/processed/_SAMPLE_DO_NOT_CITE.txt` is a dev placeholder** — never loaded, never cited.
+- **Telemetry is counts only** (`src/telemetry.py`, `docs/telemetry.md`): no question text unless
+  the user ticks the sidebar opt-in (default OFF), no session id, no history, no IP. Any new field
+  goes through the owner first.
 - **Accessibility is a requirement, not polish**: linear screen-reader-safe layout,
   keyboard navigable, high contrast + font scaling, voice in/out.
 
@@ -198,172 +152,59 @@ that suite off **212 runs** and requires a fresh calibration. The full measureme
 
 Gemini free tier is **20 calls/day/model AND 10/minute/model** (confirmed by 429).
 `gemini-2.5-flash` and `gemini-2.5-flash-lite` draw from **separate pools**, so the real
-budget is **40/day**, and `ask(failover=True)` already exploits it (Phase 09 step 1;
-failover is opt-in, fires once, and **never** on a per-minute 429 — those are retried with
-backoff, not dodged). *Corrected 2026-09-19: this section previously said "20 calls/day/model
-(`gemini-2.5-flash`)" and named one model, which under-counted the budget by half.
-`docs/phases/11_chat.md:31-36` had flagged it stale and assigned the fix to Phase G.*
+budget is **40/day**; `ask(failover=True)` exploits it (opt-in, fires once, and **never** on a
+per-minute 429 — those are retried with backoff, not dodged). 503s are transients — retry with
+backoff. **Plan any multi-call run across days and pools before spending the first call** — a
+half-finished run is wasted quota — and check `HANDOFF.md` for the day's spend first. Anchors: a
+full Phase 02 run is 12 calls; a judge run ~30; Phase G took ~42 over two days. **Never
+`--failover` on a generation or judge run** (a failed-over row breaks generator/judge model
+separation — `docs/phases/14_generation_eval.md`).
 
-A full Phase 02 run is 12 calls. **The judge run is ~30, which does not fit in one day on one
-model** — plan the split across days and/or across both pools *before* spending the first
-call, because a half-finished judge run is wasted quota. This is Phase G's first task.
-Check `HANDOFF.md` for the day's spend before starting anything LLM-backed. 503s are
-transients — retry with backoff.
+The answer cache (`scripts/.answer_cache.json`, gitignored) is a quota saver, never evidence: keyed
+on sha256(model + whole rendered prompt), fails open, every hit marked `cached=True`. A
+flakiness/repeat check must pass `--no-cache` (`test_phase02.py`), or it measures replays.
 
-`scripts/eval_phase06.py` is a custom zero-LLM proxy for the RAGAS metrics (RAGAS itself
-is not installed — its langchain/openai tree would endanger the pinned env). Its expected
-refs are ground truth read from the corpus, never copied from LLM answers. Known metric
-artifacts (reverse_rel — 0.633 on the G2 transcript; the old 0.630/0.852 described v1 and is
-retired — and coverage misses) stay **recorded as FAIL**. The judge arbitrated reverse_rel as an
-artifact (10/10 relevant, Phase G 2026-10-15). Don't tune the yardstick to make them pass.
+**Held-out discipline.** `frozen-10` stays frozen and separate. Selection uses dev; blind sets
+(`test2`, and any new one) are authored and committed **before** any arm touches them, read once,
+and never tuned against. Whether `test` is still clean is an open owner decision (2026-10-21) — do
+not read it. Every ship gate is written down before its number is seen.
 
-## CSS / Streamlit gotchas (learned the hard way)
+`scripts/eval_phase06.py` is a custom zero-LLM proxy for the RAGAS metrics (RAGAS itself is not
+installed — its langchain/openai tree would endanger the pinned env). Its expected refs are ground
+truth read from the corpus, never copied from LLM answers. Known metric artifacts (reverse_rel,
+coverage misses) stay **recorded as FAIL**; the judge arbitrated reverse_rel as an artifact. Don't
+tune the yardstick to make them pass.
 
-- Brand colors live **only** in `.streamlit/config.toml`. `accessibility_css()` in
-  `app.py` handles spacing/typography/watermark/overrides — and dark-mode surfaces, which
-  needs the `body.drlca-dark` class set by the `theme_watch_html()` iframe (Streamlit
-  exposes no server-side theme hook).
-- The watermark div sits inside `stMainBlockContainer` at z-1, so the sidebar needs
-  z-index 2. Streamlit's own section rules beat un-`!important` ones.
-- `components.html(..., height=0)` never mounts — use `height=1`. `srcdoc` scripts race
-  `<body>`, so wrap them in a DOMContentLoaded-ready guard.
-- Restart the Streamlit server after CSS edits; browser reload alone is not enough.
+## UI, CSS and Streamlit
+
+Streamlit/CSS changes **half-apply silently** and a11y regressions pass every string assert. **Read
+`.claude/rules/ui.md` before editing `app.py`'s CSS/JS, `.streamlit/`, or `tools/a11y_audit/`.**
+Two rules that must survive a `/compact`: brand colors live **only** in `.streamlit/config.toml`;
+and a widget whose label or `key=` changes remounts and **drops keyboard focus** — test focus
+behaviour in a browser, not just state.
 
 ## Working conventions
 
-- Work the active playbook in `docs/phases/` in order; each defines its own exit criteria.
-  **ACTIVE: post-launch roadmap — `docs/phases/16_post_launch_roadmap.md`, next H0 (CI).**
-  Everything below in this bullet is history up to launch (2026-10-15).
-  **Phase D is COMPLETE and MERGED — D0–D6 DONE 2026-09-19, merged to `main` and deployed the
-  same day (`8682869`, merge of `phase10/corpus-v2`).**
-  `CORPUS_VERSION = "v2"` is the default (`src/rag.py:48`); v1 is retired as the default but
-  **not deleted** — every harness takes `--corpus=v1` and reproduces its published numbers from
-  the same commit. Baseline `scripts/baseline_v2_2026-09-19.txt`, all five harnesses green.
-  **Pushing to `main` auto-deploys to Render and real users — that decision is ALWAYS the
-  user's, never yours.** Phase D's merge was authorised explicitly on 2026-09-19; that
-  authorisation covered that merge and does not carry forward to the next one.
-  **Phase E (closed 2026-09-24) — `docs/phases/13_retrieval_quality.md`.**
-  **E1 is DONE 2026-09-20 — `3d280fb` (measure-only) + `9748086` (shipped `k=4/doc, top_n=12`).
-  Held-out `test` strict recall 0.471 → 0.529, dev 0.473 → 0.573, frozen-10 0.633 → 0.734, false
-  refusals still 0/10 · 0/25 · 0/17, `MIN_SCORE` untouched. Zero Gemini calls.**
-  **E1b IS MERGED AND DEPLOYED 2026-09-20 (`b92e2f4`, merge of `phase10/ship-e1b`).** The user
-  authorised it explicitly; Render auto-deployed on the push, and the live site was smoked after —
-  helplines lead the page and the turn, one legal answer returns **12 tagged excerpts whose tag
-  list is identical to the local measurement**, one NGO lookup returns helplines-first + 3 Lagos
-  orgs. **Users moved from the `0.471` arm to the `0.529` arm.** *That authorisation covered that
-  merge and does NOT carry forward.*
-  **E2 and E3 are MEASURED AND DECLINED IN FULL 2026-09-20. E4 WAS RE-SCOPED 2026-09-23 (E4.0,
-  `scripts/e4_reach.py`, dev only).** It is now an **"OOV bridge"**: pretrained-vector expansion of
-  out-of-corpus query terms only. Its reach is **4 of 12 failing dev questions (1 of 4
-  `vocab-mismatch`)**. **NEXT IS E4a** under the strict ship gate in the re-scope box on the E4
-  step, which fixes its parameters in advance. **E4a MEASURED 2026-09-23 (`597a23b`) and PASSED
-  that gate:** `test` strict 0.529 → **0.647** (+2 / −0), dev 0.573 → 0.613, frozen-10
-  unchanged, 0/212. **PORTED (`d4d7653`), reviewer SHIP WITH CAVEATS, and MERGED TO LOCAL `main`
-  2026-09-23 (`f846ee9`) on the user's authorisation — re-verified on the merged tree. NOT
-  PUSHED: deployment is deferred until all phases are done (see Deploy below).**
-  **NEXT IS E5**, re-scoped 2026-09-23 into steps E5.0–E5.6 (the box on the E5 step). The key
-  new item is **`test2`, a fresh clean held-out set authored before any arm touches it**, because
-  `test` (n=17) has now been used for four decisions. Both
-  `eval_phase06` digests are unchanged, so nothing was re-pinned. Caveats: in `docs/phases/13`
-  E4a-ship Results (dev in-corpus min top score 0.1369 → 0.1032; test r@3 0.324 → 0.294; one
-  ad-hoc `boss` → `manager` regression).
-  ⚠ **TWO BRANCHES, AND THE SPLIT IS DELIBERATE.** `phase10/ship-e1b` (merged as `b92e2f4`) carried
-  **only** the measured E1 win and the written record. `phase10/retrieval-quality` (`a6016e4`,
-  **pushed to `origin` 2026-09-20 as an archive — pushing a topic branch does not deploy**) carries
-  E2a's and E3a's **declined code** — `scripts/ablate_rerank.py`, `scripts/build_synonyms.py`,
-  `scripts/ablate_synonyms.py`, their opt-in `src/retrieve.py` consumers (`bm25=`, `rerank=`,
-  `load_auto_synonyms()`) and both `data/processed/synonyms_auto*.json` artifacts (~36.6k lines) —
-  and is **retained unmerged as the reproduction branch**. None of that code is on `main`, by
-  design: it is inert on the shipping path, it would ship in the Render image for no runtime
-  purpose, and every arm lost. **Re-run declined arms from `phase10/retrieval-quality` at
-  `a6016e4`; do not rebuild them here, and do not re-run them at all without a new reason.**
-  **E2 (BM25/RRF re-rank) — DECLINED.** As written it was an *ordering* change, which E1b made
-  **provably inert** (`top_n == 3k` ⇒ `select_top` returns all 12 *and* re-sorts by score; every
-  recall metric scores a **set**): measured `+0.000` while re-ordering 55/60 questions. Moved to
-  *selection* it **fires and loses** — `test` 0.529 → **0.471**, no gain on any set, same on v1.
-  **The finding that generalises: BM25 is the same lexical family as TF-IDF cosine, so the `+0.206`
-  pool headroom is NOT lexically reachable.** D6's "chunk length is the mechanism, therefore BM25"
-  prediction is **measured false**.
-  **E3 (corpus-derived synonym map) — DECLINED.** `SYNONYMS`, `expand_query` and the two-sided
-  expansion gate are **unchanged**. `recall_strict` frozen-10 / dev / test — hand (control)
-  **0.734 / 0.573 / 0.529** · auto 0.601 / **0.387** / 0.382 · none 0.634 / 0.500 / **0.588** ·
-  hand∪auto 0.702 / 0.440 / 0.382. The auto map **loses on every set and gains not one question
-  anywhere** (0 up / 13 down of 52) and **halves its own target class** (pooled `vocab-mismatch`
-  strict 0.479 → **0.229**) — dilution, not inertness. **It cannot be parameterised out of it**:
-  **6 of the 34 hand keys (`fined`, `fired`, `jail`, `job`, `lawyer`, `sack`) do not occur in the
-  corpus at all**, and those are exactly the user-register bridges.
-  ⚠ **The `none` arm is a genuine dev/test DISAGREEMENT, not a win for either side**: `C − A` is
-  `−0.100 / −0.073 / +0.059` on v2 and `−0.100 / −0.047 / +0.088` on v1 — same sign on every set,
-  both corpora. **Dev selects and test checks, so the hand map stays** — but **we still have no
-  held-out evidence it is worth having. That is an E5 item; do not settle it on 17 questions.**
-  **SETTLED 2026-09-23 (E5.3, `scripts/ablate_handmap.py`):** on the fresh `test2` (n=42, authored
-  and committed before any measurement, E5.2) the hand map earns its place: ship S **0.629** vs
-  bridge-only 0.577 vs none 0.554 (`vocab-mismatch` 0.450 / 0.283 / 0.283), agreeing with dev.
-  The `test` +0.059 was noise. **S stays; `SYNONYMS` unchanged.**
-  **PHASE E CLOSED 2026-09-24.** Surface-form `beg`→`begging` arm declined (dev tie). Baseline
-  `scripts/baseline_phaseE_2026-09-24.txt` (strict 0.734 / 0.613 / test 0.647 / test2 0.629, 0/212).
-  E5.5 probe: `gemini-embedding-001` free tier = **100 strings/min, counted per string** (batching
-  saves nothing), daily cap unknown. **M2 (dense) DECLINED FOR LAUNCH, not rejected** (revisit with
-  post-launch query logs; offline invariant unchanged). **NEXT IS PHASE G —
-  `docs/phases/14_generation_eval.md`** (G0 code prep at zero quota, then a 2-day quota calendar;
-  never `--failover` on G runs). **G0 + G1 DONE AND FROZEN 2026-09-24**: prompt `cite-strict-v3` /
-  `chat-cite-strict-v2` (new rule 8 = answer-shape floor on NUMBERED tags; the chat rule is now 9);
-  `cross_turn_drift` bracket bug fixed (it always returned `[]`). **PHASE G CLOSED 2026-10-15**
-  (Day 2: judge 23/23, G4 0 drift / 0 cite failures; AI expander "recommendable, still opt-in",
-  default OFF; results in `docs/phases/14_generation_eval.md` G5). **Act cl. 1 fix DONE, verified by Jerry and merged
-  locally from `phase10/act-cl1-fix`** (show-through, corrected via `data/processed/act2018_v2_corrections.json`;
-  re-measured, shipping numbers unchanged). `parse_act_v2.py` now defaults to `--body-from=5`, which is what the shipped artifact was
-  built with. **PHASE F RE-EXAMINED 2026-10-15 → `docs/phases/15_phase_f_reexamined.md`** (M4 superseded;
-  F0 = offline static-embedding arm, dev-only, strict a-priori gate; F2 fine-tune only after launch).
-  **F0 MEASURED AND DECLINED 2026-10-15 → PHASE F CLOSED** (frozen-10 −2 q, dev net 0; test2 unread;
-  harness archived on `phase10/f0-static` `27ed13d`, not on `main`; lay/Pidgin probes +0.100 is a
-  post-launch lead only). **All phases done. G6 generator-refusal probe DONE 2026-10-15** (10/10 answered, 0 refusals, 0
-  fabricated tags; CD1.t2 narrowed to the chat path). cl.12/cl.20 OCR slips fixed and verified (Jerry). **DEPLOYED 2026-10-15 on the user's authorisation** (see Deploy below).
-  ⚠ **Bearing on E4:** this is the **second consecutive phase** where a term-level lexical signal
-  failed to reach the `+0.206` headroom, and E3a was the arm that was supposed to differ in kind.
-  A static-embedding blend is **also term-level association** — **E4's ship gate should be strict
-  and E4 should be prepared to be declined.** E4's *re-rank* framing is inert for E2a's exact
-  reason; its one structural advantage over E3 is that a **pretrained** table contains the six
-  keys the corpus never uses, which puts its live mechanism on the **expansion** side.
-  ⚠ **E1 did NOT ship what its own playbook specified**, and the reason generalises:
-  **`k=20/doc` measures `+0.000` on test.** The knob was `top_n == 3k`, and a wider pool at an
-  unchanged budget is a **regression on all three sets** (the spare slots go to the global top,
-  which the Constitution owns). A prototyped `max_per_doc` ceiling proved **bit-identical** to plain
-  `k=4/doc` and was not added. Full amendment box in that playbook's **Results**.
-  Two D6 findings bind on it (both are also in that playbook's amendment box):
-  **`CT4.t3`'s correct chunk sits outside the 60-candidate pool entirely** (rank 104 at k=200),
-  so **E1's widening does not reach it** — confirmed, and E1 shipped a *narrower* pool than the
-  one that could not reach it anyway; and
-  **`recall_strict` does NOT neutralise the packed-ref subsidy in the `ctx` arm** — it corrects
-  scoring, not retrieval, and cannot see a chunk retrieved because of another clause's words.
-  That second one bit on E1b: its `eval_chat` ctx gains look large (`chat_dev` 0.607 → 0.786) but
-  **a budget showing twice as many chunks inflates any recall-shaped metric by construction.**
-  E1b's load-bearing evidence is the single-turn held-out `test` column, not the chat deltas.
-  Order is **E → G → F**: **E** (retrieval quality — `docs/phases/13_retrieval_quality.md`, **NEW**
-  and the consolidated playbook; supersedes the scattered `09` step 3 and `10` M1/M2 sizing) →
-  **G** (fresh transcripts + judge + cross-turn citation drift, M5 + `11_chat.md`) →
-  **F** (free-GPU fine-tune, M4 — **re-examine before scheduling**, see the box on M4).
-  **E BEFORE G, decided 2026-09-19 on resource grounds**, which reverses the G-before-E call
-  taken earlier the same day (that one is recorded in `LEARNING_JOURNAL.md`, not erased).
-  The reason is asymmetric cost: **E costs zero quota and *improves* the system; G costs ~30
-  calls — most of a day's entire free budget — and only *measures* it.** Judging before E spends
-  the scarce resource on a system about to change, then needs re-running. The safety argument for
-  G-first is weaker than it looked: AI prose is opt-in and defaults OFF, so unmeasured
-  cross-turn drift is not reaching users by default. **G needs a multi-day quota plan before its
-  first call** — see the quota section above.
-  **D before E is still load-bearing** (and still satisfied): M2's embedding
-  artifact is per-chunk and keyed on a corpus sha256, so embedding before the rebuild
-  throws all of it away.
-  **M3 of `10_corpus_rebuild_and_dense.md` is SUPERSEDED — do not execute it**; two of its
-  premises were falsified. `docs/phases/08_retrieval_upgrades.md` steps 4/5 are superseded
-  too (both need a model at query time, which `requirements.txt` forbids).
-- **Doc hygiene is mandatory**: every build session ends by updating `STATUS.md`, the
-  active playbook's results section, and a dated `LEARNING_JOURNAL.md` entry. Progress
-  must survive the session.
-- No LangChain — orchestration is custom `src/`. Justify any framework change in the
-  learning journal.
-- Deploy: Render free tier auto-deploys on push to `main`
-  (https://ngodisabilityrag.onrender.com). **DEPLOYED 2026-10-15 on the user's explicit authorisation**, after all phases (E → G → F) and the three verified clause corrections: E4a bridge, `cite-strict-v3` prompts, the drift fix and the corpus corrections are now live. *(Deployment had been deferred since 2026-09-23.)* **The 2026-10-15 authorisation covered that push only. Every later push to `main` deploys to real users and is still the user's call, every time.**
-  The site URL itself is unchanged: `GOOGLE_API_KEY` is a Render env var — never
-  committed. Free instances sleep after 15 min idle (~1 min wake); a slow first load is
-  normal, not breakage.
+- **ACTIVE: `docs/phases/17_h8_corpus_expansion.md`, order H8c → H8b → H8a.** Other open items
+  (H7 week-1 signal read on/after 2026-10-28, H5b, H6) are in `docs/phases/16_post_launch_roadmap.md`
+  and `HANDOFF.md`. Work the active playbook in order; each step defines its own exit gate.
+  All earlier phases (01–15, D, E, G, F) are closed; their records are in the playbooks and
+  `docs/history/claude_md_2026-10-22.md`.
+- **Doc hygiene is mandatory**: every build session ends by updating `STATUS.md` (current state
+  only — replace lines, don't append history), `HANDOFF.md` (latest block on top; move superseded
+  blocks to `docs/history/handoff_history.md`), the active playbook's Results section, and a dated
+  `LEARNING_JOURNAL.md` entry. Progress must survive the session.
+- **Branch per change, PR to `main`.** Declined code goes on an archive branch and is never merged
+  (`phase10/retrieval-quality` `a6016e4`, `phase10/f0-static` `27ed13d`, `phase11/h4-offtopic`
+  `e884f85`, `phase11/h5a-pidgin` `5b28c07`). Pushing a topic branch does not deploy.
+- **Delegated work gets a reviewer pass** before it is reported; source-text asserts prove presence,
+  never behaviour.
+- No LangChain — orchestration is custom `src/`. Justify any framework change in the learning journal.
+- **Deploy: Render free tier auto-deploys on every push to `main`**
+  (https://ngodisabilityrag.onrender.com, service `srv-dah26opt0dsc73e9a350`). **Every merge or
+  push to `main` deploys to real users and is the owner's call, every time — no authorisation
+  carries forward**, including for docs-only merges. If auto mode blocks `gh pr merge` after the
+  owner's yes, give them the exact `!` command. `GOOGLE_API_KEY` is a Render env var — never
+  committed. Free instances sleep after 15 min idle (~1 min wake); a slow first load is normal.
+  Smoke runs that ask a question write production telemetry: count attempts and record the ids
+  to discount.
