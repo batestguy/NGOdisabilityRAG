@@ -1,5 +1,12 @@
 # HANDOFF — start here (60 seconds, updated 2026-10-22)
 
+> **■ 2026-10-22 (latest): H8b DONE → `ef9ae90` + `3b02875` on `phase11/h8b-split`** (stacked on `phase11/h8c-docs`;
+> not pushed, not merged). 11 render helpers moved verbatim to `src/ui_render.py` (`app.py` 1,748 → 1,352). The other 3
+> stay in `app.py` because they compute with app state. Reviewer SHIP: AST-identical move, test_phase05 179/179 with the
+> same names, `eval_chat` byte-identical, axe 0, focus probes identical. **Trap:** to fake Streamlit in a test, patch BOTH
+> `app._st` and `ui_render._st`. **Next:** the owner decides whether to push and open a PR for the stack (H8 playbook + H8c +
+> H8b). Merging deploys, so that is the owner's call. H8a waits on the H7 read (on/after 2026-10-28) and the H6 return.
+
 > **■ 2026-10-22 (later): H8c DONE → `fc168ae` on `phase11/h8c-docs`** (stacked on `phase11/docs-a11y-deploy`; not
 > pushed, not merged). `CLAUDE.md` is 210 lines plus `.claude/rules/{retrieval,ui}.md`, and history is in `docs/history/`.
 > **First thing next session: run `/context` and confirm neither rules file loads at startup.** Next: H8b (split
