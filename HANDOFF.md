@@ -23,18 +23,19 @@ egs_compact.txt` (gitignored).
 >   * `CORPUS_VERSION` is still `"v2"`.
 >   * Details and warnings are in playbook 17's Results.
 >
-> **Next session, in this order:**
-> 1. **H8a.3 measure (zero quota).** The gate is already written in playbook 17. Run three arms: v2 control, v3 at
->    `top_n=12`, v3 at `top_n=16`.
->    * Read dev and the selection sets first. `test2` and `test3` are read **once, at the end, for the chosen arm only**.
->      Never read `test`.
->    * The harnesses (`eval_heldout`, `calibrate_refusal`) need `--corpus=v3` plus a set loader for
->      `questions_accessregs.json`. Write those **before** looking at any v3 number.
->    * Do not point the `ablate_*` harnesses at v3 (they raise TypeError or use the wrong bridge).
->    * Watch `[Regs general]` (the preamble) in the per-question diff. The reviewer saw it in 11/40 existing-law top-12s,
->      and 38/40 questions lose a v2 hit.
-> 2. The H8a.5 cut-over still waits for the H6 legal review to return.
-> 3. H9a (suggested follow-ups) can run in parallel once the owner approves it.
+> * **H8a.3 DECLINED at the dev stage.** The harness `scripts/eval_h8a3.py` was committed before any v3 number (`9345a86`).
+>   * v3-12 regresses existing law (G1).
+>   * v3-16 keeps existing law identical, but reach is 0.583 (< 0.60, G3) and 3/6 status probes miss their evidence (G5).
+>   * The blind stage did not run: **`test2` and `test3` are still unread**.
+>   * The table and per-question detail are in playbook 17's Results and `scripts/h8a3_dev_stage_2026-10-23.txt`.
+>   * The branch is now the archive of a declined arm and is never merged.
+>
+> **Next session:**
+> 1. **Owner decides H8a:** stay declined, or reopen with a new arm (status facts carried by a fixed status note + a reach
+>    lever). A reopening needs a gate written first and a fresh dev set (`accessregs-dev` has been read). `test3` stays
+>    sealed for whichever arm wins.
+> 2. H9a (suggested follow-ups) does not depend on H8a and can start once the owner approves it.
+> 3. H7 week-1 read on/after 2026-10-28.
 >
 > **Still open (unchanged from 2026-10-22):** the H7 week-1 read is on/after **2026-10-28** (discount the 4 smoke ids).
 > **Owner:** approve H9a and decide on `via=suggestion`; is `test` still clean?; send the H6 sheet; H5b needs quota days and

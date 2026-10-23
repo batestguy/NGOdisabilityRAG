@@ -1,0 +1,81 @@
+== H8a.3 DEV STAGE (k=4/doc, min_per_doc=1, MIN_SCORE=0.10) ==
+   recall_strict     control    v3-12    v3-16
+   frozen10            0.734    0.695    0.734
+   dev                 0.613    0.593    0.613
+   accessregs-dev      0.042    0.542    0.583
+   status              0.100    0.400    0.400
+
+   probes for G4: 100 (frozen10+dev+accessregs-dev+status rows, 12 OFF_CORPUS, 34 SYNONYMS keys; `test` rows left out)
+   off-corpus answered (of 17): control 13  v3-12 14  v3-16 14
+
+== PER QUESTION, existing law (control -> arm; lost/gained pairs) ==
+   Q1       v3-12 0.667->0.667 [Regs general] | v3-16 0.667->0.667 [Regs general]
+   Q2       v3-12 0.714->0.571 LOST factsheet2020:7 | v3-16 0.714->0.714
+   Q3       v3-12 0.500->0.500 [Regs general] | v3-16 0.500->0.500 [Regs general]
+   Q4       v3-12 0.667->0.667 [Regs general] | v3-16 0.667->0.667 [Regs general]
+   Q5       v3-12 0.125->0.125 [Regs general] | v3-16 0.125->0.125 [Regs general]
+   Q6       v3-12 1.000->1.000 | v3-16 1.000->1.000 [Regs general]
+   Q7       v3-12 0.667->0.667 | v3-16 0.667->0.667 [Regs general]
+   Q8       v3-12 1.000->0.750 LOST act2018:7 | v3-16 1.000->1.000
+   Q9       v3-12 1.000->1.000 | v3-16 1.000->1.000
+   Q10      v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H1       v3-12 0.000->0.000 | v3-16 0.000->0.000 [Regs general]
+   H2       v3-12 1.000->0.500 LOST factsheet2020:16 | v3-16 1.000->1.000
+   H3       v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H4       v3-12 0.000->0.000 | v3-16 0.000->0.000
+   H5       v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H6       v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H7       v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H8       v3-12 0.000->0.000 | v3-16 0.000->0.000
+   H9       v3-12 0.000->0.000 [Regs general] | v3-16 0.000->0.000 [Regs general]
+   H10      v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H11      v3-12 0.000->0.000 | v3-16 0.000->0.000
+   H12      v3-12 1.000->1.000 [Regs general] | v3-16 1.000->1.000 [Regs general]
+   H13      v3-12 1.000->1.000 [Regs general] | v3-16 1.000->1.000 [Regs general]
+   H14      v3-12 0.000->0.000 | v3-16 0.000->0.000
+   H15      v3-12 0.000->0.000 [Regs general] | v3-16 0.000->0.000 [Regs general]
+   H16      v3-12 0.333->0.333 [Regs general] | v3-16 0.333->0.333 [Regs general]
+   H17      v3-12 0.667->0.667 [Regs general] | v3-16 0.667->0.667 [Regs general]
+   H18      v3-12 0.333->0.333 | v3-16 0.333->0.333
+   H19      v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H20      v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H26      v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H27      v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H28      v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H29      v3-12 1.000->1.000 | v3-16 1.000->1.000
+   H30      v3-12 0.000->0.000 [Regs general] | v3-16 0.000->0.000 [Regs general]
+
+== PER QUESTION, accessregs-dev + status (dev sets: shown) ==
+   AR_D01  v3-12 1.000 miss=[] | v3-16 1.000 miss=[]
+   AR_D02  v3-12 0.000 miss=['accessregs2023:151'] | v3-16 0.000 miss=['accessregs2023:151']
+   AR_D03  v3-12 0.333 miss=['accessregs2023:112', 'accessregs2023:12'] | v3-16 0.667 miss=['accessregs2023:112']
+   AR_D04  v3-12 1.000 miss=[] | v3-16 1.000 miss=[]
+   AR_D05  v3-12 1.000 miss=[] | v3-16 1.000 miss=[]
+   AR_D06  v3-12 1.000 miss=[] | v3-16 1.000 miss=[]
+   AR_D07  v3-12 0.000 miss=['accessregs2023:2'] | v3-16 0.000 miss=['accessregs2023:2']
+   AR_D08  v3-12 0.000 miss=['accessregs2023:59'] | v3-16 0.000 miss=['accessregs2023:59']
+   AR_S01  v3-12 0.000 miss=['act2018:56'] | v3-16 0.000 miss=['act2018:56']
+   AR_S02  v3-12 1.000 miss=[] | v3-16 1.000 miss=[]
+   AR_S03  v3-12 1.000 miss=[] | v3-16 1.000 miss=[]
+   AR_S04  v3-12   n/a miss=[] | v3-16   n/a miss=[]
+   AR_S05  v3-12 0.000 miss=['accessregs2023:165', 'act2018:6'] | v3-16 0.000 miss=['accessregs2023:165', 'act2018:6']
+   AR_S06  v3-12 0.000 miss=['accessregs2023:168', 'act2018:8'] | v3-16 0.000 miss=['accessregs2023:168', 'act2018:8']
+
+== DEV-STAGE GATES ==
+   v3-12: FAIL
+      - G1 frozen10 mean 0.695 < control 0.734
+      - G1 frozen10 Q2 loses factsheet2020:7
+      - G1 frozen10 Q8 loses act2018:7
+      - G1 dev mean 0.593 < control 0.613
+      - G1 dev H2 loses factsheet2020:16
+      - G3 accessregs-dev recall_strict 0.542 < 0.60
+      - G5 AR_S01 misses ['act2018:56']
+      - G5 AR_S05 misses ['accessregs2023:165', 'act2018:6']
+      - G5 AR_S06 misses ['accessregs2023:168', 'act2018:8']
+   v3-16: FAIL
+      - G3 accessregs-dev recall_strict 0.583 < 0.60
+      - G5 AR_S01 misses ['act2018:56']
+      - G5 AR_S05 misses ['accessregs2023:165', 'act2018:6']
+      - G5 AR_S06 misses ['accessregs2023:168', 'act2018:8']
+
+   G6 choice for the blind stage: None

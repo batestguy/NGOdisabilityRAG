@@ -219,6 +219,37 @@ question shows the same tags as the local measurement.
 
 ## Results
 
+> **H8a.3 — 2026-10-23, DECLINED at the dev stage (zero quota).** The harness `scripts/eval_h8a3.py` (gates G1–G6
+> copied from this playbook) was committed as `9345a86` **before** any v3 number existed. Its `--self-test` proves G3/G5
+> fire. Output: `scripts/h8a3_dev_stage_2026-10-23.txt`.
+>
+> | recall_strict | control (v2, 12) | v3-12 | v3-16 |
+> |---|---|---|---|
+> | frozen-10 | 0.734 | 0.695 | 0.734 |
+> | dev | 0.613 | 0.593 | 0.613 |
+> | accessregs-dev | 0.042 | 0.542 | 0.583 |
+> | status | 0.100 | 0.400 | 0.400 |
+>
+> * **v3-12 fails G1** (the F1 displacement): frozen-10 and dev fall, and Q2 (Factsheet 7), Q8 (Act cl. 7) and H2
+>   (Factsheet 16) lose a chunk control had. It also fails G3 and G5.
+> * **v3-16 passes G1, G2 and G4**: existing law is identical to control, with 0 lost pairs, 0 false refusals on any dev
+>   set, and refusal invariance 0/100 probes. It **fails G3** (0.583 < 0.60) and **G5**.
+>   * G3: AR_D02 (reg. 151), D07 (reg. 2) and D08 (reg. 59) get 0; D03 misses reg. 112.
+>   * G5: AR_S01 misses Act cl. 56 (control misses it too); S05 misses Act cl. 6 + reg. 165; S06 misses Act cl. 8 +
+>     reg. 168. S02, S03 and S04 pass; S04 passes because the `[Regs general]` preamble chunk is shown.
+> * **G6 choice: none. The blind stage was NOT run, so `test2` and `test3` stay unread.** The gate is not loosened after
+>   the fact. Per this playbook, H8a is declined as built. Branch `phase11/h8a-accessregs` is its archive and is never
+>   merged. The live system is untouched.
+> * G4's probe count is 100, not calibrate_refusal's 106: the `test` rows are left out (not to be read) and the 14
+>   accessregs-dev + status rows are added. Off-corpus answered: control 13/17, both v3 arms 14/17 (F9, as predicted).
+>   `MIN_SCORE` is unchanged.
+> * **What a reopening would need** (owner's call; a new reason and a new gate written before any number, dev only):
+>   v3-16's failures are reach and status evidence, not displacement. The candidates are (a) H8a.4's fixed status note
+>   carrying the status facts (enabling power, commencement, administrative-only penalties) so G5 no longer depends on
+>   retrieval, and (b) a reach lever for the Regs, e.g. title-weighted headers for short regulations. Either is a new arm
+>   with a fresh pre-declared gate. Since dev has now been read once, it is no longer a clean selection set for a v3
+>   rescue; an honest reopening authors a fresh `accessregs-dev2` before measuring.
+
 > **H8a.2 — 2026-10-23, DONE (zero quota; reviewer: ship to H8a.3).** Branch `phase11/h8a-accessregs`: `44f5a7b` (F7),
 > `0ef9b9e` (parser), `fbfe5a2` (v3 wiring), plus a review-fix commit. `CORPUS_VERSION` is still `"v2"`.
 > * **F7.** The bridge is chosen by corpus content: `PerDocRetriever` picks the registered artifact whose `corpus_sha256`

@@ -90,6 +90,7 @@ Moved from root `CLAUDE.md` by H8c (2026-10-22). The dated history behind each r
 | F0 offline static embedding | frozen-10 −2 q, dev net 0 | `phase10/f0-static` `27ed13d` |
 | H4 off-topic guard | dev 2/5 (needs 3) | `phase11/h4-offtopic` `e884f85` |
 | H5a Pidgin-routed static arm | dev net +1 (needs +2) | `phase11/h5a-pidgin` `5b28c07` |
+| H8a v3 corpus (+ Accessibility Regs) | dev stage: v3-12 regresses existing law (G1); v3-16 holds it but new-doc reach 0.583 < 0.60 (G3) and 3/6 status probes miss evidence (G5). test2/test3 unread. | `phase11/h8a-accessregs` |
 
 **Do not re-implement any of these here, and do not re-run them without a new reason.** Never re-rank
 by replacing the cosine scorer: BM25 scores are unbounded and would invalidate the `MIN_SCORE`

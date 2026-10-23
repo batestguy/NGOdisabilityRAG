@@ -29,11 +29,11 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 
 ## Open
 
-- **Active: H8 — `docs/phases/17_h8_corpus_expansion.md`.** H8c + H8b DONE and live. H8a.0 DONE: the owner
+- **H8 — `docs/phases/17_h8_corpus_expansion.md` (H8a declined, awaiting owner).** H8c + H8b DONE and live. H8a.0 DONE: the owner
   chose + signed the **Accessibility Regulations 2023 (S.I. 51)** (`docs/h8a_source_dossier.md`; PDF in `data/raw/`).
   H8a.1 DONE 2026-10-23: `data/eval/questions_accessregs.json` (dev 8 / blind `test3` 12 / status 6), committed
   before any parser as `af3129e`. H8a.2 DONE 2026-10-23 (reviewed): corpus v3 = v2 + `accessregs2023` (221 chunks, `[Regs reg. N]`, pin
-  `f13b9678…`, version-keyed OOV bridge); v2 proven bit-identical; `CORPUS_VERSION` still v2. **Next: H8a.3** (measure 3 arms).
+  `f13b9678…`, version-keyed OOV bridge); v2 proven bit-identical; `CORPUS_VERSION` still v2. **H8a.3 DECLINED 2026-10-23 at the dev stage** (v3-12 fails G1; v3-16 fails G3 0.583 < 0.60 and G5); test2/test3 unread; owner decides whether to reopen with a new arm.
 - **Queued: H9 deterministic follow-ups** (`docs/phases/18_h9_deterministic_followups.md`): H9a suggested questions
   (low risk, can run while H8a waits on H6); H9b extractive key lines (after H6 + the H7 read). Owner approval pending.
 - **H7 week-1 read on/after 2026-10-28** (command in `HANDOFF.md`; discount 4 smoke ids).

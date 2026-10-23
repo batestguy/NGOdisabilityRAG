@@ -3621,3 +3621,18 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
 - **Displacement shows up before measurement.** In the reviewer's preview, adding the doc put a Regs hit in 39 of 40
   existing-law top-12s, and the preamble chunk (which carries the Act's full title) appeared in 11. H8a.3's gate 1 exists
   for exactly this.
+
+## 2026-10-23 — H8a.3: the fourth document is declined, and the gate did its job
+
+- Both v3 arms failed the gate written before measurement. **v3-12** paid for the new document with existing-law recall
+  (frozen-10 0.734 → 0.695; three questions lost a chunk). That is the `top_n == 3k` rule from E1b, re-proven from the
+  other side. **v3-16** held existing law exactly but reached only 0.583 on the new document's dev set (bar 0.60), and 3 of
+  6 status probes did not retrieve their evidence.
+- Being one question short of 0.60 is a decline, not a near-pass. The temptation to call 0.583 "close enough" is exactly
+  what a pre-written gate is for.
+- **Status evidence is a weak fit for retrieval.** The facts a status note needs (enabling power, commencement,
+  administrative-only penalties) live in unnumbered front matter or in short clauses that TF-IDF ranks low (Act cl. 56 is
+  one sentence). A fixed, hand-verified status note tied to `doc_id` is probably the right carrier; making retrieval
+  find them is the wrong lever. That idea came from reading dev, so a reopening must re-gate it on fresh questions.
+- The blind sets stayed sealed: the harness refuses the blind stage unless G6 picks an arm, and records a marker after one
+  read. Declining at dev keeps `test2` clean and `test3` unspent for a future arm.
