@@ -1,56 +1,33 @@
-# HANDOFF — start here (60 seconds, updated 2026-10-22)
+# HANDOFF — start here (60 seconds, updated 2026-10-23)
 
-> **■■ 2026-10-22 END OF SESSION: READ THIS BLOCK FIRST ■■**
+> **■■ 2026-10-23 END OF SESSION: READ THIS BLOCK FIRST ■■**
 >
-> **Live: `main` = `94db479`** (PR #20 = H8 playbook + H8c doc split + H8b `app.py` → `src/ui_render.py`; merged on the
-> owner's word). CI green; Render `dep-dbcrr8k9v7es73bse4u0` live 07:41 UTC. The live smoke `live_smoke_a11y.mjs` PASSED.
-> It asks no question, so there are **no new telemetry ids to discount**.
+> **Live: unchanged, `main` = `94db479`.** Today ran no deploy, no quota and no telemetry.
 >
-> **Branch `phase11/h8a-sources` (pushed, docs + one raw PDF; NOT merged: merging redeploys, so bundle it with H8a code):**
-> * **H8a.0 DONE.** The owner chose the **Persons with Disabilities (Accessibility) Regulations, 2023 (S.I. No. 51 of 2023)**
->   and signed the reuse line ("go with the Accessibility Regulations, I sign off").
-> * Dossier: `docs/h8a_source_dossier.md`. PDF: `data/raw/accessibility_regulations_2023_gazette_FGP.pdf`
->   (sha256 `04bb8bec…8b05`, row in `data/raw/SOURCES.md`).
-> * Born-digital: regulations 1–172 on pp. 9–68 (the Arrangement on pp. 3–8 is the manifest). The First Schedule figures,
->   pp. 69–172, are images; exclude them.
+> **Done today (branch `phase11/h8a-accessregs`, cut from `phase11/h8a-sources`; pushed; NOT merged):**
+> * **H8c `/context` check PASSED.** At startup only the global `CLAUDE.md`, project `CLAUDE.md` and `MEMORY.md` load.
+>   `.claude/rules/retrieval.md` loaded lazily the first time a `data/processed/` file was read, which is the intended behaviour.
+> * **H8a.1 DONE (exit gate met).** `data/eval/questions_accessregs.json` was committed alone as **`af3129e`**, before any
+>   parser: **dev 8 / blind `test3` 12 / status 6**, with 5 Pidgin questions. Refs come from the gazette text.
+>   **Do not read `test3` again.**
+> * The H8a.2 findings are in playbook 17's Results: the commencement date is resolved (22 May 2023); the enacting formula is
+>   unnumbered and AR_S04 has empty `expected`; the Arrangement mislabels reg. 133 as "132"; there are two look-alike
+>   certificates (reg. 165 vs 166); the naira sign is printed as "N". The gazette text for reading lives in
+>   `runs\h8a1egs_compact.txt` (gitignored).
 >
 > **Next session, in this order:**
-> 1. **Run `/context` once.** Confirm `.claude/rules/retrieval.md` and `ui.md` do NOT load at startup (H8c check, never run).
-> 2. ~~Ask about the Act gazette~~ **Answered 2026-10-22: the reuse sign-off covers the live Act gazette too** (recorded in the dossier).
-> 3. **H8a.1 (zero quota), branch from `phase11/h8a-sources`.** Spec: `docs/phases/17_h8_corpus_expansion.md` H8a.1.
->    * Author **~20 questions from the official PDF text**, before any parser exists: **dev ~8** and a blind **`test3` ~12**,
->      plus **~6 status probes**. For the Regulations a status probe asks things like "what law lets the Commission make these
->      rules?", where the right evidence is `[Act cl. 56]`, and "is there a fine?" (reg. 168, ₦500,000 minimum).
->    * Mix plain, lay and Pidgin register (e.g. "my office get no ramp, wetin law talk?").
->    * Expected refs = regulation numbers read from the PDF. Proposed tag `[Regs reg. N]`, `doc_id` `accessregs2023`. The tag
->      is not wired yet; H8a.2 does that.
->    * Put them in a new file (e.g. `data/eval/questions_accessregs.json`). Do NOT touch `questions.json`, `questions_test2.json`
->      or the frozen-10.
->    * **Commit the questions in their own commit before writing any parsing code** (the E5.2 `test2` procedure). Do not read
->      `test3` again after authoring.
->    * Extract text only to read it while authoring: `C:\conda-envs\drlca-rag\python.exe -I` with PyMuPDF, output to `runs\`.
->      The parser comes in H8a.2.
-> 4. **H8a.2 onward:** start only after H8a.1 is committed. Read playbook 17's F1–F10 first; the OOV bridge must become
->    version-keyed before anything else (F7). **H8a.5 cut-over waits for the H6 legal review to return.**
+> 1. **H8a.2 (zero quota):** read playbook 17 F1–F10 and `.claude/rules/retrieval.md` first. **F7 comes first: the OOV bridge
+>    must become version-keyed.** Then parse the regulations behind a new corpus version (v3), append `accessregs2023` LAST in
+>    `build_corpus()`, keep v1/v2 reproducible, and give the new corpus its own pin.
+> 2. The H8a.5 cut-over still waits for the H6 legal review to return.
+> 3. H9a (suggested follow-ups) can run in parallel once the owner approves it.
 >
-> **Queued after H8a: H9, deterministic follow-ups → `docs/phases/18_h9_deterministic_followups.md`** (planned 2026-10-22,
-> zero quota). **H9a** adds suggested follow-up questions built from gazette clause titles; it is low risk and can run while
-> H8a waits on H6. **H9b** adds extractive cited "key lines"; it is moderate risk and comes after the H6 review + H7 read.
-> A composed rule-based answer was considered and rejected (reasons are in the playbook). **Owner:** approve H9a; decide
-> whether to allow a counts-only `via=suggestion` telemetry field.
+> **Still open (unchanged from 2026-10-22):** the H7 week-1 read is on/after **2026-10-28** (discount the 4 smoke ids).
+> **Owner:** approve H9a and decide on `via=suggestion`; is `test` still clean?; send the H6 sheet; H5b needs quota days and
+> native checkers; are the demo GIF and LinkedIn still wanted? **Agent, small:** NVDA listen-through, `heading-order`,
+> Cedar RECHECK, Streamlit 1.66 `aria-expanded`.
 >
-> **Still open (unchanged):**
-> * **H7 week-1 signal read on/after 2026-10-28:** command in Standing facts → file → `scripts/summarise_signal.py` minus the
->   4 smoke ids → H7 results box (`docs/phases/16_post_launch_roadmap.md`). Then decide which of M2 / F2 / H5a to reopen,
->   each with a new pre-declared gate.
-> * **Owner:** is `test` still clean? · send the H6 sheet (`docs/review/h6_review_sheet.md`) to a legal reviewer (optionally
->   adding the one-line reuse question) · H5b needs 2 quota days (~45 calls) + native Yoruba/Hausa/Igbo checkers · demo GIF
->   and LinkedIn still wanted? (old items; frames in `docs/demo/` are from September and out of date).
-> * **Agent, small:** NVDA listen-through of the radio and skip link · best-practice `heading-order` (H1 → H3) · Cedar
->   Foundation RECHECK · Streamlit 1.66 `aria-expanded` migration (own branch).
->
-> The 2026-10-21 and earlier 2026-10-22 blocks are in `docs/history/handoff_history.md`. Their gotchas now live in
-> `CLAUDE.md`, `.claude/rules/ui.md` and Standing facts below.
+> The 2026-10-22 block moved to `docs/history/handoff_history.md`.
 
 ---
 

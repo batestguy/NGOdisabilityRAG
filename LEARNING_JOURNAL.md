@@ -3582,3 +3582,23 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   - H9b, verbatim cited key lines behind an exception guard and a human "misleading" check.
 - `conversations.json` gives a zero-quota yardstick for suggestions: did a suggestion name the clause the user asked
   about next? Measure that against a random-neighbour baseline.
+
+## 2026-10-23 — H8a.1: blind questions written before a parser exists
+
+- **What:** 26 questions on the Accessibility Regulations 2023 (dev 8, blind `test3` 12, status 6) were committed alone
+  (`af3129e`) before any parsing code, repeating the E5.2 `test2` procedure. Five are in Pidgin.
+- **Why first:** once a parser exists, its chunk boundaries and titles are visible, and any question written afterwards
+  drifts towards what the parser retrieves well. Writing from the raw gazette keeps `test3` honest.
+- **Learned from reading the source closely (none of this was visible at H8a.0):**
+  1. The commencement date is not a regulation. It is the bracketed date under the title, which carries the marginal note
+     "Commencement.". Gazette conventions answer questions that a regulation search cannot.
+  2. Some status evidence (the enabling power under Act s. 56) sits in an unnumbered enacting formula. A ref-keyed eval
+     cannot score it, so AR_S04 has empty `expected`, and the harness and parser have to plan for that.
+  3. The Arrangement is not fully reliable as a manifest: it lists "132. Braille", but the body numbers it 133. The Phase D
+     manifest-anchored approach needs a body-number cross-check.
+  4. Two certificates with near-identical names (reg. 165 vs 166, valid 5 years vs 1 year) are a natural hallucination
+     trap. Two questions target it on purpose.
+- **Check:** every quoted phrase was string-matched against the extracted text. The first automated pass flagged 8 quotes,
+  but all 8 failures came from my own `...` elisions and `--` standing in for the em-dash; the substantive phrases all matched.
+- **H8c confirmed:** `/context` shows no `.claude/rules/*.md` at startup; `retrieval.md` loaded the first time a
+  `data/processed/` file was read.

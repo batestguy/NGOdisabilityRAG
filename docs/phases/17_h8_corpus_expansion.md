@@ -219,6 +219,25 @@ question shows the same tags as the local measurement.
 
 ## Results
 
+> **H8a.1 — 2026-10-23, EXIT GATE MET.** `data/eval/questions_accessregs.json` was committed alone as `af3129e` on branch
+> `phase11/h8a-accessregs`, before any parser code (zero quota). It holds 26 questions: **dev 8** (`accessregs-dev`),
+> **blind `test3` 12**, and **status 6**. Classes cover direct, vocab-mismatch, odd-wording (Pidgin) and cross-document, plus
+> `status`. The register mix is 5 Pidgin, the rest plain or lay. Expected refs are regulation numbers read from the gazette
+> text extracted to `runs\h8a1\` (gitignored), and every quoted phrase was checked against that text.
+> **Do not read `test3` again.**
+> Findings for H8a.2 onward:
+> * **Commencement resolved.** p. 9 prints "[22nd day of May, 2023]" beside the marginal note "Commencement.". That date is
+>   the commencement, so the dossier's "not verified" line is answered (amendments are still unverified).
+> * **The enacting formula is unnumbered** (power under Act s. 56, made by the Governing Council). AR_S01, S03 and S04 need it
+>   as status-note evidence. H8a.2 must decide how it is ingested or carried. **AR_S04 has empty `expected`**, so the
+>   harness must handle that without a divide-by-zero, and `verify_ground_truth` must skip it.
+> * **Arrangement typo:** the manifest (p. 6) lists "132. Braille", but the body numbers it **133**. A manifest-anchored parser
+>   must not trust the Arrangement number there.
+> * **Two near-identical certificates:** the *National Accessibility* Compliance Certificate (reg. 165(4), 5 years, for
+>   buildings) and the *National Disability* Compliance Certificate (reg. 166, 1 year, for persons/bidders). They are a
+>   designed confusion trap (AR_D06, AR_T06).
+> * The gazette prints the naira sign as "N" ("N 500,000"). Copy it verbatim and do not normalise it.
+
 > **H8a.0 — 2026-10-22, EXIT GATE MET.** The owner chose **A (Accessibility Regulations 2023)** and signed the reuse line
 > in session ("go with the Accessibility Regulations, I sign off"). The PDF is filed at
 > `data/raw/accessibility_regulations_2023_gazette_FGP.pdf` (sha256 matches) with a `SOURCES.md` row. The owner then
