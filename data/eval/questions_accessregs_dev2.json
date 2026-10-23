@@ -1,0 +1,132 @@
+[
+ {
+  "id": "AR2_01",
+  "set": "accessregs-dev2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Do street signs have to be readable by blind people, like in braille?",
+  "expected": {
+   "accessregs2023": [
+    28
+   ]
+  },
+  "note": "Regs reg.28(4) (Signage (general)), p.21 / B1361: 'Pedestrian signage shall be provided in relief and braille options.' NOT expected: reg.146 (interior signage and way-finding) -- indoor, defensible second hit; reg.133 (braille dots) -- dot shape only."
+ },
+ {
+  "id": "AR2_02",
+  "set": "accessregs-dev2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "The stadium for my town no get place where person wey dey wheelchair fit sit watch match. Na so e suppose be?",
+  "expected": {
+   "accessregs2023": [
+    30
+   ]
+  },
+  "note": "Pidgin. Regs reg.30 (Sports fields and spectator areas), p.21 / B1361: '(1) Public sports fields, parking areas, entrances and spectator areas shall be accessible ... (3) Level and accessible seating areas shall be provided beside sports fields for spectators and athletes with disabilities.' NOT expected: reg.29 (accessible seating, general) and reg.32 (grandstands) -- defensible second hits."
+ },
+ {
+  "id": "AR2_03",
+  "set": "accessregs-dev2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Can I ask for a wheelchair or crutches when I arrive at a government building?",
+  "expected": {
+   "accessregs2023": [
+    83
+   ]
+  },
+  "note": "Regs reg.83(1) (Entrance), p.41 / B1381: 'Mobility aids shall be available on request at public buildings'. Mismatch: 'wheelchair or crutches' vs 'mobility aids' (reg.171 defines mobility aid to include both). NOT expected: reg.171 (definition) -- supporting."
+ },
+ {
+  "id": "AR2_04",
+  "set": "accessregs-dev2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "My father wears a hearing aid. Should the phones and intercoms in public buildings work for him?",
+  "expected": {
+   "accessregs2023": [
+    132
+   ]
+  },
+  "note": "Regs reg.132(3) (Communication systems), p.56-57: 'Communication systems, such as telephones, SMS facility relay and intercoms, shall be equipped with volume enhancement, and where practicable, hearing loops for persons using hearing aids.' NOT expected: reg.143 (assistive listening systems), reg.145 (telephones) -- defensible second hits."
+ },
+ {
+  "id": "AR2_05",
+  "set": "accessregs-dev2",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "What do the accessibility regulations require of restaurants?",
+  "expected": {
+   "accessregs2023": [
+    150
+   ]
+  },
+  "note": "Regs reg.150 (Restaurants and other eateries), p.62 / B1402: '(1) A restaurant or other eating area offering food services to the public shall be accessible to persons with disabilities. (2) Aisle spaces ... minimum width of 900mm'. NOT expected: reg.33 (outdoor eating spaces) -- defensible."
+ },
+ {
+  "id": "AR2_06",
+  "set": "accessregs-dev2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "library shelves too close, my wheelchair cant pass between them. any rule on the gap",
+  "expected": {
+   "accessregs2023": [
+    154
+   ]
+  },
+  "note": "Lowercase, no punctuation. Regs reg.154(3) (Libraries), p.63 / B1403: 'Book shelves shall have an aisle space measuring a minimum width of 1065mm'. NOT expected: reg.105 (aisles and passageways) -- general interior."
+ },
+ {
+  "id": "AR2_07",
+  "set": "accessregs-dev2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Does a shopping mall need a place near the entrance where a disabled person can get out of the car?",
+  "expected": {
+   "accessregs2023": [
+    160
+   ]
+  },
+  "note": "Regs reg.160(2) (Shops and shopping malls), p.63-64: 'A shopping mall shall provide close to its entrance, a drop off or setting-down point.' Mismatch: 'get out of the car' vs 'drop off or setting-down point'. NOT expected: reg.9 (lay-bys / passenger loading zones) -- defensible second hit."
+ },
+ {
+  "id": "AR2_08",
+  "set": "accessregs-dev2",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "If fire start for big building, dem suppose show plan of how we go take comot?",
+  "expected": {
+   "accessregs2023": [
+    162
+   ]
+  },
+  "note": "Pidgin. Regs reg.162 (Life safety plan), p.64: 'A building shall, at its entrance, provide an evacuation plan and mustering strategies.' NOT expected: reg.137 (fire emergency systems), reg.108 (fire escape routes) -- defensible second hits."
+ },
+ {
+  "id": "AR2_09",
+  "set": "accessregs-dev2",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "The train platform is much lower than the train door and I use a wheelchair. What must the station provide?",
+  "expected": {
+   "accessregs2023": [
+    22
+   ]
+  },
+  "note": "Regs reg.22(3) (Rail Platforms), p.18 / B1358: 'where a platform is not of the same level to the door of the train, a zigzag lift or a transfer platform shall be provided for the use of persons with physical disabilities.' NOT expected: reg.161 (accessible cabin coach) -- the coach, not the platform."
+ },
+ {
+  "id": "AR2_10",
+  "set": "accessregs-dev2",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "How wide must a sidewalk be so that two wheelchairs can pass each other?",
+  "expected": {
+   "accessregs2023": [
+    10
+   ]
+  },
+  "note": "Regs reg.10(1) (Paths, sidewalks and walkways), p.14 / B1354: 'An entrance path or sidewalk ... of a minimum width of 1800mm such as to allow atleast two wheelchairs pass one another, where two-way traffic is expected.' NOT expected: reg.11 (pedestrian route, 1500mm) -- title-match trap; reg.3 (bridge sidewalks, 1220/1800mm) -- narrower context."
+ }
+]

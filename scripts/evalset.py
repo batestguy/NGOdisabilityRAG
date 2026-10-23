@@ -132,7 +132,10 @@ def load_eval_set(which: str | None = None) -> list[dict]:
 
 
 ACCESSREGS_PATH = ROOT / "data" / "eval" / "questions_accessregs.json"
-ACCESSREGS_SETS = ("accessregs-dev", "test3", "status")
+# H8a-R: a fresh dev set authored after accessregs-dev was read at H8a.3. Its
+# own file, so the file holding the sealed test3 rows is never rewritten.
+ACCESSREGS_DEV2_PATH = ROOT / "data" / "eval" / "questions_accessregs_dev2.json"
+ACCESSREGS_SETS = ("accessregs-dev", "test3", "status", "accessregs-dev2")
 
 
 def load_accessregs_set(which: str) -> list[dict]:
@@ -147,7 +150,8 @@ def load_accessregs_set(which: str) -> list[dict]:
     if which not in ACCESSREGS_SETS:
         raise ValueError("unknown set %r (expected one of %s)"
                          % (which, ACCESSREGS_SETS))
-    raw = json.loads(ACCESSREGS_PATH.read_text(encoding="utf-8"))
+    path = ACCESSREGS_DEV2_PATH if which == "accessregs-dev2" else ACCESSREGS_PATH
+    raw = json.loads(path.read_text(encoding="utf-8"))
     rows, seen = [], set()
     for r in raw:
         for field in ("id", "set", "class", "expect_gate", "text", "expected",
