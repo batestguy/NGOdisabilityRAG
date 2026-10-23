@@ -3602,3 +3602,22 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   but all 8 failures came from my own `...` elisions and `--` standing in for the em-dash; the substantive phrases all matched.
 - **H8c confirmed:** `/context` shows no `.claude/rules/*.md` at startup; `retrieval.md` loaded the first time a
   `data/processed/` file was read.
+
+## 2026-10-23 — H8a.2: a fourth document without moving the third version
+
+- **Bridge keyed by content, not by flag.** The OOV bridge is now chosen by sha256 match between the corpus and a
+  registered artifact. That covers all 20 `PerDocRetriever(...)` call sites with zero edits, and a corpus can never be paired
+  with another version's bridge. The fallback to the v2 bridge reproduces v1's long-standing "unchecked" behaviour, so it
+  is bit-identical by construction.
+- **"Bit-identical" was checked against an evidence file, not taken on trust.** Before any change, a 54-question
+  fingerprint (doc_id, ref, score to 12 places through the shipping path) was saved. The reviewer reproduced it from a
+  `git archive` of the base commit. It was built without reading `test`, `test2` or `test3`.
+- **Margin notes are separable by typography.** Gazette marginal notes are 8 pt, the body is 10.4–11 pt, and they sit in
+  alternating x bands. The notes sit 0–11 pt below their regulation's first line, not level with it, so a ±3 pt window
+  missed 61 of 172. The reviewer's independent font-split token count matched the artifact exactly.
+- **Hard-coded copies outnumber the list.** Playbook F3 listed three copies of the tag-prefix scheme. The review found a
+  fourth (`eval_phase06.py`), which would have crashed the first v3 LLM run. Lesson: grep for the literal prefix
+  alternation (`Act|Constitution|Factsheet`) whenever a document is added, not just the known sites.
+- **Displacement shows up before measurement.** In the reviewer's preview, adding the doc put a Regs hit in 39 of 40
+  existing-law top-12s, and the preamble chunk (which carries the Act's full title) appeared in 11. H8a.3's gate 1 exists
+  for exactly this.

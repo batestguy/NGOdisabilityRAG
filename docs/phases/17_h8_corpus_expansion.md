@@ -219,6 +219,46 @@ question shows the same tags as the local measurement.
 
 ## Results
 
+> **H8a.2 — 2026-10-23, DONE (zero quota; reviewer: ship to H8a.3).** Branch `phase11/h8a-accessregs`: `44f5a7b` (F7),
+> `0ef9b9e` (parser), `fbfe5a2` (v3 wiring), plus a review-fix commit. `CORPUS_VERSION` is still `"v2"`.
+> * **F7.** The bridge is chosen by corpus content: `PerDocRetriever` picks the registered artifact whose `corpus_sha256`
+>   matches its chunk stream, and otherwise falls back to v2's, as v1 always did. v1/v2 keep the exact one-argument
+>   `expand_query(q)` call, so the ablation harnesses that monkeypatch it still work on v2. **On v3 they raise a TypeError
+>   (loudly), and `ablate_handmap`/`ablate_surface` call `oov_bridge_terms(q)` bridge-less, so do not point them at v3.**
+>   v2 is proven bit-identical:
+>   * a 54-question retrieval fingerprint is byte-identical on base, HEAD and the pre-change capture (the reviewer reran it
+>     from `git archive de8c1f8`);
+>   * `oov_bridge.json` is unchanged;
+>   * the default `audit_corpus` output is identical;
+>   * `calibrate_refusal` 0/212; PORT CHECK 72/72.
+> * **Parser** `scripts/parse_accessregs.py` → `data/processed/accessregs2023_regs.json`. It is deterministic and asserts
+>   the source PDF's sha.
+>   * The margin column is split by font size (notes 8 pt, body 10.4–11 pt) and by x band. Notes are assigned one-to-one
+>     to the nearest regulation start within 3 pt above to 15 pt below.
+>   * **172/172 located.** The only flag is reg. 133 `ARRANGEMENT_NUMBER_MISMATCH`.
+>   * Reviewer's independent check: the font-split token multisets of pp. 9–68 equal the artifact exactly, in both
+>     directions (23,595 body / 568 note tokens). 171/172 titles equal the Arrangement's.
+>   * The text is verbatim, with no de-hyphenation (same policy as `parse_act_v2`). Three headers keep a split word
+>     (regs. 29, 87, 167); they stay verbatim unless H8a.3 misses trace back to them, and any fix goes through a signed
+>     corrections file.
+> * **Corpus v3** is v2 unchanged plus `accessregs2023` appended last:
+>   * 221 chunks (1 `general` preamble first, then 220 regulation chunks; 40 regulations span more than one chunk);
+>   * tags `[Regs reg. N]` / `[Regs general]`;
+>   * `V3_CORPUS_SHA256 = f13b9678…3513`;
+>   * `oov_bridge_v3.json` with 14,787 keys.
+>   * F3/F4/F5 were done in the same commit, and `test_phase05` went 179 → 181. The reviewer then found a **fourth copy of
+>     the prefix scheme in `eval_phase06.py`** (`DOC_OF`, prefix regex) that would have crashed a v3 LLM row; it is now
+>     fixed and added to the F3 row.
+>   * The `audit_corpus --corpus=v3` gate fails on each of the 172 single-regulation removals, on a missing preamble and on
+>     a moved preamble.
+> * **Watch in H8a.3** (the reviewer's displacement preview, not a gate; no recall computed):
+>   * Of 40 existing-law dev/frozen questions under v3 at k=4/top_n=12, 39 show a Regs hit and 38 lose a v2 hit from the
+>     top 12, which is F1/F9 displacement.
+>   * `[Regs general]`, the preamble chunk that carries the full Act title, appears for 11 of 40.
+>   * Gate 1's per-question diff decides. A `top_n=16` arm is already in the plan.
+> * Also noted: sub-chunk splits sometimes cut mid-word (the same `recursive_split` idiom as the Act), which affects
+>   display only. `audit_corpus --corpus=v3` is not yet in CI (optional).
+
 > **H8a.1 — 2026-10-23, EXIT GATE MET.** `data/eval/questions_accessregs.json` was committed alone as `af3129e` on branch
 > `phase11/h8a-accessregs`, before any parser code (zero quota). It holds 26 questions: **dev 8** (`accessregs-dev`),
 > **blind `test3` 12**, and **status 6**. Classes cover direct, vocab-mismatch, odd-wording (Pidgin) and cross-document, plus

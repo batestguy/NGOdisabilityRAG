@@ -13,12 +13,26 @@
 > * The H8a.2 findings are in playbook 17's Results: the commencement date is resolved (22 May 2023); the enacting formula is
 >   unnumbered and AR_S04 has empty `expected`; the Arrangement mislabels reg. 133 as "132"; there are two look-alike
 >   certificates (reg. 165 vs 166); the naira sign is printed as "N". The gazette text for reading lives in
->   `runs\h8a1egs_compact.txt` (gitignored).
+>   `runs\h8a1
+egs_compact.txt` (gitignored).
+>
+> * **H8a.2 DONE** (executor, then reviewer: "ship to H8a.3"). Commits `44f5a7b` F7 bridge, `0ef9b9e` parser, `fbfe5a2` v3
+>   wiring, `af96f0d` review fixes.
+>   * Corpus **v3** = v2 + `accessregs2023` (221 chunks, `[Regs reg. N]`), pin `f13b9678…`, `oov_bridge_v3.json`.
+>   * v2 is proven bit-identical (fingerprint, pins, 0/212, PORT CHECK).
+>   * `CORPUS_VERSION` is still `"v2"`.
+>   * Details and warnings are in playbook 17's Results.
 >
 > **Next session, in this order:**
-> 1. **H8a.2 (zero quota):** read playbook 17 F1–F10 and `.claude/rules/retrieval.md` first. **F7 comes first: the OOV bridge
->    must become version-keyed.** Then parse the regulations behind a new corpus version (v3), append `accessregs2023` LAST in
->    `build_corpus()`, keep v1/v2 reproducible, and give the new corpus its own pin.
+> 1. **H8a.3 measure (zero quota).** The gate is already written in playbook 17. Run three arms: v2 control, v3 at
+>    `top_n=12`, v3 at `top_n=16`.
+>    * Read dev and the selection sets first. `test2` and `test3` are read **once, at the end, for the chosen arm only**.
+>      Never read `test`.
+>    * The harnesses (`eval_heldout`, `calibrate_refusal`) need `--corpus=v3` plus a set loader for
+>      `questions_accessregs.json`. Write those **before** looking at any v3 number.
+>    * Do not point the `ablate_*` harnesses at v3 (they raise TypeError or use the wrong bridge).
+>    * Watch `[Regs general]` (the preamble) in the per-question diff. The reviewer saw it in 11/40 existing-law top-12s,
+>      and 38/40 questions lose a v2 hit.
 > 2. The H8a.5 cut-over still waits for the H6 legal review to return.
 > 3. H9a (suggested follow-ups) can run in parallel once the owner approves it.
 >

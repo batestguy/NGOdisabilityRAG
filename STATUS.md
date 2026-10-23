@@ -32,7 +32,8 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 - **Active: H8 — `docs/phases/17_h8_corpus_expansion.md`.** H8c + H8b DONE and live. H8a.0 DONE: the owner
   chose + signed the **Accessibility Regulations 2023 (S.I. 51)** (`docs/h8a_source_dossier.md`; PDF in `data/raw/`).
   H8a.1 DONE 2026-10-23: `data/eval/questions_accessregs.json` (dev 8 / blind `test3` 12 / status 6), committed
-  before any parser as `af3129e`. **Next: H8a.2** (F7 version-keyed OOV bridge first, then parse behind v3).
+  before any parser as `af3129e`. H8a.2 DONE 2026-10-23 (reviewed): corpus v3 = v2 + `accessregs2023` (221 chunks, `[Regs reg. N]`, pin
+  `f13b9678…`, version-keyed OOV bridge); v2 proven bit-identical; `CORPUS_VERSION` still v2. **Next: H8a.3** (measure 3 arms).
 - **Queued: H9 deterministic follow-ups** (`docs/phases/18_h9_deterministic_followups.md`): H9a suggested questions
   (low risk, can run while H8a waits on H6); H9b extractive key lines (after H6 + the H7 read). Owner approval pending.
 - **H7 week-1 read on/after 2026-10-28** (command in `HANDOFF.md`; discount 4 smoke ids).
@@ -42,4 +43,4 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 - **Small:** NVDA listen-through of radio + skip link · best-practice `heading-order` (H1 → H3) ·
   Cedar RECHECK · Streamlit 1.66 bump (`aria-expanded` migration).
 - **Unmerged branches:** `phase11/h8a-sources` (dossier + Regs PDF + H9 playbook) and `phase11/h8a-accessregs` (built on it;
-  + H8a.1 questions). Both pushed; merging redeploys, so bundle with the H8a code.
+  + H8a.1 questions + H8a.2 v3 corpus). Both pushed; merging redeploys, so bundle with the H8a code.
