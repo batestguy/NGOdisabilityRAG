@@ -3636,3 +3636,23 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   find them is the wrong lever. That idea came from reading dev, so a reopening must re-gate it on fresh questions.
 - The blind sets stayed sealed: the harness refuses the blind stage unless G6 picks an arm, and records a marker after one
   read. Declining at dev keeps `test2` clean and `test3` unspent for a future arm.
+
+## 2026-10-23 — H8a-R: the same retrieval passed, and the write-up has to say so
+
+- After the decline, a rank diagnostic on the read dev set showed two kinds of miss: just below the cut (ranks 4–9), and
+  vocabulary gap (ranks 17–30). The reopening offered a lever for the first kind (Regs k=6, arm R-b), deliberately
+  none for the second, and a fixed status note in place of retrieving status evidence. It selected on a **fresh**
+  10-question dev set that was committed before any arm existed.
+- R-a (identical retrieval to the declined v3-16) passed. R-b's extra depth bought nothing on dev2. Blind test3 0.875,
+  and test2 identical to control.
+- **The lesson is in the framing, not the number.** The reviewer pointed out that the pass came from a new sample and a
+  substituted gate (G5 → G5′), not from better retrieval. Both changes were pre-declared, but both came after seeing a
+  failure. The honest record quotes dev2 (n=10), the pooled ≈ 0.70 (n=18) and test3 (n=12) together, and calls G5′ a
+  lint. A pre-registered gate protects against tuning to a number; it does not protect against re-choosing what to
+  measure. Only candour in the write-up does that.
+- **A fixed note needs the same scrutiny as an answer.** The first draft of the status note had every number right,
+  but its wording overstated things: it named an imposer reg. 168 does not name, dropped reg. 169's "relevant
+  authority", and "not an Act" read as weaker law. The fact check passed; the legal-precision check did not. It goes to
+  H6.
+- I also wrongly called `test2` "unread"; it was read in E5.3. State a held-out set's history, not just this phase's
+  view of it.

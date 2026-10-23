@@ -23,19 +23,30 @@ egs_compact.txt` (gitignored).
 >   * `CORPUS_VERSION` is still `"v2"`.
 >   * Details and warnings are in playbook 17's Results.
 >
-> * **H8a.3 DECLINED at the dev stage.** The harness `scripts/eval_h8a3.py` was committed before any v3 number (`9345a86`).
->   * v3-12 regresses existing law (G1).
->   * v3-16 keeps existing law identical, but reach is 0.583 (< 0.60, G3) and 3/6 status probes miss their evidence (G5).
->   * The blind stage did not run: **`test2` and `test3` are still unread**.
->   * The table and per-question detail are in playbook 17's Results and `scripts/h8a3_dev_stage_2026-10-23.txt`.
->   * The branch is now the archive of a declined arm and is never merged.
+> * **H8a.3 declined at the dev stage. The owner said "reopen", which became H8a-R.**
+>   * The fresh `accessregs-dev2` was committed alone (`a41606b`); then the gate, harness, `k_by_doc` and the fixed status
+>     note were committed (`95bc165`); then the dev stage and the one blind read.
+>   * **R-a (v3, top_n=16 + note) MET THE GATE.** Existing law is identical, dev2 0.800, test3 0.875, 0 false refusals.
+>   * It is the **same retrieval as the declined v3-16**: a fresh sample plus G5 → G5′ (a note lint) made the difference.
+>     The honest framing is in playbook 17's Results.
+>   * The reviewer's verdict is SOUND-WITH-CAVEATS. The note was reworded after review and **needs H6 sign-off**.
+>   * The blind marker is written: **test3 is spent**.
 >
 > **Next session:**
-> 1. **Owner decides H8a:** stay declined, or reopen with a new arm (status facts carried by a fixed status note + a reach
->    lever). A reopening needs a gate written first and a fresh dev set (`accessregs-dev` has been read). `test3` stays
->    sealed for whichever arm wins.
-> 2. H9a (suggested follow-ups) does not depend on H8a and can start once the owner approves it.
-> 3. H7 week-1 read on/after 2026-10-28.
+> 1. **H8a.4 (zero quota):**
+>    * render `rag.DOC_STATUS_NOTES` on `accessregs2023` cards only, through the shared render helper; read-aloud says
+>      "naira";
+>    * top_n=16 for v3 in `rag.ask` / `app.offline_legal_hits`;
+>    * `test_phase05` asserts the note renders for this doc only;
+>    * re-run the axe and keyboard checks (read `.claude/rules/ui.md` first).
+>
+>    Keep Regs chunks and the note out of the LLM context until H8a.6.
+> 2. **Owner:**
+>    * send the note text with the H6 sheet; open item: commencement 22 May vs gazette 7 July 2023;
+>    * quota days for H8a.6 (`cite-strict-v4`);
+>    * the merge waits for H6 (F10).
+> 3. Decide whether `k_by_doc` (used only by R-b) is removed before merge.
+> 4. H9a whenever approved. H7 week-1 read on/after 2026-10-28.
 >
 > **Still open (unchanged from 2026-10-22):** the H7 week-1 read is on/after **2026-10-28** (discount the 4 smoke ids).
 > **Owner:** approve H9a and decide on `via=suggestion`; is `test` still clean?; send the H6 sheet; H5b needs quota days and

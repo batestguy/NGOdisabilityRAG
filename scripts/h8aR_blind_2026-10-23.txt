@@ -1,0 +1,4 @@
+== H8a-R BLIND STAGE, arm R-a (read once) ==
+   test2 recall_strict  control 0.629  R-a 0.629
+   test3 recall_strict  R-a 0.875   (reported, not gated)
+   VERDICT R-a: SHIP GATE MET

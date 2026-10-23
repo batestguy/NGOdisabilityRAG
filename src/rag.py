@@ -80,18 +80,25 @@ CORPUS_VERSION = "v2"
 # text (cl. 8, cl. 56) on 2026-10-23. Tags are verbatim cite_tag() shapes so
 # verify_citations can check them. NOT shipped until H8a.4 renders it and the
 # H6 legal reviewer has read it. Owner-signed text only: do not reword freely.
+# Reworded 2026-10-23 after review (no imposer named in reg. 168; reg. 169 needs
+# the relevant authority; 'notwithstanding' kept as 'regardless of'). Open for H6:
+# commencement (22 May) precedes gazette publication (7 July 2023). Read-aloud
+# must say 'naira' for the gazette's 'N'.
 DOC_STATUS_NOTES = {
     "accessregs2023": (
         "About this source: the Persons with Disabilities (Accessibility) "
-        "Regulations, 2023 (S.I. No. 51 of 2023) are regulations, not an Act of "
-        "the National Assembly. The Governing Council of the National Commission "
-        "for Persons with Disabilities made them under section 56 of the "
-        "Disability Act [Act cl. 56], and they started on 22 May 2023. A breach "
-        "can lead to an administrative penalty from the Commission of at least "
-        "N 500,000, or at least N 2,000,000 for a company or government body "
-        "[Regs reg. 168], and the Commission may seal off a building after a "
-        "90-day notice [Regs reg. 169]. You can also complain to the authority in "
-        "charge of the place; that does not stop you going to court [Act cl. 8]."
+        "Regulations, 2023 (S.I. No. 51 of 2023) are subsidiary legislation "
+        "with legal force, made by the Governing Council of the National "
+        "Commission for Persons with Disabilities under section 56 of the "
+        "Disability Act 2018 [Act cl. 56]. The gazette marks 22 May 2023 as "
+        "their commencement date. A person who breaks them is liable to an "
+        "administrative penalty of not less than N 500,000, and a company, "
+        "government institution or body corporate to not less than N 2,000,000, "
+        "regardless of any penalty under the Act or other law [Regs reg. 168]. "
+        "The Commission, with the relevant authority, may seal off a place in "
+        "default after a 90-day notice [Regs reg. 169]. Under the Act you can "
+        "notify the authority in charge of an inaccessible place without giving "
+        "up your right to go to court [Act cl. 8]."
     ),
 }
 

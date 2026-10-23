@@ -1,0 +1,46 @@
+== H8a-R DEV STAGE (MIN_SCORE=0.10) ==
+   recall_strict     control      R-a      R-b
+   frozen10            0.734    0.734    0.734
+   dev                 0.613    0.613    0.613
+   accessregs-dev      0.042    0.583    0.625
+   accessregs-dev2     0.000    0.800    0.800
+   status              0.100    0.400    0.400
+   (accessregs-dev was read at H8a.3: reported, never gated; status recall reported)
+
+   G4 probes: 110 (frozen10, dev, accessregs-dev, -dev2, status rows + 12 OFF_CORPUS + 34 SYNONYMS keys; `test` left out)
+   off-corpus answered (of 17): control 13  R-a 14  R-b 14
+   G5' note check: PASS
+
+== PER QUESTION, existing law (only rows that move) ==
+
+== PER QUESTION, accessregs-dev2 / accessregs-dev / status ==
+   AR2_01  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_02  R-a 0.000 miss=['accessregs2023:30'] | R-b 0.000 miss=['accessregs2023:30']
+   AR2_03  R-a 0.000 miss=['accessregs2023:83'] | R-b 0.000 miss=['accessregs2023:83']
+   AR2_04  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_05  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_06  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_07  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_08  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_09  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_10  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_D01  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_D02  R-a 0.000 miss=['accessregs2023:151'] | R-b 0.000 miss=['accessregs2023:151']
+   AR_D03  R-a 0.667 miss=['accessregs2023:112'] | R-b 1.000 miss=[]
+   AR_D04  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_D05  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_D06  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_D07  R-a 0.000 miss=['accessregs2023:2'] | R-b 0.000 miss=['accessregs2023:2']
+   AR_D08  R-a 0.000 miss=['accessregs2023:59'] | R-b 0.000 miss=['accessregs2023:59']
+   AR_S01  R-a 0.000 miss=['act2018:56'] | R-b 0.000 miss=['act2018:56']
+   AR_S02  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_S03  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_S04  R-a   n/a miss=[] | R-b   n/a miss=[]
+   AR_S05  R-a 0.000 miss=['accessregs2023:165', 'act2018:6'] | R-b 0.000 miss=['accessregs2023:165', 'act2018:6']
+   AR_S06  R-a 0.000 miss=['accessregs2023:168', 'act2018:8'] | R-b 0.000 miss=['accessregs2023:168', 'act2018:8']
+
+== DEV-STAGE GATES ==
+   R-a: PASS
+   R-b: PASS
+
+   G6 choice for the blind stage: R-a
