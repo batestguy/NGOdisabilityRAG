@@ -1328,8 +1328,8 @@ def ask(
             "llm_used": False,
             "cached": False,
             "model_used": None,
-            "llm_error": "no excerpt this turn is available to the AI answer yet "
-                         "(Accessibility Regulations excerpts are offline-only)",
+            "llm_error": "the AI answer cannot use the Accessibility Regulations "
+                         "excerpts yet; the offline excerpts above are complete",
         }
     try:
         answer, cached, model_used = generate_with_meta(

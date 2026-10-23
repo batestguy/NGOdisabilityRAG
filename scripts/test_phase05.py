@@ -808,4 +808,18 @@ check("speech-v2-unchanged", app.build_speech_text(_v2pay, None)
       == app.HELPLINE_BANNER_TEXT + "\nLegal excerpts retrieved. Citations: %s. "
       "Open the AI expander for a generated answer." % _v2tags)
 
+# H8a.4 review: the AI expander says it cannot see Regs excerpts -- behaviour,
+# not source text. A Regs payload gets the caption; a v2 payload does not.
+from chat import TurnPayload as _TP  # noqa: E402
+_AI_NOTE = "does not yet use the Accessibility Regulations"
+_capR, _, _ = _record(app.render_ai_expander, _TP(
+    question="q", excerpts=[{"tag": "[Regs reg. 168]", "doc_id": "accessregs2023",
+                             "ref": "reg. 168", "text": "t", "score": 0.2}]), 0, False)
+_capV2, _, _ = _record(app.render_ai_expander, _TP(
+    question="q", excerpts=[{"tag": "[Act cl. 28]", "doc_id": "act2018",
+                             "ref": "cl. 28", "text": "t", "score": 0.2}]), 0, False)
+check("ai-expander-says-regs-excluded",
+      sum(_AI_NOTE in str(c[1]) for c in _capR) == 1
+      and not any(_AI_NOTE in str(c[1]) for c in _capV2))
+
 print("\nALL %d ASSERTS PASSED" % len(passed))

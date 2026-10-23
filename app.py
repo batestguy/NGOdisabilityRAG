@@ -988,6 +988,15 @@ def render_ai_expander(payload, turn_index: int, plain: bool):
     with st.expander("🤖 Answer with AI (needs internet + quota)", expanded=False):
         st.caption("Optional. Off by default -- the excerpts above are the "
                    "complete offline answer. Generation uses your Gemini quota.")
+        # H8a.4 review: say so when the AI cannot see some excerpts above
+        # (rag.LLM_EXCLUDED_DOCS, lifted at H8a.6). A caption, not a widget, so
+        # no label or key changes and no focus moves. A no-op on corpus v2.
+        from rag import LLM_EXCLUDED_DOCS
+        if any(e.get("doc_id") in LLM_EXCLUDED_DOCS
+               for e in (payload.excerpts or [])):
+            st.caption("The AI answer does not yet use the Accessibility "
+                       "Regulations excerpts above; read those excerpts "
+                       "directly.")
         if payload.answer:
             st.markdown(payload.answer)
             if payload.cite_check:
