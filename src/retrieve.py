@@ -417,6 +417,47 @@ def _load_oov_bridge(path: Path = OOV_BRIDGE_PATH) -> tuple[dict, dict]:
 
 OOV_BRIDGE, OOV_BRIDGE_META = _load_oov_bridge()
 
+# ---------------------------------------------------------------------------
+# VERSION-KEYED BRIDGE -- H8a.2 / F7 (docs/phases/17_h8_corpus_expansion.md).
+#
+# The bridge's keys mean "absent from THIS index", so a fourth document needs
+# its own artifact. Rebuilding oov_bridge.json in place for corpus v3 would
+# make build_corpus("v2") hard-fail and v2 could no longer reproduce its
+# published numbers from the same commit (the Phase D rule). So each corpus
+# version has its own file, registered here; OOV_BRIDGE / OOV_BRIDGE_META above
+# stay the v2 artifact, untouched, because ablate_oov_bridge.py and others read
+# them by name.
+#
+# SELECTION IS BY CORPUS CONTENT, NOT BY A VERSION ARGUMENT. PerDocRetriever
+# hashes the chunk stream it is given (corpus_sha256) and uses the registered
+# bridge whose _meta.corpus_sha256 matches. Two reasons: no harness call site
+# has to change (every one builds `PerDocRetriever(build_corpus(v))` already),
+# and a corpus and a bridge cannot be mis-paired -- there is no argument to get
+# wrong. When nothing matches (v1, or a hand-built subset of docs) the v2
+# bridge is used, which is exactly what v1 did before this change ("runs with
+# the same bridge UNCHECKED"), so v1 stays bit-identical too.
+# ---------------------------------------------------------------------------
+OOV_BRIDGE_PATHS = {
+    "v2": OOV_BRIDGE_PATH,
+    "v3": OOV_BRIDGE_PATH.parent / "oov_bridge_v3.json",
+}
+
+
+def _load_oov_bridges() -> dict[str, tuple[dict, dict]]:
+    """version -> (bridge, meta); an absent artifact loads as ({}, {}).
+
+    v2 reuses the OOV_BRIDGE / OOV_BRIDGE_META objects loaded above (the same
+    dict, not a second copy), so `bridge is OOV_BRIDGE` identifies the v2 pick.
+    """
+    out = {"v2": (OOV_BRIDGE, OOV_BRIDGE_META)}
+    for version, path in OOV_BRIDGE_PATHS.items():
+        if version not in out:
+            out[version] = _load_oov_bridge(path)
+    return out
+
+
+OOV_BRIDGES = _load_oov_bridges()
+
 
 def corpus_sha256(docs: dict) -> str:
     """Order-sensitive digest of the exact chunk stream an index is built from."""
@@ -427,20 +468,33 @@ def corpus_sha256(docs: dict) -> str:
     return h.hexdigest()
 
 
-def check_oov_bridge(docs: dict) -> None:
-    """Hard-fail if the shipped bridge is missing or built against another corpus."""
-    if not OOV_BRIDGE_META:
+def bridge_for_corpus(docs: dict) -> dict:
+    """The registered bridge built for exactly this chunk stream, else v2's."""
+    got = corpus_sha256(docs)
+    for bridge, meta in OOV_BRIDGES.values():
+        if meta and meta.get("corpus_sha256") == got:
+            return bridge
+    return OOV_BRIDGE
+
+
+def check_oov_bridge(docs: dict, version: str = "v2") -> None:
+    """Hard-fail if `version`'s bridge is missing or built against another corpus."""
+    path = OOV_BRIDGE_PATHS[version]
+    name = "data/processed/%s" % path.name
+    _, meta = OOV_BRIDGES[version]
+    if not meta:
         raise RuntimeError(
-            "data/processed/oov_bridge.json is missing -- the shipping query "
-            "expander needs it; build it with scripts/build_oov_bridge.py")
-    want = OOV_BRIDGE_META["corpus_sha256"]
+            "%s is missing -- the shipping query expander needs it; build it "
+            "with scripts/build_oov_bridge.py%s"
+            % (name, "" if version == "v2" else " --corpus=%s" % version))
+    want = meta["corpus_sha256"]
     got = corpus_sha256(docs)
     if got != want:
         raise RuntimeError(
-            "data/processed/oov_bridge.json was built against corpus %s..., but "
-            "the v2 corpus is now %s... -- rebuild it with "
+            "%s was built against corpus %s..., but "
+            "the %s corpus is now %s... -- rebuild it with "
             "scripts/build_oov_bridge.py and re-measure (docs/phases/"
-            "13_retrieval_quality.md E4a)" % (want[:12], got[:12]))
+            "13_retrieval_quality.md E4a)" % (name, want[:12], version, got[:12]))
 
 
 def oov_bridge_terms(q: str, bridge: dict | None = None) -> list[str]:
@@ -458,16 +512,19 @@ def oov_bridge_terms(q: str, bridge: dict | None = None) -> list[str]:
     return out[:OOV_MAX_TERMS]
 
 
-def expand_query(q: str) -> str:
+def expand_query(q: str, bridge: dict | None = None) -> str:
     """The shipping query expander: the hand map, then the OOV bridge.
 
     Hand terms first and unchanged (expand_query_hand); bridge terms appended
     last, never removing or reordering a hand term. Same contract as before
     Phase E4a: the original query plus appended terms, or `q` itself.
+
+    `bridge` (H8a.2) selects a version's artifact; None is the v2 bridge, so a
+    one-argument call behaves exactly as it always has.
     """
     e = expand_query_hand(q)
     have = set(e.lower().split())
-    extra = [w for w in oov_bridge_terms(q) if w not in have]
+    extra = [w for w in oov_bridge_terms(q, bridge) if w not in have]
     return e + " " + " ".join(extra) if extra else e
 
 
@@ -506,6 +563,9 @@ class PerDocRetriever:
             assert doc_id in DOC_IDS, "unknown doc_id %r" % doc_id
         self.docs = docs
         self.k_default = k_default
+        # H8a.2 / F7: the bridge built for this exact chunk stream (v2's when
+        # none matches -- see the VERSION-KEYED BRIDGE block above).
+        self.oov_bridge = bridge_for_corpus(docs)
         self.sub = {
             doc_id: TfidfRetriever([c.text for c in chunks])
             for doc_id, chunks in docs.items()
@@ -587,7 +647,14 @@ class PerDocRetriever:
         base = self._merged(q, k)
         if not base or base[0].score < floor:
             return base                      # entry gate
-        expanded = expand_query(q)
+        # The v2 pick keeps the one-argument call verbatim: the ablation
+        # harnesses swap retrieve.expand_query for one-argument expanders
+        # (ablate_oov_bridge, ablate_handmap, ablate_phase08), and they must
+        # keep working on v1/v2. Only another version's bridge is passed.
+        if self.oov_bridge is OOV_BRIDGE:
+            expanded = expand_query(q)
+        else:
+            expanded = expand_query(q, bridge=self.oov_bridge)
         if expanded == q:
             return base
         hits = self._merged(expanded, k)
