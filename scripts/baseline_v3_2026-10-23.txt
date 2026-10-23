@@ -1,0 +1,745 @@
+=== DRLCA baseline, corpus v3, 2026-10-23 (H8a.5 offline cut-over) ===
+Commit: 8d56ba0 (+ this file)  Branch: phase11/h8a-accessregs (NOT merged, NOT deployed)
+CORPUS_VERSION default = v3 (src/rag.py): v2 + Accessibility Regulations 2023 (accessregs2023),
+appended last. Shipping budget k=4/doc, top_n=16 (rag.TOP_N_BY_VERSION; v1/v2 keep 12).
+Expander = hand map + OOV bridge (v3 bridge artifact). Regs chunks never reach the LLM (rag.LLM_EXCLUDED_DOCS) until H8a.6.
+Zero Gemini calls. Retrieval only.
+
+HELD-OUT DISCIPLINE
+  `test` was NOT scored on any corpus: eval_heldout ran with --no-test (test and test2 rows
+  dropped before ground-truth verification; test2's file never opened). Its cleanliness is an
+  open owner decision.
+  test2 was NOT re-scored. test3 was NOT loaded (spent at H8a-R; runs\h8a3\BLIND_READ kept).
+  eval_chat ran with --dev-only (chat_test not loaded, not scored).
+  calibrate_refusal ran UNCHANGED on v1/v2 (its probes include the `test` rows, as always);
+  only its decisive lines are reprinted below. Its full stdout is identical (blank lines aside)
+  to the calibrate_refusal section of scripts/baseline_phaseE_2026-09-24.txt.
+
+HEADLINE
+  recall_strict   v3: frozen-10 0.734 · dev 0.613   (v2: 0.734 · 0.613; identical, see eval_heldout)
+  Regs reach      accessregs-dev2 0.800 (gated, n=10) · accessregs-dev 0.583 (reported) · status 0.400 (reported)
+  blind, CITED from scripts/h8aR_blind_2026-10-23.txt, NOT re-run:
+                  test2 recall_strict control (v2) 0.629 · R-a (v3) 0.629 · test3 R-a 0.875 (n=12)
+  false refusals  0 on frozen-10, dev (both corpora); 0 on accessregs-dev/dev2/status (eval_h8aR G2);
+                  chat_dev contextualised 0/29, naive 1/29 -- identical on v2 and v3 (0 ctx-induced)
+  refusal         calibrate_refusal 0 / 212 disagreements (v1/v2, unchanged) · eval_h8aR G4 0 disagreements on
+                  110 probes (no `test` rows) · MIN_SCORE 0.10 unchanged
+  off-corpus      answered (of 17, eval_h8aR): v2 13 -> v3 14. The new one is OFF12 "quantum teleportation
+                  zebra unleaded gasoline": v3 surfaces Constitution s. 44 at 0.135 and Regs reg. 4 at 0.101;
+                  v2 refuses it. Predicted by F9, reported at H8a-R, not diagnosed (v3 bridge is the suspect).
+                  test_phase05 `legal-refusal` is pinned to v2 for this reason; `legal-refusal-v3` added.
+                  dev off-corpus (eval_heldout) 4/5 on both corpora (H21 top 0.1465 -> 0.1855).
+  display         shown excerpts mean (eval_heldout E5.1 view): frozen-10 9.20 -> 11.80, dev 6.92 -> 8.80;
+                  dev strict@3 0.373 -> 0.353, dev MRR(shown) 0.428 -> 0.399, frozen-10 MRR 0.925 -> 0.920
+  chat_dev        headline naive 0.655 / ctx 0.793 on both corpora; r@3 of the 60-pool curve falls
+                  (naive 0.345 -> 0.276, ctx 0.552 -> 0.448) because Regs chunks enter the pool top
+  eval_phase06    v3 digest e40b6b62... (new pin); v2 digest a46c3440... unchanged. Context precision
+                  0.217 -> 0.162 (low by design, never gated); reverse_rel 0.667 -> 0.630 (Q4 0.667 -> 0.333:
+                  a Regs chunk now ranks in the answer's reverse top-3); recall/faithfulness/coverage unchanged
+  suites          import app OK · 03 ALL PASS · 04 ALL PASS · 05 193/193 · 09_ops ALL PASS (96) ·
+                  bench_phase01 PASS · audit_corpus PASS on v3 (default), v2 and v1 ·
+                  ablate_oov_bridge (v2) PORT CHECK 72/72 · test_phase02 --no-llm dry run exit 0
+
+PINS AND ARTIFACTS
+  V1_CORPUS_SHA256 25650238c3f2daf0523297680b41b3bd2318425c9690d9fa8a1e1caf1b42e89a (audit --corpus=v1 PASS)
+  V2_CORPUS_SHA256 1fbbbcda2359ae335e139f9aee4bf3adea63bbd565aba753f9a7035b22f04b7a (audit --corpus=v2 PASS)
+  V3_CORPUS_SHA256 f13b96780303b55fd316db60472c69a111f2417426a115a9598d0d52d5633513 (audit default PASS)
+  data/processed/oov_bridge.json     sha256 9647240937fbb179f54f634dac8b7b89ea25cd6be6c9eb185bccfbb50b3fb2bf
+                                     13,470 keys, built for corpus c2105c63... (v2)
+  data/processed/oov_bridge_v3.json  sha256 2a592c1be6b688651875646815648632d6d5ca037fefb1a3a39dc848378ee7cf
+                                     14,787 keys, built for corpus 1f1f8c08... (v3)
+  data/processed/accessregs2023_regs.json sha256 e1d77d5fdef5d5398cde4c6696e6ea39ffc0d7a5f52ed50508941be0623a2968
+  (bridge digests are of the TF-IDF chunk stream, retrieve.corpus_sha256; audit pins are of the chunk records)
+
+v2 REPRODUCIBILITY (same commit): eval_heldout --corpus=v2 --no-test, eval_chat --corpus=v2 --dev-only,
+eval_phase06 --corpus=v2, ablate_phase08, eval_h8aR, audit_corpus --corpus=v2/v1 are byte-identical to
+their pre-flip output (commit 5595763 = d4c0f82 + the two opt-out flags), Streamlit warnings and output
+paths aside. eval_h8aR's dev stage is identical to scripts/h8aR_dev_stage_2026-10-23.txt.
+
+
+################################################################
+## scripts/eval_heldout.py --no-test   (corpus v3, default)
+################################################################
+CORPUS_VERSION=v3
+corpus: {'act2018': 65, 'constitution1999': 2037, 'factsheet2020': 32, 'accessregs2023': 221}
+ground truth verified against corpus: 40 questions, 87 expected refs
+sets: frozen10=10  heldout=30
+held-out EXCLUDED (--no-test): test and test2 not loaded, not scored
+
+== DEV (EX-HELD-OUT, INSPECTED 2026-09-13), PER QUESTION (corpus=v3, k=4/doc, top_n=16, MIN_SCORE=0.10) ==
+  retrieval only -- no answers exist for this set, so faithfulness /
+  coverage / reverse_rel are structurally unavailable without quota.
+  id     class            gate    recall  strict  prec    kept   still-missed
+  H1     vocab-mismatch   answer  0.000   0.000   0.000   6      factsheet2020:19
+  H2     vocab-mismatch   answer  1.000   1.000   0.125   4      -
+  H3     vocab-mismatch   answer  1.000   1.000   0.125   7      -
+  H4     vocab-mismatch   answer  0.000   0.000   0.000   4      act2018:22,factsheet2020:22
+  H5     vocab-mismatch   answer  1.000   1.000   0.125   11     -
+  H6     vocab-mismatch   answer  1.000   1.000   0.125   11     -
+  H7     vocab-mismatch   answer  1.000   1.000   0.062   8      -
+  H8     vocab-mismatch   answer  0.000   0.000   0.000   12     act2018:8
+  H9     toc-trap         answer  0.000   0.000   0.000   10     constitution1999:42
+  H10    toc-trap         answer  1.000   1.000   0.188   5      -
+  H11    toc-trap         answer  0.000   0.000   0.000   7      constitution1999:35
+  H12    toc-trap         answer  1.000   1.000   0.125   11     -
+  H13    toc-trap         answer  1.000   1.000   0.188   13     -
+  H14    cross-document   answer  0.000   0.000   0.000   7      act2018:30,constitution1999:117,constitution1999:77
+  H15    cross-document   answer  0.000   0.000   0.000   11     act2018:1,constitution1999:42
+  H16    cross-document   answer  0.333   0.333   0.062   11     act2018:20,constitution1999:18
+  H17    cross-document   answer  0.667   0.667   0.125   8      constitution1999:6
+  H18    cross-document   answer  0.333   0.333   0.062   15     act2018:3,constitution1999:17
+  H19    cross-document   answer  1.000   1.000   0.250   7      -
+  H20    cross-document   answer  1.000   1.000   0.125   6      -
+  H21    off-corpus       refuse  n/a     n/a     n/a     6      -  <-- cleared the floor
+  H22    off-corpus       refuse  n/a     n/a     n/a     11     -  <-- cleared the floor
+  H23    off-corpus       refuse  n/a     n/a     n/a     4      -  <-- cleared the floor
+  H24    off-corpus       refuse  n/a     n/a     n/a     1      -  <-- cleared the floor
+  H25    off-corpus       refuse  n/a     n/a     n/a     0      -
+  H26    odd-wording      answer  1.000   1.000   0.125   8      -
+  H27    odd-wording      answer  1.000   1.000   0.062   5      -
+  H28    odd-wording      answer  1.000   1.000   0.188   16     -
+  H29    odd-wording      answer  1.000   1.000   0.125   3      -
+  H30    odd-wording      answer  0.000   0.000   0.000   14     act2018:2,factsheet2020:2
+
+== MEANS BY CLASS (dev (ex-held-out, inspected 2026-09-13)) ==
+  class            n     recall   strict   prec     kept=0
+  cross-document   7     0.476    0.476    0.089    0/7
+  odd-wording      5     0.800    0.800    0.100    0/5
+  off-corpus       5     n/a      n/a      n/a      1/5
+  toc-trap         5     0.600    0.600    0.100    0/5
+  vocab-mismatch   8     0.625    0.625    0.070    0/8
+
+== GENERALISATION: ALL SETS SIDE BY SIDE (the headline) ==
+  corpus=v3, shipping arm k=4/doc -> select_top(top_n=16)
+  frozen-10 (fitted on)                    recall 0.734  strict 0.734  (n=10)
+  dev (ex-held-out, inspected 2026-09-13)  recall 0.613  strict 0.613  (n=25)
+  strict = evalset.strict_covered, one expected ref per chunk. The
+  recall-minus-strict gap is the PACKED-REF SUBSIDY that v1 enjoys
+  and corpus v2 removes by design. Across corpus versions compare
+  STRICT only; plain recall is not comparable v1 -> v2.
+  delta vs frozen-10 (heldout): -0.121
+  A drop here is THE FINDING, not a bug to tune away: it is the
+  measurement able to separate generalisation from fitting to 10
+  points. Do not edit a question to move any of these numbers.
+
+== RECALL@K CURVE (pool k=20/doc -> 60 candidates, select_top order) ==
+  NOT the shipping arm. Shipping is k=4/doc -> top_n=16 and is
+  reported in the headline block below. This answers a DIFFERENT
+  question: is the right chunk in the pool at all, and how deep?
+  A large gap between @6 and @60 means the miss is RANKING, and a
+  re-ranker can reach it. A flat curve would mean the chunk is
+  simply absent, and only a corpus or encoder change could help.
+  set                                      r@3     r@6     r@10    r@20    r@60    MRR     med-rk  found
+  frozen-10 (fitted on)                    0.512   0.622   0.670   0.698   0.854   0.920   1       10/10
+  dev (ex-held-out, inspected 2026-09-13)  0.353   0.427   0.493   0.607   0.760   0.416   2       21/25
+
+  same curve, recall_strict (one expected ref per chunk):
+  set                                      rs@3    rs@6    rs@10   rs@20   rs@60
+  frozen-10 (fitted on)                    0.462   0.589   0.636   0.698   0.854
+  dev (ex-held-out, inspected 2026-09-13)  0.353   0.427   0.493   0.607   0.760
+
+== USER-FACING VIEW (Phase E5.1 -- what the page renders; REPORTED, NOT GATED) ==
+  Through app.offline_legal_hits, the page's own display function. The
+  first 3 excerpts render inline and are heard first on a screen reader;
+  set recall above cannot see their quality or how many excerpts show.
+  hit@3 = any expected ref inline | strict@3 = refs covered inline |
+  MRR = first expected ref in the SHOWN list | shown = excerpts rendered
+  set                                      hit@3   strict@3  MRR     shown   min   rows<=2
+  frozen-10 (fitted on)                    0.900   0.462     0.920   11.80   6     0/10
+    of which vocab-mismatch                0.500   0.250     0.600   10.00   8     0/2
+  dev (ex-held-out, inspected 2026-09-13)  0.520   0.353     0.399   8.80    3     0/25
+    of which vocab-mismatch                0.375   0.188     0.229   7.88    4     0/8
+  Findings, not baselines: nothing here is pinned or gated. E5.4 archives
+  them in scripts/baseline_phaseE_<date>.txt.
+
+== FALSE-REFUSAL RATE (answerable questions, every set) ==
+  CLAUDE.md: false refusals deny help to PWDs. This is the number
+  that matters most here, and it was almost unmeasured before Phase 09.
+  frozen-10 (fitted on)                    0/10 = 0.0% retrieve NOTHING
+  dev (ex-held-out, inspected 2026-09-13)  0/25 = 0.0% retrieve NOTHING
+
+== GATE-LEVEL FALSE-ANSWER RATE (off-corpus questions, every set) ==
+  dev (ex-held-out, inspected 2026-09-13)  4/5 = 80.0% clear MIN_SCORE=0.10
+    cleared: H21 (top 0.1855), H22 (top 0.3363), H23 (top 0.4195), H24 (top 0.1119)
+  CAVEAT, and it is load-bearing -- a bad number here is EXPECTED and
+  is NOT a reason to touch MIN_SCORE:
+    * MIN_SCORE is a weak-overlap FLOOR, not a semantic filter, and
+      the in-corpus/off-corpus cosine bands are INVERTED
+      (src/retrieve.py:26-44). 'sourdough' scored 0.125 and 'maritime
+      shipping insurance' 0.318 before any of this work existed.
+    * The SEMANTIC refusal layer is the strict-prompt
+      NO_ANSWER_SENTENCE path in src/rag.py, which this harness
+      cannot reach -- measuring it costs quota. This measures the
+      floor only; it is half the refusal story by construction.
+    * Both layers are preserved on purpose. The gate errs LOW because
+      false refusals deny help to PWDs.
+
+== FROZEN-10 REGRESSION GUARD (the only thing that can fail here) ==
+  frozen-10 recall_strict 0.734 vs recorded baseline 0.734 (corpus v3): PASS
+  frozen-10 recall 0.734 -- PRINTED, NOT GATED (as on v2).
+  (dev and test numbers above can never fail this script, by design)
+
+EVAL_HELDOUT: PASS (frozen yardstick intact; dev/test reported as measured)
+
+
+################################################################
+## scripts/eval_heldout.py --corpus=v2 --no-test
+################################################################
+CORPUS_VERSION=v2
+corpus: {'act2018': 65, 'constitution1999': 2037, 'factsheet2020': 32}
+ground truth verified against corpus: 40 questions, 87 expected refs
+sets: frozen10=10  heldout=30
+held-out EXCLUDED (--no-test): test and test2 not loaded, not scored
+
+== DEV (EX-HELD-OUT, INSPECTED 2026-09-13), PER QUESTION (corpus=v2, k=4/doc, top_n=12, MIN_SCORE=0.10) ==
+  retrieval only -- no answers exist for this set, so faithfulness /
+  coverage / reverse_rel are structurally unavailable without quota.
+  id     class            gate    recall  strict  prec    kept   still-missed
+  H1     vocab-mismatch   answer  0.000   0.000   0.000   6      factsheet2020:19
+  H2     vocab-mismatch   answer  1.000   1.000   0.167   3      -
+  H3     vocab-mismatch   answer  1.000   1.000   0.167   6      -
+  H4     vocab-mismatch   answer  0.000   0.000   0.000   4      act2018:22,factsheet2020:22
+  H5     vocab-mismatch   answer  1.000   1.000   0.167   10     -
+  H6     vocab-mismatch   answer  1.000   1.000   0.167   7      -
+  H7     vocab-mismatch   answer  1.000   1.000   0.083   7      -
+  H8     vocab-mismatch   answer  0.000   0.000   0.000   11     act2018:8
+  H9     toc-trap         answer  0.000   0.000   0.000   8      constitution1999:42
+  H10    toc-trap         answer  1.000   1.000   0.250   4      -
+  H11    toc-trap         answer  0.000   0.000   0.000   2      constitution1999:35
+  H12    toc-trap         answer  1.000   1.000   0.167   7      -
+  H13    toc-trap         answer  1.000   1.000   0.250   12     -
+  H14    cross-document   answer  0.000   0.000   0.000   4      act2018:30,constitution1999:117,constitution1999:77
+  H15    cross-document   answer  0.000   0.000   0.000   9      act2018:1,constitution1999:42
+  H16    cross-document   answer  0.333   0.333   0.083   8      act2018:20,constitution1999:18
+  H17    cross-document   answer  0.667   0.667   0.167   6      constitution1999:6
+  H18    cross-document   answer  0.333   0.333   0.083   11     act2018:3,constitution1999:17
+  H19    cross-document   answer  1.000   1.000   0.333   6      -
+  H20    cross-document   answer  1.000   1.000   0.167   6      -
+  H21    off-corpus       refuse  n/a     n/a     n/a     5      -  <-- cleared the floor
+  H22    off-corpus       refuse  n/a     n/a     n/a     9      -  <-- cleared the floor
+  H23    off-corpus       refuse  n/a     n/a     n/a     4      -  <-- cleared the floor
+  H24    off-corpus       refuse  n/a     n/a     n/a     1      -  <-- cleared the floor
+  H25    off-corpus       refuse  n/a     n/a     n/a     0      -
+  H26    odd-wording      answer  1.000   1.000   0.167   7      -
+  H27    odd-wording      answer  1.000   1.000   0.083   5      -
+  H28    odd-wording      answer  1.000   1.000   0.250   12     -
+  H29    odd-wording      answer  1.000   1.000   0.167   2      -
+  H30    odd-wording      answer  0.000   0.000   0.000   10     act2018:2,factsheet2020:2
+
+== MEANS BY CLASS (dev (ex-held-out, inspected 2026-09-13)) ==
+  class            n     recall   strict   prec     kept=0
+  cross-document   7     0.476    0.476    0.119    0/7
+  odd-wording      5     0.800    0.800    0.133    0/5
+  off-corpus       5     n/a      n/a      n/a      1/5
+  toc-trap         5     0.600    0.600    0.133    0/5
+  vocab-mismatch   8     0.625    0.625    0.094    0/8
+
+== GENERALISATION: ALL SETS SIDE BY SIDE (the headline) ==
+  corpus=v2, shipping arm k=4/doc -> select_top(top_n=12)
+  frozen-10 (fitted on)                    recall 0.734  strict 0.734  (n=10)
+  dev (ex-held-out, inspected 2026-09-13)  recall 0.613  strict 0.613  (n=25)
+  strict = evalset.strict_covered, one expected ref per chunk. The
+  recall-minus-strict gap is the PACKED-REF SUBSIDY that v1 enjoys
+  and corpus v2 removes by design. Across corpus versions compare
+  STRICT only; plain recall is not comparable v1 -> v2.
+  delta vs frozen-10 (heldout): -0.121
+  A drop here is THE FINDING, not a bug to tune away: it is the
+  measurement able to separate generalisation from fitting to 10
+  points. Do not edit a question to move any of these numbers.
+
+== RECALL@K CURVE (pool k=20/doc -> 60 candidates, select_top order) ==
+  NOT the shipping arm. Shipping is k=4/doc -> top_n=12 and is
+  reported in the headline block below. This answers a DIFFERENT
+  question: is the right chunk in the pool at all, and how deep?
+  A large gap between @6 and @60 means the miss is RANKING, and a
+  re-ranker can reach it. A flat curve would mean the chunk is
+  simply absent, and only a corpus or encoder change could help.
+  set                                      r@3     r@6     r@10    r@20    r@60    MRR     med-rk  found
+  frozen-10 (fitted on)                    0.512   0.655   0.684   0.713   0.904   0.925   1       10/10
+  dev (ex-held-out, inspected 2026-09-13)  0.373   0.460   0.493   0.627   0.780   0.449   2       21/25
+
+  same curve, recall_strict (one expected ref per chunk):
+  set                                      rs@3    rs@6    rs@10   rs@20   rs@60
+  frozen-10 (fitted on)                    0.462   0.622   0.684   0.713   0.904
+  dev (ex-held-out, inspected 2026-09-13)  0.373   0.460   0.493   0.627   0.780
+
+== USER-FACING VIEW (Phase E5.1 -- what the page renders; REPORTED, NOT GATED) ==
+  Through app.offline_legal_hits, the page's own display function. The
+  first 3 excerpts render inline and are heard first on a screen reader;
+  set recall above cannot see their quality or how many excerpts show.
+  hit@3 = any expected ref inline | strict@3 = refs covered inline |
+  MRR = first expected ref in the SHOWN list | shown = excerpts rendered
+  set                                      hit@3   strict@3  MRR     shown   min   rows<=2
+  frozen-10 (fitted on)                    0.900   0.462     0.925   9.20    5     0/10
+    of which vocab-mismatch                0.500   0.250     0.625   7.50    6     0/2
+  dev (ex-held-out, inspected 2026-09-13)  0.520   0.373     0.428   6.92    2     2/25
+    of which vocab-mismatch                0.375   0.250     0.312   6.75    3     0/8
+  Findings, not baselines: nothing here is pinned or gated. E5.4 archives
+  them in scripts/baseline_phaseE_<date>.txt.
+
+== FALSE-REFUSAL RATE (answerable questions, every set) ==
+  CLAUDE.md: false refusals deny help to PWDs. This is the number
+  that matters most here, and it was almost unmeasured before Phase 09.
+  frozen-10 (fitted on)                    0/10 = 0.0% retrieve NOTHING
+  dev (ex-held-out, inspected 2026-09-13)  0/25 = 0.0% retrieve NOTHING
+
+== GATE-LEVEL FALSE-ANSWER RATE (off-corpus questions, every set) ==
+  dev (ex-held-out, inspected 2026-09-13)  4/5 = 80.0% clear MIN_SCORE=0.10
+    cleared: H21 (top 0.1465), H22 (top 0.3363), H23 (top 0.4195), H24 (top 0.1119)
+  CAVEAT, and it is load-bearing -- a bad number here is EXPECTED and
+  is NOT a reason to touch MIN_SCORE:
+    * MIN_SCORE is a weak-overlap FLOOR, not a semantic filter, and
+      the in-corpus/off-corpus cosine bands are INVERTED
+      (src/retrieve.py:26-44). 'sourdough' scored 0.125 and 'maritime
+      shipping insurance' 0.318 before any of this work existed.
+    * The SEMANTIC refusal layer is the strict-prompt
+      NO_ANSWER_SENTENCE path in src/rag.py, which this harness
+      cannot reach -- measuring it costs quota. This measures the
+      floor only; it is half the refusal story by construction.
+    * Both layers are preserved on purpose. The gate errs LOW because
+      false refusals deny help to PWDs.
+
+== FROZEN-10 REGRESSION GUARD (the only thing that can fail here) ==
+  frozen-10 recall_strict 0.734 vs recorded baseline 0.734 (corpus v2): PASS
+  frozen-10 recall 0.734 -- PRINTED, NOT GATED. Plain recall is not
+  comparable across corpus versions (packed refs), so v1's 0.925 is
+  not a baseline this run can be measured against. D5 published
+  that comparison as a FAIL; it was mis-stamped, not a regression.
+  (dev and test numbers above can never fail this script, by design)
+
+EVAL_HELDOUT: PASS (frozen yardstick intact; dev/test reported as measured)
+
+
+################################################################
+## scripts/eval_h8aR.py   (dev stage; no flags)
+################################################################
+== H8a-R DEV STAGE (MIN_SCORE=0.10) ==
+   recall_strict     control      R-a      R-b
+   frozen10            0.734    0.734    0.734
+   dev                 0.613    0.613    0.613
+   accessregs-dev      0.042    0.583    0.625
+   accessregs-dev2     0.000    0.800    0.800
+   status              0.100    0.400    0.400
+   (accessregs-dev was read at H8a.3: reported, never gated; status recall reported)
+
+   G4 probes: 110 (frozen10, dev, accessregs-dev, -dev2, status rows + 12 OFF_CORPUS + 34 SYNONYMS keys; `test` left out)
+   off-corpus answered (of 17): control 13  R-a 14  R-b 14
+   G5' note check: PASS
+
+== PER QUESTION, existing law (only rows that move) ==
+
+== PER QUESTION, accessregs-dev2 / accessregs-dev / status ==
+   AR2_01  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_02  R-a 0.000 miss=['accessregs2023:30'] | R-b 0.000 miss=['accessregs2023:30']
+   AR2_03  R-a 0.000 miss=['accessregs2023:83'] | R-b 0.000 miss=['accessregs2023:83']
+   AR2_04  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_05  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_06  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_07  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_08  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_09  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR2_10  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_D01  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_D02  R-a 0.000 miss=['accessregs2023:151'] | R-b 0.000 miss=['accessregs2023:151']
+   AR_D03  R-a 0.667 miss=['accessregs2023:112'] | R-b 1.000 miss=[]
+   AR_D04  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_D05  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_D06  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_D07  R-a 0.000 miss=['accessregs2023:2'] | R-b 0.000 miss=['accessregs2023:2']
+   AR_D08  R-a 0.000 miss=['accessregs2023:59'] | R-b 0.000 miss=['accessregs2023:59']
+   AR_S01  R-a 0.000 miss=['act2018:56'] | R-b 0.000 miss=['act2018:56']
+   AR_S02  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_S03  R-a 1.000 miss=[] | R-b 1.000 miss=[]
+   AR_S04  R-a   n/a miss=[] | R-b   n/a miss=[]
+   AR_S05  R-a 0.000 miss=['accessregs2023:165', 'act2018:6'] | R-b 0.000 miss=['accessregs2023:165', 'act2018:6']
+   AR_S06  R-a 0.000 miss=['accessregs2023:168', 'act2018:8'] | R-b 0.000 miss=['accessregs2023:168', 'act2018:8']
+
+== DEV-STAGE GATES ==
+   R-a: PASS
+   R-b: PASS
+
+   G6 choice for the blind stage: R-a
+
+
+################################################################
+## scripts/eval_chat.py --dev-only   (corpus v3, default)
+################################################################
+CORPUS_VERSION=v3
+corpus: {'act2018': 65, 'constitution1999': 2037, 'factsheet2020': 32, 'accessregs2023': 221}
+chat ground truth verified against corpus: 29 expected refs
+  chat_dev   13 conversations, 37 turns  direct=13 ellipsis=6 handoff=4 narrowing=2 off-corpus-after-legal=2 pronoun=7 topic-shift=3
+  held-out EXCLUDED (--dev-only): chat_test not loaded, not scored
+
+  contextualisation thresholds (chat.py, chosen on chat_dev ONLY):
+    CARRY_WINDOW=2  THIN_MAX=3  MARKER_MAX=4  QUESTION_WEIGHT=2
+
+== chat_dev (tuning allowed) -- PER TURN (corpus=v3, k=4/doc, top_n=16, MIN_SCORE=0.10) ==
+  turn       class                  gate    naive   ctx     carry  why / still-missed
+  CD1.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD1.t2     ellipsis               answer  0.000   1.000   True   unbound-pronoun:they | -
+  CD1.t3     pronoun                answer  1.000   1.000   True   unbound-pronoun:they | -
+  CD2.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD2.t2     pronoun                answer  1.000   1.000   True   unbound-pronoun:they,him | -
+  CD2.t3     handoff                help    n/a     n/a     False  self-sufficient:4 content stems, marker='' | -
+  CD3.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD3.t2     pronoun                answer  0.000   0.000   True   unbound-pronoun:they,them | act2018:6
+  CD3.t3     topic-shift            answer  1.000   1.000   True   thin:2<=3 | -
+  CD4.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD4.t2     ellipsis               answer  0.000   1.000   True   unbound-pronoun:them,they | -
+  CD5.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD5.t2     ellipsis               answer  1.000   1.000   True   unbound-pronoun:that | -
+  CD5.t3     off-corpus-after-legal refuse  n/a     n/a     True   thin:3<=3 | -
+  CD6.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD6.t2     ellipsis               answer  0.000   0.000   True   thin:3<=3 | constitution1999:42
+  CD6.t3     pronoun                answer  0.000   0.000   True   unbound-pronoun:that | constitution1999:46
+  CD7.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD7.t2     handoff                help    n/a     n/a     False  self-sufficient:4 content stems, marker='' | -
+  CD7.t3     narrowing              help    n/a     n/a     True   thin:1<=3 | -
+  CD8.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD8.t2     ellipsis               answer  1.000   1.000   True   thin:3<=3 | -
+  CD8.t3     topic-shift            answer  1.000   1.000   True   thin:2<=3 | -
+  CD9.t1     direct                 answer  0.000   0.000   False  no-history | act2018:31
+  CD9.t2     pronoun                answer  0.000   0.000   True   unbound-pronoun:it | act2018:32
+  CD9.t3     pronoun                answer  0.000   0.000   True   unbound-pronoun:it | act2018:32
+  CD10.t1    direct                 answer  1.000   1.000   False  no-history | -
+  CD10.t2    ellipsis               answer  0.000   1.000   True   thin:1<=3 | -
+  CD10.t3    off-corpus-after-legal refuse  n/a     n/a     False  self-sufficient:6 content stems, marker='and' | -
+  CD11.t1    direct                 answer  1.000   1.000   False  no-history | -
+  CD11.t2    handoff                help    n/a     n/a     True   thin:3<=3 | -
+  CD11.t3    narrowing              help    n/a     n/a     True   thin:1<=3 | -
+  CD12.t1    direct                 answer  1.000   1.000   False  no-history | -
+  CD12.t2    pronoun                answer  0.000   1.000   True   unbound-pronoun:it | -
+  CD12.t3    topic-shift            answer  1.000   1.000   False  self-sufficient:5 content stems, marker='' | -
+  CD13.t1    direct                 answer  1.000   1.000   False  no-history | -
+  CD13.t2    handoff                help    n/a     n/a     False  self-sufficient:5 content stems, marker='' | -
+
+== chat_dev (tuning allowed) -- RECALL BY TURN CLASS, naive vs contextualised ==
+  class                    n    naive    ctx      delta    n-strict c-strict d-strict
+  direct                   13   0.923    0.923    +0.000   0.923    0.923    +0.000
+  ellipsis                 6    0.333    0.833    +0.500   0.333    0.833    +0.500  <-- gain class
+  handoff                  4    (no legal ground truth -- see the slots / off-corpus tables)
+  narrowing                2    (no legal ground truth -- see the slots / off-corpus tables)
+  off-corpus-after-legal   2    (no legal ground truth -- see the slots / off-corpus tables)
+  pronoun                  7    0.286    0.429    +0.143   0.286    0.429    +0.143  <-- gain class
+  topic-shift              3    1.000    1.000    +0.000   1.000    1.000    +0.000
+
+== chat_dev (tuning allowed) -- RECALL@K (pool k=20/doc -> 60 candidates, select_top order) ==
+  NOT the shipping arm (k=4/doc -> top_n=16). This answers 'is the
+  right chunk in the pool at all, and how deep?' -- a wide @6-to-@60
+  gap means a re-ranker could reach it; a flat curve means it is absent.
+  arm              r@3     r@6     r@10    r@20    r@60    MRR     med-rk  found
+  naive            0.276   0.448   0.483   0.586   0.724   0.187   5       21/29
+  contextualised   0.448   0.655   0.690   0.759   0.828   0.290   3       24/29
+
+== chat_dev (tuning allowed) -- HELP SLOTS (handoff + narrowing turns) ==
+  naive = router.extract_help_slots() on this turn ALONE, which is
+  what ships today. contextualised = chat.merge_help_slots() across
+  the conversation. A narrowing turn like 'anywhere in Kano?' has no
+  disability in it, so the stateless scan drops the filter and the
+  connector answers a question the user did not ask.
+  naive            4/6 turns with BOTH slots correct
+  contextualised   6/6 turns with BOTH slots correct
+    CD2.t3     'my son is deaf, who can help us ' naive='deaf'/'lagos' ctx='deaf'/'lagos'
+    CD7.t2     'I am deaf, I need an organisatio' naive='deaf'/'' ctx='deaf'/''
+    CD7.t3     'anywhere in Kano?'                naive=''/'kano' ctx='deaf'/'kano'
+    CD11.t2    'I have albinism and I need suppo' naive='albinism'/'' ctx='albinism'/''
+    CD11.t3    'is there anywhere in Abuja?'      naive=''/'abuja' ctx='albinism'/'abuja'
+    CD13.t2    'I am deaf and I live in Lagos, i' naive='deaf'/'lagos' ctx='deaf'/'lagos'
+
+== chat_dev (tuning allowed) -- FALSE-REFUSAL RATE (answerable turns) ==
+  CLAUDE.md: false refusals deny help to PWDs. This is the number
+  that matters most, and chat can create new ones -- appending
+  absent terms dilutes the query-vector norm and can drop a turn
+  below MIN_SCORE that the raw question cleared.
+  naive            1/29 = 3.4% retrieve NOTHING
+    offenders: CD1.t2 (ellipsis, top 0.0000)
+  contextualised   0/29 = 0.0% retrieve NOTHING
+  CONTEXTUALISATION-INDUCED: 0 turn(s) the naive arm answered and
+  the contextualised arm refuses. This is the one retrieval number
+  here that FAILS the run -- it is our code denying help to someone
+  who would have been helped without it, not a disappointing metric.
+
+== chat_dev (tuning allowed) -- INHERITED-CONTEXT FALSE ANSWERS (off-corpus turns) ==
+  The genuinely NEW failure mode chat creates: carrying prior turns
+  lets an off-corpus question inherit legal vocabulary and clear
+  MIN_SCORE on words the user never wrote.
+  naive            2/2 = 100.0% clear MIN_SCORE=0.10
+    CD5.t3     carried=False top 0.2748  'and how do I renew my international passport?'
+    CD10.t3    carried=False top 0.2551  'and what does the law say about maritime shipping in'
+  contextualised   2/2 = 100.0% clear MIN_SCORE=0.10
+    CD5.t3     carried=True  top 0.2454  'and how do I renew my international passport?'
+    CD10.t3    carried=False top 0.2551  'and what does the law say about maritime shipping in'
+  CAVEAT, load-bearing and identical to eval_heldout's: a bad number
+  here is EXPECTED and is NOT a reason to touch MIN_SCORE. It is a
+  weak-overlap FLOOR, not a semantic filter, and the in-corpus /
+  off-corpus cosine bands are INVERTED (src/retrieve.py:26-44) --
+  single-turn DRLCA already clears it on 5/5 off-corpus questions.
+  The only chat-attributable number is the DELTA between the arms.
+
+== HEADLINE: ALL SETS, BOTH ARMS (corpus=v3, shipping arm k=4/doc -> select_top(16)) ==
+  set                                            naive    ctx      delta    n
+  chat_dev (tuning allowed)                      0.655    0.793    +0.138   29
+  Means over ANSWERABLE turns only. help and off-corpus turns have
+  no legal ground truth and are scored in their own tables, never as
+  0.000 -- see the class table for the per-class split, which is the
+  number that actually says whether contextualisation works.
+
+== PHASE B GATES ==
+  ctx BEATS naive on ellipsis       0.333 -> 0.833   PASS
+  ctx BEATS naive on pronoun        0.286 -> 0.429   PASS
+  topic-shift NOT WORSE than naive  1.000 -> 1.000   PASS
+  help slots naive 4/6 -> ctx 6/6
+  cross-turn citation drift: STRUCTURALLY UNAVAILABLE here -- it
+  needs a generated answer to read. chat.cross_turn_drift() is wired
+  and unmeasured; Phase G's multi-turn transcript is what runs it.
+
+== FAILURE CONDITION (the only retrieval number that can fail) ==
+  0 contextualisation-induced false refusals on either set.
+
+EVAL_CHAT: PASS (ground truth verified; all numbers reported as measured)
+
+
+################################################################
+## scripts/eval_chat.py --corpus=v2 --dev-only
+################################################################
+CORPUS_VERSION=v2
+corpus: {'act2018': 65, 'constitution1999': 2037, 'factsheet2020': 32}
+chat ground truth verified against corpus: 29 expected refs
+  chat_dev   13 conversations, 37 turns  direct=13 ellipsis=6 handoff=4 narrowing=2 off-corpus-after-legal=2 pronoun=7 topic-shift=3
+  held-out EXCLUDED (--dev-only): chat_test not loaded, not scored
+
+  contextualisation thresholds (chat.py, chosen on chat_dev ONLY):
+    CARRY_WINDOW=2  THIN_MAX=3  MARKER_MAX=4  QUESTION_WEIGHT=2
+
+== chat_dev (tuning allowed) -- PER TURN (corpus=v2, k=4/doc, top_n=12, MIN_SCORE=0.10) ==
+  turn       class                  gate    naive   ctx     carry  why / still-missed
+  CD1.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD1.t2     ellipsis               answer  0.000   1.000   True   unbound-pronoun:they | -
+  CD1.t3     pronoun                answer  1.000   1.000   True   unbound-pronoun:they | -
+  CD2.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD2.t2     pronoun                answer  1.000   1.000   True   unbound-pronoun:they,him | -
+  CD2.t3     handoff                help    n/a     n/a     False  self-sufficient:4 content stems, marker='' | -
+  CD3.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD3.t2     pronoun                answer  0.000   0.000   True   unbound-pronoun:they,them | act2018:6
+  CD3.t3     topic-shift            answer  1.000   1.000   True   thin:2<=3 | -
+  CD4.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD4.t2     ellipsis               answer  0.000   1.000   True   unbound-pronoun:them,they | -
+  CD5.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD5.t2     ellipsis               answer  1.000   1.000   True   unbound-pronoun:that | -
+  CD5.t3     off-corpus-after-legal refuse  n/a     n/a     True   thin:3<=3 | -
+  CD6.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD6.t2     ellipsis               answer  0.000   0.000   True   thin:3<=3 | constitution1999:42
+  CD6.t3     pronoun                answer  0.000   0.000   True   unbound-pronoun:that | constitution1999:46
+  CD7.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD7.t2     handoff                help    n/a     n/a     False  self-sufficient:4 content stems, marker='' | -
+  CD7.t3     narrowing              help    n/a     n/a     True   thin:1<=3 | -
+  CD8.t1     direct                 answer  1.000   1.000   False  no-history | -
+  CD8.t2     ellipsis               answer  1.000   1.000   True   thin:3<=3 | -
+  CD8.t3     topic-shift            answer  1.000   1.000   True   thin:2<=3 | -
+  CD9.t1     direct                 answer  0.000   0.000   False  no-history | act2018:31
+  CD9.t2     pronoun                answer  0.000   0.000   True   unbound-pronoun:it | act2018:32
+  CD9.t3     pronoun                answer  0.000   0.000   True   unbound-pronoun:it | act2018:32
+  CD10.t1    direct                 answer  1.000   1.000   False  no-history | -
+  CD10.t2    ellipsis               answer  0.000   1.000   True   thin:1<=3 | -
+  CD10.t3    off-corpus-after-legal refuse  n/a     n/a     False  self-sufficient:6 content stems, marker='and' | -
+  CD11.t1    direct                 answer  1.000   1.000   False  no-history | -
+  CD11.t2    handoff                help    n/a     n/a     True   thin:3<=3 | -
+  CD11.t3    narrowing              help    n/a     n/a     True   thin:1<=3 | -
+  CD12.t1    direct                 answer  1.000   1.000   False  no-history | -
+  CD12.t2    pronoun                answer  0.000   1.000   True   unbound-pronoun:it | -
+  CD12.t3    topic-shift            answer  1.000   1.000   False  self-sufficient:5 content stems, marker='' | -
+  CD13.t1    direct                 answer  1.000   1.000   False  no-history | -
+  CD13.t2    handoff                help    n/a     n/a     False  self-sufficient:5 content stems, marker='' | -
+
+== chat_dev (tuning allowed) -- RECALL BY TURN CLASS, naive vs contextualised ==
+  class                    n    naive    ctx      delta    n-strict c-strict d-strict
+  direct                   13   0.923    0.923    +0.000   0.923    0.923    +0.000
+  ellipsis                 6    0.333    0.833    +0.500   0.333    0.833    +0.500  <-- gain class
+  handoff                  4    (no legal ground truth -- see the slots / off-corpus tables)
+  narrowing                2    (no legal ground truth -- see the slots / off-corpus tables)
+  off-corpus-after-legal   2    (no legal ground truth -- see the slots / off-corpus tables)
+  pronoun                  7    0.286    0.429    +0.143   0.286    0.429    +0.143  <-- gain class
+  topic-shift              3    1.000    1.000    +0.000   1.000    1.000    +0.000
+
+== chat_dev (tuning allowed) -- RECALL@K (pool k=20/doc -> 60 candidates, select_top order) ==
+  NOT the shipping arm (k=4/doc -> top_n=12). This answers 'is the
+  right chunk in the pool at all, and how deep?' -- a wide @6-to-@60
+  gap means a re-ranker could reach it; a flat curve means it is absent.
+  arm              r@3     r@6     r@10    r@20    r@60    MRR     med-rk  found
+  naive            0.345   0.448   0.483   0.621   0.724   0.209   4       21/29
+  contextualised   0.552   0.655   0.690   0.759   0.828   0.319   3       24/29
+
+== chat_dev (tuning allowed) -- HELP SLOTS (handoff + narrowing turns) ==
+  naive = router.extract_help_slots() on this turn ALONE, which is
+  what ships today. contextualised = chat.merge_help_slots() across
+  the conversation. A narrowing turn like 'anywhere in Kano?' has no
+  disability in it, so the stateless scan drops the filter and the
+  connector answers a question the user did not ask.
+  naive            4/6 turns with BOTH slots correct
+  contextualised   6/6 turns with BOTH slots correct
+    CD2.t3     'my son is deaf, who can help us ' naive='deaf'/'lagos' ctx='deaf'/'lagos'
+    CD7.t2     'I am deaf, I need an organisatio' naive='deaf'/'' ctx='deaf'/''
+    CD7.t3     'anywhere in Kano?'                naive=''/'kano' ctx='deaf'/'kano'
+    CD11.t2    'I have albinism and I need suppo' naive='albinism'/'' ctx='albinism'/''
+    CD11.t3    'is there anywhere in Abuja?'      naive=''/'abuja' ctx='albinism'/'abuja'
+    CD13.t2    'I am deaf and I live in Lagos, i' naive='deaf'/'lagos' ctx='deaf'/'lagos'
+
+== chat_dev (tuning allowed) -- FALSE-REFUSAL RATE (answerable turns) ==
+  CLAUDE.md: false refusals deny help to PWDs. This is the number
+  that matters most, and chat can create new ones -- appending
+  absent terms dilutes the query-vector norm and can drop a turn
+  below MIN_SCORE that the raw question cleared.
+  naive            1/29 = 3.4% retrieve NOTHING
+    offenders: CD1.t2 (ellipsis, top 0.0000)
+  contextualised   0/29 = 0.0% retrieve NOTHING
+  CONTEXTUALISATION-INDUCED: 0 turn(s) the naive arm answered and
+  the contextualised arm refuses. This is the one retrieval number
+  here that FAILS the run -- it is our code denying help to someone
+  who would have been helped without it, not a disappointing metric.
+
+== chat_dev (tuning allowed) -- INHERITED-CONTEXT FALSE ANSWERS (off-corpus turns) ==
+  The genuinely NEW failure mode chat creates: carrying prior turns
+  lets an off-corpus question inherit legal vocabulary and clear
+  MIN_SCORE on words the user never wrote.
+  naive            2/2 = 100.0% clear MIN_SCORE=0.10
+    CD5.t3     carried=False top 0.2748  'and how do I renew my international passport?'
+    CD10.t3    carried=False top 0.2551  'and what does the law say about maritime shipping in'
+  contextualised   2/2 = 100.0% clear MIN_SCORE=0.10
+    CD5.t3     carried=True  top 0.2454  'and how do I renew my international passport?'
+    CD10.t3    carried=False top 0.2551  'and what does the law say about maritime shipping in'
+  CAVEAT, load-bearing and identical to eval_heldout's: a bad number
+  here is EXPECTED and is NOT a reason to touch MIN_SCORE. It is a
+  weak-overlap FLOOR, not a semantic filter, and the in-corpus /
+  off-corpus cosine bands are INVERTED (src/retrieve.py:26-44) --
+  single-turn DRLCA already clears it on 5/5 off-corpus questions.
+  The only chat-attributable number is the DELTA between the arms.
+
+== HEADLINE: ALL SETS, BOTH ARMS (corpus=v2, shipping arm k=4/doc -> select_top(12)) ==
+  set                                            naive    ctx      delta    n
+  chat_dev (tuning allowed)                      0.655    0.793    +0.138   29
+  Means over ANSWERABLE turns only. help and off-corpus turns have
+  no legal ground truth and are scored in their own tables, never as
+  0.000 -- see the class table for the per-class split, which is the
+  number that actually says whether contextualisation works.
+
+== PHASE B GATES ==
+  ctx BEATS naive on ellipsis       0.333 -> 0.833   PASS
+  ctx BEATS naive on pronoun        0.286 -> 0.429   PASS
+  topic-shift NOT WORSE than naive  1.000 -> 1.000   PASS
+  help slots naive 4/6 -> ctx 6/6
+  cross-turn citation drift: STRUCTURALLY UNAVAILABLE here -- it
+  needs a generated answer to read. chat.cross_turn_drift() is wired
+  and unmeasured; Phase G's multi-turn transcript is what runs it.
+
+== FAILURE CONDITION (the only retrieval number that can fail) ==
+  0 contextualisation-induced false refusals on either set.
+
+EVAL_CHAT: PASS (ground truth verified; all numbers reported as measured)
+
+
+################################################################
+## scripts/eval_phase06.py --out=<scratch>/eval06_v3.json   (corpus v3, default)
+################################################################
+transcript: test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json
+corpus: {'act2018': 65, 'constitution1999': 2037, 'factsheet2020': 32, 'accessregs2023': 221}
+ground truth verified against corpus (10 questions)
+
+== PER-QUESTION (retrieval live/offline; answers frozen v2) ==
+  id   recall prec   faith  faithA cover  revrel  missed-expected
+  Q1   0.667  0.125  0.750  0.750  0.500  0.667   factsheet2020:2
+  Q2   0.714  0.312  0.667  0.667  1.000  1.000   act2018:5,act2018:6
+  Q3   0.500  0.062  0.500  0.500  0.600  0.333   act2018:30
+  Q4   0.667  0.125  0.667  0.667  1.000  0.333   factsheet2020:30
+  Q5   0.125  0.062  0.000  0.000  n/a(ref) n/a(ref)  act2018:10,act2018:13,act2018:2,act2018:29,act2018:30,act2018:8,act2018:9
+  Q6   1.000  0.188  1.000  1.000  0.833  0.667   -
+  Q7   0.667  0.250  0.667  0.667  1.000  1.000   act2018:16,act2018:20
+  Q8   1.000  0.312  1.000  1.000  0.250  0.667   -
+  Q9   1.000  0.125  1.000  1.000  0.600  0.667   -
+  Q10  1.000  0.062  0.667  0.667  0.600  0.333   -
+
+== COVERAGE-MISS WORDS (artifact diagnosis: paraphrase, not off-topic) ==
+  Q1 missing from answer: ['does', 'say']
+  Q3 missing from answer: ['exist', 'protect']
+  Q6 missing from answer: ['does']
+  Q8 missing from answer: ['compliance', 'long', 'transitional']
+  Q9 missing from answer: ['does', 'guarantee']
+  Q10 missing from answer: ['disability', 'violat']
+
+== MEANS vs SPEC TARGETS ==
+  recall>0.75 (context):            0.734 FAIL
+  faithfulness_audited>0.85:        0.692 FAIL
+  reverse_rel>0.80 (answer relev.): 0.630 FAIL
+  (coverage floor, ungated: 0.709 -- punishes paraphrase, diagnosed metric artifact)
+  (precision diagnostic, ungated: 0.162 -- per-doc merging trades it away by design)
+wrote <scratch>/eval06_v3.json (10 records) sha256=e40b6b620375e5150cc426d757f59586f53a7a715f71d988023363380e4b40f5
+
+
+################################################################
+## scripts/eval_phase06.py --corpus=v2 --out=<scratch>/eval06_v2.json
+################################################################
+transcript: test_phase02_results_cite-strict-v2-fixA2_2026-09-10.json
+corpus: {'act2018': 65, 'constitution1999': 2037, 'factsheet2020': 32}
+ground truth verified against corpus (10 questions)
+
+== PER-QUESTION (retrieval live/offline; answers frozen v2) ==
+  id   recall prec   faith  faithA cover  revrel  missed-expected
+  Q1   0.667  0.167  0.750  0.750  0.500  0.667   factsheet2020:2
+  Q2   0.714  0.417  0.667  0.667  1.000  1.000   act2018:5,act2018:6
+  Q3   0.500  0.083  0.500  0.500  0.600  0.333   act2018:30
+  Q4   0.667  0.167  0.667  0.667  1.000  0.667   factsheet2020:30
+  Q5   0.125  0.083  0.000  0.000  n/a(ref) n/a(ref)  act2018:10,act2018:13,act2018:2,act2018:29,act2018:30,act2018:8,act2018:9
+  Q6   1.000  0.250  1.000  1.000  0.833  0.667   -
+  Q7   0.667  0.333  0.667  0.667  1.000  1.000   act2018:16,act2018:20
+  Q8   1.000  0.417  1.000  1.000  0.250  0.667   -
+  Q9   1.000  0.167  1.000  1.000  0.600  0.667   -
+  Q10  1.000  0.083  0.667  0.667  0.600  0.333   -
+
+== COVERAGE-MISS WORDS (artifact diagnosis: paraphrase, not off-topic) ==
+  Q1 missing from answer: ['does', 'say']
+  Q3 missing from answer: ['exist', 'protect']
+  Q6 missing from answer: ['does']
+  Q8 missing from answer: ['compliance', 'long', 'transitional']
+  Q9 missing from answer: ['does', 'guarantee']
+  Q10 missing from answer: ['disability', 'violat']
+
+== MEANS vs SPEC TARGETS ==
+  recall>0.75 (context):            0.734 FAIL
+  faithfulness_audited>0.85:        0.692 FAIL
+  reverse_rel>0.80 (answer relev.): 0.667 FAIL
+  (coverage floor, ungated: 0.709 -- punishes paraphrase, diagnosed metric artifact)
+  (precision diagnostic, ungated: 0.217 -- per-doc merging trades it away by design)
+wrote <scratch>/eval06_v2.json (10 records) sha256=a46c3440f0fe764544cdeb1a99c09e693822a177ab2de0bc974a2846ca675974
+
+
+################################################################
+## scripts/calibrate_refusal.py   (UNCHANGED; VERSIONS v1, v2) -- decisive lines only
+################################################################
+  probes 106 (60 eval + 12 off-corpus + 34 synonym keys) x 2 versions = 212 probe-runs
+  disagreements: 0 / 212
+  -> PASS -- select_top is refusal-invariant on both corpora
+CALIBRATE_REFUSAL: PASS -- MIN_SCORE 0.10 holds on v1 and v2
+
+
+################################################################
+## scripts/audit_corpus.py   (corpus v3, default) -- v3 gate block
+################################################################
+  factsheet2020      row-spanning chunks 0 <= 0: PASS
+  CORPUS             sha256   recorded f13b96780303b55fd316db60472c69a111f2417426a115a9598d0d52d5633513
+                              measured f13b96780303b55fd316db60472c69a111f2417426a115a9598d0d52d5633513 ok
+
+== V3 ACCESSREGS2023 GATE (H8a.2) ==
+  accessregs2023     n          pinned 221    measured 221    ok
+  accessregs2023     general    pinned 1      measured 1      ok
+  accessregs2023     packed     pinned 0      measured 0      ok
+  accessregs2023     over_cap   pinned 0      measured 0      ok
+  the one `general` chunk is the enacting formula, first: PASS
+  regulations citable (reg. 1..172, each a ref): PASS
+  manifest: located 172/172, missing 0, flags {133: ['ARRANGEMENT_NUMBER_MISMATCH']}: PASS
+  ground truth (accessregs-dev+status, 14 rows): 18 expected numbers all present as refs: PASS
+  CORRECTION         cl.1     verified by Jerry, 2026-10-15, against the gazette scan PDF p.5 (A101)
+  CORRECTION         cl.12    verified by Jerry, 2026-10-15, against the gazette scan PDF p.7 (A103)
+  CORRECTION         cl.20    verified by Jerry, 2026-10-15, against the gazette scan PDF p.9 (A105)
+  act_ref contradicts manifest ref: PASS (none)
+  act clauses citable (all 58, no exclusion set): PASS
+
+AUDIT_CORPUS: PASS
