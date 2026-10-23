@@ -99,7 +99,8 @@ existing one. The core rules, which must not be lost:
 - **Three docs, three numbering schemes.** `doc_id ∈ {act2018, constitution1999, factsheet2020}`.
   Act clause N, Constitution section N and Factsheet Section N are different things and must never
   be conflated. `cite_tag()` is the only place tags are built.
-- **Shipping budget `k=4/doc, top_n=12`, and `top_n == 3 × k` is load-bearing.** Widening `k`
+- **Shipping budget `k=4/doc, top_n = 4 × n_docs`, and that equality is load-bearing**: 12 on
+  v1/v2, 16 on corpus v3 (the default since H8a.5; `rag.TOP_N_BY_VERSION`). Widening `k`
   without holding it measured worse on all three sets. `top_n` is a ceiling, not a count.
 - **`build_corpus()` dict insertion order breaks score ties.** Reordering it moves published numbers.
 - **Context precision is low by design** (per-doc merging). Never gate or "fix" it.

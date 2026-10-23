@@ -160,6 +160,15 @@ def main(argv: list[str] | None = None) -> None:
     # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
     corpus = next((a.split("=", 1)[1] for a in argv
                    if a.startswith("--corpus=")), None)
+    # H8a.5 (2026-10-23): a v1/v2 MEASUREMENT harness, pinned there explicitly
+    # now that CORPUS_VERSION is "v3". Its "before" arm swaps retrieve.expand_query
+    # for a one-argument identity, and v3's retriever calls expand_query with its
+    # own bridge (two arguments), so a v3 run would TypeError or mis-pair (H8a.2
+    # Results). TOP_N=12 below is the v1/v2 budget. No-arg runs measure v2, as
+    # they did before the flip, and stay byte-identical.
+    corpus = corpus or "v2"
+    if corpus not in ("v1", "v2"):
+        raise SystemExit("ablate_phase08 measures v1/v2 only (got %r)" % corpus)
 
     # D6 found this harness had NO corpus stamp at all -- worse than the five
     # wrong ones, since the shape dict below is the only thing that identified

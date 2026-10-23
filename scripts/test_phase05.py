@@ -87,8 +87,8 @@ check("legal-tags-valid", all(tag_re.fullmatch(e["tag"]) for e in pay["excerpts"
       str([e["tag"] for e in pay["excerpts"]][:6]))
 check("legal-citations-mirror-tags", pay["citations"] == [e["tag"] for e in pay["excerpts"]])
 # H8a.2 (F3): corpus v3's "[Regs reg. N]" / "[Regs general]" shapes. The default
-# corpus above is v2 and never emits them, so they are checked on cite_tag()'s own
-# output: this tag_re and rag.CITE_TAG_RE must accept them, every pre-existing shape
+# corpus above was v2 when this was written and never emitted them (since H8a.5 it is
+# v3), so they are checked on cite_tag()'s own output: this tag_re and rag.CITE_TAG_RE must accept them, every pre-existing shape
 # must still match both, and near-miss shapes must match neither.
 import rag as _rag  # noqa: E402
 from retrieve import cite_tag as _cite_tag  # noqa: E402
@@ -103,8 +103,20 @@ check("regs-tags-valid", _regs_tags == ["[Regs reg. 24]", "[Regs general]"]
 check("old-tag-shapes-unchanged",
       all(tag_re.fullmatch(t) and _rag.CITE_TAG_RE.fullmatch(t) for t in _old_tags)
       and not any(tag_re.fullmatch(t) or _rag.CITE_TAG_RE.fullmatch(t) for t in _bad_tags))
-ref = app.offline_legal_hits("quantum teleportation zebra unleaded gasoline", retr)
+# H8a.5 FIXTURE SPLIT (2026-10-23). This string is OFF12 of ablate_phase08.OFF_CORPUS.
+# v2 refuses it; v3 does NOT (it surfaces Constitution s. 44 at 0.135 and Regs
+# reg. 4 at 0.101) -- the off-corpus false-answer rise 13 -> 14 of 17 that F9
+# predicted and H8a-R recorded (reported, not gated; MIN_SCORE unchanged). The
+# assert below is therefore pinned to an EXPLICIT v2 retriever, unchanged, and a
+# v3 counterpart checks the same refusal path on the shipping default with an
+# off-corpus probe v3 still refuses (OFF_CORPUS "quantum computing entanglement").
+retr_v2 = PerDocRetriever(build_corpus("v2"))
+ref = app.offline_legal_hits("quantum teleportation zebra unleaded gasoline", retr_v2)
 check("legal-refusal", ref["refused"] and "08000-3000-100" in ref["answer"])
+ref3 = app.offline_legal_hits("quantum computing entanglement", retr)
+check("legal-refusal-v3", _rag.CORPUS_VERSION == "v3"
+      and "accessregs2023" in retr.docs
+      and ref3["refused"] and "08000-3000-100" in ref3["answer"])
 
 # 3. Clarify rendering ------------------------------------------------------
 r = app.resolve_mode("where", explicit="auto")
@@ -782,7 +794,10 @@ check("status-note-inside-fold-before-first-regs-card",
       len(_fn) == 1 and _fn[0] > _fx and _fold_calls[_fn[0] + 1][1].startswith("`[Regs reg. 168]"))
 
 # Nothing for any other doc: v2 hits, and a v3 turn that retrieved no Regs card.
-_v2pay = app.offline_legal_hits("What are my education rights under the Act?", retr)
+# H8a.5: `retr` is the DEFAULT corpus, v3 since the flip, and this question now
+# retrieves a Regs card there. "v2 hits" means v2, so it is built explicitly
+# (retr_v2, from the legal-refusal block). The v3 side of "absent" is _v3none.
+_v2pay = app.offline_legal_hits("What are my education rights under the Act?", retr_v2)
 _v2calls, _, _ = _record(app.render_excerpts, _v2pay["excerpts"], 0)
 _v3none = app.offline_legal_hits("What happens if I am arrested?", retr3)
 _v3calls, _, _ = _record(app.render_excerpts, _v3none["excerpts"], 0)

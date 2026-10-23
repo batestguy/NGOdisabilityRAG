@@ -364,7 +364,8 @@ def offline_legal_hits(question: str, retriever, k: int = 4,
 
     H8a.4: `top_n=None` takes rag.default_top_n(retriever), the same default
     ask() takes -- 12 on v1/v2 (unchanged), 16 on v3 -- so the two paths can
-    never disagree on the budget.
+    never disagree on the budget. Since H8a.5 (2026-10-23) the shipping corpus
+    is v3, so the default ceiling is 16 (still 3 inline, the rest folded).
     """
     from retrieve import MIN_SCORE, cite_tag, select_top
     from rag import REFUSAL_MESSAGE, default_top_n

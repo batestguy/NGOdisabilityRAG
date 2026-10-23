@@ -40,9 +40,11 @@ SLEEP_S = 7  # 10/min/model free tier
 
 
 def prompt_hits(ret, q):
-    """Exactly ask()'s context: select_top(k=4, top_n=12), then the per-hit floor."""
-    merged = select_top(ret.query(q, k=4), 12, min_per_doc=1)
-    return [h for h in merged if h.score >= MIN_SCORE]
+    """Exactly ask()'s PROMPT context: select_top(k=4, top_n=default_top_n), the
+    per-hit floor, then rag.llm_context_hits (H8a.5: Regs chunks never reach the
+    model until H8a.6). top_n is 12 on v1/v2 and 16 on v3, as in ask()."""
+    merged = select_top(ret.query(q, k=4), rag.default_top_n(ret), min_per_doc=1)
+    return rag.llm_context_hits([h for h in merged if h.score >= MIN_SCORE])
 
 
 def main(argv=None) -> int:

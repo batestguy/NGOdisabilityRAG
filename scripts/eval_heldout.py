@@ -105,7 +105,7 @@ from evalset import (  # noqa: E402
     strict_covered,
     verify_expected,
 )
-from rag import CORPUS_VERSION, build_corpus  # noqa: E402
+from rag import CORPUS_VERSION, build_corpus, default_top_n  # noqa: E402
 from retrieve import MIN_SCORE, Hit, PerDocRetriever, select_top  # noqa: E402
 
 # ---- the corpus stamp (D6, 2026-09-19) -----------------------------------
@@ -127,8 +127,13 @@ def corpus_stamp() -> str:
 # 3*K_PER_DOC on purpose -- with three docs that is every candidate retrieved,
 # so select_top discards nothing. Held identical to ask() / eval_phase06 /
 # ablate_phase08 / eval_chat / judge_phase06.
+#
+# H8a.5 (2026-10-23): TOP_N is the module default (12, the v1/v2 budget) and
+# main() resets it to rag.default_top_n() of the corpus actually built -- 12 on
+# v1/v2 (byte-identical output), 16 on v3 (k x n_docs, no cut). The module value
+# stays 12 because calibrate_refusal.py imports it and runs v1/v2 only.
 K_PER_DOC = 4   # ask() / eval_phase06 / ablate_phase08 depth
-TOP_N = 12      # ask() / eval_phase06 / ablate_phase08 merge width
+TOP_N = 12      # v1/v2 merge width; main() takes the built corpus's budget
 MIN_PER_DOC = 1  # ask() default -- the doc-quota merge, Phase 09 step 3 M2
 
 # ---- the recall@k curve (Phase 10 A) -------------------------------------
@@ -189,6 +194,15 @@ FROZEN10_RECALL_BASELINE_V1 = 0.925
 # baseline. Truncated to six places, the same convention the old constant used.
 # Any future guard pinned off a printed table has the same bug.
 FROZEN10_STRICT_BASELINE_V2 = 0.733928
+
+# The v3 arm (H8a.5, 2026-10-23), its OWN constant as the guard below demands.
+# Corpus v3 at its shipping budget (k=4/doc, top_n=16) retrieves exactly the
+# v2 frozen-10 pairs per question (H8a-R gate G1, scripts/h8aR_dev_stage_
+# 2026-10-23.txt: R-a frozen-10 0.734, 0 lost pairs), and this harness measured
+# 0.7339285714285715 on v3 at H8a.5 -- the same float v2 gives in that run
+# (0.733928571428571x, last digit is summation order), truncated to six
+# places by the same convention. Equal by measurement, not copied from v2.
+FROZEN10_STRICT_BASELINE_V3 = 0.733928
 
 EPS = 1e-6
 
@@ -486,7 +500,10 @@ def main(argv: list[str] | None = None) -> int:
     elif (corpus or CORPUS_VERSION) == "v2":
         rows = rows + load_eval_set("test2")
     else:
-        LABELS.pop("test2", None)   # test2 is v2-only (6 refs absent on v1)
+        # test2 is v2-only (6 refs absent on v1). On v3 it also stays out: its
+        # v3 number is recorded once (scripts/h8aR_blind_2026-10-23.txt) and is
+        # never re-scored (H8a.5).
+        LABELS.pop("test2", None)
     by_set = {s: [r for r in rows if r["set"] == s] for s in LABELS}
 
     docs = build_corpus(corpus)
@@ -500,6 +517,8 @@ def main(argv: list[str] | None = None) -> int:
         print("held-out EXCLUDED (--no-test): test and test2 not loaded, not scored")
 
     ret = PerDocRetriever(docs)
+    global TOP_N
+    TOP_N = default_top_n(ret)          # H8a.5: 12 on v1/v2, 16 on v3
     measured = {s: [measure_one(ret, r) for r in by_set[s]] for s in LABELS}
     curves = {s: [measure_curve(ret, r) for r in by_set[s]] for s in LABELS}
 
@@ -612,6 +631,14 @@ def main(argv: list[str] | None = None) -> int:
         print("  frozen-10 recall_strict %s -- published now, BEFORE v2 exists, so"
               % fmt(f_strict))
         print("  the v2 rebuild has an honest yardstick to be compared against.")
+    elif corpus_stamp() == "v3":
+        # H8a.5: same metric as v2 (recall_strict), its own constant.
+        ok = f_strict is not None and f_strict >= FROZEN10_STRICT_BASELINE_V3 - EPS
+        print("  frozen-10 recall_strict %s vs recorded baseline %.3f (corpus %s): %s"
+              % (fmt(f_strict), FROZEN10_STRICT_BASELINE_V3, corpus_stamp(),
+                 "PASS" if ok else "FAIL"))
+        print("  frozen-10 recall %s -- PRINTED, NOT GATED (as on v2)."
+              % fmt(f_recall))
     elif corpus_stamp() == "v2":
         ok = f_strict is not None and f_strict >= FROZEN10_STRICT_BASELINE_V2 - EPS
         print("  frozen-10 recall_strict %s vs recorded baseline %.3f (corpus %s): %s"
@@ -625,10 +652,10 @@ def main(argv: list[str] | None = None) -> int:
         print("  that comparison as a FAIL; it was mis-stamped, not a regression.")
     else:
         # UNREACHABLE THROUGH THE CLI TODAY, and recorded as such rather than
-        # left to look load-bearing: build_corpus() rejects anything but v1/v2
-        # first (src/rag.py:674), so --corpus=v3 dies upstream. This arm is
-        # forward defence -- the moment build_corpus learns a v3, it is what
-        # stops the frozen-10 guard silently reusing v2's baseline. Negative-
+        # left to look load-bearing: build_corpus() rejects anything but
+        # v1/v2/v3 first, and v3 got its own arm above at H8a.5. This arm is
+        # forward defence -- the moment build_corpus learns a v4, it is what
+        # stops the frozen-10 guard silently reusing v3's baseline. Negative-
         # tested by making corpus_stamp() disagree with the corpus built,
         # which is precisely the state that future change would create.
         raise AssertionError(

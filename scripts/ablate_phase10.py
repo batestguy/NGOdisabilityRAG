@@ -166,6 +166,13 @@ def main(argv: list[str] | None = None) -> int:
     # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
     corpus = next((a.split("=", 1)[1] for a in argv
                    if a.startswith("--corpus=")), None)
+    # H8a.5 (2026-10-23): a v1/v2 measurement harness (its "shipping" arm is
+    # k=4/top_n=12, the 3-doc budget), pinned there explicitly now that
+    # CORPUS_VERSION is "v3". No-arg runs measure v2, as before the flip. NOTE: it
+    # scores `test` on every run -- not run at H8a.5.
+    corpus = corpus or "v2"
+    if corpus not in ("v1", "v2"):
+        raise SystemExit("ablate_phase10 measures v1/v2 only (got %r)" % corpus)
 
     rows = load_eval_set()
     by_set = {s: [r for r in rows if r["set"] == s] for s in LABELS}

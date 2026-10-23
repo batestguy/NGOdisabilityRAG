@@ -69,7 +69,15 @@ PROMPT_VERSION = "cite-strict-v3"
 # entirely because the v1 scan repeats a page, and an end to cl.38's tail being
 # served under an [Act cl. 39] tag. That defect is live in main until this
 # branch merges.
-CORPUS_VERSION = "v2"
+#
+# FLIPPED TO "v3" AT H8a.5, 2026-10-23 (docs/phases/17_h8_corpus_expansion.md):
+# v2 plus the Accessibility Regulations 2023 (accessregs2023) appended last,
+# shipped at top_n=16 (TOP_N_BY_VERSION below; H8a-R arm R-a). v1 and v2 are
+# retired as the default, not deleted: every harness still takes --corpus=v1 /
+# --corpus=v2 and reproduces its published numbers from this same commit
+# (scripts/baseline_phaseE_2026-09-24.txt is v2; scripts/baseline_v3_2026-10-23.txt
+# is v3). Regs chunks still never reach the LLM until H8a.6 (LLM_EXCLUDED_DOCS).
+CORPUS_VERSION = "v3"
 
 # H8a-R: FIXED status notes, one per doc that needs one -- never generated.
 # Status facts (what kind of law, who made it, since when, what enforcement)
@@ -120,7 +128,8 @@ def budget_version(docs=None) -> str:
 
     None means the shipping default, CORPUS_VERSION. A dict holding the
     accessregs2023 doc is v3; otherwise v1/v2, which share doc ids AND budget,
-    so CORPUS_VERSION is returned when it is one of them (else "v2").
+    so CORPUS_VERSION is returned when it is one of them (else "v2"). Since
+    H8a.5 CORPUS_VERSION is "v3", so a v1/v2 dict resolves to "v2" (12).
     """
     if docs is None:
         return CORPUS_VERSION
@@ -819,9 +828,10 @@ def build_corpus(version: str | None = None,
     "v3" (H8a.2, docs/phases/17_h8_corpus_expansion.md) is EXACTLY the v2 dict
     for the three existing docs plus docs["accessregs2023"] (_regs_chunks_v3)
     appended LAST (F6), so ties among the first three resolve as in v2 and any
-    number that moves does so because of the new doc's scores. It is built only
-    on request; CORPUS_VERSION stays "v2" until H8a.5. Its OOV bridge is its own
-    artifact, data/processed/oov_bridge_v3.json (F7, src/retrieve.py).
+    number that moves does so because of the new doc's scores. Built only on
+    request until H8a.5 (2026-10-23), which made it the default CORPUS_VERSION.
+    Its OOV bridge is its own artifact, data/processed/oov_bridge_v3.json (F7,
+    src/retrieve.py).
     """
     version = version or CORPUS_VERSION
     if version not in ("v1", "v2", "v3"):
@@ -1264,6 +1274,8 @@ def ask(
 
     H8a.4: `top_n=None` (the default) takes default_top_n(retriever) -- 12 on
     v1/v2 (unchanged), 16 on v3 -- so top_n == k x n_docs holds per version.
+    Since H8a.5 (2026-10-23) the default corpus is v3, so the shipping default
+    is k=4/doc, top_n=16; the "Depth" paragraph above is the v2-era record.
     H8a.5: the prompt and the citation check see llm_context_hits(hits) only
     (LLM_EXCLUDED_DOCS dropped). If nothing is left, no model is called and the
     row stays PENDING with llm_error saying why -- never faked.

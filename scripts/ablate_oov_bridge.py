@@ -50,7 +50,11 @@ from rag import build_corpus  # noqa: E402
 from retrieve import (MIN_SCORE, SYNONYMS, PerDocRetriever, corpus_sha256,  # noqa: E402
                       select_top, stem)
 
-K_PER_DOC, TOP_N, MIN_PER_DOC = 4, 12, 1          # E1b shipping budget, held fixed
+# H8a.5 (2026-10-23): a v2-ONLY measurement harness. main() builds
+# build_corpus("v2") explicitly and TOP_N=12 is v2's budget; the shipping corpus
+# is now v3 (top_n=16), which this file deliberately does not measure -- its arms
+# monkeypatch the one-argument expand_query that v3's retriever does not call.
+K_PER_DOC, TOP_N, MIN_PER_DOC = 4, 12, 1          # E1b (v2) budget, held fixed
 MAX_BRIDGE_TERMS = 4                              # playbook point 4, fixed a priori
 CONTROL_STRICT = {"frozen10": 0.734, "heldout": 0.573, "test": 0.529}
 LABELS = {"frozen10": "frozen-10 (tripwire)", "heldout": "dev (SELECTOR)",

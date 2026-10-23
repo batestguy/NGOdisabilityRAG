@@ -18,7 +18,7 @@ Moved from root `CLAUDE.md` by H8c (2026-10-22). The dated history behind each r
 
 ## Corpus
 
-- `doc_id ∈ {act2018, constitution1999, factsheet2020}` on v1/v2; corpus v3 (H8a.2, not shipping) appends `accessregs2023`
+- `doc_id ∈ {act2018, constitution1999, factsheet2020}` on v1/v2; corpus v3 (H8a.2; the default since H8a.5) appends `accessregs2023`
   (`[Regs reg. N]`, `[Regs general]`); every `Chunk`/`Hit` carries `(doc_id, ref)`
   and `cite_tag()` (`src/retrieve.py`) is the only place tags are built. The doc list is hard-coded in
   more places than that (`retrieve.DOC_IDS`, `scripts/evalset.py` `DOC_IDS`, `rag.CITE_TAG_RE`,
@@ -26,9 +26,10 @@ Moved from root `CLAUDE.md` by H8c (2026-10-22). The dated history behind each r
   `docs/phases/17_h8_corpus_expansion.md` F1–F10 before adding a document.
 - Chunk sizes are pinned by Phase 01 measurement: Act section-aware 800, Constitution chapter-aware
   400, Factsheet recursive 500/50.
-- **`CORPUS_VERSION = "v2"`** (`src/rag.py`). v1 is retired as the default but **not deleted**: every
-  harness takes `--corpus=v1` and reproduces its published numbers from the same commit. Keep it that
-  way for any future version.
+- **`CORPUS_VERSION = "v3"`** (`src/rag.py`, flipped at H8a.5, 2026-10-23). v1 and v2 are retired as
+  the default but **not deleted**: every harness takes `--corpus=v1` / `--corpus=v2` and reproduces its
+  published numbers from the same commit. Keep it that way for any future version. v2-only
+  measurement harnesses (`ablate_*`, `judge_phase06`) pin v2 explicitly; see their headers.
 - **"Act section-aware 800" is misleading.** `chunk.SECTION_RE` matches only 4 times in the cleaned
   Act, all at 89.8%+ of the document, so v1's Act split is effectively `recursive_split(text, 800)`.
   Not a bug: it is the byte-identical v1 path every v1 baseline depends on. v2's Act is
@@ -43,8 +44,9 @@ Moved from root `CLAUDE.md` by H8c (2026-10-22). The dated history behind each r
 
 ## Retrieval budget
 
-- **Shipping: `k=4/doc, top_n=12`** (Phase E1b, 2026-09-20; `ask()` in `src/rag.py`,
-  `app.offline_legal_hits()`). It was `k=3/doc, top_n=6` before, so **any baseline or comment
+- **Shipping: `k=4/doc, top_n=16` on v3** (H8a-R arm R-a, default since H8a.5; `rag.TOP_N_BY_VERSION`,
+  taken by `ask()` and `app.offline_legal_hits()` from the retriever's own docs). On v1/v2 it is
+  **`k=4/doc, top_n=12`** (Phase E1b, 2026-09-20). It was `k=3/doc, top_n=6` before, so **any baseline or comment
   predating 2026-09-20 was measured at 3/6.**
 - **`top_n == 3 × k` is load-bearing**: `select_top` then returns every candidate, so the cross-doc
   cosine cut — the comparison `PerDocRetriever`'s own docstring calls invalid — never discards
@@ -111,8 +113,9 @@ calibration. Superseded and never to be executed: M3 of `10_corpus_rebuild_and_d
   on a held-out number, by design.
 - Frozen questions are frozen: add new ones, never edit them, never merge held-out into frozen-10.
   `bench_phase01.load_questions()` is kept so a reworded frozen question fails loudly.
-- Current figures: `scripts/baseline_phaseE_2026-09-24.txt` (strict 0.734 / 0.613 / test 0.647 /
-  test2 0.629, calibrate 0/212).
+- Current figures: v3 `scripts/baseline_v3_2026-10-23.txt` (H8a.5; `test` not scored); v2
+  `scripts/baseline_phaseE_2026-09-24.txt` (strict 0.734 / 0.613 / test 0.647 / test2 0.629,
+  calibrate 0/212).
 
 ## Harnesses (measure-only; none gates CI)
 

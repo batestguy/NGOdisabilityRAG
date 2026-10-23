@@ -446,13 +446,20 @@ def main() -> int:
     import app as _app
     docs3 = build_corpus("v3")
     ret3 = PerDocRetriever(docs3)
-    for v, d in (("v1", build_corpus("v1")), ("v2", docs), ("v3", docs3)):
+    # H8a.5 FIXTURE: `docs`/`ret` (section 4) are the DEFAULT corpus, which was v2
+    # when this block was written and is v3 since the flip. The v2 rows here are
+    # about v2, so v2 is built explicitly; the default gets its own v3 checks.
+    docs2 = build_corpus("v2")
+    ret2 = PerDocRetriever(docs2)
+    for v, d in (("v1", build_corpus("v1")), ("v2", docs2), ("v3", docs3)):
         check(rag.TOP_N_BY_VERSION[v] == rag.K_PER_DOC * len(d)
               == rag.K_PER_DOC * rag.N_DOCS_BY_VERSION[v],
               "%s: top_n %d == 4 x %d docs" % (v, rag.TOP_N_BY_VERSION[v], len(d)))
-    check(rag.CORPUS_VERSION == "v2" and rag.default_top_n() == 12
-          and rag.default_top_n(ret) == 12 and rag.default_top_n(ret3) == 16,
-          "default_top_n: shipping v2 -> 12, v2 retriever -> 12, v3 retriever -> 16")
+    check(rag.CORPUS_VERSION == "v3" and rag.default_top_n() == 16
+          and rag.default_top_n(ret2) == 12 and rag.default_top_n(ret3) == 16,
+          "default_top_n: shipping v3 -> 16, v2 retriever -> 12, v3 retriever -> 16")
+    check(list(docs) == list(docs3) and rag.default_top_n(ret) == 16,
+          "H8a.5: the default corpus is v3 (same docs, same order) at top_n 16")
     seen_n: list[int] = []
     orig_rag_st, orig_ret_st = rag.select_top, _retrieve.select_top
 
@@ -462,11 +469,11 @@ def main() -> int:
 
     rag.select_top = _retrieve.select_top = spy
     try:
-        ask(q, retriever=ret, use_llm=False)
-        _app.offline_legal_hits(q, ret)
+        ask(q, retriever=ret2, use_llm=False)
+        _app.offline_legal_hits(q, ret2)
         ask(q, retriever=ret3, use_llm=False)
         _app.offline_legal_hits(q, ret3)
-        ask(q, retriever=ret, use_llm=False, top_n=7)
+        ask(q, retriever=ret2, use_llm=False, top_n=7)
     finally:
         rag.select_top, _retrieve.select_top = orig_rag_st, orig_ret_st
     check(seen_n == [12, 12, 16, 16, 7],
@@ -518,8 +525,8 @@ def main() -> int:
           and "llm_error" in res and res["model_used"] is None,
           "only-Regs hits: no model call, row PENDING with llm_error (never faked)")
     install(lambda model: "PLAIN ANSWER [Act cl. 1]")
-    res = ask(q, retriever=ret, use_cache=False)
-    v2_hits = [h for h in rag.select_top(ret.query(q, k=4), 12, min_per_doc=1,
+    res = ask(q, retriever=ret2, use_cache=False)      # H8a.5: explicit v2
+    v2_hits = [h for h in rag.select_top(ret2.query(q, k=4), 12, min_per_doc=1,
                                          floor=rag.MIN_SCORE)
                if h.score >= rag.MIN_SCORE]
     check(PROMPTS == [rag.build_prompt(q, v2_hits)]

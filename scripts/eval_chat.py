@@ -104,7 +104,7 @@ from chatset import (  # noqa: E402
     verify_expected,
 )
 from evalset import ref_nums, strict_covered  # noqa: E402
-from rag import CORPUS_VERSION, build_corpus  # noqa: E402
+from rag import CORPUS_VERSION, build_corpus, default_top_n  # noqa: E402
 from retrieve import MIN_SCORE, PerDocRetriever, select_top  # noqa: E402
 
 # ---- the corpus stamp (D6, 2026-09-19) -----------------------------------
@@ -122,6 +122,8 @@ def corpus_stamp() -> str:
 # Held identical to eval_heldout.py / ask() / eval_phase06 / ablate_phase08.
 # Widened 3/6 -> 4/12 at Phase E1b (2026-09-20); TOP_N == 3*K_PER_DOC means
 # select_top discards nothing.
+# H8a.5 (2026-10-23): main() resets TOP_N to rag.default_top_n() of the corpus
+# actually built -- 12 on v1/v2 (byte-identical output), 16 on v3 (4 docs x 4).
 K_PER_DOC = 4
 TOP_N = 12
 MIN_PER_DOC = 1
@@ -420,6 +422,8 @@ def main(argv=None) -> int:
              chat.QUESTION_WEIGHT))
 
     ret = PerDocRetriever(docs)
+    global TOP_N
+    TOP_N = default_top_n(ret)          # H8a.5: 12 on v1/v2, 16 on v3
     measured = {}
     for s in sets:
         rows = {arm: [] for arm in ARMS}

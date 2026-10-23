@@ -85,6 +85,14 @@ OUT = ROOT / "scripts" / ("judge_phase06_results_%s_%s.json"
 # Widened 3/6 -> 4/12 at Phase E1b (2026-09-20), kept in step with ask() /
 # eval_heldout / eval_chat / ablate_phase08 / eval_phase06. Phase G has not run
 # yet, so no judge transcript exists that was scored at the old budget.
+#
+# H8a.5 (2026-10-23): pinned to corpus v2 (JUDGE_CORPUS) now that CORPUS_VERSION
+# is "v3". This judge scores transcripts generated on v2 contexts by the
+# G-validated prompts, and until H8a.6 no Regs chunk may reach an LLM
+# (rag.LLM_EXCLUDED_DOCS) -- so a v3 judge context would show the judge text the
+# generator never saw. Feed it an `eval_phase06.py --corpus=v2 --out=` file.
+# H8a.6 decides the v3 judge budget (16) when it judges a v3 generation run.
+JUDGE_CORPUS = "v2"
 K_PER_DOC, TOP_N, MIN_PER_DOC = 4, 12, 1
 
 
@@ -405,7 +413,7 @@ def main() -> None:
         "non-default transcript) first" % eval_path)
     rows = json.loads(eval_path.read_text(encoding="utf-8"))
 
-    ret = PerDocRetriever(build_corpus())
+    ret = PerDocRetriever(build_corpus(JUDGE_CORPUS))
     tasks = build_tasks(questions, recs, rows, ret)
     done = load_checkpoint()
 
@@ -500,7 +508,7 @@ def ceiling(row_of: dict) -> None:
     questions = load_questions()
     recs = {r["id"]: r for r in json.loads(
         TRANSCRIPT.read_text(encoding="utf-8")) if r["id"].startswith("Q")}
-    ret = PerDocRetriever(build_corpus())
+    ret = PerDocRetriever(build_corpus(JUDGE_CORPUS))
     print("\n== A-PRIME. reverse_rel STRUCTURAL CEILING (no LLM, deterministic) ==")
     print("  %-5s %-14s %-20s %-10s %-8s %s"
           % ("qid", "EXPECTED docs", "reverse top-3 docs", "countable", "actual", "ceiling"))

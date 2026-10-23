@@ -78,7 +78,7 @@ from evalset import (  # noqa: E402
     expected_map,
     load_eval_set,
 )
-from rag import CITE_TAG_RE, CORPUS_VERSION, build_corpus  # noqa: E402
+from rag import CITE_TAG_RE, CORPUS_VERSION, build_corpus, default_top_n  # noqa: E402
 from retrieve import PerDocRetriever, select_top, stem  # noqa: E402
 
 TRANSCRIPT = (ROOT / "scripts"
@@ -292,7 +292,15 @@ V1_RESULTS_SHA256 = ("12BDEBA001D21E838A3747281A108BCB8C77A165EFA8932A4500D573"
 V2_RESULTS_SHA256 = ("A46C3440F0FE764544CDEB1A99C09E693822A177AB2DE0BC974A2846"
                      "CA675974").lower()
 
-RESULTS_SHA256 = {"v1": V1_RESULTS_SHA256, "v2": V2_RESULTS_SHA256}
+# v3, pinned at H8a.5 (2026-10-23) when the default flipped -- the same reason
+# V2 was pinned at D6. Measured twice, identical; same CRLF caveat. It scores the
+# same frozen v2 answers against v3 retrieval at its shipping budget (k=4/doc,
+# top_n=16), so it is v3's instrument reading, not a change to any v1/v2 digest.
+V3_RESULTS_SHA256 = ("e40b6b620375e5150cc426d757f59586f53a7a715f71d988023363380e"
+                     "4b40f5")
+
+RESULTS_SHA256 = {"v1": V1_RESULTS_SHA256, "v2": V2_RESULTS_SHA256,
+                  "v3": V3_RESULTS_SHA256}
 
 
 def main() -> None:
@@ -325,8 +333,13 @@ def main() -> None:
     # top_n=12 since Phase E1b (2026-09-20); was k=3, 6. The reverse_rel probe
     # above (k=3, 3, min_per_doc=0) is a DIFFERENT measurement on the generated
     # answer and is deliberately NOT moved with the shipping arm.
+    # H8a.5 (2026-10-23): top_n is rag.default_top_n(ret), the shipping budget of
+    # the corpus actually built -- 12 on v1/v2 (digests unchanged), 16 on v3.
+    # The context columns score the RETRIEVED set (what the page shows); the
+    # frozen answers were generated on v2 and never saw a Regs chunk.
+    top_n = default_top_n(ret)
     rows = [eval_question("Q%d" % (i + 1), q, recs["Q%d" % (i + 1)],
-                          select_top(ret.query(q, k=4), 12), ret)
+                          select_top(ret.query(q, k=4), top_n), ret)
             for i, q in enumerate(questions)]
     print("\n== PER-QUESTION (retrieval live/offline; answers frozen v2) ==")
     print("  %-4s %-6s %-6s %-6s %-6s %-6s %-6s  missed-expected" % (
