@@ -12,6 +12,7 @@ below, so `app.<name>` and inspect.getsource(app.<name>) keep working.
 """
 
 import html
+import re
 import sys
 from pathlib import Path
 
@@ -135,6 +136,56 @@ def dedupe_excerpts(excerpts) -> list:
     return out
 
 
+def status_note(doc_id):
+    """The fixed status note for `doc_id` (rag.DOC_STATUS_NOTES), or None.
+
+    A plain dict lookup, so a future document only adds an entry there. The
+    text is owner-signed and rendered verbatim; it is never generated.
+    """
+    from rag import DOC_STATUS_NOTES
+    return DOC_STATUS_NOTES.get(doc_id)
+
+
+def status_note_index(excerpts) -> dict:
+    """{doc_id: index of its FIRST excerpt} for every doc with a status note.
+
+    H8a.4: the note renders ONCE per turn, immediately before that doc's first
+    card, wherever it falls (inline or inside the fold). `excerpts` must be the
+    list actually displayed (deduped), so live and replay agree.
+    """
+    first = {}
+    for i, e in enumerate(excerpts):
+        d = e.get("doc_id")
+        if d not in first and status_note(d):
+            first[d] = i
+    return first
+
+
+# Narrow on purpose: "N" + space + a number; the number may not end in a comma,
+# so "N 500,000, and" speaks "500,000 naira, and".
+_NAIRA_RE = re.compile(r"\bN (\d(?:[\d,]*\d)?)")
+
+
+def spoken_status_note(doc_id):
+    """The note as READ ALOUD: the gazette's "N 500,000" becomes "500,000 naira"
+    (a speech engine says "N"). Speech only -- the displayed note stays verbatim."""
+    note = status_note(doc_id)
+    return _NAIRA_RE.sub(r"\1 naira", note) if note else note
+
+
+# Lead-in the note's own text already opens with; bolded at display only.
+STATUS_NOTE_LEAD = "About this source:"
+
+
+def _render_status_note(doc_id):
+    """Plain, linear markdown: no widget, no columns, no new colour."""
+    st = _st()
+    note = status_note(doc_id)
+    if note.startswith(STATUS_NOTE_LEAD):
+        note = "**%s**%s" % (STATUS_NOTE_LEAD, note[len(STATUS_NOTE_LEAD):])
+    st.markdown(note)
+
+
 def render_excerpts(excerpts, turn_index: int):
     """One turn's excerpt cards: INLINE_EXCERPTS inline, the rest behind one fold.
 
@@ -143,17 +194,24 @@ def render_excerpts(excerpts, turn_index: int):
     conversation they sit between the user and their next question -- which is
     why the fold exists, and why E1b's move from 6 to 12 retrieved chunks
     changed what is BEHIND the fold and not what is in front of it.
+
+    H8a.4: a doc with a status note gets it once, just before its first card.
     """
     st = _st()
     st.markdown("**Retrieved excerpts (offline, citations kept):**")
     excerpts = dedupe_excerpts(excerpts)
-    for e in excerpts[:INLINE_EXCERPTS]:
+    notes = {i: d for d, i in status_note_index(excerpts).items()}
+    for i, e in enumerate(excerpts[:INLINE_EXCERPTS]):
+        if i in notes:
+            _render_status_note(notes[i])
         _render_excerpt(e)
     rest = excerpts[INLINE_EXCERPTS:]
     if rest:
         with st.expander("📄 %d more excerpt(s) retrieved for this turn"
                          % len(rest), expanded=False):
-            for e in rest:
+            for i, e in enumerate(rest, start=INLINE_EXCERPTS):
+                if i in notes:
+                    _render_status_note(notes[i])
                 _render_excerpt(e)
 
 

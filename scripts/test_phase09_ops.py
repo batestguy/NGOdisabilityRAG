@@ -99,6 +99,7 @@ def make_per_minute_429(daily: str) -> str:
 # the installed script says -- return text, or raise a recorded 429.
 # ---------------------------------------------------------------------------
 CALLS: list[str] = []
+PROMPTS: list[str] = []  # H8a.4: the prompt text each call was given
 SCRIPT = [None]  # callable(model) -> str, or raises
 
 
@@ -110,6 +111,7 @@ class _Resp:
 class _FakeModels:
     def generate_content(self, model, contents):  # noqa: ARG002
         CALLS.append(model)
+        PROMPTS.append(contents)
         return _Resp(SCRIPT[0](model))
 
 
@@ -121,6 +123,7 @@ class _FakeClient:
 def install(script) -> None:
     """Arm the fake client with a per-model behaviour and clear the log."""
     CALLS.clear()
+    PROMPTS.clear()
     SCRIPT[0] = script
 
 
@@ -433,6 +436,100 @@ def main() -> int:
     check(chat.cross_turn_drift("Parking. [Regs reg. 24]", regs_prior, now)
           == ["[Regs reg. 24]"],
           "cross_turn_drift reports a Regs tag re-cited from an earlier turn")
+
+    print("\n== 8c. BUDGET BY CORPUS VERSION (H8a.4 F1, zero network) ==")
+    # top_n == K_PER_DOC x n_docs per version (the E1b "no cut" rule), and both
+    # shipping callers (ask, app.offline_legal_hits) take it from the corpus in use.
+    import inspect as _inspect
+    import retrieve as _retrieve
+    sys.path.insert(0, str(ROOT))
+    import app as _app
+    docs3 = build_corpus("v3")
+    ret3 = PerDocRetriever(docs3)
+    for v, d in (("v1", build_corpus("v1")), ("v2", docs), ("v3", docs3)):
+        check(rag.TOP_N_BY_VERSION[v] == rag.K_PER_DOC * len(d)
+              == rag.K_PER_DOC * rag.N_DOCS_BY_VERSION[v],
+              "%s: top_n %d == 4 x %d docs" % (v, rag.TOP_N_BY_VERSION[v], len(d)))
+    check(rag.CORPUS_VERSION == "v2" and rag.default_top_n() == 12
+          and rag.default_top_n(ret) == 12 and rag.default_top_n(ret3) == 16,
+          "default_top_n: shipping v2 -> 12, v2 retriever -> 12, v3 retriever -> 16")
+    seen_n: list[int] = []
+    orig_rag_st, orig_ret_st = rag.select_top, _retrieve.select_top
+
+    def spy(cands, top_n, **kw):
+        seen_n.append(top_n)
+        return orig_ret_st(cands, top_n, **kw)
+
+    rag.select_top = _retrieve.select_top = spy
+    try:
+        ask(q, retriever=ret, use_llm=False)
+        _app.offline_legal_hits(q, ret)
+        ask(q, retriever=ret3, use_llm=False)
+        _app.offline_legal_hits(q, ret3)
+        ask(q, retriever=ret, use_llm=False, top_n=7)
+    finally:
+        rag.select_top, _retrieve.select_top = orig_rag_st, orig_ret_st
+    check(seen_n == [12, 12, 16, 16, 7],
+          "ask/offline_legal_hits budget v2 12/12, v3 16/16, explicit kept: %s" % seen_n)
+
+    print("\n== 8d. LLM CONTEXT EXCLUDES accessregs2023 UNTIL H8a.6 (zero network) ==")
+    note = rag.DOC_STATUS_NOTES["accessregs2023"]
+    qr = "Is there a fine for not following the accessibility regulations?"
+    shown3 = _app.offline_legal_hits(qr, ret3)["excerpts"]
+    check(any(e["doc_id"] == "accessregs2023" for e in shown3)
+          and any(e["doc_id"] != "accessregs2023" for e in shown3),
+          "v3 offline display still shows Regs cards (and others) for %r" % qr)
+    install(lambda model: "Fines apply [Act cl. 56] [Regs reg. 168].")
+    res = ask(qr, retriever=ret3, use_cache=False)
+    check(len(PROMPTS) == 1 and "[Regs" not in PROMPTS[0]
+          and "Retrieved excerpts" in PROMPTS[0] and "[Act cl." in PROMPTS[0],
+          "v3 single-turn prompt carries no [Regs tag (other docs kept)")
+    # Every sentence of the note, not a bare figure: the Act's own cl. 28 text
+    # says "N500,000" and legitimately reaches the prompt.
+    note_sents = [s.strip() for s in note.split(". ") if len(s.strip()) > 20]
+    check(len(note_sents) >= 5 and not any(s in PROMPTS[0] for s in note_sents)
+          and "About this source" not in PROMPTS[0],
+          "v3 prompt carries no status-note text (%d sentences checked)"
+          % len(note_sents))
+    check([c["tag"] for c in res["cite_check"] if not c["number_ok"]] == ["Regs reg. 168"],
+          "cite check runs on the LLM hits only: a [Regs] tag fails as unretrieved")
+    hist = [{"question": "Can my employer sack me?", "answer": "No [Act cl. 28]."}]
+    install(lambda model: "CHAT ANSWER [Act cl. 56]")
+    ask(qr, retriever=ret3, use_cache=False, history=hist, failover=True)
+    check(len(PROMPTS) == 1 and "[Regs" not in PROMPTS[0]
+          and "S.I. No. 51" not in PROMPTS[0]
+          and "Earlier in this conversation" in PROMPTS[0],
+          "v3 chat prompt (failover on) carries no [Regs tag and no note")
+    install(fail_then_ok(daily))
+    res = ask(qr, retriever=ret3, use_cache=False, failover=True)
+    check(CALLS == [MODEL_NAME, FALLBACK_MODEL] and len(PROMPTS) == 2
+          and all("[Regs" not in p for p in PROMPTS),
+          "failover re-sends the same Regs-free prompt to the fallback model")
+
+    class _RegsOnly:
+        docs = {"accessregs2023": []}
+
+        def query(self, text, k=4):  # noqa: ARG002
+            return [Hit("accessregs2023", "reg. 168", "Penalty text", 0.4)]
+
+    install(lambda model: "SHOULD NOT BE CALLED")
+    res = ask(qr, retriever=_RegsOnly(), use_cache=False)
+    check(CALLS == [] and res["answer"] is None and res["refused"] is False
+          and "llm_error" in res and res["model_used"] is None,
+          "only-Regs hits: no model call, row PENDING with llm_error (never faked)")
+    install(lambda model: "PLAIN ANSWER [Act cl. 1]")
+    res = ask(q, retriever=ret, use_cache=False)
+    v2_hits = [h for h in rag.select_top(ret.query(q, k=4), 12, min_per_doc=1,
+                                         floor=rag.MIN_SCORE)
+               if h.score >= rag.MIN_SCORE]
+    check(PROMPTS == [rag.build_prompt(q, v2_hits)]
+          and rag.llm_context_hits(v2_hits) == v2_hits,
+          "v2: prompt byte-identical to build_prompt(all hits) -- a no-op by construction")
+    ai_src = _inspect.getsource(_app._run_ai_turn)
+    check("hits = llm_context_hits(" in ai_src
+          and "verify_citations(res[\"answer\"], hits)" in ai_src
+          and "cross_turn_drift(res[\"answer\"], prior, hits)" in ai_src,
+          "app._run_ai_turn verifies citations/drift against llm_context_hits")
 
     print("\n== 9. CHAT: relative 'that' is NOT an unbound pronoun (H1a, zero network) ==")
     # Seen on the live smoke after the 2026-10-15 deploy: "an organisation that

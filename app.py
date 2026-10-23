@@ -33,7 +33,7 @@ from ui_render import (  # noqa: E402,F401
     dedupe_excerpts, render_clarify, render_context_note, render_defects,
     render_excerpts, render_greeting, render_help_records, render_helpful,
     render_plain_caption, render_routing_trap, render_voice_draft,
-    try_voice_input)
+    spoken_status_note, status_note, status_note_index, try_voice_input)
 
 # ---------------------------------------------------------------------------
 # Pure helpers (import-safe, unit-assertable without a browser)
@@ -340,7 +340,7 @@ def answer_legal(question: str, retriever=None, plain: bool = False,
 
 
 def offline_legal_hits(question: str, retriever, k: int = 4,
-                       top_n: int = 12, min_per_doc: int = 1,
+                       top_n: int | None = None, min_per_doc: int = 1,
                        min_score: float = 0.10,
                        retrieval_query: str | None = None) -> dict:
     """Offline legal display payload: gated excerpts WITH citation tags.
@@ -361,9 +361,15 @@ def offline_legal_hits(question: str, retriever, k: int = 4,
     same reason and with the same default: chat.contextualise() may hand
     retrieval a merged query while `question` stays what the USER asked. Omit
     it and behaviour is byte-identical to the pre-chat path.
+
+    H8a.4: `top_n=None` takes rag.default_top_n(retriever), the same default
+    ask() takes -- 12 on v1/v2 (unchanged), 16 on v3 -- so the two paths can
+    never disagree on the budget.
     """
     from retrieve import MIN_SCORE, cite_tag, select_top
-    from rag import REFUSAL_MESSAGE
+    from rag import REFUSAL_MESSAGE, default_top_n
+    if top_n is None:
+        top_n = default_top_n(retriever)
     floor = MIN_SCORE if min_score is None else min_score
     query = retrieval_query if retrieval_query is not None else question
     merged = select_top(retriever.query(query, k=k), top_n,
@@ -412,11 +418,28 @@ def build_speech_text(legal: dict | None, help_payload: dict | None,
             # The tags of the cards actually shown: H1's dedupe dropped the
             # byte-identical pair from the cards but not from `citations`, so
             # read-aloud spoke 10 tags against 9 cards (H2 owner pre-run).
-            shown = [e["tag"] for e in dedupe_excerpts(legal.get("excerpts") or [])]
-            tags = ", ".join(shown or legal.get("citations", [])
-                             or ["no citations yet"])
-            parts.append("Legal excerpts retrieved. Citations: %s. "
-                         "Open the AI expander for a generated answer." % tags)
+            shown_ex = dedupe_excerpts(legal.get("excerpts") or [])
+            shown = [e["tag"] for e in shown_ex]
+            # H8a.4: a status note is spoken once, where the page shows it --
+            # just before its doc's first card (the first such tag here).
+            firsts = sorted((i, d) for d, i in status_note_index(shown_ex).items())
+            if not firsts:
+                tags = ", ".join(shown or legal.get("citations", [])
+                                 or ["no citations yet"])
+                parts.append("Legal excerpts retrieved. Citations: %s. "
+                             "Open the AI expander for a generated answer." % tags)
+            else:
+                said, cuts = ["Legal excerpts retrieved."], [i for i, _ in firsts]
+                bounds = [0] + cuts + [len(shown)]
+                for j in range(len(bounds) - 1):
+                    seg = shown[bounds[j]:bounds[j + 1]]
+                    if j > 0:
+                        said.append(spoken_status_note(firsts[j - 1][1]))
+                    if seg:
+                        said.append("%s: %s." % ("More citations" if bounds[j] else
+                                                 "Citations", ", ".join(seg)))
+                said.append("Open the AI expander for a generated answer.")
+                parts.append(" ".join(said))
     if help_payload is not None:
         names = [r.get("name", "") for r in help_payload.get("records", [])]
         parts.append("Help contacts: " + "; ".join(names))
@@ -944,8 +967,10 @@ def _run_ai_turn(payload, turn_index: int, plain: bool) -> bool:
     if not route.get("cached"):
         # A cache replay spends no quota, so counting it would over-report.
         quota_log_record(route.get("model_used") or route.get("model") or "?")
-    from rag import verify_citations
-    hits = [_HitRef(e["doc_id"], e["ref"]) for e in payload.excerpts]
+    from rag import llm_context_hits, verify_citations
+    # H8a.5: only the hits ask() put in the prompt (LLM_EXCLUDED_DOCS dropped).
+    hits = llm_context_hits(
+        [_HitRef(e["doc_id"], e["ref"]) for e in payload.excerpts])
     payload.answer = res["answer"]
     payload.cite_check = verify_citations(res["answer"], hits)
     payload.drift = chat.cross_turn_drift(res["answer"], prior, hits)

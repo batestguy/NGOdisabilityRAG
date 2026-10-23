@@ -102,6 +102,54 @@ DOC_STATUS_NOTES = {
     ),
 }
 
+# H8a.4 (F1): the retrieval budget, ONE source of truth keyed by corpus version.
+# k stays 4/doc. top_n == K_PER_DOC x (number of docs) is load-bearing (E1b,
+# .claude/rules/retrieval.md): select_top then returns every candidate, so the
+# invalid cross-doc cosine cut never discards anything. v3 adds a fourth doc,
+# so it gets 16 (H8a-R arm R-a); v3 at 12 regressed existing law (H8a.3 G1).
+K_PER_DOC = 4
+N_DOCS_BY_VERSION = {"v1": 3, "v2": 3, "v3": 4}
+TOP_N_BY_VERSION = {"v1": 12, "v2": 12, "v3": 16}
+for _v, _n in TOP_N_BY_VERSION.items():
+    assert _n == K_PER_DOC * N_DOCS_BY_VERSION[_v], (
+        "top_n must equal k x n_docs for %s (no cut)" % _v)
+
+
+def budget_version(docs=None) -> str:
+    """The corpus version whose budget applies to `docs` (a build_corpus dict).
+
+    None means the shipping default, CORPUS_VERSION. A dict holding the
+    accessregs2023 doc is v3; otherwise v1/v2, which share doc ids AND budget,
+    so CORPUS_VERSION is returned when it is one of them (else "v2").
+    """
+    if docs is None:
+        return CORPUS_VERSION
+    if "accessregs2023" in docs:
+        return "v3"
+    return CORPUS_VERSION if CORPUS_VERSION in ("v1", "v2") else "v2"
+
+
+def default_top_n(retriever=None) -> int:
+    """Shipping top_n for the corpus actually in use: the retriever's own docs
+    when one is given, CORPUS_VERSION otherwise. v1/v2 -> 12, v3 -> 16."""
+    docs = getattr(retriever, "docs", None) if retriever is not None else None
+    return TOP_N_BY_VERSION[budget_version(docs)]
+
+
+# H8a.5 (until H8a.6): docs whose chunks are NEVER put in front of the LLM nor
+# used to verify an LLM answer's citations. The G-validated prompts
+# (cite-strict-v3 / chat-cite-strict-v2) were never evaluated on the Regs tag
+# shape, so Regs excerpts show offline only. H8a.6 lifts this after a
+# quota-funded cite-strict-v4 run passes its gate. DOC_STATUS_NOTES never
+# reaches a prompt either (build_prompt renders hits only). Under v2 no hit has
+# this doc_id, so this is a no-op by construction.
+LLM_EXCLUDED_DOCS = frozenset({"accessregs2023"})
+
+
+def llm_context_hits(hits) -> list:
+    """`hits` minus LLM_EXCLUDED_DOCS, order kept. Works on Hits or _HitRefs."""
+    return [h for h in hits if h.doc_id not in LLM_EXCLUDED_DOCS]
+
 # Sizes pinned from Phase 01: Act section-aware 800; Constitution
 # chapter-aware RECOMMENDED 400 (Q9 needs <=400 to pass 0.16);
 # Factsheet recursive 500/50.
@@ -1140,8 +1188,8 @@ def ask(
     question: str,
     retriever: PerDocRetriever | None = None,
     plain: bool = False,
-    k: int = 4,
-    top_n: int = 12,
+    k: int = K_PER_DOC,
+    top_n: int | None = None,
     min_per_doc: int = 1,
     min_score: float = MIN_SCORE,
     model: str = MODEL_NAME,
@@ -1213,9 +1261,17 @@ def ask(
     `history` is passed straight to build_prompt(). history=None renders a
     byte-identical prompt to the pre-chat one; see build_prompt's docstring for
     why that is load-bearing for both the cache and privacy.
+
+    H8a.4: `top_n=None` (the default) takes default_top_n(retriever) -- 12 on
+    v1/v2 (unchanged), 16 on v3 -- so top_n == k x n_docs holds per version.
+    H8a.5: the prompt and the citation check see llm_context_hits(hits) only
+    (LLM_EXCLUDED_DOCS dropped). If nothing is left, no model is called and the
+    row stays PENDING with llm_error saying why -- never faked.
     """
     if retriever is None:
         retriever = PerDocRetriever(build_corpus())
+    if top_n is None:
+        top_n = default_top_n(retriever)
     query = retrieval_query if retrieval_query is not None else question
     merged = select_top(retriever.query(query, k=k), top_n,
                         min_per_doc=min_per_doc, floor=min_score)
@@ -1260,9 +1316,24 @@ def ask(
             "route": route,
             "llm_used": False,
         }
+    llm_hits = llm_context_hits(hits)
+    if not llm_hits:
+        return {
+            "question": question,
+            "answer": None,
+            "citations": [],
+            "refused": False,
+            "scores": scores,
+            "route": route,
+            "llm_used": False,
+            "cached": False,
+            "model_used": None,
+            "llm_error": "no excerpt this turn is available to the AI answer yet "
+                         "(Accessibility Regulations excerpts are offline-only)",
+        }
     try:
         answer, cached, model_used = generate_with_meta(
-            build_prompt(question, hits, plain=plain, history=history),
+            build_prompt(question, llm_hits, plain=plain, history=history),
             model=model, use_cache=use_cache, failover=failover)
     except Exception as e:  # quota/network: report pending, never fake
         return {
@@ -1304,5 +1375,5 @@ def ask(
         "llm_used": True,
         "cached": cached,
         "model_used": model_used,
-        "cite_check": verify_citations(answer, hits),
+        "cite_check": verify_citations(answer, llm_hits),
     }

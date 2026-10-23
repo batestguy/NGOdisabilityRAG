@@ -671,4 +671,141 @@ check("minor-bridge-skip-link-and-landmarks",
       and "color:#fff !important" in _bj and "outline:3px solid #ffd700 !important" in _bj
       and "sliders(); landmarks();" in _bj and "%" not in _bj)
 
+# H8a.4 (2026-10-23): the Accessibility Regulations' fixed status note renders ONCE
+# per turn, just before the first accessregs2023 card (inline or in the fold), in the
+# shared render_excerpts that both render_turn and replay_turn call. Nothing for any
+# other doc. Read-aloud speaks it once at the same position, with "N 500,000" spoken
+# as "500,000 naira"; the displayed note stays verbatim. Rendered against a recording
+# stand-in for streamlit (same _st() swap as the quota-log block above).
+import contextlib as _ctx  # noqa: E402
+
+import streamlit.components.v1 as _components  # noqa: E402
+
+_NOTE = _rag.DOC_STATUS_NOTES["accessregs2023"]
+_NOTE_KEY = "S.I. No. 51 of 2023"  # a substring only the note carries
+
+
+class _RecSt:
+    """Records every streamlit call a render helper makes, in order."""
+
+    def __init__(self):
+        self.calls = []
+        self.session_state = {"turns": [], "plain": False}
+
+    def markdown(self, body, **kw):  # noqa: ARG002
+        self.calls.append(("markdown", body))
+
+    def expander(self, label, expanded=False):  # noqa: ARG002
+        self.calls.append(("expander", label))
+        return _ctx.nullcontext()
+
+    def button(self, *a, **k):  # noqa: ARG002
+        return False
+
+    def __getattr__(self, name):
+        return lambda *a, **k: self.calls.append((name, a[0] if a else None))
+
+
+def _record(fn, *a, **k):
+    rec, spoken = _RecSt(), []
+    saved = (app._st, _ui._st, _components.html)
+    app._st = _ui._st = lambda: rec
+    _components.html = lambda body, **kw: spoken.append(body)
+    try:
+        out = fn(*a, **k)
+    finally:
+        app._st, _ui._st, _components.html = saved
+    return rec.calls, spoken, out
+
+
+def _excerpt_region(calls):
+    """From the 'Retrieved excerpts' header to the last card body."""
+    i = next(n for n, c in enumerate(calls) if c[0] == "markdown"
+             and str(c[1]).startswith("**Retrieved excerpts"))
+    j = max(n for n, c in enumerate(calls) if "drlca-answer" in str(c[1]))
+    return calls[i:j + 1]
+
+
+def _note_calls(calls):
+    return [n for n, c in enumerate(calls) if _NOTE_KEY in str(c[1])]
+
+
+retr3 = PerDocRetriever(build_corpus("v3"))
+_qR = "Is there a fine for not following the accessibility regulations?"
+_orig_lr = app.load_retriever
+app.load_retriever = lambda: retr3
+try:
+    _live_calls, _, _live = _record(app.render_legal, _qR, False, 0)
+finally:
+    app.load_retriever = _orig_lr
+_shownR = app.dedupe_excerpts(_live["excerpts"])
+_regs_i = [n for n, e in enumerate(_shownR) if e["doc_id"] == "accessregs2023"]
+_nc = _note_calls(_live_calls)
+_first_regs_card = next(n for n, c in enumerate(_live_calls)
+                        if str(c[1]).startswith("`[Regs"))
+check("status-note-once-on-regs-turn", len(_regs_i) >= 1 and len(_nc) == 1,
+      "regs cards %d, notes %d" % (len(_regs_i), len(_nc)))
+check("status-note-just-before-first-regs-card", _nc[0] == _first_regs_card - 1
+      and not any(str(c[1]).startswith("`[Regs") for c in _live_calls[:_nc[0]]),
+      "note@%d first regs card@%d" % (_nc[0], _first_regs_card))
+_note_md = _live_calls[_nc[0]][1]
+check("status-note-display-verbatim",
+      _note_md == "**About this source:**" + _NOTE[len("About this source:"):]
+      and "N 500,000" in _note_md and "N 2,000,000" in _note_md and "naira" not in _note_md)
+
+# Replay: same pixels from the stored TurnPayload, with every lookup booby-trapped.
+import router as _router5  # noqa: E402
+_payR = _TP(question=_qR, mode="legal", routing={"secondary": None},
+            excerpts=_live["excerpts"], refused=False, answer=None)
+_saved5 = (app.offline_legal_hits, app.load_retriever, app.answer_legal,
+           _router5.route, PerDocRetriever.query)
+app.offline_legal_hits = app.load_retriever = app.answer_legal = _router5.route = _boom
+PerDocRetriever.query = _boom
+try:
+    _rep_calls, _rep_spoken, _ = _record(app.replay_turn, _payR, 0)
+finally:
+    (app.offline_legal_hits, app.load_retriever, app.answer_legal,
+     _router5.route, PerDocRetriever.query) = _saved5
+check("status-note-replay-identical",
+      _excerpt_region(_rep_calls) == _excerpt_region(_live_calls)
+      and len(_note_calls(_rep_calls)) == 1)
+
+# Wherever the first Regs card falls: inline (above) or inside the fold (synthetic).
+_syn = [{"tag": "[Act cl. %d]" % n, "doc_id": "act2018", "ref": "cl. %d" % n,
+         "text": "Act text %d" % n, "score": 0.3} for n in (1, 2, 3, 4)]
+_syn += [{"tag": "[Regs reg. %d]" % n, "doc_id": "accessregs2023", "ref": "reg. %d" % n,
+          "text": "Regs text %d" % n, "score": 0.2} for n in (168, 169)]
+_fold_calls, _, _ = _record(app.render_excerpts, _syn, 3)
+_fx = next(n for n, c in enumerate(_fold_calls) if c[0] == "expander")
+_fn = _note_calls(_fold_calls)
+check("status-note-inside-fold-before-first-regs-card",
+      len(_fn) == 1 and _fn[0] > _fx and _fold_calls[_fn[0] + 1][1].startswith("`[Regs reg. 168]"))
+
+# Nothing for any other doc: v2 hits, and a v3 turn that retrieved no Regs card.
+_v2pay = app.offline_legal_hits("What are my education rights under the Act?", retr)
+_v2calls, _, _ = _record(app.render_excerpts, _v2pay["excerpts"], 0)
+_v3none = app.offline_legal_hits("What happens if I am arrested?", retr3)
+_v3calls, _, _ = _record(app.render_excerpts, _v3none["excerpts"], 0)
+check("status-note-absent-without-regs",
+      _note_calls(_v2calls) == [] and _note_calls(_v3calls) == []
+      and not any(e["doc_id"] == "accessregs2023" for e in _v3none["excerpts"])
+      and app.status_note("act2018") is None and app.status_note("constitution1999") is None
+      and app.status_note("factsheet2020") is None)
+
+# Read-aloud: once, before the first Regs tag, naira spoken; v2 text unchanged.
+_spR = app.build_speech_text(_live, None)
+check("speech-status-note-once-naira",
+      _spR.count(_NOTE_KEY) == 1 and "500,000 naira" in _spR
+      and "2,000,000 naira" in _spR and "N 500,000" not in _spR
+      and "N 2,000,000" not in _spR, _spR[:80])
+check("speech-status-note-before-first-regs-tag",
+      "[Regs" not in _spR[:_spR.index(_NOTE_KEY)]
+      and all(t in _spR for t in [e["tag"] for e in _shownR]))
+check("speech-replay-speaks-note", any(_NOTE_KEY in s and "500,000 naira" in s
+                                       for s in _rep_spoken))
+_v2tags = ", ".join(e["tag"] for e in app.dedupe_excerpts(_v2pay["excerpts"]))
+check("speech-v2-unchanged", app.build_speech_text(_v2pay, None)
+      == app.HELPLINE_BANNER_TEXT + "\nLegal excerpts retrieved. Citations: %s. "
+      "Open the AI expander for a generated answer." % _v2tags)
+
 print("\nALL %d ASSERTS PASSED" % len(passed))
