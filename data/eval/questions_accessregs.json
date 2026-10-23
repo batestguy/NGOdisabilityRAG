@@ -1,0 +1,353 @@
+[
+ {
+  "id": "AR_D01",
+  "set": "accessregs-dev",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "What do the accessibility regulations say about parking spaces reserved for persons with disabilities?",
+  "expected": {
+   "accessregs2023": [
+    24
+   ]
+  },
+  "note": "Regs reg.24 (Parking), gazette p.19 / B1359: '(2) A parking space reserved for persons with disabilities shall be provided within 30,000mm to the entrance of the building ... (8) For every 100 accessible parking spaces, a minimum of 8 spaces shall be reserved ... where the number of parking spaces is less than 25, a minimum of two'. NOT expected: reg.25 (garages / enclosed parking) -- narrower; reg.81 (pathway from parking to building) -- route, not the spaces."
+ },
+ {
+  "id": "AR_D02",
+  "set": "accessregs-dev",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Does a church or mosque have to keep some seats for disabled people?",
+  "expected": {
+   "accessregs2023": [
+    151
+   ]
+  },
+  "note": "Regs reg.151 (Place of Worship), p.62 / B1402: '(3) ... a minimum of 8 per cent of seats or praying spaces in a place of worship shall be reserved for persons with disabilities.' Mismatch: user says 'church or mosque', 'keep some seats'; corpus says 'place of worship', 'praying spaces', 'reserved'. NOT expected: reg.54 (access to seating area) -- cross-referenced by 151(2) but does not carry the 8 per cent rule."
+ },
+ {
+  "id": "AR_D03",
+  "set": "accessregs-dev",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "My office get no ramp, wetin law talk?",
+  "expected": {
+   "accessregs2023": [
+    12,
+    112
+   ],
+   "act2018": [
+    4
+   ]
+  },
+  "note": "Pidgin register (handoff example). Regs reg.12(1) p.15: 'A ramp shall be provided, where gradient is more than 1:20.'; reg.112 (Interior ramps, Chapter Three) -- 'office' is a building interior. Act cl.4: 'A public building shall be constructed with the necessary accessibility aids such as lifts (where necessary), ramps ...'. NOT expected: reg.6(3) (ramp where elevation change exceeds 1:20 on roads/sidewalks) -- exterior grades, defensible but secondary; reg.13 (ramps with handrails) -- dimensions only. Whether a private 'office' is a 'public building' turns on reg.171 ('offices' are listed) -- a nuance for the answer, not a retrieval target."
+ },
+ {
+  "id": "AR_D04",
+  "set": "accessregs-dev",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "ATM no dey talk and I be blind person. Bank fit leave am like that?",
+  "expected": {
+   "accessregs2023": [
+    147
+   ]
+  },
+  "note": "Pidgin. Regs reg.147 (ATMs), p.61 / B1401: '(4) Control buttons ... shall ... (b) have tactile features, and raised numbers or letters ... (5) An ATM shall be equipped with -- (a) audio accessibility devices to provide voice or sound cues or instructions'. NOT expected: reg.148 (ticketing machines) -- same wording for (3), different machine; Act cl.9 (goods and services discrimination) -- general, not about ATM design."
+ },
+ {
+  "id": "AR_D05",
+  "set": "accessregs-dev",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "The lift at the federal secretariat has no voice saying which floor you are on, and the buttons are flat. Is there a rule about that?",
+  "expected": {
+   "accessregs2023": [
+    109
+   ]
+  },
+  "note": "Regs reg.109(4), p.50-51 / B1390-1: 'A lift shall -- (a) be equipped with an audio floor announcing feature ; (b) have tactile controls or buttons'. Mismatch: 'voice saying which floor' vs 'audio floor announcing feature'; 'buttons are flat' vs 'tactile controls'. NOT expected: reg.110 (passenger lift call buttons 'shall be raised') -- defensible second hit; recorded, not required."
+ },
+ {
+  "id": "AR_D06",
+  "set": "accessregs-dev",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "How long is the National Disability Compliance Certificate valid, and what happens if it is not renewed?",
+  "expected": {
+   "accessregs2023": [
+    166
+   ]
+  },
+  "note": "Regs reg.166, p.66 / B1406: '(3) A National Disability Compliance Certificate shall be valid for a period of one year. (4) The Commission shall issue a penalty on the renewal ... where a person fails to renew the certificate within 90 days of its expiration.' TRAP: reg.165(5) -- the differently named 'National Accessibility Compliance Certificate' is valid five years; an answer that says five years has cited the wrong certificate. reg.171 defines both."
+ },
+ {
+  "id": "AR_D07",
+  "set": "accessregs-dev",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "Who do the accessibility regulations apply to?",
+  "expected": {
+   "accessregs2023": [
+    2
+   ]
+  },
+  "note": "Regs reg.2 (Application), p.9 / B1349: '(a) Ministries, Departments, and Agencies of Government (MDAs) ; (b) international organisations, and non-governmental organisations ; (c) structures and facilities accessible to members of the public, and their owners ; and (d) persons undertaking any activity in relation to built environment ...'. NOT expected: reg.1 (objectives)."
+ },
+ {
+  "id": "AR_D08",
+  "set": "accessregs-dev",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "The toilet at the motor park is so small I cannot turn my wheelchair inside. What should it be?",
+  "expected": {
+   "accessregs2023": [
+    59
+   ]
+  },
+  "note": "Regs reg.59 (Accessible restrooms), p.31-32 / B1371-2: '(6) An accessible restroom shall -- (a) have a clear turning space measuring 1500mm by 1500mm'; (4) sliding or outward-opening door 'to allow more space for a wheelchair to be maneuvered inside'. Mismatch: 'motor park', 'too small', 'turn my wheelchair'. NOT expected: reg.60 (toilet fixture positions); reg.125 (interior restrooms and washrooms) -- defensible second hit."
+ },
+ {
+  "id": "AR_T01",
+  "set": "test3",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Can the government lock up a building that is not accessible to disabled people?",
+  "expected": {
+   "accessregs2023": [
+    169
+   ]
+  },
+  "note": "Regs reg.169 (Powers to seal off building), p.67 / B1407: '(1) ... the Commission, in collaboration with a relevant authority, may seal off a built environment found to be in default ... (2) ... a 90 day notice to regularize the default.' Mismatch: 'lock up' vs 'seal off'. NOT expected: reg.168 (administrative penalty) -- money, not closure."
+ },
+ {
+  "id": "AR_T02",
+  "set": "test3",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "For our market, dem no leave space for wheelchair to pass between the stalls. Any law for that?",
+  "expected": {
+   "accessregs2023": [
+    50,
+    51
+   ]
+  },
+  "note": "Pidgin. Regs reg.50: 'Persons with disabilities shall have access to a market place.'; reg.51: 'A walkway or aisle between stalls or edges of vending tables shall be of a minimum width of 3000mm.' (p.29-30). NOT expected: reg.105 (interior aisles and passageways) -- indoor; reg.28(6) (market signage) -- signage, not space."
+ },
+ {
+  "id": "AR_T03",
+  "set": "test3",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "How wide must a zebra crossing be under the accessibility regulations?",
+  "expected": {
+   "accessregs2023": [
+    4
+   ]
+  },
+  "note": "Regs reg.4(2)(b), p.10 / B1350: 'be of a minimum width of 3,000mm, and clearly marked by 100 mm, painted white lines'. NOT expected: reg.66 (zebra crossing and pedestrian signals, Part V) -- same title words, about signals; a title-match trap."
+ },
+ {
+  "id": "AR_T04",
+  "set": "test3",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "I am deaf. When I go to the police station or court, do they have to give me information in a way I can understand?",
+  "expected": {
+   "accessregs2023": [
+    152
+   ]
+  },
+  "note": "Regs reg.152 (Public institutions in the criminal justice system), p.62 / B1402: 'Public institutions such as a court, police station, or correctional center shall ensure that information is provided in accessible format'. Mismatch: 'deaf', 'understand' vs 'accessible format'. NOT expected: reg.84(6)(c) (sign language interpretation at reception desks, 'where practicable') -- defensible, recorded not required; Constitution s.36 (fair hearing / interpreter) -- correct legal context but outside the Regs target, scored only if the harness credits cross-doc."
+ },
+ {
+  "id": "AR_T05",
+  "set": "test3",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "Must every train have a coach that a wheelchair user can travel in?",
+  "expected": {
+   "accessregs2023": [
+    161
+   ]
+  },
+  "note": "Regs reg.161 (Accessible cabin coach), p.63-64: '(1) A train shall have a minimum of one accessible cabin coach. (2) An accessible cabin shall -- (a) have an accessible restroom, (b) be equipped with an on-board wheelchair ; and (c) have an aisle measuring a width of 900mm.' NOT expected: reg.22 (rail platforms) -- platform, not coach; Act cl.10 (vehicles) -- government transport, not trains specifically."
+ },
+ {
+  "id": "AR_T06",
+  "set": "test3",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "my brother wan bid for govt contract, which disability certificate e need get first",
+  "expected": {
+   "accessregs2023": [
+    166
+   ]
+  },
+  "note": "Pidgin, no punctuation. Regs reg.166(6), p.66 / B1406: 'The National Disability Compliance Certificate is a mandatory pre-qualification document for bidding on procurement of public works, goods, and services.' NOT expected: reg.167 (certification course, a condition for the certificate) -- defensible second hit; reg.165 (National Accessibility Compliance Certificate for buildings) -- the wrong certificate."
+ },
+ {
+  "id": "AR_T07",
+  "set": "test3",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "Does a hospital or clinic have to be easy to get into for people with disabilities?",
+  "expected": {
+   "accessregs2023": [
+    153
+   ]
+  },
+  "note": "Regs reg.153 (Health Care and social welfare facilities), p.62 / B1402: 'A facility that provides healthcare or social welfare services to the public shall be accessible to persons with disabilities'. Mismatch: 'hospital or clinic', 'easy to get into'. NOT expected: Act cl.21-22 (health) -- service provision, not the building; reg.171 'Public Building' definition lists hospitals -- supporting, not required."
+ },
+ {
+  "id": "AR_T08",
+  "set": "test3",
+  "class": "odd-wording",
+  "expect_gate": "answer",
+  "text": "Hawkers don block the bus stop for my junction finish, I no fit pass with my crutches. Wetin the rule talk?",
+  "expected": {
+   "accessregs2023": [
+    21
+   ]
+  },
+  "note": "Pidgin. Regs reg.21 (Bus stops), p.18 / B1358: '(2) A bus stop area shall be free from hawking and freestanding objects.' NOT expected: reg.20 (bus shelters); reg.9 (lay-bys / bus stop pads) -- defensible second hits on 'bus stop', recorded not required."
+ },
+ {
+  "id": "AR_T09",
+  "set": "test3",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "The front desk at the ministry is too high for me in my wheelchair. How low should it be?",
+  "expected": {
+   "accessregs2023": [
+    84
+   ]
+  },
+  "note": "Regs reg.84(3) (Reception area or information desk), p.41 / B1381: 'a section of the counter shall -- (a) be lowered to a maximum height of 760mm and have a minimum width of 1500mm ; (b) have a knee space ...'; 84(2)(c) also names 'person with dwarfism'. Mismatch: 'front desk' vs 'reception area or information desk', 'counter'. NOT expected: reg.150(3), reg.154(2) -- cross-reference reg.84 for restaurants/libraries."
+ },
+ {
+  "id": "AR_T10",
+  "set": "test3",
+  "class": "cross-document",
+  "expect_gate": "answer",
+  "text": "Before a new public building goes up, who checks that its plan is accessible?",
+  "expected": {
+   "accessregs2023": [
+    165
+   ],
+   "act2018": [
+    7
+   ]
+  },
+  "note": "Regs reg.165(1), p.65 / B1405: '... prior to a new construction, present a construction plan to the relevant authority to ensure that the plan conforms with the standards and code for an accessible built environment'. Act cl.7(1): 'Before erecting any public structure, its plan shall be scrutinised by the relevant authority to ensure that the plan conforms with the building code'. NOT expected: reg.164 (inter-agency collaboration) -- general."
+ },
+ {
+  "id": "AR_T11",
+  "set": "test3",
+  "class": "vocab-mismatch",
+  "expect_gate": "answer",
+  "text": "The fire alarm in our office building only makes a sound. My colleague is deaf and cannot hear it. Is that allowed?",
+  "expected": {
+   "accessregs2023": [
+    131
+   ]
+  },
+  "note": "Regs reg.131(2) (Audible and visual information), p.56 / B1396: 'Fire alarm signals in public buildings shall be designed with both visual and audio features.' NOT expected: reg.137 (fire emergency systems and signals) -- defensible second hit; reg.59(8) (fire alarm in accessible toilet) -- narrower."
+ },
+ {
+  "id": "AR_T12",
+  "set": "test3",
+  "class": "direct",
+  "expect_gate": "answer",
+  "text": "What is the minimum width of a building's entrance door so a wheelchair can pass?",
+  "expected": {
+   "accessregs2023": [
+    85
+   ]
+  },
+  "note": "Regs reg.85(1) (Doors and doorways), p.42 / B1382: 'A main entrance door, and other accessible entrance and exit door shall measure a minimum width of 915mm'. NOT expected: reg.83 (Entrance) -- title-match trap, no width; reg.86 (self-closing swing doors) -- interior door leaves."
+ },
+ {
+  "id": "AR_S01",
+  "set": "status",
+  "class": "status",
+  "expect_gate": "answer",
+  "text": "What law gives the Commission the power to make these accessibility rules?",
+  "expected": {
+   "act2018": [
+    56
+   ]
+  },
+  "note": "Status probe. Enacting formula, p.9 / B1349 (unnumbered): 'In exercise of the powers conferred on it by section 56 of the Discrimination Against Persons with Disabilities (Prohibition) Act, 2018 ... the Governing Council of the National Commission ... makes the following Regulations'. Act cl.56: 'The Council may make regulations for the purpose of carrying out or giving full effect to the provisions of this Act.' PARSER FLAG: the enacting formula carries no regulation number; whether it is ingested (and under what ref) is an H8a.2 decision. The status note must say the Regs are subsidiary legislation under the Act."
+ },
+ {
+  "id": "AR_S02",
+  "set": "status",
+  "class": "status",
+  "expect_gate": "answer",
+  "text": "Is there a fine for not following the accessibility regulations?",
+  "expected": {
+   "accessregs2023": [
+    168
+   ]
+  },
+  "note": "Status probe. Regs reg.168, p.67 / B1407: '(1) ... any person who contravenes the provisions of these Regulations is liable to an administrative penalty of not less than N 500,000. (2) Any company, government institution or body corporate ... not less than N 2,000,000.' The gazette prints 'N' for the naira sign. Status nuance: an ADMINISTRATIVE penalty imposed by the Commission, 'notwithstanding the penalties provided under the Act'. NOT expected: reg.169 (sealing) -- defensible second hit."
+ },
+ {
+  "id": "AR_S03",
+  "set": "status",
+  "class": "status",
+  "expect_gate": "answer",
+  "text": "Are the accessibility regulations an Act passed by the National Assembly?",
+  "expected": {
+   "act2018": [
+    56
+   ],
+   "accessregs2023": [
+    172
+   ]
+  },
+  "note": "Status probe. No: S.I. No. 51 of 2023, made by the Governing Council of the Commission under Act cl.56 (enacting formula, p.9). Regs reg.172 (Citation): 'These Regulations may be cited as the Persons with Disabilities (Accessibility) Regulations, 2023.' A correct answer needs the status note (subsidiary instrument); an answer that calls them an Act is a fail regardless of retrieval."
+ },
+ {
+  "id": "AR_S04",
+  "set": "status",
+  "class": "status",
+  "expect_gate": "answer",
+  "text": "When did the accessibility regulations come into force?",
+  "expected": {},
+  "note": "Status probe, NO NUMBERED REF. Gazette p.9 / B1349: the date '[22nd day of May, 2023]' sits under the title with the marginal note 'Commencement.' -- the gazette's own commencement marker. (This resolves the dossier's 'commencement date not verified' line: 22 May 2023; gazetted 7 July 2023 per dossier.) Evidence lives in the front matter, so retrieval cannot be scored by ref; the harness must treat empty 'expected' as status-note-only (answer must give the date from the status note, never invent one). PARSER FLAG as AR_S01."
+ },
+ {
+  "id": "AR_S05",
+  "set": "status",
+  "class": "status",
+  "expect_gate": "answer",
+  "text": "The Disability Act gave five years to make old buildings accessible. Do the 2023 regulations say anything about buildings that already existed?",
+  "expected": {
+   "act2018": [
+    6
+   ],
+   "accessregs2023": [
+    165
+   ]
+  },
+  "note": "Status/cross-document probe. Act cl.6 (Transitory Period): 'a transitory period of five years within which all public buildings and structures ... which were inaccessible ... shall be modified'. Regs reg.165(3), p.65-66: 'The Commission shall conduct an accessibility audit on a built environment existing prior to the commencement of these Regulations upon the expiration of 21 days accessibility audit notice'. The Regs contain NO transitional deadline of their own; an answer must not invent one. Whether the Act's five-year period has run (Act commenced 2019) is a status-note matter for the H6 reviewer."
+ },
+ {
+  "id": "AR_S06",
+  "set": "status",
+  "class": "status",
+  "expect_gate": "answer",
+  "text": "If a shop breaks the accessibility regulations, can I take them to court myself, or only report to the Commission?",
+  "expected": {
+   "act2018": [
+    8
+   ],
+   "accessregs2023": [
+    168
+   ]
+  },
+  "note": "Status probe. Act cl.8(1): a person may 'without prejudice to his right to seek redress in court, notify the relevant authority ... of the existence of the state of inaccessibility'. Regs reg.168: penalties are ADMINISTRATIVE, imposed by the Commission; the Regs create no private right of action. The status note must not overstate the Regs into a cause of action. NOT expected: reg.160 (shops) -- the substantive duty, not the remedy; defensible second hit."
+ }
+]
