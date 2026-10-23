@@ -400,6 +400,40 @@ def main() -> int:
     check(chat.cross_turn_drift(None, prior, now) == [],
           "a pending answer (None) has no drift")
 
+    print("\n== 8b. CITATIONS: [Regs reg. N] ROUND-TRIPS (H8a.2 F3, zero network) ==")
+    # Corpus v3 adds accessregs2023. Its tag shape must be visible to every
+    # citation check in the SAME commit as the corpus, or a fabricated regulation
+    # number would pass verify_citations silently. Synthetic Hits: under test is
+    # the tag plumbing (cite_tag -> CITE_TAG_RE -> doc_of -> drift), not retrieval.
+    regs_hits = [Hit("accessregs2023", "reg. 24", "", 0.3),
+                 Hit("accessregs2023", "general", "", 0.2),
+                 Hit("act2018", "cl. 56", "", 0.2)]
+    check(rag.cite_tag("accessregs2023", "reg. 24") == "[Regs reg. 24]"
+          and rag.cite_tag("accessregs2023", "general") == "[Regs general]",
+          "cite_tag builds [Regs reg. N] / [Regs general]")
+    ans = "Parking is reserved [Regs reg. 24], made under [Act cl. 56] ([Regs general])."
+    check(rag.extract_citations(ans) == ["Regs reg. 24", "Act cl. 56", "Regs general"],
+          "CITE_TAG_RE extracts the Regs shapes alongside the old ones")
+    check([c["number_ok"] for c in rag.verify_citations(ans, regs_hits)] == [True] * 3,
+          "verify_citations passes Regs tags whose ref was retrieved")
+    check([c["number_ok"] for c in rag.verify_citations("[Regs reg. 25]", regs_hits)]
+          == [False], "a Regs number nobody retrieved fails (fabrication caught)")
+    check([c["number_ok"] for c in rag.verify_citations(
+               "[Regs reg. 56] [Act cl. 24]", regs_hits)] == [False, False],
+          "doc_of keeps the numbering schemes apart: Act cl. 56 cannot satisfy "
+          "[Regs reg. 56], nor Regs reg. 24 satisfy [Act cl. 24]")
+    old = "[Act cl. 28] [Constitution s. 42] [Factsheet Section 19] [Act general]"
+    old_hits = [Hit("act2018", "cl. 28", "", 0.3), Hit("constitution1999", "s. 42", "", 0.3),
+                Hit("factsheet2020", "Section 19", "", 0.3)]
+    check([c["number_ok"] for c in rag.verify_citations(old, old_hits)] == [True] * 4
+          and [c["number_ok"] for c in rag.verify_citations(old, [])] == [False] * 3 + [True],
+          "the pre-existing tag shapes verify exactly as before")
+    regs_prior = [{"question": Q, "answer": "x",
+                   "tags": [rag.cite_tag("accessregs2023", "reg. 24")]}]
+    check(chat.cross_turn_drift("Parking. [Regs reg. 24]", regs_prior, now)
+          == ["[Regs reg. 24]"],
+          "cross_turn_drift reports a Regs tag re-cited from an earlier turn")
+
     print("\n== 9. CHAT: relative 'that' is NOT an unbound pronoun (H1a, zero network) ==")
     # Seen on the live smoke after the 2026-10-15 deploy: "an organisation that
     # can help me" was read as unbound 'that' and carried the previous legal

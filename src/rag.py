@@ -145,6 +145,10 @@ CONST_PATH = ROOT / "data" / "processed" / "constitution_1999_NHRC.txt"
 FACT_PATH = ROOT / "data" / "processed" / "disability_act_factsheet_PLAC.txt"
 # The OCR/parse -> runtime seam. See _act_chunks_v2().
 ACT_V2_PATH = ROOT / "data" / "processed" / "act2018_v2_clauses.json"
+# The same seam for the Accessibility Regulations 2023 (H8a.2, corpus v3 only).
+# Written by scripts/parse_accessregs.py (dev env, pymupdf); read here with
+# stdlib json. See _regs_chunks_v3().
+ACCESSREGS_PATH = ROOT / "data" / "processed" / "accessregs2023_regs.json"
 
 SECTION_RE = re.compile(r"(Section \d+)", re.IGNORECASE)
 CONST_REF_RE = re.compile(r"\u00a7\u00a7?(\d+)")
@@ -431,6 +435,45 @@ def _act_chunks_v2() -> list[Chunk]:
     return chunks
 
 
+def _regs_chunks_v3() -> list[Chunk]:
+    """v3 only: the Accessibility Regulations 2023, one regulation per chunk.
+
+    The same seam and idiom as _act_chunks_v2(), read its docstring: one JSON
+    artifact (ACCESSREGS_PATH, written by scripts/parse_accessregs.py in the dev
+    env) read with stdlib json, so the slim runtime never needs pymupdf. `ref`
+    is "reg. %d" % n straight from the manifest, never inferred from text, so a
+    packed ref cannot exist. Every sub-chunk repeats the regulation's header
+    ("24. Parking.", the gazette's marginal note), budgeted out of the size cap.
+    The size is ACT_V2_SIZE: the regulations are the Act's subsidiary
+    legislation with the same marginal-note layout, and no new number was tuned
+    here (H8a.3 measures; it does not get to pick a chunk size first).
+
+    The unnumbered enacting formula (title block, the "[22nd day of May, 2023]"
+    commencement date with its marginal note, and "In exercise of the powers
+    conferred on it by section 56 of the ... Act, 2018 ...") is ONE chunk with
+    ref "general", placed first in document order. It carries no number to cite
+    by, but it is the evidence for the status questions (who made these, under
+    what power, from when), so it is ingested rather than dropped.
+    """
+    manifest = json.loads(ACCESSREGS_PATH.read_text(encoding="utf-8"))
+    entries = [("general", manifest["preamble"]["header"],
+                manifest["preamble"]["text"], "preamble")]
+    entries += [("reg. %d" % r["n"], r["header"], r["text"], "manifest")
+                for r in manifest["regs"]]
+    chunks: list[Chunk] = []
+    for ref, header, body, path in entries:
+        if len(header) + 1 + len(body) <= ACT_V2_SIZE:
+            pieces = [body]
+        else:
+            budget = max(ACT_V2_SIZE - len(header) - 1, 100)
+            pieces = recursive_split(body, size=budget)
+        chunks.extend(
+            Chunk("accessregs2023", ref, "%s\n%s" % (header, p), path)
+            for p in pieces
+        )
+    return chunks
+
+
 def fact_v2_rows() -> list[dict]:
     """Parse the PLAC factsheet's S/N table into one struct per row.
 
@@ -670,7 +713,7 @@ def _const_chunks_v2() -> list[Chunk]:
 
 def build_corpus(version: str | None = None,
                  check_bridge: bool = True) -> dict[str, list[Chunk]]:
-    """Load + chunk all three docs. Raw files are never modified.
+    """Load + chunk the corpus docs. Raw files are never modified.
 
     version defaults to CORPUS_VERSION ("v1" until D6), so every existing
     no-arg caller is unchanged. The default no-arg path is v1 and is
@@ -693,11 +736,18 @@ def build_corpus(version: str | None = None,
     alone (src/retrieve.py:331-338), so insertion order breaks ties and
     reordering these three blocks silently moves published numbers. It is the
     same order in both versions for that reason.
+
+    "v3" (H8a.2, docs/phases/17_h8_corpus_expansion.md) is EXACTLY the v2 dict
+    for the three existing docs plus docs["accessregs2023"] (_regs_chunks_v3)
+    appended LAST (F6), so ties among the first three resolve as in v2 and any
+    number that moves does so because of the new doc's scores. It is built only
+    on request; CORPUS_VERSION stays "v2" until H8a.5. Its OOV bridge is its own
+    artifact, data/processed/oov_bridge_v3.json (F7, src/retrieve.py).
     """
     version = version or CORPUS_VERSION
-    if version not in ("v1", "v2"):
+    if version not in ("v1", "v2", "v3"):
         raise ValueError(
-            "unknown corpus version %r (only 'v1' and 'v2' exist)" % version
+            "unknown corpus version %r (only 'v1', 'v2' and 'v3' exist)" % version
         )
 
     docs: dict[str, list[Chunk]] = {}
@@ -706,12 +756,16 @@ def build_corpus(version: str | None = None,
         _const_chunks_v1() if version == "v1" else _const_chunks_v2())
     docs["factsheet2020"] = (
         _fact_chunks_v1() if version == "v1" else _fact_chunks_v2())
+    if version == "v3":
+        docs["accessregs2023"] = _regs_chunks_v3()   # appended LAST (F6)
     # check_bridge=False exists for scripts/build_oov_bridge.py ONLY -- it is
     # the one caller that must read the corpus before the artifact exists.
     if version == "v2" and check_bridge:
         # Phase E4a: the OOV bridge is keyed on "absent from THIS index", so a
         # corpus change without a bridge rebuild must fail loudly, not degrade.
         check_oov_bridge(docs)
+    if version == "v3" and check_bridge:
+        check_oov_bridge(docs, "v3")                 # its own artifact (F7)
     return docs
 
 
@@ -819,9 +873,14 @@ def build_prompt(question: str, hits, plain: bool = False, history=None) -> str:
     return "\n".join(lines)
 
 
+# H8a.2 (F3): the Regs shapes ("[Regs reg. 24]", "[Regs general]") land in the
+# SAME commit as corpus v3, so a v3 chunk's tag can never reach the LLM while
+# being invisible to verify_citations. "Regs" is not a prefix of, and has no
+# prefix among, Act/Constitution/Factsheet.
 CITE_TAG_RE = re.compile(
     r"\[(Act cl\. [\d,]+|Act general|Constitution s\. [\d,]+|"
-    r"Constitution general|Factsheet [Ss]ection [\d,]+|Factsheet general)\]"
+    r"Constitution general|Factsheet [Ss]ection [\d,]+|Factsheet general|"
+    r"Regs reg\. [\d,]+|Regs general)\]"
 )
 
 
@@ -856,10 +915,10 @@ def verify_citations(answer: str, hits) -> list[dict]:
     enforces when it tells the model to copy multi-number tags whole.
     """
     doc_of = {"Act": "act2018", "Constitution": "constitution1999",
-              "Factsheet": "factsheet2020"}
+              "Factsheet": "factsheet2020", "Regs": "accessregs2023"}
     out = []
     for tag in extract_citations(answer):
-        m = re.match(r"(Act|Constitution|Factsheet) (.+)", tag)
+        m = re.match(r"(Act|Constitution|Factsheet|Regs) (.+)", tag)
         assert m is not None  # tags come from CITE_TAG_RE, always match
         doc_id, refbit = m.group(1), m.group(2)
         nums = re.findall(r"\d+", refbit)

@@ -61,6 +61,7 @@ assert_frozen10_matches_notebook() is what keeps that true afterwards.
 
 import json
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -69,7 +70,17 @@ TEST2_PATH = ROOT / "data" / "eval" / "questions_test2.json"
 
 SETS = ("frozen10", "heldout", "test", "test2")
 GATES = ("answer", "refuse")
-DOC_IDS = ("act2018", "constitution1999", "factsheet2020")
+DOC_IDS = ("act2018", "constitution1999", "factsheet2020", "accessregs2023")
+
+# F4 (docs/phases/17_h8_corpus_expansion.md): this is a SEPARATE copy of
+# retrieve.DOC_IDS (chatset.py imports this one). Two hand-kept tuples drift
+# silently, so they are pinned equal here, on every import.
+sys.path.insert(0, str(ROOT / "src"))
+from retrieve import DOC_IDS as _RETRIEVE_DOC_IDS  # noqa: E402
+
+assert DOC_IDS == _RETRIEVE_DOC_IDS, (
+    "scripts/evalset.py DOC_IDS %r != src/retrieve.py DOC_IDS %r"
+    % (DOC_IDS, _RETRIEVE_DOC_IDS))
 
 
 def load_eval_set(which: str | None = None) -> list[dict]:

@@ -81,10 +81,28 @@ retr = PerDocRetriever(build_corpus())
 pay = app.offline_legal_hits("What are my education rights under the Act?", retr)
 check("legal-hits-nonempty", len(pay["excerpts"]) >= 1, str(len(pay["excerpts"])))
 tag_re = re.compile(r"\[(Act cl\. [\d,]+|Act general|Constitution s\. [\d,]+|"
-                    r"Constitution general|Factsheet [Ss]ection [\d,]+|Factsheet general)\]")
+                    r"Constitution general|Factsheet [Ss]ection [\d,]+|Factsheet general|"
+                    r"Regs reg\. [\d,]+|Regs general)\]")
 check("legal-tags-valid", all(tag_re.fullmatch(e["tag"]) for e in pay["excerpts"]),
       str([e["tag"] for e in pay["excerpts"]][:6]))
 check("legal-citations-mirror-tags", pay["citations"] == [e["tag"] for e in pay["excerpts"]])
+# H8a.2 (F3): corpus v3's "[Regs reg. N]" / "[Regs general]" shapes. The default
+# corpus above is v2 and never emits them, so they are checked on cite_tag()'s own
+# output: this tag_re and rag.CITE_TAG_RE must accept them, every pre-existing shape
+# must still match both, and near-miss shapes must match neither.
+import rag as _rag  # noqa: E402
+from retrieve import cite_tag as _cite_tag  # noqa: E402
+_regs_tags = [_cite_tag("accessregs2023", "reg. 24"), _cite_tag("accessregs2023", "general")]
+_old_tags = ["[Act cl. 28]", "[Act cl. 16,17]", "[Act general]", "[Constitution s. 42]",
+             "[Constitution general]", "[Factsheet Section 19]", "[Factsheet section 9]",
+             "[Factsheet general]"]
+_bad_tags = ["[Regs s. 24]", "[Regs cl. 24]", "[reg. 24]", "[Regulation 24]", "[Regs reg 24]"]
+check("regs-tags-valid", _regs_tags == ["[Regs reg. 24]", "[Regs general]"]
+      and all(tag_re.fullmatch(t) and _rag.CITE_TAG_RE.fullmatch(t) for t in _regs_tags),
+      str(_regs_tags))
+check("old-tag-shapes-unchanged",
+      all(tag_re.fullmatch(t) and _rag.CITE_TAG_RE.fullmatch(t) for t in _old_tags)
+      and not any(tag_re.fullmatch(t) or _rag.CITE_TAG_RE.fullmatch(t) for t in _bad_tags))
 ref = app.offline_legal_hits("quantum teleportation zebra unleaded gasoline", retr)
 check("legal-refusal", ref["refused"] and "08000-3000-100" in ref["answer"])
 

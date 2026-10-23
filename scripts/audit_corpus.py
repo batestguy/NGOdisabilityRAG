@@ -88,7 +88,9 @@ from rag import (  # noqa: E402
 def size_caps(version: str) -> dict:
     return {"act2018": ACT_SIZE if version == "v1" else ACT_V2_SIZE,
             "constitution1999": CONST_SIZE,
-            "factsheet2020": FACT_SIZE if version == "v1" else FACT_V2_SIZE}
+            "factsheet2020": FACT_SIZE if version == "v1" else FACT_V2_SIZE,
+            # v3 only (H8a.2): _regs_chunks_v3() splits at ACT_V2_SIZE.
+            "accessregs2023": ACT_V2_SIZE}
 
 
 # The Act has 58 clauses. Source: the Arrangement of Sections in
@@ -149,6 +151,30 @@ V1_CORPUS_SHA256 = "25650238c3f2daf0523297680b41b3bd2318425c9690d9fa8a1e1caf1b42
 # 'is delivered' (same corrections file; only those two spans moved; every metric and the
 # eval_phase06 digest unchanged). Previous value: c4f7cfbbb0d09902bdb0db0d122fd718a6e9e0cf1200e74ecad55367e481c8eb
 V2_CORPUS_SHA256 = "1fbbbcda2359ae335e139f9aee4bf3adea63bbd565aba753f9a7035b22f04b7a"
+
+
+# v3 (H8a.2, docs/phases/17_h8_corpus_expansion.md F8): corpus v2 for the three
+# existing docs, byte-identical, PLUS accessregs2023 appended last. A NEW pin,
+# never an edit of the v2 one above: `--corpus=v3` is gated on this, the
+# default/v2 run is untouched. Measured 2026-10-23 on the commit that adds v3,
+# from data/processed/accessregs2023_regs.json as parsed by
+# scripts/parse_accessregs.py (source sha256 04bb8bec...8b05).
+V3_CORPUS_SHA256 = "f13b96780303b55fd316db60472c69a111f2417426a115a9598d0d52d5633513"
+
+# accessregs2023 shape, pinned the same way V1_EXPECTED pins v1: one chunk per
+# regulation (long ones sub-split, header repeated), plus exactly ONE `general`
+# chunk -- the unnumbered enacting formula, which is status-question evidence
+# and the only uncitable chunk this document may have. Packed refs are
+# structurally impossible (ref from the manifest), so 0 is gated, not hoped.
+V3_ACCESSREGS_EXPECTED = {"n": 221, "general": 1, "packed": 0, "over_cap": 0}
+V3_ACCESSREGS_REGS = range(1, 173)
+# The parser's only expected flag (the Arrangement prints "132. Braille" for
+# the body's 133). Any other flag is a parse regression.
+V3_ACCESSREGS_FLAGS = {133: ["ARRANGEMENT_NUMBER_MISMATCH"]}
+# The eval rows this script may read. NOT test3: it is blind (H8a.1), and the
+# reg. 1..172 coverage check already covers every number it could expect.
+ACCESSREGS_EVAL_PATH = ROOT / "data" / "eval" / "questions_accessregs.json"
+ACCESSREGS_READABLE_SETS = ("accessregs-dev", "status")
 
 
 def corpus_sha256(docs: dict[str, list]) -> str:
@@ -441,6 +467,64 @@ def act_ref_validator(chunks: list) -> dict:
     }
 
 
+def v3_accessregs_gate(docs: dict, s: dict) -> list[str]:
+    """accessregs2023 shape + ground-truth gate (v3 only). Returns failures."""
+    from evalset import verify_expected
+    from rag import ACCESSREGS_PATH
+    fails: list[str] = []
+    chunks = docs["accessregs2023"]
+    print("\n== V3 ACCESSREGS2023 GATE (H8a.2) ==")
+    for key, want in V3_ACCESSREGS_EXPECTED.items():
+        ok = want is not None and s[key] == want
+        print("  %-18s %-10s pinned %-6s measured %-6d %s"
+              % ("accessregs2023", key, want, s[key], "ok" if ok else "DRIFT"))
+        if not ok:
+            fails.append("accessregs2023.%s: pinned %s, measured %d"
+                         % (key, want, s[key]))
+    gen = [c for c in chunks if c.ref == "general"]
+    ok = len(gen) == 1 and gen[0].path == "preamble" and chunks[0].ref == "general"
+    print("  the one `general` chunk is the enacting formula, first: %s"
+          % ("PASS" if ok else "FAIL"))
+    if not ok:
+        fails.append("accessregs2023: the only general chunk must be the "
+                     "preamble (path 'preamble'), placed first")
+    want_refs = {"reg. %d" % n for n in V3_ACCESSREGS_REGS}
+    have_refs = {c.ref for c in chunks if c.ref != "general"}
+    missing = sorted(want_refs - have_refs, key=lambda r: int(r.split()[1]))
+    extra = sorted(have_refs - want_refs)
+    print("  regulations citable (reg. 1..172, each a ref): %s"
+          % ("PASS" if not missing and not extra else
+             "FAIL (missing %s, unexpected %s)" % (missing, extra)))
+    if missing or extra:
+        fails.append("accessregs2023 refs: missing %s, unexpected %s"
+                     % (missing, extra))
+    man = json.loads(ACCESSREGS_PATH.read_text(encoding="utf-8"))
+    flagged = {r["n"]: r["flags"] for r in man["regs"] if r["flags"]}
+    ok = flagged == V3_ACCESSREGS_FLAGS and man["missing"] == 0
+    print("  manifest: located %d/172, missing %d, flags %s: %s"
+          % (man["located"], man["missing"], flagged or "none",
+             "PASS" if ok else "FAIL (pinned %s)" % V3_ACCESSREGS_FLAGS))
+    if not ok:
+        fails.append("accessregs2023 manifest flags %s != pinned %s"
+                     % (flagged, V3_ACCESSREGS_FLAGS))
+    # Ground truth, readable rows only (never test3). AR_S04 expects nothing
+    # (the commencement date has no number) and passes through untouched.
+    raw = json.loads(ACCESSREGS_EVAL_PATH.read_text(encoding="utf-8"))
+    rows = [{"id": r["id"], "note": r["note"],
+             "expected": {d: {int(n) for n in ns}
+                          for d, ns in r["expected"].items()}}
+            for r in raw if r.get("set") in ACCESSREGS_READABLE_SETS]
+    try:
+        n_pairs = verify_expected(rows, docs)
+        print("  ground truth (%s, %d rows): %d expected numbers all present "
+              "as refs: PASS" % ("+".join(ACCESSREGS_READABLE_SETS), len(rows),
+                                 n_pairs))
+    except AssertionError as e:
+        print("  ground truth: FAIL\n    %s" % e)
+        fails.append("accessregs eval ground truth: %s" % e)
+    return fails
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     json_out = next((a.split("=", 1)[1] for a in argv
@@ -457,7 +541,11 @@ def main(argv: list[str] | None = None) -> int:
     print("  mode: %s" % ("v1 regression tripwire -- pinned to the recorded "
                           "shape, does NOT fail for being bad"
                           if version == "v1"
-                          else "v2 quality gate"))
+                          else "v2 quality gate" if version == "v2"
+                          else "v2 quality gate on the three v2 docs + "
+                               "accessregs2023 shape gate"))
+    shown = [d for d in ("act2018", "constitution1999", "factsheet2020",
+                         "accessregs2023") if d in docs]
 
     caps = size_caps(version)
     stats = {d: audit_doc(d, c, caps) for d, c in docs.items()}
@@ -466,7 +554,7 @@ def main(argv: list[str] | None = None) -> int:
     print("  %-18s %-6s %-14s %-14s %-9s %-9s %-22s" % (
         "doc", "chunks", "uncitable", "packed refs", "row-span", "toc-gen",
         "length min/med/max"))
-    for d in ("act2018", "constitution1999", "factsheet2020"):
+    for d in shown:
         s = stats[d]
         print("  %-18s %-6d %-14s %-14s %-9d %-9s %d/%d/%d (cap %d)" % (
             d, s["n"], "%d (%.1f%%)" % (s["general"], s["general_pct"]),
@@ -493,7 +581,7 @@ def main(argv: list[str] | None = None) -> int:
     print("                section marker and score 0/0. Added at D4.")
 
     print("\n== LENGTH HISTOGRAMS (vs size cap) ==")
-    for d in ("act2018", "constitution1999", "factsheet2020"):
+    for d in shown:
         s = stats[d]
         print("  %s (cap %d, %d at cap, %d OVER cap):"
               % (d, s["size_cap"], s["at_cap"], s["over_cap"]))
@@ -656,8 +744,11 @@ def main(argv: list[str] | None = None) -> int:
                 "constant count looks exactly like this."
                 % (V1_CORPUS_SHA256, got_sha))
     else:
-        print("\n== V2 QUALITY GATE ==")
+        print("\n== V2 QUALITY GATE ==" if version == "v2" else
+              "\n== V2 QUALITY GATE (v3: the three v2 docs, unchanged) ==")
         for d in stats:
+            if d == "accessregs2023":
+                continue          # gated in its own v3 block below
             s = stats[d]
             # --- uncitable %. Gated on the Act and the factsheet only.
             gated = d in V2_GENERAL_PCT_GATED
@@ -734,9 +825,10 @@ def main(argv: list[str] | None = None) -> int:
                         "another's number" % (d, s["row_spanning"],
                                               V2_MAX_ROW_SPANNING))
         got_sha = corpus_sha256(docs)
-        ok = got_sha == V2_CORPUS_SHA256
+        pin = V2_CORPUS_SHA256 if version == "v2" else V3_CORPUS_SHA256
+        ok = got_sha == pin
         print("  %-18s %-8s recorded %s" % ("CORPUS", "sha256",
-                                            V2_CORPUS_SHA256))
+                                            pin))
         print("  %-18s %-8s measured %s %s" % ("", "", got_sha,
                                                "ok" if ok else "DRIFT"))
         if not ok:
@@ -744,7 +836,9 @@ def main(argv: list[str] | None = None) -> int:
                 "corpus sha256: recorded %s, measured %s -- chunk CONTENT "
                 "moved. The per-doc numbers above are a SHAPE check and cannot "
                 "see text moving between chunks at constant count."
-                % (V2_CORPUS_SHA256, got_sha))
+                % (pin, got_sha))
+        if version == "v3":
+            fails += v3_accessregs_gate(docs, stats["accessregs2023"])
         # Verified corrections (parse_act_v2.py). Reported, never gated: an
         # unsigned one is a WARN so it can't hide, but signing is a human act.
         corr_p = ROOT / "data" / "processed" / "act2018_v2_corrections.json"

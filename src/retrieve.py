@@ -4,9 +4,10 @@ Foundation runs fully offline on TF-IDF. Gemini embeddings / generation are
 opt-in: they need GOOGLE_API_KEY and an explicit call. No key = no network.
 
 Numbering is never conflated: every chunk carries (doc_id, ref) metadata with
-doc_id in {'act2018', 'constitution1999', 'factsheet2020'}:
-  - Act clause N vs Constitution section N vs Factsheet Section N are
-    different things; the doc_id on every hit keeps them apart.
+doc_id in {'act2018', 'constitution1999', 'factsheet2020'} (+ 'accessregs2023'
+in corpus v3 only, H8a.2):
+  - Act clause N vs Constitution section N vs Factsheet Section N vs
+    Regulation N are different things; the doc_id on every hit keeps them apart.
 
 Retrieval strategy (Phase 02, option b -- per-doc retrievers):
   The joint index is ~95% Constitution chunks (S36 alone splits into 21),
@@ -106,7 +107,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 # ---------------------------------------------------------------------------
 MIN_SCORE = 0.10
 
-DOC_IDS = ("act2018", "constitution1999", "factsheet2020")
+# "accessregs2023" (H8a.2) is appended LAST and exists only in corpus v3:
+# build_corpus("v1"/"v2") never emits it, so v1/v2 behave exactly as before.
+# scripts/evalset.py keeps a separate copy and asserts it equals this one (F4).
+DOC_IDS = ("act2018", "constitution1999", "factsheet2020", "accessregs2023")
 
 # A chunk of citable text. ref examples: Act "cl. 31", Constitution "s. 17",
 # Factsheet "Section 19" (or "general" when no section marker was found).
@@ -819,6 +823,11 @@ def cite_tag(doc_id: str, ref: str) -> str:
         return "[Constitution %s]" % ref
     if doc_id == "factsheet2020":
         return "[Factsheet %s]" % ref
+    if doc_id == "accessregs2023":
+        # H8a.2 (F5): "[Regs reg. 24]", "[Regs general]". "Regs" neither is
+        # nor has a prefix among Act/Constitution/Factsheet, and the unit word
+        # "reg." keeps a regulation number from reading as a section number.
+        return "[Regs %s]" % ref
     return "[%s %s]" % (doc_id, ref)
 
 
