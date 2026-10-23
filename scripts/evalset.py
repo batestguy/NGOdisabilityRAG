@@ -131,6 +131,44 @@ def load_eval_set(which: str | None = None) -> list[dict]:
     return rows
 
 
+ACCESSREGS_PATH = ROOT / "data" / "eval" / "questions_accessregs.json"
+ACCESSREGS_SETS = ("accessregs-dev", "test3", "status")
+
+
+def load_accessregs_set(which: str) -> list[dict]:
+    """Rows of ONE set from questions_accessregs.json (H8a.1), normalised.
+
+    `which` is required: there is no "everything" call, so the blind `test3`
+    rows are returned only to a caller that names them. Same schema checks as
+    load_eval_set, with one exception: a `status` row may expect nothing
+    (AR_S04 -- its evidence is the unnumbered enacting formula), and the caller
+    has to score it without a recall denominator.
+    """
+    if which not in ACCESSREGS_SETS:
+        raise ValueError("unknown set %r (expected one of %s)"
+                         % (which, ACCESSREGS_SETS))
+    raw = json.loads(ACCESSREGS_PATH.read_text(encoding="utf-8"))
+    rows, seen = [], set()
+    for r in raw:
+        for field in ("id", "set", "class", "expect_gate", "text", "expected",
+                      "note"):
+            assert field in r, "row %r missing field %r" % (r.get("id"), field)
+        assert r["set"] in ACCESSREGS_SETS, "%s: bad set %r" % (r["id"], r["set"])
+        assert r["expect_gate"] == "answer", "%s: every row is answerable" % r["id"]
+        assert r["id"] not in seen, "duplicate id %r" % r["id"]
+        seen.add(r["id"])
+        if r["set"] != which:
+            continue
+        exp = {}
+        for doc_id, nums in r["expected"].items():
+            assert doc_id in DOC_IDS, "%s: unknown doc_id %r" % (r["id"], doc_id)
+            assert nums, "%s: empty number list for %s" % (r["id"], doc_id)
+            exp[doc_id] = {int(n) for n in nums}
+        assert exp or r["set"] == "status", "%s: needs expected refs" % r["id"]
+        rows.append({**r, "expected": exp})
+    return rows
+
+
 def expected_map(rows: list[dict]) -> dict:
     """{id: {doc_id: set[int]}} -- the exact shape eval_phase06.EXPECTED has."""
     return {r["id"]: r["expected"] for r in rows}
