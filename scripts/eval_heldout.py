@@ -2,6 +2,12 @@
 
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\eval_heldout.py   (from D:\\NGORAG)
      ... --reveal-test        (see the TEST-SET PROTECTION note below)
+     ... --no-test            keep `test` AND `test2` out of EVERYTHING: not loaded,
+                              not verified, not scored, not in any table. H8a.5
+                              (2026-10-23): `test` cleanliness is an open owner
+                              decision and test2's v3 number is already recorded,
+                              so every H8a.5 run uses this. Without the flag the
+                              output is byte-identical to before.
 
 WHAT THIS IS FOR
 ----------------
@@ -462,6 +468,7 @@ def curve_table(curves: dict) -> None:
 def main(argv: list[str] | None = None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     reveal_test = "--reveal-test" in argv
+    no_test = "--no-test" in argv       # H8a.5: held-out opt-out, see header
     # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
     corpus = next((a.split("=", 1)[1] for a in argv
                    if a.startswith("--corpus=")), None)
@@ -470,7 +477,13 @@ def main(argv: list[str] | None = None) -> int:
 
     assert_frozen10_matches_notebook()
     rows = load_eval_set()
-    if (corpus or CORPUS_VERSION) == "v2":
+    if no_test:
+        # Dropped BEFORE verify_expected, so not even the ground-truth check
+        # reads a test row; test2's file is never opened.
+        rows = [r for r in rows if r["set"] != "test"]
+        LABELS.pop("test", None)
+        LABELS.pop("test2", None)
+    elif (corpus or CORPUS_VERSION) == "v2":
         rows = rows + load_eval_set("test2")
     else:
         LABELS.pop("test2", None)   # test2 is v2-only (6 refs absent on v1)
@@ -483,6 +496,8 @@ def main(argv: list[str] | None = None) -> int:
     print("ground truth verified against corpus: %d questions, %d expected refs"
           % (len(rows), n_refs))
     print("sets: %s" % "  ".join("%s=%d" % (s, len(by_set[s])) for s in LABELS))
+    if no_test:
+        print("held-out EXCLUDED (--no-test): test and test2 not loaded, not scored")
 
     ret = PerDocRetriever(docs)
     measured = {s: [measure_one(ret, r) for r in by_set[s]] for s in LABELS}

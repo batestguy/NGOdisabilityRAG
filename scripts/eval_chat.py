@@ -2,6 +2,10 @@
 
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\eval_chat.py   (from D:\\NGORAG)
      ... --reveal-test        (see TEST-SET PROTECTION)
+     ... --dev-only           score chat_dev ONLY: chat_test is not loaded, not
+                              verified, not scored (H8a.5, 2026-10-23: the v3
+                              baseline reads no held-out set). Without the flag
+                              the output is byte-identical to before.
 
 WHAT THIS MEASURES AND WHY IT COMES BEFORE THE CHAT UI
 ------------------------------------------------------
@@ -390,13 +394,15 @@ def turn_table(label: str, by_arm: dict, show_missed: bool) -> None:
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     reveal_test = "--reveal-test" in argv
+    dev_only = "--dev-only" in argv     # H8a.5: held-out opt-out, see header
+    sets = ("chat_dev",) if dev_only else SETS
     # EQUALS FORM ONLY (repo convention: the space form is silently ignored).
     corpus = next((a.split("=", 1)[1] for a in argv
                    if a.startswith("--corpus=")), None)
     global _EFFECTIVE_CORPUS
     _EFFECTIVE_CORPUS = corpus          # every stamp below reads corpus_stamp()
 
-    convs = load_chat_set()
+    convs = load_chat_set("chat_dev") if dev_only else load_chat_set()
     docs = build_corpus(corpus)
     print("CORPUS_VERSION=%s" % corpus_stamp())
     print("corpus: %s" % {k: len(v) for k, v in docs.items()})
@@ -406,6 +412,8 @@ def main(argv=None) -> int:
         print("  %-10s %2d conversations, %2d turns  %s"
               % (s, stat["conversations"], stat["turns"],
                  " ".join("%s=%d" % kv for kv in sorted(stat["by_class"].items()))))
+    if dev_only:
+        print("  held-out EXCLUDED (--dev-only): chat_test not loaded, not scored")
     print("\n  contextualisation thresholds (chat.py, chosen on chat_dev ONLY):")
     print("    CARRY_WINDOW=%d  THIN_MAX=%d  MARKER_MAX=%d  QUESTION_WEIGHT=%d"
           % (chat.CARRY_WINDOW, chat.THIN_MAX, chat.MARKER_MAX,
@@ -413,7 +421,7 @@ def main(argv=None) -> int:
 
     ret = PerDocRetriever(docs)
     measured = {}
-    for s in SETS:
+    for s in sets:
         rows = {arm: [] for arm in ARMS}
         for c in [c for c in convs if c["set"] == s]:
             for t in c["turns"]:
@@ -423,7 +431,7 @@ def main(argv=None) -> int:
         measured[s] = rows
 
     induced_total = []
-    for s in SETS:
+    for s in sets:
         label = LABELS[s]
         detail = (s != "chat_test") or reveal_test
         turn_table(label, measured[s], show_missed=detail)
@@ -440,7 +448,7 @@ def main(argv=None) -> int:
     print("\n== HEADLINE: ALL SETS, BOTH ARMS (corpus=%s, shipping arm k=%d/doc "
           "-> select_top(%d)) ==" % (corpus_stamp(), K_PER_DOC, TOP_N))
     print("  %-46s %-8s %-8s %-8s %s" % ("set", "naive", "ctx", "delta", "n"))
-    for s in SETS:
+    for s in sets:
         nr = mean(r["recall"] for r in measured[s]["naive"])
         cr = mean(r["recall"] for r in measured[s]["contextualised"])
         n = sum(1 for r in measured[s]["naive"] if r["recall"] is not None)
