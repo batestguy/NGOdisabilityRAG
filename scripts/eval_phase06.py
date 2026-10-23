@@ -166,7 +166,7 @@ def split_claims(answer: str) -> list:
 
 
 DOC_OF = {"Act": "act2018", "Constitution": "constitution1999",
-          "Factsheet": "factsheet2020"}
+          "Factsheet": "factsheet2020", "Regs": "accessregs2023"}
 
 
 def eval_question(qid, question, rec, hits, ret) -> dict:
@@ -194,7 +194,7 @@ def eval_question(qid, question, rec, hits, ret) -> dict:
     answer = rec["answer_full"] or ""
     claims = []
     for text, tag in split_claims(answer):
-        m = re.match(r"(Act|Constitution|Factsheet) (.+)", tag)
+        m = re.match(r"(Act|Constitution|Factsheet|Regs) (.+)", tag)
         assert m is not None  # tags come from CITE_TAG_RE, always match
         doc_id, refbit = m.group(1), m.group(2)
         doc_id = DOC_OF[doc_id]

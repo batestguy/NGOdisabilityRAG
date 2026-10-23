@@ -379,5 +379,5 @@ def cross_turn_drift(answer: str | None, turns, hits) -> list:
     # bracketed form, which is also what the UI warning prints.
     # Both sides come from rag (CITE_TAG_RE, cite_tag), so corpus v3's
     # "[Regs reg. N]" shape needs no change here (H8a.2 F3; test_phase09_ops 8b).
-    cited =["[%s]" % t for t in rag.extract_citations(answer or "")]
+    cited = ["[%s]" % t for t in rag.extract_citations(answer or "")]
     return [tag for tag in cited if tag not in current and tag in earlier]

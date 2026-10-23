@@ -18,7 +18,8 @@ Moved from root `CLAUDE.md` by H8c (2026-10-22). The dated history behind each r
 
 ## Corpus
 
-- `doc_id ∈ {act2018, constitution1999, factsheet2020}`; every `Chunk`/`Hit` carries `(doc_id, ref)`
+- `doc_id ∈ {act2018, constitution1999, factsheet2020}` on v1/v2; corpus v3 (H8a.2, not shipping) appends `accessregs2023`
+  (`[Regs reg. N]`, `[Regs general]`); every `Chunk`/`Hit` carries `(doc_id, ref)`
   and `cite_tag()` (`src/retrieve.py`) is the only place tags are built. The doc list is hard-coded in
   more places than that (`retrieve.DOC_IDS`, `scripts/evalset.py` `DOC_IDS`, `rag.CITE_TAG_RE`,
   `verify_citations`' `doc_of`, the prompt's rule 1, `test_phase05.tag_re`): see
