@@ -9,9 +9,13 @@ Writes, deterministically and with ZERO network calls:
 SOURCES. AI answers come ONLY from three versioned transcripts already on disk
 (G2 single-turn, G4 multi-turn, G6 generator-refusal probes). No transcript stores
 excerpt TEXT, so the offline excerpts are recomputed here with the shipping
-display path, app.offline_legal_hits() (corpus v2, k=4/doc, top_n=12) -- exactly
-what a user sees with the AI expander OFF. G2 and G4 recorded the excerpt TAG list
-at the time; each row is compared against it and a difference is reported in the
+display path, app.offline_legal_hits() on the default corpus at its own budget --
+exactly what a user sees with the AI expander OFF. Since H8a.5 (2026-10-23) that is
+corpus v3 (+ Accessibility Regulations 2023), k=4/doc, top_n=16, and each row shows
+the fixed status note (rag.DOC_STATUS_NOTES) once, just before its first Regs excerpt,
+as the app does (F10: the lawyer reviews the system that would ship). The v2 pack the
+reviewer was first sent is kept verbatim as docs/review/h6_review_sheet_v2_2026-10-21.*. G2 and G4 recorded the excerpt TAG list
+at the time; each row's non-Regs tags (the AI never saw a Regs excerpt) are compared against it and a difference is reported in the
 .md (the corpus has had human-verified corrections since, e.g. Act cl. 1).
 A few offline-only rows (`authored-h6`) fill the Constitution / cross-document
 gap; their ai_answer is a fixed placeholder, never generated.
@@ -65,7 +69,7 @@ CATEGORIES = {
     "factsheet": "2020 Factsheet",
     "cross-document": "More than one document",
     "lay-pidgin": "Everyday wording (plain English or Pidgin)",
-    "off-corpus": "Outside the three documents",
+    "off-corpus": "Outside the four documents",
 }
 
 # Row-level warnings for AI answers recorded before a corpus correction. Each is
@@ -155,6 +159,16 @@ def answer_of(src: str, rec: dict):
     return ans, rec.get("llm_error")
 
 
+REGS = "accessregs2023"
+NOTE_LEAD = "About this source:"
+
+
+def note_md(note: str) -> str:
+    """The status note as the app displays it: lead bolded, text verbatim."""
+    return ("**%s**%s" % (NOTE_LEAD, note[len(NOTE_LEAD):])
+            if note.startswith(NOTE_LEAD) else note)
+
+
 def main() -> int:
     import app  # import-safe by contract (no server)
     import rag
@@ -162,6 +176,8 @@ def main() -> int:
 
     docs = rag.build_corpus()
     ret = PerDocRetriever(docs)
+    version, top_n = rag.CORPUS_VERSION, rag.default_top_n(ret)
+    NOTE = rag.DOC_STATUS_NOTES[REGS]
     src = load_sources()
     fails = []
 
@@ -232,7 +248,10 @@ def main() -> int:
             "ai_tags": ai_tags,
             "sheet_note": sheet_note,
             "recorded": recorded,
-            "recorded_match": None if recorded is None else recorded == shown,
+            # The AI transcripts were recorded on v2 and never saw a Regs excerpt,
+            # so the comparison is against today's NON-Regs tags.
+            "recorded_match": None if recorded is None else recorded == [
+                t for t, _, d, _ in excerpts if d != REGS],
             "_src": source, "_item": item,
         })
 
@@ -243,14 +262,23 @@ def main() -> int:
     buf = io.StringIO(newline="")
     w = csv.writer(buf)  # default dialect: CRLF, minimal quoting -- Excel-friendly
     w.writerow(cols)
+    def csv_join(excerpts):
+        out, noted = [], False
+        for t, txt, d, _ in excerpts:
+            if d == REGS and not noted:
+                out.append(NOTE)               # once, before the first Regs excerpt
+                noted = True
+            out.append("%s %s" % (t, txt))
+        return CSV_SEP.join(out)
+
     for r in rows:
-        exc = CSV_SEP.join("%s %s" % (t, txt) for t, txt, _, _ in r["excerpts"]) or NO_EXCERPTS
+        exc = csv_join(r["excerpts"]) or NO_EXCERPTS
         w.writerow([r["row_id"], r["source"], r["category"], r["question"], exc,
                     r["ai_answer"], "; ".join(r["ai_tags"]), r["sheet_note"],
                     "", "", "", "", "", ""])
     csv_text = buf.getvalue()
     for r in rows:
-        r["csv_excerpts"] = CSV_SEP.join("%s %s" % (t, txt) for t, txt, _, _ in r["excerpts"])
+        r["csv_excerpts"] = csv_join(r["excerpts"])
 
     # ---- MD ------------------------------------------------------------------
     md = []
@@ -264,10 +292,17 @@ def main() -> int:
     add("## A note for the reviewer")
     add("")
     add("Thank you for agreeing to read this. **DRLCA** is a free website that answers questions "
-        "about the rights of persons with disabilities in Nigeria. It answers only from three "
+        "about the rights of persons with disabilities in Nigeria. It answers only from four "
         "documents: the **Discrimination Against Persons with Disabilities (Prohibition) Act 2018**, "
-        "the **1999 Constitution**, and a **2020 Factsheet** that summarises the Act. It also points "
-        "people to the DRAC helplines and to disability organisations.")
+        "the **1999 Constitution**, a **2020 Factsheet** that summarises the Act, and (new in this "
+        "version of the sheet) the **Persons with Disabilities (Accessibility) Regulations, 2023** "
+        "(S.I. No. 51 of 2023). It also points people to the DRAC helplines and to disability "
+        "organisations.")
+    add("")
+    add("*This sheet replaces the earlier three-document version you may have received "
+        "(`h6_review_sheet_v2_2026-10-21`, kept unchanged). The questions and AI answers are the "
+        "same; the excerpts now come from the four documents, and there are four new questions "
+        "about the Regulations just below.*")
     add("")
     add("**What every user sees.** For each question the site shows short passages (\"excerpts\") "
         "taken word for word from the three documents. Each excerpt starts with a citation tag that "
@@ -276,19 +311,30 @@ def main() -> int:
     add("* `[Act cl. N]` \u2014 clause N of the Disability Act 2018")
     add("* `[Constitution s. N]` \u2014 section N of the 1999 Constitution")
     add("* `[Factsheet Section N]` \u2014 Section N of the 2020 Factsheet")
+    add("* `[Regs reg. N]` \u2014 regulation N of the Accessibility Regulations 2023 "
+        "(`[Regs general]` is their unnumbered opening text: title, commencement date and "
+        "enacting power)")
     add("")
-    add("These three numbering schemes are different: Act clause 12 and Constitution section 12 are "
-        "not the same provision. The excerpt text is copied exactly as it appears in our copy of "
+    add("These four numbering schemes are different: Act clause 12, Constitution section 12 and "
+        "regulation 12 are not the same provision. The excerpt text is copied exactly as it appears in our copy of "
         "each document, including any scanning errors (odd characters, broken words), because we "
         "never alter the source text without a human check. The site shows the first three excerpts "
         "and folds the rest under a \"more\" link.")
+    add("")
+    add("**A fixed note on the Regulations.** Whenever excerpts from the Regulations are shown, the "
+        "site shows one fixed, hand-written note about their legal status (\"About this source: "
+        "...\") once, just before the first Regulations excerpt, and reads it aloud there. It is "
+        "the same text every time and is never generated by the AI. It appears in this sheet "
+        "exactly where a user would see it.")
     add("")
     add("**The AI answer is optional.** A user can switch on an \"AI answer\" that writes a short "
         "plain-English answer from the excerpts, with a citation tag after each claim. It is "
         "**OFF by default**, so most users only ever see the excerpts. The AI answers in this sheet "
         "were recorded in September and October 2026 in our own tests. A refusal (\"I can't answer "
         "this from the Disability Act 2018, the 1999 Constitution, or the factsheet I have...\") is "
-        "the intended behaviour when the documents do not answer the question.")
+        "the intended behaviour when the documents do not answer the question. **The AI answers "
+        "were recorded before the Regulations were added, and the AI does not yet use the "
+        "Regulations excerpts** (the site says so next to the AI answer).")
     add("")
     add("**What we would like from you.** For each question below:")
     add("")
@@ -311,7 +357,8 @@ def main() -> int:
     add("**About the excerpts in this sheet.** No test record stored the excerpt text itself, so "
         "the excerpts for **all %d questions were recomputed when this sheet was built**, using the "
         "same search the live site uses. For %d questions we had kept the list of citation tags "
-        "shown at the time the AI answer was recorded: today's list is the same for %d of them "
+        "shown at the time the AI answer was recorded: leaving aside the new Regulations excerpts, "
+        "today's list is the same for %d of them "
         "(%s) and different for %d (%s). The other %d questions had no earlier list to compare "
         "(%s). Separately, the wording of a few Act clauses (for example clause 1) was corrected "
         "against the official text after some AI answers were recorded, so an AI answer may quote "
@@ -320,6 +367,56 @@ def main() -> int:
         % (len(rows), len(matches) + len(differs), len(matches), ", ".join(matches) or "none",
            len(differs), ", ".join(differs) or "none", len(no_record),
            ", ".join(no_record) or "none"))
+    add("")
+    n_words = len(NOTE.split())
+    n_regs_rows = sum(any(d == REGS for _, _, d, _ in r["excerpts"]) for r in rows)
+    n_regs_inline = sum(any(d == REGS for _, _, d, _ in r["excerpts"][:app.INLINE_EXCERPTS])
+                        for r in rows)
+    add("## Four questions about the Accessibility Regulations (new)")
+    add("")
+    add("Please answer these before the question-by-question part. Short answers are fine.")
+    add("")
+    add("**(i) The status note.** This is the exact text the site shows (and reads aloud) before "
+        "the first Regulations excerpt:")
+    add("")
+    add("> " + note_md(NOTE))
+    add("")
+    add("Is it legally accurate? Is anything in it wrong, overstated or missing (for example who "
+        "imposes the administrative penalty, and the relationship to penalties under the Act)?")
+    add("")
+    add("**Your answer:**")
+    add("")
+    add("&nbsp;")
+    add("")
+    add("**(ii) The commencement date.** The gazette prints \"[22nd day of May, 2023]\" beside the "
+        "marginal note \"Commencement.\", but the gazette itself was published on 7 July 2023 "
+        "(Official Gazette No. 122, Vol. 110). Is it right to tell users the Regulations commenced on "
+        "22 May 2023? If you know of any later amendment to the Regulations, please say so.")
+    add("")
+    add("**Your answer:**")
+    add("")
+    add("&nbsp;")
+    add("")
+    add("**(iii) How often the note appears.** The note is about %d words. The search shows a "
+        "Regulations excerpt for most questions, including many that are not about accessibility "
+        "(in our own test questions, about 86%% of turns; in this sheet, %d of %d questions, %d of "
+        "them among the first three excerpts). Is a note of this length acceptable on most answers, "
+        "or would you prefer a short one-line lead (for example \"These are binding regulations "
+        "made under the Act\") with the full text folded behind a \"more\" link?"
+        % (n_words, n_regs_rows, len(rows), n_regs_inline))
+    add("")
+    add("**Your answer:**")
+    add("")
+    add("&nbsp;")
+    add("")
+    add("**(iv) Quoting the texts.** May a free, non-commercial legal-information tool quote "
+        "Nigerian Acts and Statutory Instruments (here the Act 2018 gazette and S.I. No. 51 of "
+        "2023) verbatim, with citation? The project owner has signed off on this, and we would "
+        "welcome your view.")
+    add("")
+    add("**Your answer:**")
+    add("")
+    add("&nbsp;")
     add("")
     add("---")
     add("")
@@ -335,15 +432,22 @@ def main() -> int:
         if not r["excerpts"]:
             add(NO_EXCERPTS)
             add("")
-        for j, (tag, txt, _, _) in enumerate(r["excerpts"], 1):
+        noted = False
+        for j, (tag, txt, d, _) in enumerate(r["excerpts"], 1):
+            if d == REGS and not noted:
+                add("*Fixed note shown before the first Regulations excerpt:*")
+                add("")
+                add("> " + note_md(NOTE))
+                add("")
+                noted = True
             add("**%s** (excerpt %d of %d)" % (tag, j, len(r["excerpts"])))
             add("")
             for line in txt.split("\n"):
                 add(("> " + md_excerpt_line(line)).rstrip())
             add("")
         if r["recorded_match"] is False:
-            add("*Note: the excerpts shown when the AI answer below was recorded were slightly "
-                "different: %s.*" % ", ".join(r["recorded"]))
+            add("*Note: leaving aside the Regulations, the excerpts shown when the AI answer below "
+                "was recorded were slightly different: %s.*" % ", ".join(r["recorded"]))
             add("")
         add("### AI answer (optional feature, off by default)")
         add("")
@@ -374,10 +478,12 @@ def main() -> int:
         add("---")
         add("")
     add("*Technical note for the DRLCA team: generated by `scripts/build_h6_review.py` from %s; "
-        "corpus v2 chunk-stream sha256 `%s`; excerpts via `app.offline_legal_hits` "
-        "(k=4/doc, top_n=12). Zero network calls. A line-initial `N.` in excerpt text is written "
+        "corpus %s chunk-stream sha256 `%s`; excerpts via `app.offline_legal_hits` "
+        "(k=4/doc, top_n=%d); status note `rag.DOC_STATUS_NOTES[\"%s\"]` verbatim. Zero network "
+        "calls. A line-initial `N.` in excerpt text is written "
         "`N\\.` here so Markdown does not renumber it; the CSV holds the raw text.*"
-        % (", ".join("`%s`" % p for p in SOURCES.values()), corpus_sha256(docs)))
+        % (", ".join("`%s`" % p for p in SOURCES.values()), version, corpus_sha256(docs),
+           top_n, REGS))
     md_text = "\n".join(md) + "\n"
 
     # ---- checks --------------------------------------------------------------
@@ -421,6 +527,25 @@ def main() -> int:
         hits = CONTROL_RE.findall(text)
         check(not hits, "%s has no control characters%s" % (name, "" if not hits
                                                             else ": %r" % sorted(set(hits))))
+    # H8a.5 (F10): the note is in the reviewer block verbatim, and in every row that
+    # shows a Regs excerpt exactly once, immediately before the first one.
+    nm = "> " + note_md(NOTE)
+    misplaced = []
+    for r in rows:
+        regs = [j for j, (_, _, d, _) in enumerate(r["excerpts"]) if d == REGS]
+        want = 1 if regs else 0
+        if r["csv_excerpts"].count(NOTE) != want:
+            misplaced.append(r["row_id"])
+        elif regs and r["csv_excerpts"].split(CSV_SEP)[regs[0]] != NOTE:
+            misplaced.append(r["row_id"])
+    check(version == "v3" and top_n == 16, "pack built on %s at top_n=%d" % (version, top_n))
+    check(not misplaced and md_text.count(nm) == n_regs_rows + 1 and n_regs_rows > 0,
+          "status note verbatim: reviewer block + once per Regs row before its first Regs "
+          "excerpt (%d rows)%s" % (n_regs_rows, "" if not misplaced else ": %s" % misplaced))
+    check(all(q in md_text for q in ("**(i) The status note.**", "**(ii) The commencement date.**",
+                                     "**(iii) How often the note appears.**",
+                                     "**(iv) Quoting the texts.**")),
+          "reviewer question block (i)-(iv) present")
     build_fails = [f for f in fails if ":" in f and ("cite_tag" in f or "citations" in f)]
     check(not build_fails, "build-time tag/citation consistency%s"
           % ("" if not build_fails else ": %s" % build_fails))
