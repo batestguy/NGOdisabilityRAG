@@ -71,6 +71,30 @@ PROMPT_VERSION = "cite-strict-v3"
 # branch merges.
 CORPUS_VERSION = "v2"
 
+# H8a-R: FIXED status notes, one per doc that needs one -- never generated.
+# Status facts (what kind of law, who made it, since when, what enforcement)
+# sit in unnumbered front matter or one-line clauses that retrieval ranks low
+# (H8a.3 G5), so they are carried here as hand-verified text instead of hoped
+# for in the excerpts. Every fact was read from the gazette (S.I. 51 of 2023,
+# p.9 enacting formula and commencement date; regs. 168-169) or the Act v2
+# text (cl. 8, cl. 56) on 2026-10-23. Tags are verbatim cite_tag() shapes so
+# verify_citations can check them. NOT shipped until H8a.4 renders it and the
+# H6 legal reviewer has read it. Owner-signed text only: do not reword freely.
+DOC_STATUS_NOTES = {
+    "accessregs2023": (
+        "About this source: the Persons with Disabilities (Accessibility) "
+        "Regulations, 2023 (S.I. No. 51 of 2023) are regulations, not an Act of "
+        "the National Assembly. The Governing Council of the National Commission "
+        "for Persons with Disabilities made them under section 56 of the "
+        "Disability Act [Act cl. 56], and they started on 22 May 2023. A breach "
+        "can lead to an administrative penalty from the Commission of at least "
+        "N 500,000, or at least N 2,000,000 for a company or government body "
+        "[Regs reg. 168], and the Commission may seal off a building after a "
+        "90-day notice [Regs reg. 169]. You can also complain to the authority in "
+        "charge of the place; that does not stop you going to court [Act cl. 8]."
+    ),
+}
+
 # Sizes pinned from Phase 01: Act section-aware 800; Constitution
 # chapter-aware RECOMMENDED 400 (Q9 needs <=400 to pass 0.16);
 # Factsheet recursive 500/50.

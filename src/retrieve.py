@@ -575,19 +575,31 @@ class PerDocRetriever:
             for doc_id, chunks in docs.items()
         }
 
-    def _merged(self, q: str, k: int) -> list[Hit]:
-        """Top-k from each doc, merged and sorted. No expansion, no gating."""
+    def _merged(self, q: str, k: int, k_by_doc: dict | None = None) -> list[Hit]:
+        """Top-k from each doc, merged and sorted. No expansion, no gating.
+
+        k_by_doc overrides k for the docs it names (H8a-R arm R-b: the 221-chunk
+        Regulations index at k=6 while the others stay at 4). None -- every
+        shipping caller -- is the unchanged path. The refusal decision cannot
+        move: every doc still contributes its own top hit, so the global max of
+        the merge is the same for any k >= 1.
+        """
         hits: list[Hit] = []
         for doc_id, chunks in self.docs.items():
-            for i, s, _ in self.sub[doc_id].query(q, k=k):
+            kd = k if k_by_doc is None else k_by_doc.get(doc_id, k)
+            for i, s, _ in self.sub[doc_id].query(q, k=kd):
                 hits.append(Hit(chunks[i].doc_id, chunks[i].ref, chunks[i].text, s))
         hits.sort(key=lambda h: h.score, reverse=True)
         return hits
 
     def query(
-        self, q: str, k: int | None = None, min_score: float | None = None
+        self, q: str, k: int | None = None, min_score: float | None = None,
+        k_by_doc: dict | None = None,
     ) -> list[Hit]:
         """Top-k hits from EACH doc, merged and sorted by score desc.
+
+        k_by_doc: per-doc override of k, see _merged(). Measurement-only until
+        an arm using it ships; no shipping caller passes it.
 
         min_score is the floor the EXPANSION GATE below consults; it does not
         filter the returned hits (retrieve() does that). It is threaded
@@ -648,7 +660,7 @@ class PerDocRetriever:
         """
         k = self.k_default if k is None else k
         floor = MIN_SCORE if min_score is None else min_score
-        base = self._merged(q, k)
+        base = self._merged(q, k, k_by_doc)
         if not base or base[0].score < floor:
             return base                      # entry gate
         # The v2 pick keeps the one-argument call verbatim: the ablation
@@ -661,7 +673,7 @@ class PerDocRetriever:
             expanded = expand_query(q, bridge=self.oov_bridge)
         if expanded == q:
             return base
-        hits = self._merged(expanded, k)
+        hits = self._merged(expanded, k, k_by_doc)
         if not hits or hits[0].score < floor:
             return base                      # exit gate
         return hits

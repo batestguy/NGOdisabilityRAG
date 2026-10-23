@@ -176,6 +176,36 @@ for the chosen arm only.**
 **Do not:** read `test` (its cleanliness is an open owner decision as of 2026-10-21); tune anything after
 reading `test2`/`test3`; change `SYNONYMS` (it moves `calibrate_refusal` off its 212 probes).
 
+### H8a-R — reopened measurement (owner reopened H8a on 2026-10-23). Gate fixed here, before any number
+
+H8a.3 declined both v3 arms. v3-16 held existing law exactly but failed reach (0.583) and status evidence (G5). A rank
+diagnostic on the **already-read** dev set split the misses into two kinds: just below the k=4 cut (ranks 4–9), and
+vocabulary gap (ranks 17–30, scores ≤ 0.04). Because these ideas came from reading dev, selection moves to a **fresh
+`accessregs-dev2`** (10 q, `a41606b`, committed before any arm existed). `accessregs-dev` is reported, never gated.
+`test2` and `test3` are still unread.
+
+**Arms** (MIN_SCORE unchanged; `scripts/eval_h8aR.py`):
+* `control` v2 k=4 top_n=12.
+* `R-a` v3 k=4 top_n=16 plus the fixed status note.
+* `R-b` = R-a, but the Regulations index uses k=6 and top_n=18 (`PerDocRetriever.query(k_by_doc=)`, unused by any
+  shipping caller). It is 18 candidates against 18 slots, so there is no cut.
+* The vocabulary gap gets **no** lever: that is the E2/E3/F0 family, and `SYNONYMS` stays frozen.
+
+**Status note.** `rag.DOC_STATUS_NOTES["accessregs2023"]` is fixed, hand-verified text (S.I. 51; made under s. 56
+[Act cl. 56]; commenced 22 May 2023; administrative penalties [Regs reg. 168]; sealing [Regs reg. 169]; complaint without
+prejudice to court [Act cl. 8]). It renders in H8a.4, and the H6 legal reviewer reads it before any ship.
+
+**Gate:**
+* **G1–G4 are unchanged from H8a.3.** G2 adds dev2. G3 is now ≥ 0.60 on **dev2**.
+* **G5′ replaces G5:** the note states the five facts; every tag in it matches `CITE_TAG_RE` and names a ref present in v3;
+  every status probe is answered. Status-probe recall is **reported, no longer gated**. This change is deliberate and is
+  made before any reopened number, because the note now carries the status facts.
+* **G6:** prefer R-a; take R-b only if R-a fails nothing but G3 and R-b passes everything.
+* The blind stage (test2 + test3) runs once, for the chosen arm only, using the same marker file as H8a.3.
+
+**Display cost of R-b:** up to 18 cards instead of 12. `INLINE_EXCERPTS` stays 3, so the fold grows. Record it if R-b
+wins.
+
 ### H8a.4 — UI: per-document status note (zero quota)
 
 * Each excerpt card from the new doc carries a short plain-language status line (e.g. "Lagos State law:
