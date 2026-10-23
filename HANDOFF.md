@@ -32,21 +32,28 @@ egs_compact.txt` (gitignored).
 >   * The reviewer's verdict is SOUND-WITH-CAVEATS. The note was reworded after review and **needs H6 sign-off**.
 >   * The blind marker is written: **test3 is spent**.
 >
-> **Next session:**
-> 1. **H8a.4 (zero quota):**
->    * render `rag.DOC_STATUS_NOTES` on `accessregs2023` cards only, through the shared render helper; read-aloud says
->      "naira";
->    * top_n=16 for v3 in `rag.ask` / `app.offline_legal_hits`;
->    * `test_phase05` asserts the note renders for this doc only;
->    * re-run the axe and keyboard checks (read `.claude/rules/ui.md` first).
+> * **H8a.4 DONE** (`fb6ad40` + review fixes; reviewer: ship to next step).
+>   * The note renders once before the first Regs card, in live and replay, and is spoken with "naira".
+>   * Budget: v3 → 16.
+>   * Regs and the note are kept out of every LLM prompt and citation check, and the AI expander says so.
+>   * v2 is byte-identical. Browser check on a temporary local v3: axe 0, keyboard unchanged.
 >
->    Keep Regs chunks and the note out of the LLM context until H8a.6.
-> 2. **Owner:**
->    * send the note text with the H6 sheet; open item: commencement 22 May vs gazette 7 July 2023;
->    * quota days for H8a.6 (`cite-strict-v4`);
->    * the merge waits for H6 (F10).
-> 3. Decide whether `k_by_doc` (used only by R-b) is removed before merge.
-> 4. H9a whenever approved. H7 week-1 read on/after 2026-10-28.
+> **Next session:**
+> 1. **H8a.5 cut-over (zero quota, branch only, NOT merged):**
+>    * flip `CORPUS_VERSION = "v3"`;
+>    * re-run every suite and harness; the harnesses pinning 12 are listed in playbook 17's H8a.4 Results, and
+>      `probe_gen_refusal` must use `llm_context_hits`;
+>    * write `scripts/baseline_v3_<date>.txt`;
+>    * re-pin anything keyed on the shipping version;
+>    * keep the LLM exclusion.
+>
+>    Read `.claude/rules/retrieval.md` first. Never read `test`; test3 is spent.
+> 2. **Owner / H6:**
+>    * the note text (commencement 22 May vs gazette 7 July 2023);
+>    * whether the 110-word note on ~86% of v3 turns is acceptable;
+>    * the H6 sheet must be regenerated on v3 or returned before merge (F10).
+> 3. Quota days for H8a.6 (`cite-strict-v4`), which lifts the LLM exclusion.
+> 4. Decide on `k_by_doc` (used only by R-b). H9a whenever approved. H7 read on/after 2026-10-28.
 >
 > **Still open (unchanged from 2026-10-22):** the H7 week-1 read is on/after **2026-10-28** (discount the 4 smoke ids).
 > **Owner:** approve H9a and decide on `via=suggestion`; is `test` still clean?; send the H6 sheet; H5b needs quota days and

@@ -249,6 +249,39 @@ question shows the same tags as the local measurement.
 
 ## Results
 
+> **H8a.4 — 2026-10-23, DONE (zero quota; executor, then reviewer: "ship to next step"). `fb6ad40` + a review-fix commit.**
+> Under v2 everything is byte-identical: fingerprint, `eval_h8aR` dev stage, calibrate 0/212, all suites. `test_phase05`
+> went 181 → 192 and `test_phase09_ops` 81 → 95.
+> * **Budget:** `rag.TOP_N_BY_VERSION` = {v1: 12, v2: 12, v3: 16} with k = 4, and `top_n == k × n_docs` asserted.
+>   `rag.ask` / `app.offline_legal_hits` default to the budget of the retriever's own docs.
+>   * Harnesses that pin 12 were left alone and must be re-run at H8a.5: `eval_heldout`, `eval_chat`, `ablate_phase08`,
+>     `ablate_oov_bridge`, `eval_phase06`, `judge_phase06`, `probe_gen_refusal`.
+>   * `probe_gen_refusal` must also apply `llm_context_hits`.
+> * **LLM exclusion:** `rag.LLM_EXCLUDED_DOCS = {"accessregs2023"}` through `llm_context_hits()`, applied to the prompt,
+>   `verify_citations`, chat, failover and `_run_ai_turn`. The status note never reaches a prompt.
+>   * When only Regs hits remain, the turn makes no model call; it stays pending with an `llm_error`, never faked.
+>   * The reviewer found no leak path (history carries no excerpts; the cache key is the Regs-free prompt).
+>   * After review, the AI expander now **says** it does not use the Regs excerpts. This is a caption with a behavioural
+>     test, and a no-op on v2.
+> * **Status note:**
+>   * It renders once per turn, immediately before the first `accessregs2023` card, inline or in the fold, through the
+>     shared helper, so live and replay are identical.
+>   * **Deviation from "on each card" (decided):** the note is about 110 words, and repeating it on up to 4 cards would
+>     burden a screen reader.
+>   * The displayed text is verbatim ("N 500,000"); read-aloud speaks it once at the same point with "500,000 naira".
+> * **Browser check on a local temporary v3** (reverted, never committed):
+>   * axe matrix 0 violations over 33 scans;
+>   * keyboard stops the same as v2, and the note adds no tab stop;
+>   * focus returns to the chat input;
+>   * screenshots are in `runs\h8a4\note_check_v3\`.
+>
+>   The note inside the fold was unit-tested only.
+> * **Product finding, for H6:** on v3, 36 of 42 dev/frozen turns retrieve a Regs card, so the note shows on about 86% of
+>   turns. It is visible without a click on about 40%, and read-aloud speaks it on about 86%.
+>   * Even an employment question puts a Regs card at the top, which is a retrieval-precision matter.
+>   * The reviewer recommends keeping the note next to the card as built, and asking H6 explicitly: is a 110-word note
+>     acceptable on most turns, or is a short lead plus a folded full text wanted?
+
 > **H8a-R — 2026-10-23, SHIP GATE MET for arm R-a (zero quota; reviewer: SOUND-WITH-CAVEATS, nothing blocking).**
 > The order is in git: dev2 `a41606b`, then gate + harness `95bc165`, then the dev stage, then the one blind read.
 > Outputs: `scripts/h8aR_dev_stage_2026-10-23.txt`, `scripts/h8aR_blind_2026-10-23.txt`. The marker `runs\h8a3\BLIND_READ`

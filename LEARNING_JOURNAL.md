@@ -3656,3 +3656,19 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   H6.
 - I also wrongly called `test2` "unread"; it was read in E5.3. State a held-out set's history, not just this phase's
   view of it.
+
+## 2026-10-23 — H8a.4: a disclosure that is right can still be too frequent
+
+- The status note now travels with the first Regulations card of a turn, live and replayed, and is spoken with "naira"
+  for the gazette's "N". The playbook pictured a line on every card. At about 110 words, once per turn was the
+  accessible choice.
+- **Exclusion by construction, then disclosure.** Keeping Regs out of the LLM until a prompt is validated on the new tag
+  shape (H8a.6) was correct, but silent. The reviewer caught the consequence: the AI answer could refuse while Regs
+  cards that answer the question sit just above it. Hiding an input from a model needs a visible sentence to the user,
+  not just a test.
+- **Frequency is a product property the gate never measured.** About 86% of v3 dev/frozen turns retrieve a Regs card,
+  so the note appears on most turns, including an employment question whose top card is a Regulation. Retrieval
+  precision, not the note, drives that. It goes to H6 as an explicit question rather than being pre-solved by rewording
+  signed text.
+- A small regex lesson: `\bN (\d[\d,]*)` swallowed the comma in "N 500,000, and", which is spoken badly. Anchoring the
+  match on a final digit fixed it. The executor found it by listening to the output, not by reading it.

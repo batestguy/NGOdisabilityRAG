@@ -29,13 +29,15 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 
 ## Open
 
-- **Active: H8 — `docs/phases/17_h8_corpus_expansion.md` (H8a-R passed; H8a.4 next).** H8c + H8b DONE and live. H8a.0 DONE: the owner
+- **Active: H8 — `docs/phases/17_h8_corpus_expansion.md` (H8a-R passed; H8a.4 done; H8a.5 next).** H8c + H8b DONE and live. H8a.0 DONE: the owner
   chose + signed the **Accessibility Regulations 2023 (S.I. 51)** (`docs/h8a_source_dossier.md`; PDF in `data/raw/`).
   H8a.1 DONE 2026-10-23: `data/eval/questions_accessregs.json` (dev 8 / blind `test3` 12 / status 6), committed
   before any parser as `af3129e`. H8a.2 DONE 2026-10-23 (reviewed): corpus v3 = v2 + `accessregs2023` (221 chunks, `[Regs reg. N]`, pin
   `f13b9678…`, version-keyed OOV bridge); v2 proven bit-identical; `CORPUS_VERSION` still v2. H8a.3 declined at the dev stage; owner reopened → **H8a-R SHIP GATE MET for R-a** (v3, k=4, top_n=16 + fixed status
   note): existing law identical (frozen-10/dev/test2), fresh dev2 0.800, blind test3 0.875, 0 false refusals; off-corpus
-  answered 13 → 14/17. **Next: H8a.4** (render note, top_n=16 for v3). Note text and merge wait for H6 sign-off.
+  answered 13 → 14/17. H8a.4 DONE (note renders once before the first Regs card;
+  v3 budget 16; Regs excluded from the LLM; v2 byte-identical). **Next: H8a.5** (v3 cut-over: flip `CORPUS_VERSION`, re-run
+  harnesses, v3 baseline). Note text, note frequency (~86% of v3 turns) and merge wait for H6.
 - **Queued: H9 deterministic follow-ups** (`docs/phases/18_h9_deterministic_followups.md`): H9a suggested questions
   (low risk, can run while H8a waits on H6); H9b extractive key lines (after H6 + the H7 read). Owner approval pending.
 - **H7 week-1 read on/after 2026-10-28** (command in `HANDOFF.md`; discount 4 smoke ids).
