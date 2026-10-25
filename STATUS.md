@@ -10,8 +10,10 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
   DRAC Toll-Free 08000-3000-100", no WhatsApp anywhere, the notice says "number above", WCAG axe `[]`).
 - **Helpline: DRAC Toll-Free only** (owner decision 2026-10-25). The WhatsApp `08000-3000-10` was removed because it
   is not on drac-ng.org. No office line.
-- README rewritten with 6 screenshots + a 44 s demo (`docs/media/`, reproducible via
-  `tools/a11y_audit/capture_readme_media.mjs`, local runs only).
+- README: 7 screenshots + a 59 s demo that includes the plain-language AI answer (PR #23, `8c4665d`, live). Media lives in
+  `docs/media/`; reproduce with `tools/a11y_audit/capture_readme_media.mjs` (`--with-ai` spends 1 call), local runs only.
+  **PR #24** (badges + author section) is open with CI green; the owner merges it. The repo's About box now has the homepage,
+  description and 10 topics. Profile README (`batestguy/batestguy`): DRLCA row updated and 3 corrupted emoji fixed (`44f3d66`).
 - Live since PR #21: the not-legal-advice notice (+ Hausa/Igbo/Yorùbá, not native-checked), an interface-language
   switcher (EN/HA/IG/YO, interface only, the law stays English), and high-contrast fixes.
 - Multi-turn chat; helplines first on the page and on every turn; offline by default; Gemini AI expander
