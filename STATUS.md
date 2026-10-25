@@ -39,7 +39,7 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
   v3 budget 16; Regs excluded from the LLM; v2 byte-identical). **H8a.5 DONE** (reviewed 2026-10-25; `CORPUS_VERSION = "v3"`; `scripts/baseline_v3_2026-10-23.txt` + errata; OFF12 answered on v3 is open and pinned). **Next:** H6-S.2 → H6-S.3, H8a.6 on booked free quota days, H8a.7.
 - **Owner rule (2026-10-25): zero cost, self-review first** (`docs/phases/19_zero_cost_self_review.md`). External legal
   and language review deferred to a grant-funded phase F. **H6-S** (disclosure line, fixed-text traceability, agent
-  self-review of the H6 sheet) replaces H6 as the gate. H6-S.1 (the "not legal advice" line) is built on `phase11/h6s-disclosure`, awaiting the owner's merge word.
+  self-review of the H6 sheet) replaces H6 as the gate. H6-S.1 (the "not legal advice" line, + Hausa/Igbo/Yorùbá versions, not native-checked) is built on `phase11/h6s-disclosure`, awaiting the owner's merge word.
 - **Queued: H9 deterministic follow-ups** (`docs/phases/18_h9_deterministic_followups.md`): H9a suggested questions
   (low risk, can run while H8a waits on H6); H9b extractive key lines (after H6 + the H7 read). Owner approval pending.
 - **H7 week-1 read on/after 2026-10-28** (command in `HANDOFF.md`; discount 4 smoke ids).

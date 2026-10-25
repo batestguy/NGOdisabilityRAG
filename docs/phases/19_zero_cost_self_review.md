@@ -117,3 +117,12 @@ language ships as "supported" before F2. Do not spend quota on it now. The owner
 >   only), skip link topmost at 390 px and in HC, no page errors. DOM text order: title → banner → notice.
 > * Not done: a spoken read-aloud copy (screen readers read the caption as page text; the per-turn read-aloud button
 >   is for answers). Merging deploys, so it waits for the owner's word.
+>
+> **H6-S.1 + translations — 2026-10-25 (`c025a73`, same branch, not merged).** At the owner's request the notice also
+> appears in **Hausa, Igbo and Yorùbá**, in a collapsed expander right after the English line. Each paragraph has its
+> own `lang` (ha/ig/yo) so screen readers switch voice. The expander is labelled *"Translated by this project and not
+> yet checked by a native speaker. If a translation and the English differ, follow the English."*
+> * This is **fixed text only**. No answer is translated, so H5b stays deferred. The native-speaker check of these
+>   three paragraphs joins F2.
+> * Checks: `test_phase05` 187/187 (+4). Axe matrix 0 over 33 cells. Expander opened with Enter on its summary: open,
+>   focus kept, WCAG axe `[]`. Screenshots at 1280 and 360 px in `runs\h6s1_tr\` show the diacritics render.
