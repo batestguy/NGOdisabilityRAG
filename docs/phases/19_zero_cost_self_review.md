@@ -154,3 +154,24 @@ language ships as "supported" before F2. Do not spend quota on it now. The owner
 >   "Read answer aloud", "Was this answer helpful?" plus Yes/No (they are telemetry values, so only `format_func` may
 >   change them), the privacy note, the NGO filters, the AI expander and the title. Read-aloud stays English
 >   (`en-NG` voice).
+>
+> **H6-S.2 — 2026-10-25, PASS (`f7e02b2`, branch `phase11/h8a-accessregs`, where the note lives).**
+> `scripts/audit_fixed_text.py` keeps a claim ledger for `rag.DOC_STATUS_NOTES`. The ledger has 10 claims: 3 verbatim,
+> 6 declared paraphrases (each with a `why`) and 1 interpretive. Every evidence phrase is found in its cited chunk,
+> matching case-, space- and punctuation-insensitively because the gazette OCR runs words together. The corpus text is
+> untouched. The audit also checks tags, every printed number, and sentence coverage. It runs in CI.
+> * **Finding 1, fixed:** the S.I. number, the Governing Council and the 22 May 2023 commencement come from the
+>   Regulations' enacting formula, but the note never showed that source's tag. That broke the invariant that every
+>   legal claim carries a tag. `[Regs general]` was added after both sentences; no word was changed. The H6 sheet was
+>   regenerated (note text only).
+> * **Finding 2, owner / F1:** "subsidiary legislation with legal force" is a legal characterisation that no source
+>   sentence states. It is listed as UNTRACEABLE on every run, not failed, because the text is owner-signed.
+> * **Paraphrases recorded:** "breaks them" stands for "contravenes the provisions of these Regulations"; "regardless
+>   of" for "notwithstanding"; "place" for "built environment" (the 90-day notice goes to the owner, manager, occupier
+>   or developer); "without giving up your right to go to court" for "without prejudice to his right to seek redress in
+>   court". cl. 8(1) is "Subject to section 7", which the note omits.
+> * **Break tests:** each of these FAILs: 500,000 → 50,000; 90-day → 30-day; a dropped `[Regs reg. 169]`; an
+>   unledgered sentence with a new figure. Changing the note and the ledger together still FAILs, because the evidence
+>   must exist in the source.
+> * **Regression:** `test_phase05` 194/194; 03/04/09_ops ALL PASS; `audit_corpus` PASS; `eval_h8aR` G5′ PASS, and its
+>   dev stage is identical to `scripts/h8aR_dev_stage_2026-10-23.txt`.

@@ -3703,3 +3703,15 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   "Not loaded" meant "parsed and dropped". "Identical" meant "identical at one budget". A nonsense question that v3 now
   answers was disclosed, but nothing in the suite would notice if it changed. A characterisation assert fixes that last
   one: it pins a known defect so it cannot drift silently, without pretending the defect is fine.
+
+## 2026-10-25 — A ledger finds what a reviewer would have asked
+
+- The first run of the traceability audit found that the status note's opening facts (the S.I. number, who made the
+  Regulations, the commencement date) had no tag for the document they came from. People had read the note several
+  times and nobody noticed, because the facts were correct. The audit asks a narrower question, "where does the user
+  see the source?", and that question has an exact answer.
+- Splitting claims into verbatim, paraphrase and interpretive made the one real legal judgement in the note visible
+  ("subsidiary legislation with legal force"). A script cannot settle that, so it reports it on every run instead of
+  passing it silently.
+- The same session showed a test-tool trap: adding a radio group ahead of an existing one silently redirected two audit
+  scripts that used "the first checked radio". Address a control by its label, never by its position.

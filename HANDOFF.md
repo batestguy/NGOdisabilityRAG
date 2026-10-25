@@ -36,7 +36,8 @@
 >    lawyer has checked it" line, plus Hausa/Igbo/Yorùbá versions labelled not native-checked, plus the high-contrast
 >    fixes (tooltip, `?` icons, expander, captions) from the owner's screenshot.
 >    **Plus an interface-language switcher** (EN/HA/IG/YO, chrome only, the law stays English; playbook 19 Results). **Owner: reword it if you like, then say whether to merge. Merging deploys.**
-> 3. **H6-S.2** `scripts/audit_fixed_text.py`: every claim in the Regs status note is traced verbatim to its source chunk.
+> 3. ~~H6-S.2~~ **PASS 2026-10-25** (`f7e02b2`): the audit is in CI. The note gained its missing `[Regs general]` tags.
+>    **Owner:** keep or drop "subsidiary legislation with legal force", which no source states (listed UNTRACEABLE).
 > 4. **On/after 2026-10-28: H7 week-1 read** (discount the 4 smoke ids below).
 > 5. **H6-S.3** agent self-review of the H6 sheet, harmful-first, with a quote for each verdict.
 > 6. **Owner: book free quota days for H8a.6** (~30 calls, one clean day, no `--failover`). Then H8a.7 merge on the

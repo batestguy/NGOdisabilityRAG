@@ -27,6 +27,7 @@ C:\conda-envs\drlca-rag\python.exe scripts\test_phase04.py         # Intent rout
 C:\conda-envs\drlca-rag\python.exe scripts\test_phase05.py         # UI script-level + source-text asserts
 C:\conda-envs\drlca-rag\python.exe scripts\test_phase09_ops.py     # ops/chat/telemetry invariants, zero network
 C:\conda-envs\drlca-rag\python.exe scripts\audit_corpus.py         # corpus shape gate + v1 regression tripwire
+C:\conda-envs\drlca-rag\python.exe scripts\audit_fixed_text.py     # H6-S.2: every fact in the status note traced to its chunk
 C:\conda-envs\drlca-rag\python.exe scripts\eval_heldout.py         # held-out retrieval baseline (+ recall_strict, + test2 on v2)
 C:\conda-envs\drlca-rag\python.exe scripts\eval_chat.py            # multi-turn set
 C:\conda-envs\drlca-rag\python.exe scripts\calibrate_refusal.py    # refusal invariance, 212 probes, 0 disagreements
