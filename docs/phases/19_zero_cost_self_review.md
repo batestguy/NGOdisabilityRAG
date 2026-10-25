@@ -134,3 +134,23 @@ language ships as "supported" before F2. Do not spend quota on it now. The owner
 > Computed styles were verified in light and dark themes. `test_phase05` 188/188, axe matrix 0, `minor_check` clean.
 > **Lesson:** axe passes 60% grey on black (about 7:1), but an HC user asked for full strength. The owner's eyes caught
 > what the gate allowed.
+>
+> **Interface-language switcher — 2026-10-25 (`e51ad50` + `44aad57`, same branch, not merged; owner request).**
+> `src/ui_i18n.py` covers English, Hausa, Igbo and Yorùbá. It is **chrome only**: the sidebar headings and control labels,
+> the banner wording, the instructions, the answer headings, the voice expander and the chat placeholder.
+> * **Never translated:** the law (excerpts are marked `lang="en"`, and a translated line says the law is quoted in its
+>   official English text), citation tags, helpline numbers, and answers. H5b stays deferred.
+> * **How state survives a switch:** a sidebar radio comes first, with a stable multilingual label and code options. Every
+>   translated control carries `key=` (new: `hc`, `font-size`). The route radio keeps English values with
+>   `format_func=T`. `<html lang>` follows the choice through the theme-watch loop.
+> * **Labelling:** a non-English UI shows the translated notice plus "translated by this project, not native-checked".
+> * **Checks:** `test_phase05` 197/197 (+9 i18n asserts: every key used and complete; no digits, DRAC or tags in any
+>   translation; the law is never passed to `T`; the selector comes first; state keys present). Axe matrix 0. In a
+>   Playwright run, switching by keyboard (ArrowRight) kept focus on the radio, kept HC and the route, and set
+>   `lang=ha`. A Yorùbá-UI legal turn showed English excerpts with `lang=en`, unchanged tags, and WCAG axe `[]`.
+> * **Tooling fix the switcher exposed:** `minor_check.mjs` and `live_smoke_a11y.mjs` drove the *first* checked sidebar
+>   radio, which is now the language picker. They are now scoped to the route group, and `minor_check` passes in full again.
+> * **Still English (next pass):** help tooltips, the "Next question" caption, "I treated this as…", "Switch to …",
+>   "Read answer aloud", "Was this answer helpful?" plus Yes/No (they are telemetry values, so only `format_func` may
+>   change them), the privacy note, the NGO filters, the AI expander and the title. Read-aloud stays English
+>   (`en-NG` voice).
