@@ -25,7 +25,8 @@
 > 1. ~~Reviewer pass on H8a.5~~ **DONE 2026-10-25**: ship to next step; review fixes committed; branch pushed. Open:
 >    OFF12 is answered on v3 (pinned by `off12-v3-characterised-answered`), so diagnose the v3 bridge terms (zero quota).
 > 2. **H6-S.1 BUILT** on `phase11/h6s-disclosure` (`b2bac54` + `c025a73`, pushed, not merged): the "not legal advice / no
->    lawyer has checked it" line, plus Hausa/Igbo/Yorùbá versions labelled not native-checked. **Owner: reword it if you like, then say whether to merge. Merging deploys.**
+>    lawyer has checked it" line, plus Hausa/Igbo/Yorùbá versions labelled not native-checked, plus the high-contrast
+>    fixes (tooltip, `?` icons, expander, captions) from the owner's screenshot. **Owner: reword it if you like, then say whether to merge. Merging deploys.**
 > 3. **H6-S.2** `scripts/audit_fixed_text.py`: every claim in the Regs status note is traced verbatim to its source chunk.
 > 4. **On/after 2026-10-28: H7 week-1 read** (discount the 4 smoke ids below).
 > 5. **H6-S.3** agent self-review of the H6 sheet, harmful-first, with a quote for each verdict.

@@ -126,3 +126,11 @@ language ships as "supported" before F2. Do not spend quota on it now. The owner
 >   three paragraphs joins F2.
 > * Checks: `test_phase05` 187/187 (+4). Axe matrix 0 over 33 cells. Expander opened with Enter on its summary: open,
 >   focus kept, WCAG axe `[]`. Screenshots at 1280 and 360 px in `runs\h6s1_tr\` show the diacritics render.
+>
+> **High-contrast fix — 2026-10-25 (same branch).** The owner's screenshot showed the HC help tooltip as white on white.
+> Playwright measured four defects that had been there since before H6-S: the tooltip surface `#f6f8fa`; the `?` icon
+> strokes `rgba(13,17,23,.6)` on black, so the icons were invisible; the expander header's surface not pinned; and
+> captions at opacity 0.6, which included the new notice. All four are now pinned black/white in the HC overlay.
+> Computed styles were verified in light and dark themes. `test_phase05` 188/188, axe matrix 0, `minor_check` clean.
+> **Lesson:** axe passes 60% grey on black (about 7:1), but an HC user asked for full strength. The owner's eyes caught
+> what the gate allowed.
