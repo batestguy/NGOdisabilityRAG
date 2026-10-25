@@ -23,6 +23,10 @@ import chat  # noqa: E402  (contextualise / merge_help_slots / drift -- offline,
 from chat import TurnPayload  # noqa: E402  (the stored unit of conversation)
 import telemetry  # noqa: E402  (H7: counts-only stdout lines; no network, no file)
 from ngo import DRAC_TOLLFREE, DRAC_WHATSAPP  # noqa: E402
+# Interface-language switcher (owner 2026-10-25): chrome only, never the law.
+from ui_i18n import (  # noqa: E402
+    LANG_CODES, LANG_KEY, LANG_LABEL, LANG_NAMES, UI_TRANSLATION_CAVEAT, T,
+    current_lang)
 # H8b (2026-10-22): the shared render helpers live in src/ui_render.py. Every
 # moved name is re-exported here so `app.<name>` (scripts, test_phase05) and
 # inspect.getsource(app.<name>) keep working. ui_render never imports app.
@@ -48,9 +52,52 @@ HELPLINE_BANNER_TEXT = (
 def helpline_banner_markdown() -> str:
     """Banner text; both DRAC numbers must appear BEFORE any answer text."""
     return (
-        "**National helplines:** DRAC Toll-Free `%s` | DRAC WhatsApp `%s`"
-        % (DRAC_TOLLFREE, DRAC_WHATSAPP)
+        "**%s** DRAC Toll-Free `%s` | DRAC WhatsApp `%s`"
+        % (T("National helplines:"), DRAC_TOLLFREE, DRAC_WHATSAPP)
     )
+
+
+# H6-S.1 (docs/phases/19_zero_cost_self_review.md): no lawyer has reviewed
+# DRLCA, so the page says so -- once, directly AFTER the helpline banner
+# (helplines stay first), and again inside the AI expander. Never claim review.
+LEGAL_INFO_NOTICE = (
+    "This site gives general information from the text of Nigerian law. "
+    "It is not legal advice, and no lawyer has checked it yet. For help with "
+    "your own situation, call DRAC on the numbers above."
+)
+
+# The same notice in Hausa, Igbo and Yoruba (owner request 2026-10-25). Written
+# by the project, NOT checked by a native speaker (that is funded phase F2), and
+# labelled so on the page. Each renders with its own `lang` so screen readers
+# switch voice. Fixed text only: no answer is ever translated (H5b stays deferred).
+LEGAL_INFO_NOTICE_TRANSLATIONS = (
+    ("ha", "Hausa",
+     "Wannan shafin yana ba da bayanai na gaba ɗaya daga rubutun dokokin "
+     "Najeriya. Ba shawarar shari'a ba ce, kuma har yanzu babu wani lauya da "
+     "ya duba shi. Don neman taimako game da halin da kuke ciki, ku kira DRAC "
+     "a lambobin da ke sama."),
+    ("ig", "Igbo",
+     "Weebụsaịtị a na-enye ozi n'ozuzu site n'ederede iwu Naịjirịa. Ọ bụghị "
+     "ndụmọdụ iwu, ọ dịbeghịkwa onye ọka iwu nyochara ya. Maka enyemaka "
+     "gbasara ọnọdụ gị, kpọọ DRAC na nọmba ndị dị n'elu."),
+    ("yo", "Yorùbá",
+     "Ojú-òpó yìí ń pèsè ìmọ̀ gbogbogbò láti inú ọ̀rọ̀ òfin Nàìjíríà. Kì í ṣe "
+     "ìmọ̀ràn òfin, kò sì tíì sí agbẹjọ́rò kankan tó ṣàyẹ̀wò rẹ̀. Fún "
+     "ìrànlọ́wọ́ nípa ipò tìrẹ, pe DRAC lórí àwọn nọ́mbà tó wà lókè."),
+)
+TRANSLATION_CAVEAT = (
+    "Translated by this project and not yet checked by a native speaker. "
+    "If a translation and the English differ, follow the English."
+)
+
+
+def legal_info_translations_html() -> str:
+    """The translated notices as one HTML block, each paragraph in its own lang."""
+    import html as _html
+    return "".join(
+        '<p lang="%s"><strong>%s:</strong> %s</p>'
+        % (code, _html.escape(name), _html.escape(text))
+        for code, name, text in LEGAL_INFO_NOTICE_TRANSLATIONS)
 
 
 WATERMARK_IMAGE_URL = "app/static/watermark.jpg"
@@ -226,6 +273,31 @@ def accessibility_css(high_contrast: bool = False, font_size: int = 18) -> str:
             "  color: #fff !important; opacity: 1 !important; }\n"
             "body:has(.drlca-hc-on) [data-testid='stChatInput'] {\n"
             "  border: 2px solid #fff !important; }\n"
+            "/* Owner report 2026-10-25 (screenshot, Brave). Measured in Playwright:\n"
+            "   (1) the 'Help for ...' tooltip kept the themed #f6f8fa surface under\n"
+            "   forced-white text -- white on white; (2) the '?' icon SVGs stroke\n"
+            "   rgba(13,17,23,0.6) -- dark on black, so the icons vanished; (3) the\n"
+            "   expander header kept a themed/translucent surface that can go light.\n"
+            "   Pin all three to the black/white pair, in every interaction state. */\n"
+            "body:has(.drlca-hc-on) [data-testid='stTooltipContent'],\n"
+            "body:has(.drlca-hc-on) [data-baseweb='tooltip'] > div {\n"
+            "  background-color: #000 !important; color: #fff !important;\n"
+            "  border: 2px solid #fff !important; }\n"
+            "body:has(.drlca-hc-on) svg.icon,\n"
+            "body:has(.drlca-hc-on) svg.icon * {\n"
+            "  stroke: #fff !important; }\n"
+            "body:has(.drlca-hc-on) [data-testid='stExpander'] details,\n"
+            "body:has(.drlca-hc-on) [data-testid='stExpander'] summary,\n"
+            "body:has(.drlca-hc-on) [data-testid='stExpander'] summary:hover,\n"
+            "body:has(.drlca-hc-on) [data-testid='stExpander'] summary:focus,\n"
+            "body:has(.drlca-hc-on) [data-testid='stExpander'] summary:active {\n"
+            "  background-color: #000 !important; color: #fff !important; }\n"
+            "body:has(.drlca-hc-on) [data-testid='stExpander'] details {\n"
+            "  border: 2px solid #fff !important; }\n"
+            "/* Captions (incl. the not-legal-advice notice) sat at opacity 0.6, so\n"
+            "   forced white rendered as grey. HC means full strength. */\n"
+            "body:has(.drlca-hc-on) [data-testid='stCaptionContainer'] {\n"
+            "  opacity: 1 !important; }\n"
             "</style>"
             "<div class='drlca-hc-on' style='display:none;'></div>"
         )
@@ -712,6 +784,9 @@ def theme_watch_html() -> str:
         "var lum=(0.2126*+m[0]+0.7152*+m[1]+0.0722*+m[2])/255;"
         "window.parent.document.body.classList.toggle('drlca-dark',lum<0.4);"
         # H2: follow the app's Text size slider (the frame has its own root).
+        # Language switcher: <html lang> follows the #drlca-lang marker run() writes.
+        "var L=window.parent.document.getElementById('drlca-lang');"
+        "if(L){window.parent.document.documentElement.lang=L.getAttribute('data-lang')||'en';}"
         "document.documentElement.style.fontSize=window.parent.getComputedStyle("
         "window.parent.document.documentElement).fontSize;"
         "}catch(e){}"
@@ -963,6 +1038,7 @@ def render_ai_expander(payload, turn_index: int, plain: bool):
     with st.expander("🤖 Answer with AI (needs internet + quota)", expanded=False):
         st.caption("Optional. Off by default -- the excerpts above are the "
                    "complete offline answer. Generation uses your Gemini quota.")
+        st.caption(LEGAL_INFO_NOTICE)
         if payload.answer:
             st.markdown(payload.answer)
             if payload.cite_check:
@@ -1087,7 +1163,7 @@ def render_turn(question: str, explicit: str, plain: bool, history,
         wants_legal = mode == "legal" or secondary == "legal"
         wants_help = mode == "help" or secondary == "help"
         if wants_legal:
-            st.subheader("⚖️ Your rights (offline excerpts)")
+            st.subheader(T("⚖️ Your rights (offline excerpts)"))
             legal_view = render_legal(question, plain, turn_index,
                                       retrieval_query=retrieval_query,
                                       prior=history)
@@ -1100,7 +1176,7 @@ def render_turn(question: str, explicit: str, plain: bool, history,
                 render_defects(payload)
                 render_ai_expander(payload, turn_index, plain)
         if wants_help:
-            st.subheader("🤝 Help near you (offline directory)")
+            st.subheader(T("🤝 Help near you (offline directory)"))
             help_view = render_help(question, turn_index, slots=slots)
             payload.help_payload = help_view
         render_routing_trap(mode)
@@ -1149,7 +1225,7 @@ def replay_turn(payload, turn_index: int, live: bool = False):
         wants_legal = payload.mode == "legal" or secondary == "legal"
         wants_help = payload.mode == "help" or secondary == "help"
         if wants_legal:
-            st.subheader("⚖️ Your rights (offline excerpts)")
+            st.subheader(T("⚖️ Your rights (offline excerpts)"))
             legal_view = {"refused": payload.refused, "answer": payload.answer,
                           "excerpts": payload.excerpts,
                           "citations": payload.tags}
@@ -1161,7 +1237,7 @@ def replay_turn(payload, turn_index: int, live: bool = False):
                 render_defects(payload)
                 render_ai_expander(payload, turn_index, plain)
         if wants_help and payload.help_payload:
-            st.subheader("🤝 Help near you (offline directory)")
+            st.subheader(T("🤝 Help near you (offline directory)"))
             # Speak the records as DISPLAYED, so an active filter is honoured.
             help_view = render_help_records(payload.help_payload, turn_index)
         if live:
@@ -1243,23 +1319,32 @@ def run():
     st.session_state[ROUTE_KEY] = _LABEL_BY_ROUTE.get(st.session_state["explicit"],
                                                       _LABEL_BY_ROUTE["auto"])
 
+    # --- Sidebar: interface language (first, so it is found first) --------
+    # Stable multilingual label + stable option codes: switching never
+    # remounts this radio, so keyboard focus stays on it. Every other control
+    # below carries an explicit key= so its translated label keeps its state.
+    st.sidebar.radio(LANG_LABEL, list(LANG_CODES), key=LANG_KEY,
+                     format_func=LANG_NAMES.get, horizontal=True)
+    lang = current_lang()
+
     # --- Sidebar: accessibility controls ----------------------------------
-    st.sidebar.header("♿ Accessibility")
-    high_contrast = st.sidebar.checkbox("High contrast mode", value=False,
+    st.sidebar.header(T("♿ Accessibility"))
+    high_contrast = st.sidebar.checkbox(T("High contrast mode"), value=False,
+                                        key="hc",
                                         help="Black background, white text, "
                                              "underlined links")
-    font_size = st.sidebar.slider("Text size", min_value=14, max_value=28,
-                                   value=18, step=1,
+    font_size = st.sidebar.slider(T("Text size"), min_value=14, max_value=28,
+                                   value=18, step=1, key="font-size",
                                    help="Scales answer and banner text")
-    plain = st.sidebar.checkbox("Explain in plain language", value=False,
+    plain = st.sidebar.checkbox(T("Explain in plain language"), value=False,
                                 key="plain",
                                 help="Renders AI answers in simple words "
                                      "(same facts, same citations)")
     st.sidebar.caption(WATERMARK_ATTRIBUTION)
 
     # --- Sidebar: conversation controls ------------------------------------
-    st.sidebar.header("💬 Conversation")
-    if st.sidebar.button("Clear conversation", key="clear-convo",
+    st.sidebar.header(T("💬 Conversation"))
+    if st.sidebar.button(T("Clear conversation"), key="clear-convo",
                          help="Forget every turn. Nothing was stored on disk."):
         st.session_state["turns"] = []
         st.session_state["pending"] = ""
@@ -1274,16 +1359,17 @@ def run():
     # A native radio group: checked state, arrow keys and stable focus for
     # free (WCAG 4.1.2 / 2.4.3). Three buttons whose label changed on select
     # remounted on every press and dropped keyboard focus to <body>.
-    st.sidebar.radio("How should I handle your next question?",
+    st.sidebar.radio(T("How should I handle your next question?"),
                      [label for _, label, _ in ROUTE_BUTTONS], key=ROUTE_KEY,
+                     format_func=T,  # values stay English: routing state
                      on_change=_route_changed,
                      help=" · ".join(tip for _, _, tip in ROUTE_BUTTONS))
     st.sidebar.caption("Next question: **%s**. An override lasts one turn, "
                        "then resets." % st.session_state["explicit"].upper())
 
     # --- Sidebar: AI + quota readout ---------------------------------------
-    st.sidebar.header("🤖 AI answers")
-    st.sidebar.checkbox("AI-answer every new turn", value=False,
+    st.sidebar.header(T("🤖 AI answers"))
+    st.sidebar.checkbox(T("AI-answer every new turn"), value=False,
                         key="ai_every_turn",
                         help="OFF by default. When off, every turn is answered "
                              "offline from retrieved excerpts and the AI "
@@ -1297,8 +1383,8 @@ def run():
            or "none"))
 
     # --- Sidebar: H7 improvement signal (text sharing is a separate opt-in) --
-    st.sidebar.header("📊 Help improve this service")
-    st.sidebar.checkbox("Also share the words of my questions", value=False,
+    st.sidebar.header(T("📊 Help improve this service"))
+    st.sidebar.checkbox(T("Also share the words of my questions"), value=False,
                         key="share_text",
                         help="OFF by default. When off, only counts are "
                              "recorded (see the note under each answer). When "
@@ -1311,6 +1397,18 @@ def run():
     # --- Helplines pinned at the very top (never below the fold) -----------
     st.title("DRLCA — Disability Rights & Help Finder")
     render_helpline_banner()  # compact single-column banner, no wide columns
+    st.caption("ℹ️ " + LEGAL_INFO_NOTICE)  # H6-S.1: after the banner, never before
+    if lang != "en":
+        _name, _text = {c: (n, t) for c, n, t in LEGAL_INFO_NOTICE_TRANSLATIONS}[lang]
+        st.markdown('<p lang="%s">ℹ️ %s</p><p lang="%s"><em>%s</em></p>'
+                    % (lang, html.escape(_text), lang,
+                       html.escape(UI_TRANSLATION_CAVEAT[lang])),
+                    unsafe_allow_html=True)
+    st.markdown("<div id='drlca-lang' data-lang='%s' style='display:none;'></div>"
+                % lang, unsafe_allow_html=True)
+    with st.expander("This notice in Hausa, Igbo and Yorùbá", expanded=False):
+        st.caption(TRANSLATION_CAVEAT)
+        st.markdown(legal_info_translations_html(), unsafe_allow_html=True)
 
     # --- The conversation ---------------------------------------------------
     pending = (st.session_state.pop("pending", "") or "").strip()
@@ -1326,12 +1424,12 @@ def run():
         st.session_state["turns"].append(turn)
         st.session_state["submitted"] = True
     elif not st.session_state["turns"]:
-        st.caption("Ask your question in the box at the bottom of the page "
-                   "(keyboard: Tab to it, Enter to send). No answer yet.")
+        st.caption(T("Ask your question in the box at the bottom of the page "
+                     "(keyboard: Tab to it, Enter to send). No answer yet."))
 
     # --- Input: optional voice draft, then the chat box ---------------------
     render_voice_draft()
-    typed = st.chat_input("Type your question here", key="chat-in")
+    typed = st.chat_input(T("Type your question here"), key="chat-in")
     if typed and typed.strip():
         # Queue and rerun so the new turn paints in position at the end of the
         # thread rather than below the input Streamlit pins to the viewport.
