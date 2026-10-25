@@ -38,11 +38,14 @@ await p.waitForTimeout(500);
 res.skipFocusesH1 = await p.evaluate(() => document.activeElement && document.activeElement.tagName === 'H1');
 
 const sb = p.getByTestId('stSidebar');
-const checked = async () => (await sb.getByRole('radio', { checked: true }).first().getAttribute('aria-label'))
-  || (await sb.getByRole('radio', { checked: true }).first().evaluate(e => (e.closest('label') || e).innerText.trim()));
+// The route group by its label: since the language switcher (2026-10-25) the
+// FIRST checked sidebar radio is the language choice, not the route.
+const rg = sb.locator('[data-testid="stRadio"]', { hasText: 'How should I handle' });
+const checked = async () => (await rg.getByRole('radio', { checked: true }).first().getAttribute('aria-label'))
+  || (await rg.getByRole('radio', { checked: true }).first().evaluate(e => (e.closest('label') || e).innerText.trim()));
 res.routeDefault = await checked();
 // Keyboard: focus the checked radio, ArrowUp moves to "Find help near me"; focus must stay on a radio.
-await sb.getByRole('radio', { checked: true }).first().focus();
+await rg.getByRole('radio', { checked: true }).first().focus();
 await p.keyboard.press('ArrowUp');
 await p.waitForTimeout(2500);
 res.routeAfterKey = await checked();

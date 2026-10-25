@@ -18,6 +18,7 @@ from pathlib import Path
 
 import chat  # history_for_prompt, for the prompt-version caption
 import telemetry  # H7: counts-only stdout lines; no network, no file
+from ui_i18n import LAW_IN_ENGLISH, T, current_lang  # chrome only, never the law
 
 
 def _st():
@@ -113,7 +114,9 @@ INLINE_EXCERPTS = 3
 def _render_excerpt(e):
     st = _st()
     st.markdown("`%s` (relevance %.3f)" % (e["tag"], e["score"]))
-    st.markdown("<div class='drlca-answer'>%s…</div>"
+    # lang='en': the law is quoted in its official English text whatever the
+    # interface language, so a screen reader keeps an English voice here.
+    st.markdown("<div class='drlca-answer' lang='en'>%s…</div>"
                 % html.escape(e["text"][:700]), unsafe_allow_html=True)
 
 
@@ -198,7 +201,9 @@ def render_excerpts(excerpts, turn_index: int):
     H8a.4: a doc with a status note gets it once, just before its first card.
     """
     st = _st()
-    st.markdown("**Retrieved excerpts (offline, citations kept):**")
+    st.markdown(T("**Retrieved excerpts (offline, citations kept):**"))
+    if current_lang() in LAW_IN_ENGLISH:
+        st.caption(LAW_IN_ENGLISH[current_lang()])
     excerpts = dedupe_excerpts(excerpts)
     notes = {i: d for d, i in status_note_index(excerpts).items()}
     for i, e in enumerate(excerpts[:INLINE_EXCERPTS]):
@@ -472,7 +477,7 @@ def render_voice_draft():
     which law gets searched and which contacts get shown.
     """
     st = _st()
-    with st.expander("🎤 Voice input (optional)", expanded=False):
+    with st.expander(T("🎤 Voice input (optional)"), expanded=False):
         try_voice_input()
         # Seeding and clearing both happen BEFORE the widget is instantiated.
         # Streamlit forbids mutating a widget-keyed session_state value once

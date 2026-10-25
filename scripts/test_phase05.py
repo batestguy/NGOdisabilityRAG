@@ -211,6 +211,13 @@ check("config-primary-light", "#1a7f37" in toml)
 check("config-primary-dark", "#3fb950" in toml)
 # Forced HC palette + slider-driven scale coverage retained under new names:
 check("css-hc-palette", "#000" in css and "#fff" in css and "#ffd700" in css)
+# Owner report 2026-10-25: tooltip, '?' icon and expander header in HC. Source
+# presence only; the colours are proven in a browser (computed styles).
+check("css-hc-tooltip-icon-expander",
+      "[data-testid='stTooltipContent']" in css and "svg.icon *" in css
+      and "summary:hover" in css
+      and "[data-testid='stCaptionContainer'] {\n  opacity: 1 !important" in css
+      and "stTooltipContent" not in css_plain)
 check("css-rem-scale", "1rem" in css_plain and "html" in css_plain)
 for label in ["Type your question here", "Ask about my rights", "Find help near me",
               "Explain in plain language", "High contrast mode", "Text size"]:
@@ -408,15 +415,15 @@ check("ai-expander-collapsed-per-turn",
       'st.expander("🤖 Answer with AI' in ai_body and "expanded=False" in ai_body)
 check("ai-button-keyed-per-turn", 'key="llm-go-%d" % turn_index' in ai_body)
 check("ai-every-turn-defaults-off", '"ai_every_turn": False' in run_body
-      and 'st.sidebar.checkbox("AI-answer every new turn", value=False' in run_body)
+      and 'st.sidebar.checkbox(T("AI-answer every new turn"), value=False' in run_body)
 
 # Chat surface: chat_input in, the single-turn form out.
-check("chat-input-present", 'st.chat_input("Type your question here"' in src)
+check("chat-input-present", 'st.chat_input(T("Type your question here")' in src)
 check("no-form-widget", "st.form" not in src + ui_src)  # H8b: both modules
 check("chat-message-bubbles", 'st.chat_message("user")' in hist_body
       and 'st.chat_message("assistant")' in hist_body)
 check("clear-conversation-control",
-      'st.sidebar.button("Clear conversation"' in run_body
+      'st.sidebar.button(T("Clear conversation")' in run_body
       and '"turns"] = []' in run_body)
 check("history-uses-turnpayload", "from chat import TurnPayload" in src
       and "TurnPayload(question=question" in turn_body
@@ -667,7 +674,7 @@ check("minor-replay-speaks-displayed-help",
 _run_src = inspect.getsource(app.run)
 check("minor-route-is-radio",
       [r for r, _, _ in app.ROUTE_BUTTONS] == ["legal", "help", "auto"]
-      and "st.sidebar.radio(\"How should I handle your next question?\"" in _run_src
+      and "st.sidebar.radio(T(\"How should I handle your next question?\")" in _run_src
       and "on_change=_route_changed" in _run_src
       and "st.sidebar.button(label" not in _run_src and "(selected)" not in _run_src)
 check("minor-route-radio-maps-back",
@@ -845,5 +852,64 @@ _capV2, _, _ = _record(app.render_ai_expander, _TP(
 check("ai-expander-says-regs-excluded",
       sum(_AI_NOTE in str(c[1]) for c in _capR) == 1
       and not any(_AI_NOTE in str(c[1]) for c in _capV2))
+# H6-S.1 (docs/phases/19_zero_cost_self_review.md): the "not legal advice, no
+# lawyer has checked it" notice. It must exist, sit AFTER the banner in run()
+# (helplines first), appear in the AI expander, and never claim a review.
+_notice = app.LEGAL_INFO_NOTICE
+check("h6s-notice-says-not-advice",
+      "not legal advice" in _notice and "no lawyer has checked" in _notice)
+check("h6s-notice-never-claims-review",
+      not re.search(r"(reviewed|checked|approved) by (a )?lawyer", _notice, re.I))
+check("h6s-notice-after-banner-in-run",
+      run_body.index("render_helpline_banner()")
+      < run_body.find("LEGAL_INFO_NOTICE")  # -1 (absent) fails cleanly
+      < run_body.index("st.chat_input("))
+_ai_body = src.split("def render_ai_expander")[1].split("\ndef ")[0]
+check("h6s-notice-in-ai-expander", "st.caption(LEGAL_INFO_NOTICE)" in _ai_body)
+# Translations (owner 2026-10-25): ha/ig/yo, each with its own lang, each names
+# DRAC verbatim, labelled as not native-checked, rendered after the English notice.
+_tr = app.LEGAL_INFO_NOTICE_TRANSLATIONS
+_tr_html = app.legal_info_translations_html()
+check("h6s-translations-ha-ig-yo", [c for c, _, _ in _tr] == ["ha", "ig", "yo"]
+      and all("DRAC" in t for _, _, t in _tr))
+check("h6s-translations-own-lang",
+      all('<p lang="%s">' % c in _tr_html for c, _, _ in _tr))
+check("h6s-translations-caveat",
+      "not yet checked by a native speaker" in app.TRANSLATION_CAVEAT
+      and "st.caption(TRANSLATION_CAVEAT)" in run_body)
+check("h6s-translations-after-notice",
+      run_body.find("LEGAL_INFO_NOTICE)") < run_body.find("legal_info_translations_html()")
+      < run_body.index("st.chat_input("))
+
+# Interface-language switcher (owner 2026-10-25; src/ui_i18n.py). Chrome only:
+# the law, citation tags and helpline numbers are never translated.
+import ui_i18n as _i18n  # noqa: E402
+check("i18n-every-key-has-ha-ig-yo",
+      all(set(v) == {"ha", "ig", "yo"} and all(v.values())
+          for v in _i18n.STRINGS.values()))
+_joined = re.sub(r'"\s*\n\s*"', "", src + ui_src)  # implicit string concatenation
+check("i18n-every-key-used", all(k in _joined for k in _i18n.STRINGS),
+      str([k for k in _i18n.STRINGS if k not in _joined]))
+check("i18n-english-is-identity-and-fallback",
+      _i18n.T("High contrast mode", "en") == "High contrast mode"
+      and _i18n.T("no such string", "ha") == "no such string"
+      and _i18n.current_lang() == "en")
+_all_tr = [v2 for v in _i18n.STRINGS.values() for v2 in v.values()]
+check("i18n-no-number-or-tag-in-translations",
+      not any(re.search(r"\d|DRAC|\[(Act|Constitution|Factsheet|Regs)", v2) for v2 in _all_tr))
+check("i18n-law-never-translated",
+      "T(e[" not in ui_src and "lang='en'>%s" in ui_src
+      and all(c in _i18n.LAW_IN_ENGLISH for c in ("ha", "ig", "yo")))
+check("i18n-selector-first-stable-label",
+      run_body.index("st.sidebar.radio(LANG_LABEL") < run_body.index('T("♿ Accessibility")')
+      and "key=LANG_KEY" in run_body and "format_func=LANG_NAMES.get" in run_body)
+check("i18n-translated-labels-keep-state",
+      'key="hc"' in run_body and 'key="font-size"' in run_body
+      and "format_func=T" in run_body)
+check("i18n-banner-numbers-untouched",
+      all(n in app.helpline_banner_markdown() for n in ("08000-3000-100", "08000-3000-10")))
+check("i18n-caveat-when-not-english",
+      "UI_TRANSLATION_CAVEAT[lang]" in run_body
+      and all(c in _i18n.UI_TRANSLATION_CAVEAT for c in ("ha", "ig", "yo")))
 
 print("\nALL %d ASSERTS PASSED" % len(passed))
