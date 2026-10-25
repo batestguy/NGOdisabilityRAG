@@ -12,7 +12,7 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
   is not on drac-ng.org. No office line.
 - README: 7 screenshots + a 59 s demo that includes the plain-language AI answer (PR #23, `8c4665d`, live). Media lives in
   `docs/media/`; reproduce with `tools/a11y_audit/capture_readme_media.mjs` (`--with-ai` spends 1 call), local runs only.
-  **PR #24** (badges + author section) is open with CI green; the owner merges it. The repo's About box now has the homepage,
+  PR #24 (badges + author section) is merged. The repo's About box now has the homepage,
   description and 10 topics. Profile README (`batestguy/batestguy`): DRLCA row updated and 3 corrupted emoji fixed (`44f3d66`).
 - Live since PR #21: the not-legal-advice notice (+ Hausa/Igbo/Yorùbá, not native-checked), an interface-language
   switcher (EN/HA/IG/YO, interface only, the law stays English), and high-contrast fixes.

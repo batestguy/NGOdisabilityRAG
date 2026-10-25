@@ -2,8 +2,8 @@
 
 > **■■ 2026-10-25: READ THIS BLOCK FIRST ■■**
 >
-> **Live: `main` = `8c4665d` (PR #23, the README demo with the AI answer, 2026-10-25); PR #22 `36e5107` came before it.** **PR #24**
-> (README badges + author, docs only, CI green) waits for the owner: `! gh pr merge 24 --merge`. Then merge `main` into this branch.
+> **Live: `main` = `8c4665d` (PR #23, the README demo with the AI answer, 2026-10-25); PR #22 `36e5107` came before it.** PR #24
+> (README badges + author) is merged, and `main` is merged into this branch.
 > PR #21 (`6ee7978`) went
 > live earlier the same day. Both live checks were page loads only, so no question was asked and no telemetry was
 > written. **Quota 2026-10-25: 1 call** (`gemini-2.5-flash`, the README demo's AI answer;
