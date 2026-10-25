@@ -33,15 +33,20 @@ import re
 import pandas as pd
 
 # --- Helpline banner contract ------------------------------------------------
-# EVERY lookup path returns these two rows FIRST, before any CSV rows, via
-# with_helplines(). Spec: DRAC Toll-Free 08000-3000-100 + DRAC WhatsApp
-# 08000-3000-10 (repo non-negotiable: helplines always on top).
+# EVERY lookup path returns this row FIRST, before any CSV rows, via
+# with_helplines() (repo non-negotiable: helplines always on top).
+# 2026-10-25, owner decision: the spec's "DRAC WhatsApp 08000-3000-10" is
+# REMOVED. A real-browser check of drac-ng.org (home + /contact) found the
+# toll-free number (tel:080003000100, "Call Now - Toll Free") but no WhatsApp
+# number or link anywhere. Verified contacts only: do not re-add a WhatsApp or
+# office line without fresh verification on DRAC's own site.
 HELPLINES = [
     {"name": "DRAC Toll-Free (National Helpline)", "phone": "08000-3000-100"},
-    {"name": "DRAC WhatsApp (National Helpline)", "phone": "08000-3000-10"},
 ]
 DRAC_TOLLFREE = "08000-3000-100"
-DRAC_WHATSAPP = "08000-3000-10"
+# How many banner rows with_helplines() prepends. Every "skip the banner rows"
+# slice uses this, never a literal (it was [2:] while there were two).
+N_HELPLINES = len(HELPLINES)
 
 SCHEMA = ["name", "disability_focus", "location", "phone", "email", "website", "description"]
 
@@ -109,7 +114,7 @@ def with_helplines(results: pd.DataFrame) -> pd.DataFrame:
     """Prepend the DRAC helpline banner to CSV result rows.
 
     THE function every lookup/response shape must go through, so the banner
-    contract (toll-free + WhatsApp FIRST) cannot be bypassed by a new path.
+    contract (DRAC toll-free FIRST) cannot be bypassed by a new path.
     """
     base = results if isinstance(results, pd.DataFrame) else pd.DataFrame(results)
     for c in SCHEMA:  # tolerate thin frames (e.g. fallback rows)
@@ -396,7 +401,7 @@ def filter_records(rows: list, disability_type: str = "", state: str = "",
     """Filter + sort stored org rows; ALWAYS helplines first (with_helplines).
 
     `rows` are org rows only, already in relevance order. An empty result is
-    the two helpline rows alone, never an empty list.
+    the helpline row(s) alone, never an empty list.
     """
     kept = [r for r in rows
             if (not disability_type or record_types(r) & {disability_type, "*"})

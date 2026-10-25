@@ -27,7 +27,10 @@ def check(name, cond, extra=""):
 # 1. Helplines-first ordering ---------------------------------------------
 md = app.helpline_banner_markdown()
 check("banner-has-tollfree", "08000-3000-100" in md)
-check("banner-has-whatsapp", "08000-3000-10" in md)
+# 2026-10-25: WhatsApp removed by the owner. "08000-3000-10" is a prefix of the
+# toll-free number, so a substring test proves nothing: assert the word is gone.
+check("banner-has-no-whatsapp", "WhatsApp" not in md and "08000-3000-10`" not in md
+      and md.count("08000-3000-1") == 1)
 src = (ROOT / "app.py").read_text(encoding="utf-8")
 # H8b (2026-10-22): the shared render helpers moved to src/ui_render.py. Asserts
 # about CONTENT that now lives there read ui_src; every PLACEMENT assert (banner
@@ -118,11 +121,12 @@ check("plain-offline-no-llm", p1["llm_used"] is False and p1["answer"] is None)
 
 # 5. Help contract: top-k + fuzzy confirm ------------------------------------
 hp = app.help_display("find blind support in Lagos")
-check("help-location-narrowed", len(hp["records"]) == 3, str(len(hp["records"])))  # 2 banner + 1 Lagos org
+check("help-location-narrowed", len(hp["records"]) == 2, str(len(hp["records"])))  # 1 banner + 1 Lagos org
 hp_full = app.help_display("find help near me")
-check("help-topk", len(hp_full["records"]) == 5, str(len(hp_full["records"])))  # 2 banner + full top-3
+check("help-topk", len(hp_full["records"]) == 4, str(len(hp_full["records"])))  # 1 banner + full top-3
 check("help-banner-first", hp["records"][0]["phone"] == "08000-3000-100"
-      and hp["records"][1]["phone"] == "08000-3000-10")
+      and all("WhatsApp" not in r["name"] for r in hp["records"])
+      and all(r["phone"] != "08000-3000-10" for r in hp["records"]))
 check("help-confirm-gated-or-clean", (not hp["needs_confirmation"]) or bool(hp["confirm_prompt"]))
 # H8b: the badge is rendered by render_help_records, now in ui_render.
 check("help-badge-text-in-src", "please confirm this matches your need" in ui_src)
@@ -148,7 +152,7 @@ check("no-top-level-generate", "generate(" not in (src + ui_src).replace("Genera
 
 # 9. Voice read-aloud (Web Speech API, client-side) -----------------------------
 speech = app.build_speech_text(pay, hp, "")
-check("speech-has-helplines", "08000-3000-100" in speech and "08000-3000-10" in speech)
+check("speech-has-helplines", "08000-3000-100" in speech and "WhatsApp" not in speech)
 rae = app.read_aloud_html("test answer")
 check("readaloud-webspeech", "SpeechSynthesisUtterance" in rae and "speechSynthesis.speak" in rae)
 check("readaloud-no-server", "components.html" in src or "components.v1" in src)
@@ -458,7 +462,7 @@ _hp_c = app.help_display("and their phone number?",
                          slots={"disability": "blind", "location": "lagos"})
 check("help-payload-slots-honoured",
       _hp_c["slots"] == {"disability": "blind", "location": "lagos"}
-      and len(_hp_c["records"]) == 3, str(len(_hp_c["records"])))
+      and len(_hp_c["records"]) == 2, str(len(_hp_c["records"])))
 check("retrieval-query-default-identical",
       app.offline_legal_hits(_q, retr)
       == app.offline_legal_hits(_q, retr, retrieval_query=_q))
@@ -547,15 +551,15 @@ check("h3a-options-from-stored-rows", "Hearing" in _types and "Lagos" in _states
 _views = [_ngo.filter_records(_dir, t, s, o) for t in [""] + _types
           for s in [""] + _states for o in ("relevance", "name")]
 check("h3a-helplines-lead-every-filtered-view",
-      all([r["phone"] for r in v[:2]] == _hl for v in _views), str(len(_views)))
+      all([r["phone"] for r in v[:_ngo.N_HELPLINES]] == _hl for v in _views), str(len(_views)))
 check("h3a-umbrella-and-national-never-filtered-out",
       all(any("JONAPWD" in r["name"] for r in v) for v in _views))
 _local = [r for r in _dir if "*" not in _ngo.record_states(r)]
 _empty = _ngo.filter_records(_local, "Hearing", "Lagos")
 check("h3a-empty-result-is-helplines-only", [r["phone"] for r in _empty] == _hl)
-_byname = [r["name"] for r in _ngo.filter_records(_dir, sort="name")[2:]]
+_byname = [r["name"] for r in _ngo.filter_records(_dir, sort="name")[_ngo.N_HELPLINES:]]
 check("h3a-sort-by-name", _byname == sorted(_byname, key=str.casefold))
-_hear = _ngo.filter_records(_dir, "Hearing")[2:]
+_hear = _ngo.filter_records(_dir, "Hearing")[_ngo.N_HELPLINES:]
 check("h3a-specialist-before-umbrella", "Deaf" in _hear[0]["name"], _hear[0]["name"])
 
 
@@ -586,7 +590,7 @@ check("h3a-filter-keys-carry-turn-index", '"ngo-type-%d" % turn_index' in _rhr
 check("h3a-replay-passes-turn-index",
       "render_help_records(payload.help_payload, turn_index)" in replay_body)
 # H3 review (2026-10-18): regressions it found.
-_psy = [r["name"] for r in _ngo.filter_records(_dir, "Psychosocial / mental health")[2:]]
+_psy = [r["name"] for r in _ngo.filter_records(_dir, "Psychosocial / mental health")[_ngo.N_HELPLINES:]]
 check("h3-review-psychosocial-not-developmental",
       all("Mentally Aware" in n or "*" in _ngo.record_types(next(r for r in _dir if r["name"] == n))
           for n in _psy) and any("Mentally Aware" in n for n in _psy), "; ".join(_psy))
@@ -598,9 +602,10 @@ check("h3-review-location-word-boundary",
       _router.extract_help_slots("is a buyout legal")["location"] == ""
       and _router.extract_help_slots("help in Uyo please")["location"] == "uyo")
 check("h3-review-sort-alone-keeps-top-k",
-      'filter_records(records[2:], sort="name")' in _rhr and "confirm = payload.get" in _rhr)
+      'filter_records(records[N_HELPLINES:], sort="name")' in _rhr and "confirm = payload.get" in _rhr)
 check("h3-review-controls-after-results",
-      _rhr.index("for r in records[2:]") < _rhr.index('st.expander("🔎 Filter or sort'))
+      _rhr.index("for r in records[N_HELPLINES:]") < _rhr.index('st.expander("🔎 Filter or sort'))
+check("no-literal-helpline-slice", "records[2:]" not in ui_src and '"records")[2:]' not in src)
 
 # H2/H3 leftover minor items (2026-10-21).
 # 1. Read-aloud honours the active NGO filter: render_help_records returns the
@@ -715,9 +720,33 @@ check("i18n-translated-labels-keep-state",
       'key="hc"' in run_body and 'key="font-size"' in run_body
       and "format_func=T" in run_body)
 check("i18n-banner-numbers-untouched",
-      all(n in app.helpline_banner_markdown() for n in ("08000-3000-100", "08000-3000-10")))
+      "08000-3000-100" in app.helpline_banner_markdown()
+      and "WhatsApp" not in app.helpline_banner_markdown())
 check("i18n-caveat-when-not-english",
       "UI_TRANSLATION_CAVEAT[lang]" in run_body
       and all(c in _i18n.UI_TRANSLATION_CAVEAT for c in ("ha", "ig", "yo")))
+
+# BEHAVIOURAL: emit_turn_signal runs on every NEW turn, after the answer and
+# BEFORE st.chat_input. A NameError there (2026-10-25, a dropped N_HELPLINES
+# import) killed every turn's script before the chat box drew -- and no source
+# assert saw it. Call it for real on a help and a legal payload.
+import contextlib as _ctx2  # noqa: E402
+import io as _io2  # noqa: E402
+import json as _json2  # noqa: E402
+import types as _types2  # noqa: E402
+import ngo as _ngo2  # noqa: E402
+_hpE = app.help_display("I'm deaf and live in Lagos. Who can help me?")
+_lines = []
+for _pl in (_types2.SimpleNamespace(signal_id=None, excerpts=[], help_payload=_hpE, mode="help",
+                                    refused=False, answer=None, question="q"),
+            _types2.SimpleNamespace(signal_id=None, excerpts=pay["excerpts"], help_payload=None,
+                                    mode="legal", refused=False, answer=None, question="q")):
+    _buf = _io2.StringIO()
+    with _ctx2.redirect_stdout(_buf):
+        app.emit_turn_signal(_pl)
+    _lines.append(_json2.loads(_buf.getvalue().strip().split(" ", 1)[1]))
+check("emit-turn-signal-runs-help-and-legal",
+      _lines[0]["orgs"] == len(_hpE["records"]) - _ngo2.N_HELPLINES and _lines[0]["orgs"] >= 1
+      and _lines[1]["orgs"] == 0 and _lines[1]["shown"] >= 1, str(_lines))
 
 print("\nALL %d ASSERTS PASSED" % len(passed))

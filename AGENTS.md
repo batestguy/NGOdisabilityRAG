@@ -8,7 +8,8 @@ Phase playbooks: `docs/phases/`. Machine/env notes: `ENVIRONMENTS.md`.
 - Free tier only ($0.00): Colab/Kaggle dev, Render / Streamlit Cloud deploy (HF Spaces dropped 2026-09-10: Streamlit SDK → PRO-only), free-tier LLMs/embeddings/vector DB. No paid services.
 - Every legal answer must include direct citations (e.g. "Section 17(2) of the Disability Act states..."). Citation accuracy target: 100%.
 - NGO CSV schema (min 10 verified Nigerian orgs): `name, disability_focus, location, phone, email, website, description`.
-- Always display national helplines on top: DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp `08000-3000-10`.
+- Always display the national helpline on top: DRAC Toll-Free `08000-3000-100`. (The spec's DRAC WhatsApp
+  `08000-3000-10` was removed by the owner on 2026-10-25: it is not published on drac-ng.org.)
 - Accessibility is mandatory, not polish: screen-reader compatible, voice input/output, keyboard navigable, high contrast + font scaling, simple UI.
 
 ## Stack (pinned — don't improvise)

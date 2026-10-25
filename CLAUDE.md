@@ -112,9 +112,11 @@ existing one. The core rules, which must not be lost:
 
 ## Invariants (violating these is a spec break, not a style choice)
 
-- **Helplines first, always.** DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp
-  `08000-3000-10` render above every answer and lead every NGO result. Any new NGO
-  response shape must go through `ngo.with_helplines()`.
+- **Helplines first, always.** DRAC Toll-Free `08000-3000-100` renders above every answer and
+  leads every NGO result. Any new NGO response shape must go through `ngo.with_helplines()`, and
+  code that skips the banner rows uses `ngo.N_HELPLINES`, never a literal. The spec's WhatsApp line
+  (`08000-3000-10`) was **removed by the owner on 2026-10-25**: it is not on drac-ng.org. Do not
+  re-add a helpline that has not been verified on DRAC's own site in a real browser.
 - **Every legal claim carries a citation tag**, copied verbatim from the chunk header —
   `[Act cl. N]`, `[Constitution s. N]`, `[Factsheet Section N]`. Never strip, renumber,
   or "clean up" OCR quirks in section numbers (fixes go only through the human-signed

@@ -101,6 +101,8 @@ Required Helplines (Always Display)
 Service	Number
 DRAC Toll-Free	08000-3000-100
 DRAC WhatsApp	08000-3000-10
+[Amended by the owner, 2026-10-25: the WhatsApp line is REMOVED from the app. A real-browser check of
+drac-ng.org found the toll-free number but no WhatsApp number. Only verified helplines are displayed.]
 🔬 Research & Learning Requirements
 Technical Exploration Areas
 While building, research and document learnings on:

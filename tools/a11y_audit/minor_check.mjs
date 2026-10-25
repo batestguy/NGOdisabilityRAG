@@ -15,7 +15,7 @@ const p = await (await b.newContext({ viewport: { width: 1280, height: 900 } }))
 const errs = []; p.on('pageerror', e => errs.push(String(e)));
 const res = {};
 await p.goto(BASE, { timeout: 120000 });
-await p.getByText('National helplines').first().waitFor({ timeout: 120000 });
+await p.getByText(/National helplines?/).first().waitFor({ timeout: 120000 });
 await p.waitForTimeout(3000);
 
 res.sliderName = await p.getByRole('slider').first().evaluate(e => e.getAttribute('aria-labelledby') === null && e.getAttribute('aria-label'));
@@ -101,11 +101,11 @@ res.routeAfterTrap = await checked();
 
 // Skip link at phone width and in high-contrast mode.
 await p.setViewportSize({ width: 390, height: 844 });
-await p.goto(BASE); await p.getByText('National helplines').first().waitFor({ timeout: 120000 }); await p.waitForTimeout(2500);
+await p.goto(BASE); await p.getByText(/National helplines?/).first().waitFor({ timeout: 120000 }); await p.waitForTimeout(2500);
 await p.keyboard.press('Tab');
 res.skipVisible390 = await skipOnTop();
 await p.setViewportSize({ width: 1280, height: 900 });
-await p.goto(BASE); await p.getByText('National helplines').first().waitFor({ timeout: 120000 }); await p.waitForTimeout(2500);
+await p.goto(BASE); await p.getByText(/National helplines?/).first().waitFor({ timeout: 120000 }); await p.waitForTimeout(2500);
 await p.getByTestId('stSidebar').getByText('High contrast mode').click(); await p.waitForTimeout(2500);
 await p.evaluate(() => document.activeElement && document.activeElement.blur());
 await p.evaluate(() => document.getElementById('drlca-skip').focus());

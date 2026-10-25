@@ -37,6 +37,8 @@ layout. If re-shot, update the commit hash above rather than leaving it stale.
 
 Landing state, nothing typed. The DRAC Toll-Free `08000-3000-100` and DRAC
 WhatsApp `08000-3000-10` banner sits directly under the title, before the input.
+*(2026-10-25: these frames are historical. The WhatsApp line was removed, and current README media lives
+in `docs/media/`, made by `tools/a11y_audit/capture_readme_media.mjs`.)*
 This is the project's first invariant: **helplines render above every answer and
 lead every NGO result**, so a user in distress never has to parse a legal answer
 to reach a human. The placeholder shows both supported intents

@@ -22,7 +22,7 @@ async function ask(q) {
   await p.waitForTimeout(3000);
 }
 const res = {};
-await p.goto(BASE); await p.getByText('National helplines').first().waitFor({ timeout: 60000 });
+await p.goto(BASE); await p.getByText(/National helplines?/).first().waitFor({ timeout: 60000 });
 const s0 = signals().length;
 const Q1 = 'What are the penalties under the Act?';
 await ask(Q1);
