@@ -1,5 +1,11 @@
 # DRLCA — Disability Rights & Help Finder (Nigeria)
 
+[![Offline test suites](https://github.com/batestguy/NGOdisabilityRAG/actions/workflows/offline-suites.yml/badge.svg)](https://github.com/batestguy/NGOdisabilityRAG/actions/workflows/offline-suites.yml)
+[![Live app](https://img.shields.io/badge/live-ngodisabilityrag.onrender.com-1a7f37)](https://ngodisabilityrag.onrender.com)
+[![WCAG 2.2 AA: 0 axe issues](https://img.shields.io/badge/WCAG%202.2%20AA-0%20axe%20issues-1a7f37)](docs/accessibility.md)
+![Cost: $0](https://img.shields.io/badge/cost-%240%20free%20tier-555)
+![Interface: EN · HA · IG · YO](https://img.shields.io/badge/interface-EN%20%C2%B7%20HA%20%C2%B7%20IG%20%C2%B7%20YO-555)
+
 A free, accessible chatbot that helps persons with disabilities in Nigeria find **what the law says** and **who can help**.
 It answers from the text of the **Discrimination Against Persons with Disabilities (Prohibition) Act 2018**, the
 **1999 Constitution** and a **2020 factsheet** on the Act, and it points people to verified disability organisations.
@@ -119,5 +125,13 @@ the live site, because the demo asks questions; add `--with-ai` for the AI segme
 * [LEARNING_JOURNAL.md](LEARNING_JOURNAL.md): what each step taught
 * [docs/accessibility.md](docs/accessibility.md): the accessibility record
 * `RAGNGO.txt`: the original specification
+
+## Author
+
+**Jerry Zachary Bannister**, a statistician and data scientist in Bauchi, Nigeria
+([GitHub profile](https://github.com/batestguy) · [blog](https://batestguy.github.io/QuartoWebsite-blog-others/) ·
+[ORCID](https://orcid.org/0009-0002-3302-9558) · [batesthommie@gmail.com](mailto:batesthommie@gmail.com)).
+Feedback from persons with disabilities, disability organisations and Nigerian lawyers is very welcome. Please open an
+issue or send an email.
 
 Built on free tiers only ($0.00). Background photo: Onwuka Glory, Wikimedia Commons (CC BY 4.0).
