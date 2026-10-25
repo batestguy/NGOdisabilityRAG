@@ -16,9 +16,12 @@ It answers from the text of the **Discrimination Against Persons with Disabiliti
 
 ## Demo
 
-![DRLCA demo: an employment question answered with cited excerpts, an accessibility question, a help request in Lagos, the Hausa and Yorùbá interface, and high-contrast mode](docs/media/demo.gif)
+![DRLCA demo: plain-language mode on, an employment question answered with cited excerpts, the optional AI answer explaining it in simple words with a citation on every sentence, a help request in Lagos, the Hausa and Yorùbá interface, and high-contrast mode](docs/media/demo.gif)
 
-44 seconds, recorded on a local copy with no AI and no internet calls. [Full-quality MP4](docs/media/demo.mp4).
+59 seconds, recorded on a local copy: **"Explain in plain language"** is ticked, the employment question is answered
+from the law's own words, and then the optional **AI answer** explains it simply, with a citation after every sentence.
+That AI answer is one real Gemini call (free tier). Everything else in the video runs offline.
+[Full-quality MP4](docs/media/demo.mp4).
 
 ## Screenshots
 
@@ -30,6 +33,12 @@ It answers from the text of the **Discrimination Against Persons with Disabiliti
 | **Help near you**: helpline first, then verified organisations, with filters | **Hausa, Igbo, Yorùbá** interface (the law itself stays in its official English text) |
 | ![High-contrast mode: black background, white text, visible help icons](docs/media/05_high_contrast.jpg) | ![The phone layout at 390 pixels wide](docs/media/06_phone.jpg) |
 | **High contrast** and adjustable text size | **Phone-first** layout |
+
+**Optional AI answer in plain language.** It is off by default and only runs when the user asks. The prompt only lets it
+use the excerpts shown above it, and every sentence must carry their citation tags, which are checked against the
+retrieved excerpts:
+
+![The AI answer in plain language: "No. A person with a disability has an equal right to work and earn a living [Factsheet Section 28]…", with the citations listed underneath and the not-legal-advice notice above it](docs/media/07_ai_plain_answer.jpg)
 
 ## What it does
 
@@ -99,7 +108,7 @@ python scripts/audit_corpus.py
 ```
 
 The README media is reproducible. Run `tools/a11y_audit/capture_readme_media.mjs` against a **local** server (never
-the live site, because the demo asks questions), then encode with ffmpeg:
+the live site, because the demo asks questions; add `--with-ai` for the AI segment, one free Gemini call, cached after), then encode with ffmpeg:
 `ffmpeg -i demo.webm -c:v libx264 -crf 26 -pix_fmt yuv420p demo.mp4`.
 
 ## Project records
