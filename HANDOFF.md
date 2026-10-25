@@ -2,8 +2,9 @@
 
 > **■■ 2026-10-25: READ THIS BLOCK FIRST ■■**
 >
-> **Live: `main` = `6ee7978` (PR #21, merged by the owner and deployed 2026-10-25).** The live check was a page load
-> only, so no question was asked and no telemetry was written. No quota was spent.
+> **Live: `main` = `36e5107` (PR #22, merged on the owner's word and deployed 2026-10-25).** PR #21 (`6ee7978`) went
+> live earlier the same day. Both live checks were page loads only, so no question was asked and no telemetry was
+> written. No quota was spent.
 >
 > **H8a.5 is now DONE (reviewed 2026-10-25).** The 2026-10-23 session had committed it and stopped before the reviewer
 > pass and the doc close-out. The four commits on `phase11/h8a-accessregs` are **local only (branch 4 ahead of origin)**:
@@ -18,13 +19,12 @@
 > 13 → 14/17 (OFF12, v3 bridge suspected, undiagnosed); dev strict@3 0.373 → 0.353 and MRR(shown) 0.428 → 0.399;
 > chat_dev r@3 drops as Regs chunks enter the pool top; eval_phase06 reverse_rel 0.667 → 0.630.
 >
-> **⚠ HELPLINE PROVENANCE (checked 2026-10-25, real browser, drac-ng.org home + /contact):** both banner numbers come from
-> the owner's spec `RAGNGO.txt` lines 102–103. No earlier record verified them against DRAC.
-> * **Toll-Free `08000-3000-100`: VERIFIED.** The site links `tel:080003000100` labelled "Call Now - Toll Free".
-> * **WhatsApp `08000-3000-10`: NOT FOUND on DRAC's site.** There is no WhatsApp text or link anywhere. The only other number
->   is `08115326607` (office: Plot 690 Akon House, Wuye, Abuja). A 0800 toll-free number is also an unlikely WhatsApp
->   account. The banner is an invariant and the spec is the owner's, so **the owner decides**: test it on WhatsApp, or
->   replace or remove it. Screenshot: `runs\drac_contact_2026-10-25.png`.
+> **HELPLINE (closed 2026-10-25):** the owner removed the unverified WhatsApp `08000-3000-10`, so it is toll-free only
+> now. Banner-skipping slices use `ngo.N_HELPLINES`. Three AI answers recorded in Sep/Oct still quote the old
+> refusal text with WhatsApp inside the H6 sheet. They are records, so leave them unaltered. **Open retrieval
+> miss** found while recording the demo: "Can my employer refuse to hire me because I'm blind?" returns
+> Constitution s. 5/s. 1, not Act cl. 29 ("denied employment" works). It is a vocabulary gap (hire/blind). A candidate
+> dev question needs a pre-declared gate, and `SYNONYMS` must not be edited casually.
 >
 > **OWNER RULE 2026-10-25: zero cost, self-review first.** Paid or recruited reviewers (legal H6, language H5b, AT users)
 > wait for grant funding (phase F). Self-review gates replace them, honestly labelled "not reviewed by a lawyer". Full

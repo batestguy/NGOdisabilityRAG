@@ -5,9 +5,13 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 
 ## Live
 
-- **https://ngodisabilityrag.onrender.com** (Render free, `srv-dah26opt0dsc73e9a350`), `main` = `6ee7978`
-  (PR #21, merged by the owner and deployed 2026-10-25; live check, page load only and no question asked: title →
-  helplines → not-legal-advice notice; Hausa switch sets `lang=ha` and keeps both numbers; WCAG axe `[]`).
+- **https://ngodisabilityrag.onrender.com** (Render free, `srv-dah26opt0dsc73e9a350`), `main` = `36e5107`
+  (PR #22, merged and deployed 2026-10-25; live check, page load only: the banner reads "National helpline:
+  DRAC Toll-Free 08000-3000-100", no WhatsApp anywhere, the notice says "number above", WCAG axe `[]`).
+- **Helpline: DRAC Toll-Free only** (owner decision 2026-10-25). The WhatsApp `08000-3000-10` was removed because it
+  is not on drac-ng.org. No office line.
+- README rewritten with 6 screenshots + a 44 s demo (`docs/media/`, reproducible via
+  `tools/a11y_audit/capture_readme_media.mjs`, local runs only).
 - Live since PR #21: the not-legal-advice notice (+ Hausa/Igbo/Yorùbá, not native-checked), an interface-language
   switcher (EN/HA/IG/YO, interface only, the law stays English), and high-contrast fixes.
 - Multi-turn chat; helplines first on the page and on every turn; offline by default; Gemini AI expander
@@ -40,7 +44,6 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
   note): existing law identical (frozen-10/dev/test2), fresh dev2 0.800, blind test3 0.875, 0 false refusals; off-corpus
   answered 13 → 14/17. H8a.4 DONE (note renders once before the first Regs card;
   v3 budget 16; Regs excluded from the LLM; v2 byte-identical). **H8a.5 DONE** (reviewed 2026-10-25; `CORPUS_VERSION = "v3"`; `scripts/baseline_v3_2026-10-23.txt` + errata; OFF12 answered on v3 is open and pinned). H6-S.2 PASS (`scripts/audit_fixed_text.py`, in CI; one interpretive phrase for the owner). **Next:** H6-S.3, H8a.6 on booked free quota days, H8a.7.
-- **⚠ Helpline check (2026-10-25):** DRAC Toll-Free verified on drac-ng.org; **WhatsApp `08000-3000-10` not found there** (only office `08115326607`). Owner decision pending (`HANDOFF.md`).
 - **Owner rule (2026-10-25): zero cost, self-review first** (`docs/phases/19_zero_cost_self_review.md`). External legal
   and language review deferred to a grant-funded phase F. **H6-S** (disclosure line, fixed-text traceability, agent
   self-review of the H6 sheet) replaces H6 as the gate. H6-S.1 is LIVE (PR #21, `6ee7978`).

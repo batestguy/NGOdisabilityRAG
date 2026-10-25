@@ -3715,3 +3715,16 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   passing it silently.
 - The same session showed a test-tool trap: adding a radio group ahead of an existing one silently redirected two audit
   scripts that used "the first checked radio". Address a control by its label, never by its position.
+
+## 2026-10-25 — Removing one phone number touched four hidden assumptions
+
+- The owner removed the unverified WhatsApp line. Four places in the code skipped "the first 2 rows" as helplines. With
+  one helpline left, each would have quietly hidden the best-matching organisation. A named constant
+  (`ngo.N_HELPLINES`) replaces every literal, and a source assert forbids the old slice.
+- The old tests could not notice the number was gone: "08000-3000-10" is a prefix of "08000-3000-100", so every
+  substring check still passed. Testing for absence needs the absent thing's own marker ("WhatsApp"), not a prefix.
+- Recording the README demo found a crash that 199 asserts missed: a dropped import in the telemetry call killed every
+  turn just before the chat box was drawn. Using the app as a person would, by asking a second question, caught it.
+  A behavioural test now calls that function for real.
+- The demo also exposed an honest retrieval miss on a natural question. It is written into the README's limits, not
+  hidden by choosing better phrasing in silence.
