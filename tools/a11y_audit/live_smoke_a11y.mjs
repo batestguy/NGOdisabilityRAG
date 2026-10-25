@@ -22,10 +22,12 @@ const skip = await p.evaluate(() => {
 await p.keyboard.press('Enter'); await p.waitForTimeout(500);
 const h1Focused = await p.evaluate(() => document.activeElement && document.activeElement.tagName === 'H1');
 const sb = p.getByTestId('stSidebar');
-const radio = sb.getByRole('radio', { checked: true }).first();
+// Scope to the route group: the language switcher (2026-10-25) is now the first sidebar radio.
+const rg = sb.locator('[data-testid="stRadio"]', { hasText: 'How should I handle' });
+const radio = rg.getByRole('radio', { checked: true }).first();
 const routeBefore = await radio.evaluate(e => (e.closest('label') || e).innerText.trim());
 await radio.focus(); await p.keyboard.press('ArrowUp'); await p.waitForTimeout(3000);
-const routeAfter = await sb.getByRole('radio', { checked: true }).first().evaluate(e => (e.closest('label') || e).innerText.trim());
+const routeAfter = await rg.getByRole('radio', { checked: true }).first().evaluate(e => (e.closest('label') || e).innerText.trim());
 const focusAfter = await p.evaluate(() => document.activeElement && document.activeElement.tagName + ':' + document.activeElement.type);
 const caption = (await sb.innerText()).match(/Next question: (\w+)/)?.[1];
 const text = await p.locator('body').innerText();
