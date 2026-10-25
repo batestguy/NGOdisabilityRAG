@@ -92,15 +92,20 @@ CORPUS_VERSION = "v3"
 # Reworded 2026-10-23 after review (no imposer named in reg. 168; reg. 169 needs
 # the relevant authority; 'notwithstanding' kept as 'regardless of'). Open for H6:
 # commencement (22 May) precedes gazette publication (7 July 2023). Read-aloud
-# must say 'naira' for the gazette's 'N'.
+# must say 'naira' for the gazette's 'N'. H6-S.2 (2026-10-25,
+# scripts/audit_fixed_text.py): '[Regs general]' added after the first two
+# sentences -- their S.I./Council/commencement facts come from the Regs'
+# enacting formula, which the note never tagged. Tags only; no word changed.
+# Edit this note -> edit audit_fixed_text.LEDGER, or CI fails.
 DOC_STATUS_NOTES = {
     "accessregs2023": (
         "About this source: the Persons with Disabilities (Accessibility) "
         "Regulations, 2023 (S.I. No. 51 of 2023) are subsidiary legislation "
         "with legal force, made by the Governing Council of the National "
         "Commission for Persons with Disabilities under section 56 of the "
-        "Disability Act 2018 [Act cl. 56]. The gazette marks 22 May 2023 as "
-        "their commencement date. A person who breaks them is liable to an "
+        "Disability Act 2018 [Regs general] [Act cl. 56]. The gazette marks "
+        "22 May 2023 as their commencement date [Regs general]. A person who "
+        "breaks them is liable to an "
         "administrative penalty of not less than N 500,000, and a company, "
         "government institution or body corporate to not less than N 2,000,000, "
         "regardless of any penalty under the Act or other law [Regs reg. 168]. "

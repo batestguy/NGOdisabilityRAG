@@ -73,5 +73,9 @@ jobs:
       - name: audit_corpus --corpus=v1 (v1 tripwire)
         run: python scripts/audit_corpus.py --corpus=v1
 
+      # H6-S.2 (zero-cost rule): every fact in hand-written legal text traced to its source chunk.
+      - name: audit_fixed_text (status-note traceability)
+        run: python scripts/audit_fixed_text.py
+
       - name: bench_phase01 (retrieval bench)
         run: python scripts/bench_phase01.py
