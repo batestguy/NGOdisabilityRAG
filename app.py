@@ -53,6 +53,16 @@ def helpline_banner_markdown() -> str:
     )
 
 
+# H6-S.1 (docs/phases/19_zero_cost_self_review.md): no lawyer has reviewed
+# DRLCA, so the page says so -- once, directly AFTER the helpline banner
+# (helplines stay first), and again inside the AI expander. Never claim review.
+LEGAL_INFO_NOTICE = (
+    "This site gives general information from the text of Nigerian law. "
+    "It is not legal advice, and no lawyer has checked it yet. For help with "
+    "your own situation, call DRAC on the numbers above."
+)
+
+
 WATERMARK_IMAGE_URL = "app/static/watermark.jpg"
 # NOTE: this MUST stay a # comment -- a bare string literal here would be
 # rendered as visible text by Streamlit's magic (bug seen 2026-09-08).
@@ -963,6 +973,7 @@ def render_ai_expander(payload, turn_index: int, plain: bool):
     with st.expander("🤖 Answer with AI (needs internet + quota)", expanded=False):
         st.caption("Optional. Off by default -- the excerpts above are the "
                    "complete offline answer. Generation uses your Gemini quota.")
+        st.caption(LEGAL_INFO_NOTICE)
         if payload.answer:
             st.markdown(payload.answer)
             if payload.cite_check:
@@ -1311,6 +1322,7 @@ def run():
     # --- Helplines pinned at the very top (never below the fold) -----------
     st.title("DRLCA — Disability Rights & Help Finder")
     render_helpline_banner()  # compact single-column banner, no wide columns
+    st.caption("ℹ️ " + LEGAL_INFO_NOTICE)  # H6-S.1: after the banner, never before
 
     # --- The conversation ---------------------------------------------------
     pending = (st.session_state.pop("pending", "") or "").strip()

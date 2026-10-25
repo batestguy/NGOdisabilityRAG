@@ -653,4 +653,19 @@ check("minor-bridge-skip-link-and-landmarks",
       and "color:#fff !important" in _bj and "outline:3px solid #ffd700 !important" in _bj
       and "sliders(); landmarks();" in _bj and "%" not in _bj)
 
+# H6-S.1 (docs/phases/19_zero_cost_self_review.md): the "not legal advice, no
+# lawyer has checked it" notice. It must exist, sit AFTER the banner in run()
+# (helplines first), appear in the AI expander, and never claim a review.
+_notice = app.LEGAL_INFO_NOTICE
+check("h6s-notice-says-not-advice",
+      "not legal advice" in _notice and "no lawyer has checked" in _notice)
+check("h6s-notice-never-claims-review",
+      not re.search(r"(reviewed|checked|approved) by (a )?lawyer", _notice, re.I))
+check("h6s-notice-after-banner-in-run",
+      run_body.index("render_helpline_banner()")
+      < run_body.find("LEGAL_INFO_NOTICE")  # -1 (absent) fails cleanly
+      < run_body.index("st.chat_input("))
+_ai_body = src.split("def render_ai_expander")[1].split("\ndef ")[0]
+check("h6s-notice-in-ai-expander", "st.caption(LEGAL_INFO_NOTICE)" in _ai_body)
+
 print("\nALL %d ASSERTS PASSED" % len(passed))
