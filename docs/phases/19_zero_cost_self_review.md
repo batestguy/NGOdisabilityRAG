@@ -175,3 +175,8 @@ language ships as "supported" before F2. Do not spend quota on it now. The owner
 >   must exist in the source.
 > * **Regression:** `test_phase05` 194/194; 03/04/09_ops ALL PASS; `audit_corpus` PASS; `eval_h8aR` G5′ PASS, and its
 >   dev stage is identical to `scripts/h8aR_dev_stage_2026-10-23.txt`.
+>
+> **H6-S.1 LIVE — 2026-10-25.** PR #21 was merged by the owner, using the `!` command because auto mode blocks agent
+> merges to `main`. Render deployed `6ee7978`. The live check was a page load only, so no telemetry was written: the
+> order is title → helplines → notice; the translations box is present; switching to Hausa sets `lang=ha` and keeps both
+> numbers; WCAG axe `[]`. `main` was merged back into the H8a branch.

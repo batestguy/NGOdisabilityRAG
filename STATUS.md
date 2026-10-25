@@ -5,8 +5,11 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 
 ## Live
 
-- **https://ngodisabilityrag.onrender.com** (Render free, `srv-dah26opt0dsc73e9a350`), `main` = `94db479`
-  (PR #20: H8 playbook + H8c + H8b; deployed and live-smoked 2026-10-22).
+- **https://ngodisabilityrag.onrender.com** (Render free, `srv-dah26opt0dsc73e9a350`), `main` = `6ee7978`
+  (PR #21, merged by the owner and deployed 2026-10-25; live check, page load only and no question asked: title →
+  helplines → not-legal-advice notice; Hausa switch sets `lang=ha` and keeps both numbers; WCAG axe `[]`).
+- Live since PR #21: the not-legal-advice notice (+ Hausa/Igbo/Yorùbá, not native-checked), an interface-language
+  switcher (EN/HA/IG/YO, interface only, the law stays English), and high-contrast fixes.
 - Multi-turn chat; helplines first on the page and on every turn; offline by default; Gemini AI expander
   opt-in, default OFF (`cite-strict-v3` / `chat-cite-strict-v2`, "recommendable" per Phase G).
 - Corpus v2 (Act gazette-OCR, clause-aligned, cl.1/12/20 corrections signed; Constitution; Factsheet).
@@ -40,7 +43,7 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 - **⚠ Helpline check (2026-10-25):** DRAC Toll-Free verified on drac-ng.org; **WhatsApp `08000-3000-10` not found there** (only office `08115326607`). Owner decision pending (`HANDOFF.md`).
 - **Owner rule (2026-10-25): zero cost, self-review first** (`docs/phases/19_zero_cost_self_review.md`). External legal
   and language review deferred to a grant-funded phase F. **H6-S** (disclosure line, fixed-text traceability, agent
-  self-review of the H6 sheet) replaces H6 as the gate. H6-S.1 (the "not legal advice" line, + Hausa/Igbo/Yorùbá versions, not native-checked) is built on `phase11/h6s-disclosure`, awaiting the owner's merge word.
+  self-review of the H6 sheet) replaces H6 as the gate. H6-S.1 is LIVE (PR #21, `6ee7978`).
 - **Queued: H9 deterministic follow-ups** (`docs/phases/18_h9_deterministic_followups.md`): H9a suggested questions
   (low risk, can run while H8a waits on H6); H9b extractive key lines (after H6 + the H7 read). Owner approval pending.
 - **H7 week-1 read on/after 2026-10-28** (command in `HANDOFF.md`; discount 4 smoke ids).

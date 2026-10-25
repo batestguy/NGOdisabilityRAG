@@ -2,7 +2,8 @@
 
 > **■■ 2026-10-25: READ THIS BLOCK FIRST ■■**
 >
-> **Live: unchanged, `main` = `94db479`.** No deploy, no quota and no telemetry since 2026-10-22.
+> **Live: `main` = `6ee7978` (PR #21, merged by the owner and deployed 2026-10-25).** The live check was a page load
+> only, so no question was asked and no telemetry was written. No quota was spent.
 >
 > **H8a.5 is now DONE (reviewed 2026-10-25).** The 2026-10-23 session had committed it and stopped before the reviewer
 > pass and the doc close-out. The four commits on `phase11/h8a-accessregs` are **local only (branch 4 ahead of origin)**:
@@ -32,10 +33,9 @@
 > **Next, in this order (all $0):**
 > 1. ~~Reviewer pass on H8a.5~~ **DONE 2026-10-25**: ship to next step; review fixes committed; branch pushed. Open:
 >    OFF12 is answered on v3 (pinned by `off12-v3-characterised-answered`), so diagnose the v3 bridge terms (zero quota).
-> 2. **H6-S.1 BUILT** on `phase11/h6s-disclosure` (`b2bac54` + `c025a73`, pushed, not merged): the "not legal advice / no
->    lawyer has checked it" line, plus Hausa/Igbo/Yorùbá versions labelled not native-checked, plus the high-contrast
->    fixes (tooltip, `?` icons, expander, captions) from the owner's screenshot.
->    **Plus an interface-language switcher** (EN/HA/IG/YO, chrome only, the law stays English; playbook 19 Results). **Owner: reword it if you like, then say whether to merge. Merging deploys.**
+> 2. ~~H6-S.1~~ **LIVE** (PR #21 → `6ee7978`): the notice, the HA/IG/YO notice, the language switcher and the HC fixes.
+>    `main` is merged back into `phase11/h8a-accessregs` (conflicts resolved: the AI expander keeps both captions;
+>    test_phase05 212/212). **H8a.7 must still re-run the browser matrix on the merged branch** (v3 + switcher).
 > 3. ~~H6-S.2~~ **PASS 2026-10-25** (`f7e02b2`): the audit is in CI. The note gained its missing `[Regs general]` tags.
 >    **Owner:** keep or drop "subsidiary legislation with legal force", which no source states (listed UNTRACEABLE).
 > 4. **On/after 2026-10-28: H7 week-1 read** (discount the 4 smoke ids below).
