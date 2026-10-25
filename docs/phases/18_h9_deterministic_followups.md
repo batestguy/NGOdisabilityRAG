@@ -33,7 +33,8 @@ by risk:
 2. **Partial quotes drop exceptions.** "subject to", "provided that" and "notwithstanding" carry the law.
 3. **The audience.** A confident wrong answer about rights costs a person with a disability more than a list of excerpts.
 
-**Do not reopen this** without the H6 legal review and a new pre-declared gate.
+**Do not reopen this** without the H6 legal review and a new pre-declared gate. *(2026-10-25: H6 is now funded-phase
+only, so this stays closed until then. H6-S is not a substitute for it here.)*
 
 ---
 
@@ -96,7 +97,7 @@ or help turns; change routing or retrieval.
 ## H9b — "key lines" (extractive, cited)
 
 **Branch** `phase11/h9b-keylines` from `main`, after H9a ships. **Quota** zero. **Owner-only:** merge, and the decision
-to ship before or after the H6 review. **Recommended:** ship only after H6 returns and after the H7 week-1 read shows
+to ship before or after the H6 review. **Recommended (2026-10-25):** ship only after H6-S (`docs/phases/19_zero_cost_self_review.md`) and after the H7 week-1 read shows
 excerpt-only answers rate poorly on "helpful". If they rate fine, H9b may not be worth its risk.
 
 ### Design (fixed here)
@@ -121,7 +122,7 @@ excerpt-only answers rate poorly on "helpful". If they rate fine, H9b may not be
    H6 reviewer would call irrelevant, H9b waits for a discriminative signal.** Do not add a display threshold on score;
    that is `MIN_SCORE` nudging by another name.
 4. `test2` read once for gate 1 and reported. Suites, axe, focus, read-aloud as in H9a.
-5. **Human gate:** the owner (and the H6 reviewer if available) reads key lines for 15 dev questions and marks each
+5. **Human gate:** the owner (plus an H6-S.3-style agent self-review; no paid reviewer, 2026-10-25) reads key lines for 15 dev questions and marks each
    "fair / misleading". 0 "misleading" to ship.
 
 **Do not:** compose sentences; drop citation tags; show a key line without its excerpt below it; tune the selector on
@@ -139,7 +140,7 @@ re-running its gates on the new corpus.
 
 1. Approve H9a (recommended) and whether H9b is queued at all.
 2. Optional: allow a counts-only `via=suggestion` telemetry field, so suggestion use can be measured (G6).
-3. Order relative to H8a: the recommendation is H9a while H8a waits on H6; H9b after H6 + the H7 read.
+3. Order relative to H8a: the recommendation is H9a while H8a waits on H6-S; H9b after H6-S + the H7 read (2026-10-25).
 
 ## Results
 

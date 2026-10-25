@@ -28,7 +28,7 @@ in at least ten places, and three of them change shipped behaviour or spend quot
 | F7 | `src/retrieve.py:399,418` | The OOV bridge is **one artifact at one path, loaded at import**, keyed on one corpus sha. | Rebuilding it for a 4-doc corpus makes `build_corpus("v2")` **hard-fail**, so v2 can no longer reproduce its published numbers from the same commit (the Phase D rule). H8a needs a **version-keyed bridge** (`oov_bridge_v3.json`, chosen by corpus version) before anything else. That is a code change with its own PORT CHECK (`ablate_oov_bridge.py`) still passing on v2. |
 | F8 | `scripts/audit_corpus.py:151` `V2_CORPUS_SHA256` + per-doc shape integers | v2 pin. | Add a `V3_CORPUS_SHA256` and v3 shape rows. **Never edit the v2 pin.** |
 | F9 | `MIN_SCORE = 0.10` (`src/retrieve.py`) | Calibrated on the three-doc index. | A fourth doc gives every query more chances to clear the floor. **Off-corpus false-answer can only rise.** `calibrate_refusal.py` re-runs; `MIN_SCORE` may move **down** on evidence, never up (its own gate 3). |
-| F10 | H6 review pack (`docs/review/h6_review_sheet.*`, built from the shipping 3-doc display) | A lawyer is about to read 3-doc answers. | Do not ship H8a while the H6 review is out, or the review describes a system that no longer exists. **H8a ships after H6 returns, or H6 is re-generated.** |
+| F10 | H6 review pack (`docs/review/h6_review_sheet.*`, built from the shipping 3-doc display) | A lawyer is about to read 3-doc answers. | Do not ship H8a while the H6 review is out, or the review describes a system that no longer exists. **H8a ships after H6 returns, or H6 is re-generated.** *2026-10-25: H6 is replaced by the H6-S self-audit (`docs/phases/19_zero_cost_self_review.md`); the v3 sheet was regenerated at H8a.5 and stays ready for F1.* |
 
 **Reading.** H8a is a corpus rebuild on the scale of Phase D, plus a prompt version bump, plus a quota
 spend. It is not a data-entry task. H8b and H8c are low-risk and zero-quota. **Recommended order:
@@ -234,7 +234,7 @@ prompt is never asked to cite a tag shape it was not evaluated on.
 
 ### H8a.7 — merge (owner)
 
-Only after H6 has returned or been re-generated on v3 (F10). Reviewer pass on the whole branch, CI green,
+Only after **H6-S** has passed (2026-10-25: it replaces "H6 returned"; `docs/phases/19_zero_cost_self_review.md`). Reviewer pass on the whole branch, CI green,
 then the owner's word. Live smoke: helplines first, one new-doc question shows its status note, one old
 question shows the same tags as the local measurement.
 
@@ -244,10 +244,18 @@ question shows the same tags as the local measurement.
 
 1. Approve the order H8c → H8b → H8a.
 2. H8a.0: pick one document and sign its licence line.
-3. Whether H8a waits for the H6 review to return (recommended) or H6 is re-generated on v3.
+3. ~~Whether H8a waits for the H6 review to return or H6 is re-generated on v3.~~ Decided 2026-10-25: neither. H6-S
+   gates it, and H6 waits for funding (`docs/phases/19_zero_cost_self_review.md`).
 4. The quota days for H8a.6.
 
 ## Results
+
+> **H8a.5 — 2026-10-23, BUILT; reviewer pass and close-out PENDING (zero quota).** `5595763`, `09e38c1`, `8d56ba0`,
+> `aeb317f`, local only at 2026-10-25. `CORPUS_VERSION = "v3"`; v3 baseline in `scripts/baseline_v3_2026-10-23.txt`; H6 pack
+> regenerated on v3 (F10), v2 copy kept. The baseline's own headline: existing law identical, accessregs-dev2 0.800,
+> 0 false refusals, calibrate 0/212, suites green (05 193/193). Reported, not gated: OFF12 newly answered (13 → 14/17),
+> dev strict@3 0.373 → 0.353, reverse_rel 0.667 → 0.630. **Do not treat as DONE until a reviewer has checked it**;
+> the checklist is in `HANDOFF.md` (2026-10-25).
 
 > **H8a.4 — 2026-10-23, DONE (zero quota; executor, then reviewer: "ship to next step"). `fb6ad40` + a review-fix commit.**
 > Under v2 everything is byte-identical: fingerprint, `eval_h8aR` dev stage, calibrate 0/212, all suites. `test_phase05`

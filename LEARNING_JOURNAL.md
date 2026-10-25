@@ -3672,3 +3672,30 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   signed text.
 - A small regex lesson: `\bN (\d[\d,]*)` swallowed the comma in "N 500,000, and", which is spoken badly. Anchoring the
   match on a final digit fixed it. The executor found it by listening to the output, not by reading it.
+
+## 2026-10-25 — H8a.5: committed is not closed
+
+- The v3 cut-over was committed with a full baseline, and then the session ended. The review and the doc close-out never
+  happened. The repo said "Next: H8a.5" while the branch already held H8a.5. A later reader would either redo the work or
+  take it as done. Neither is safe.
+- The baseline file is careful (`test` not scored, test2/test3 cited rather than re-run, v2 reproducibility stated). But
+  it is the executor's own account. The project rule is that delegated work is reviewed before it is reported, and a
+  well-written report is exactly the case that rule exists for.
+- What the cut-over changes for users is mostly display, not recall: more excerpts per turn (dev 6.9 → 8.8), slightly
+  lower early precision, one extra off-corpus question answered. None of these is gated, and none should be quietly
+  tuned. They go to the reviewer and to H6 as facts.
+- Lesson for the playbook pattern: the last step of every build step is the doc commit. If a session might end early,
+  write the Results line first, marked PENDING, and fill it in after the review.
+
+## 2026-10-25 — Zero cost: rigour has to come from us first
+
+- The owner set the rule: no paid reviewers until grants. That removed two gates the plan had leaned on, H6 (a lawyer)
+  and H5b's native speakers, and showed how much of the plan was quietly waiting on someone else's calendar.
+- Removing a gate is only honest if something takes its place and the user is told. The replacement, H6-S, has three
+  parts. First, a disclosure line, because the live site turned out to say nowhere that it is not legal advice. Second,
+  a script that traces every hand-written legal claim to verbatim source text. Third, an agent self-review that must
+  quote the source for each verdict.
+- The limit is written into the gate itself: an LLM reviewing LLM answers shares its blind spots. Self-review is
+  evidence of care, not of legal correctness, and the site and any grant application must say so.
+- Languages are treated differently: a mechanical check cannot catch a wrong meaning about rights, so H5b waits for
+  funding rather than shipping half-checked.

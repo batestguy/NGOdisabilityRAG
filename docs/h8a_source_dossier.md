@@ -69,7 +69,8 @@ administrative penalty for non-compliance. The CRPD (B) has a real licence quest
 `data/raw/SOURCES.md`. Nothing in `data/raw/` is read at boot, and nothing has been parsed.
 
 **After signing:** H8a.1 (author dev + blind `test3` questions from the official text, committed before any parsing). It can
-start before the H6 review returns, because it changes nothing users see. **H8a.5's cut-over waits for H6.**
+start before the H6 review returns, because it changes nothing users see. **H8a.5's cut-over waits for H6.** *(2026-10-25: H6 is replaced by the H6-S self-audit; the reuse and amendment questions
+move to F1's open-questions list in `docs/phases/19_zero_cost_self_review.md`.)*
 
 ### Sources
 

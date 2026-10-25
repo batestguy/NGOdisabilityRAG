@@ -1,4 +1,4 @@
-# STATUS — current state (updated 2026-10-23)
+# STATUS — current state (updated 2026-10-25)
 
 Current state only. Replace lines; do not append history. Dated history to 2026-10-22:
 `docs/history/status_history.md`. Phase records: `docs/phases/`. Narrative: `LEARNING_JOURNAL.md`.
@@ -23,7 +23,7 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
   test 0.647 · test2 0.629. False refusals 0 on every set. `calibrate_refusal` 0/212.
 - Generation (Phase G, 2026-10-15): judge 23/23, G4 0 cross-turn drift, G6 10/10 answered, 0 fabricated tags.
 - Suites (2026-10-22): `test_phase03` matrix 24/24 + statics 16/16 · `test_phase04` ALL PASS ·
-  `test_phase05` 179/179 · `test_phase09_ops` ALL PASS · `import app` + `import ui_render` OK.
+  `test_phase05` 179/179 on `main` (193/193 on the v3 branch) · `test_phase09_ops` ALL PASS · `import app` + `import ui_render` OK.
 - UI code: `app.py` (run / render_turn / replay_turn / history / banner / loaders) 1,352 lines +
   `src/ui_render.py` (shared render helpers, re-exported by `app`) 437 lines (H8b).
 
@@ -36,13 +36,14 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
   `f13b9678…`, version-keyed OOV bridge); v2 proven bit-identical; `CORPUS_VERSION` still v2. H8a.3 declined at the dev stage; owner reopened → **H8a-R SHIP GATE MET for R-a** (v3, k=4, top_n=16 + fixed status
   note): existing law identical (frozen-10/dev/test2), fresh dev2 0.800, blind test3 0.875, 0 false refusals; off-corpus
   answered 13 → 14/17. H8a.4 DONE (note renders once before the first Regs card;
-  v3 budget 16; Regs excluded from the LLM; v2 byte-identical). **Next: H8a.5** (v3 cut-over: flip `CORPUS_VERSION`, re-run
-  harnesses, v3 baseline). Note text, note frequency (~86% of v3 turns) and merge wait for H6.
+  v3 budget 16; Regs excluded from the LLM; v2 byte-identical). **H8a.5 built, NOT reviewed** (4 local commits, `CORPUS_VERSION = "v3"`, `scripts/baseline_v3_2026-10-23.txt`, H6 pack regenerated on v3). **Next: reviewer pass, Results, push**; then H6-S (replaces H6), H8a.6 on booked free quota days, H8a.7.
+- **Owner rule (2026-10-25): zero cost, self-review first** (`docs/phases/19_zero_cost_self_review.md`). External legal
+  and language review deferred to a grant-funded phase F. **H6-S** (disclosure line, fixed-text traceability, agent
+  self-review of the H6 sheet) replaces H6 as the gate. The live site has no "not legal advice" line yet (H6-S.1).
 - **Queued: H9 deterministic follow-ups** (`docs/phases/18_h9_deterministic_followups.md`): H9a suggested questions
   (low risk, can run while H8a waits on H6); H9b extractive key lines (after H6 + the H7 read). Owner approval pending.
 - **H7 week-1 read on/after 2026-10-28** (command in `HANDOFF.md`; discount 4 smoke ids).
-- **Owner:** is `test` still clean? · send the H6 review sheet (`docs/review/h6_review_sheet.md`) to a
-  legal reviewer · H5b needs 2 quota days (~45 calls) + native Yoruba/Hausa/Igbo checkers
+- **Owner:** is `test` still clean? · H6 sheet kept ready for F1 (funded) · H5b deferred to F2 (native speakers, funded)
 - **Deferred:** NGO directory growth past 20 (no Facebook route). Old owner items (demo GIF encode, LinkedIn) are in `docs/history/status_history.md`; still wanted?
 - **Small:** NVDA listen-through of radio + skip link · best-practice `heading-order` (H1 → H3) ·
   Cedar RECHECK · Streamlit 1.66 bump (`aria-expanded` migration).

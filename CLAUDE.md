@@ -113,6 +113,11 @@ existing one. The core rules, which must not be lost:
 
 ## Invariants (violating these is a spec break, not a style choice)
 
+- **Zero cost; self-review before any paid reviewer** (owner, 2026-10-25; `docs/phases/19_zero_cost_self_review.md`). $0.00 always:
+  free tiers only. No external legal, language or user-testing reviewer is a gate. They wait for grant
+  funding (phase F). Each is replaced by a written, reproducible self-review gate (H6-S), labelled
+  *checked against the official text, not reviewed by a lawyer*. **Never claim or imply expert review.**
+  Owner checks are short and optional; only deploy, signatures and held-out/quota decisions block.
 - **Helplines first, always.** DRAC Toll-Free `08000-3000-100`, DRAC WhatsApp
   `08000-3000-10` render above every answer and lead every NGO result. Any new NGO
   response shape must go through `ngo.with_helplines()`.
@@ -187,7 +192,7 @@ behaviour in a browser, not just state.
 ## Working conventions
 
 - **ACTIVE: `docs/phases/17_h8_corpus_expansion.md`, order H8c → H8b → H8a.** Other open items
-  (H7 week-1 signal read on/after 2026-10-28, H5b, H6) are in `docs/phases/16_post_launch_roadmap.md`
+  (H7 week-1 signal read on/after 2026-10-28; H6 → H6-S and H5b deferral in `docs/phases/19_zero_cost_self_review.md`) are in `docs/phases/16_post_launch_roadmap.md`
   and `HANDOFF.md`. Work the active playbook in order; each step defines its own exit gate.
   All earlier phases (01–15, D, E, G, F) are closed; their records are in the playbooks and
   `docs/history/claude_md_2026-10-22.md`.

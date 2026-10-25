@@ -1,66 +1,45 @@
-# HANDOFF — start here (60 seconds, updated 2026-10-23)
+# HANDOFF — start here (60 seconds, updated 2026-10-25)
 
-> **■■ 2026-10-23 END OF SESSION: READ THIS BLOCK FIRST ■■**
+> **■■ 2026-10-25: READ THIS BLOCK FIRST ■■**
 >
-> **Live: unchanged, `main` = `94db479`.** Today ran no deploy, no quota and no telemetry.
+> **Live: unchanged, `main` = `94db479`.** No deploy, no quota and no telemetry since 2026-10-22.
 >
-> **Done today (branch `phase11/h8a-accessregs`, cut from `phase11/h8a-sources`; pushed; NOT merged):**
-> * **H8c `/context` check PASSED.** At startup only the global `CLAUDE.md`, project `CLAUDE.md` and `MEMORY.md` load.
->   `.claude/rules/retrieval.md` loaded lazily the first time a `data/processed/` file was read, which is the intended behaviour.
-> * **H8a.1 DONE (exit gate met).** `data/eval/questions_accessregs.json` was committed alone as **`af3129e`**, before any
->   parser: **dev 8 / blind `test3` 12 / status 6**, with 5 Pidgin questions. Refs come from the gazette text.
->   **Do not read `test3` again.**
-> * The H8a.2 findings are in playbook 17's Results: the commencement date is resolved (22 May 2023); the enacting formula is
->   unnumbered and AR_S04 has empty `expected`; the Arrangement mislabels reg. 133 as "132"; there are two look-alike
->   certificates (reg. 165 vs 166); the naira sign is printed as "N". The gazette text for reading lives in
->   `runs\h8a1
-egs_compact.txt` (gitignored).
+> **H8a.5 is built but NOT closed.** The 2026-10-23 session committed it and stopped before the reviewer pass and the
+> doc close-out. The four commits on `phase11/h8a-accessregs` are **local only (branch 4 ahead of origin)**:
+> * `5595763` held-out opt-out flags (`eval_heldout --no-test`, `eval_chat --dev-only`; defaults unchanged);
+> * `09e38c1` `CORPUS_VERSION = "v3"`; harnesses take the version budget; v2-only harnesses pinned to v2;
+> * `8d56ba0` H6 review pack regenerated on v3 (F10); the v2 sheet kept as `docs/review/h6_review_sheet_v2_2026-10-21.*`;
+> * `aeb317f` `scripts/baseline_v3_2026-10-23.txt`.
 >
-> * **H8a.2 DONE** (executor, then reviewer: "ship to H8a.3"). Commits `44f5a7b` F7 bridge, `0ef9b9e` parser, `fbfe5a2` v3
->   wiring, `af96f0d` review fixes.
->   * Corpus **v3** = v2 + `accessregs2023` (221 chunks, `[Regs reg. N]`), pin `f13b9678…`, `oov_bridge_v3.json`.
->   * v2 is proven bit-identical (fingerprint, pins, 0/212, PORT CHECK).
->   * `CORPUS_VERSION` is still `"v2"`.
->   * Details and warnings are in playbook 17's Results.
+> **Baseline headline (as the file states it; unreviewed):** existing law identical on v3 (frozen-10 0.734, dev 0.613);
+> accessregs-dev2 0.800; test2/test3 *cited* from `h8aR_blind`, not re-run; `test` not scored; 0 false refusals
+> everywhere; calibrate 0/212; suites 03/04/09_ops ALL PASS, 05 193/193. Reported, not gated: off-corpus answered
+> 13 → 14/17 (OFF12, v3 bridge suspected, undiagnosed); dev strict@3 0.373 → 0.353 and MRR(shown) 0.428 → 0.399;
+> chat_dev r@3 drops as Regs chunks enter the pool top; eval_phase06 reverse_rel 0.667 → 0.630.
 >
-> * **H8a.3 declined at the dev stage. The owner said "reopen", which became H8a-R.**
->   * The fresh `accessregs-dev2` was committed alone (`a41606b`); then the gate, harness, `k_by_doc` and the fixed status
->     note were committed (`95bc165`); then the dev stage and the one blind read.
->   * **R-a (v3, top_n=16 + note) MET THE GATE.** Existing law is identical, dev2 0.800, test3 0.875, 0 false refusals.
->   * It is the **same retrieval as the declined v3-16**: a fresh sample plus G5 → G5′ (a note lint) made the difference.
->     The honest framing is in playbook 17's Results.
->   * The reviewer's verdict is SOUND-WITH-CAVEATS. The note was reworded after review and **needs H6 sign-off**.
->   * The blind marker is written: **test3 is spent**.
+> **OWNER RULE 2026-10-25: zero cost, self-review first.** Paid or recruited reviewers (legal H6, language H5b, AT users)
+> wait for grant funding (phase F). Self-review gates replace them, honestly labelled "not reviewed by a lawyer". Full
+> text and the new order: `docs/phases/19_zero_cost_self_review.md`. It is also an invariant in `CLAUDE.md`.
 >
-> * **H8a.4 DONE** (`fb6ad40` + review fixes; reviewer: ship to next step).
->   * The note renders once before the first Regs card, in live and replay, and is spoken with "naira".
->   * Budget: v3 → 16.
->   * Regs and the note are kept out of every LLM prompt and citation check, and the AI expander says so.
->   * v2 is byte-identical. Browser check on a temporary local v3: axe 0, keyboard unchanged.
+> **Next, in this order (all $0):**
+> 1. **Reviewer pass on H8a.5.** Check that `test` was never scored, test2/test3 were not re-opened, the "v2
+>    byte-identical" claim, the v2-pinned harness list, `legal-refusal` pinned to v2 plus `legal-refusal-v3`, the CI
+>    change, and the regenerated H6 sheet. Then write H8a.5 Results in playbook 17, update `STATUS.md`, and push the
+>    branch (pushing does not deploy).
+> 2. **H6-S.1 disclosure** (branch `phase11/h6s-disclosure` from `main`): the live site has no "not legal advice / no
+>    lawyer has checked this" line. It can ship alone, on the owner's word.
+> 3. **H6-S.2** `scripts/audit_fixed_text.py`: every claim in the Regs status note is traced verbatim to its source chunk.
+> 4. **On/after 2026-10-28: H7 week-1 read** (discount the 4 smoke ids below).
+> 5. **H6-S.3** agent self-review of the H6 sheet, harmful-first, with a quote for each verdict.
+> 6. **Owner: book free quota days for H8a.6** (~30 calls, one clean day, no `--failover`). Then H8a.7 merge on the
+>    owner's word.
+> 7. H9a if approved. H5b is deferred to F2.
 >
-> **Next session:**
-> 1. **H8a.5 cut-over (zero quota, branch only, NOT merged):**
->    * flip `CORPUS_VERSION = "v3"`;
->    * re-run every suite and harness; the harnesses pinning 12 are listed in playbook 17's H8a.4 Results, and
->      `probe_gen_refusal` must use `llm_context_hits`;
->    * write `scripts/baseline_v3_<date>.txt`;
->    * re-pin anything keyed on the shipping version;
->    * keep the LLM exclusion.
+> **Still open:** owner: approve H9a and decide on `via=suggestion`; is `test` still clean?; are the demo GIF and LinkedIn still wanted? `k_by_doc` (used only by R-b) is undecided. Agent, small: NVDA
+> listen-through, `heading-order`, Cedar RECHECK, Streamlit 1.66 `aria-expanded`. `scripts/eval_tmp.json` (untracked,
+> 2026-09-20) is a stale scratch output; leave it or delete it, but never commit it.
 >
->    Read `.claude/rules/retrieval.md` first. Never read `test`; test3 is spent.
-> 2. **Owner / H6:**
->    * the note text (commencement 22 May vs gazette 7 July 2023);
->    * whether the 110-word note on ~86% of v3 turns is acceptable;
->    * the H6 sheet must be regenerated on v3 or returned before merge (F10).
-> 3. Quota days for H8a.6 (`cite-strict-v4`), which lifts the LLM exclusion.
-> 4. Decide on `k_by_doc` (used only by R-b). H9a whenever approved. H7 read on/after 2026-10-28.
->
-> **Still open (unchanged from 2026-10-22):** the H7 week-1 read is on/after **2026-10-28** (discount the 4 smoke ids).
-> **Owner:** approve H9a and decide on `via=suggestion`; is `test` still clean?; send the H6 sheet; H5b needs quota days and
-> native checkers; are the demo GIF and LinkedIn still wanted? **Agent, small:** NVDA listen-through, `heading-order`,
-> Cedar RECHECK, Streamlit 1.66 `aria-expanded`.
->
-> The 2026-10-22 block moved to `docs/history/handoff_history.md`.
+> The 2026-10-23 block moved to `docs/history/handoff_history.md`.
 
 ---
 

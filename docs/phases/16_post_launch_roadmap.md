@@ -340,6 +340,10 @@ OOV-heavy).
 >   `runs/h5a_pidgin/dev_2026-10-18.txt`.
 
 ### H5b — Yoruba / Hausa / Igbo: opt-in LLM path only (quota)
+
+> **2026-10-25 owner rule: H5b is deferred until native speakers are funded (F2).** No language ships as
+> "supported" without a meaning check. Do not spend quota on it now (`docs/phases/19_zero_cost_self_review.md`).
+
 * Behind its own opt-in control, default OFF. Gemini translates the question **in** to English, the
   normal pipeline answers, and Gemini translates the answer **out**. **Citation tags are never
   translated**: they are masked before translation and restored verbatim, and the cite check runs
@@ -358,6 +362,9 @@ translation model to the runtime.
 ---
 
 ## H6 — Legal-expert review (owner-led; the agent prepares)
+
+> **2026-10-25 owner rule: H6 is no longer a gate.** External legal review moves to the funded phase (F1). The
+> agent-run self-audit **H6-S** replaces it as the ship gate (`docs/phases/19_zero_cost_self_review.md`). Steps 2–3 below stay valid for F1.
 
 **Goal.** The first human legal read of DRLCA's output. **Quota:** ~0 if existing transcripts
 cover it; otherwise a planned ≤ 20 calls.

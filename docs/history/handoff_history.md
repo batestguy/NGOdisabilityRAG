@@ -5,6 +5,70 @@
 
 ---
 
+<!-- moved here 2026-10-25 -->
+
+> **■■ 2026-10-23 END OF SESSION: READ THIS BLOCK FIRST ■■**
+>
+> **Live: unchanged, `main` = `94db479`.** Today ran no deploy, no quota and no telemetry.
+>
+> **Done today (branch `phase11/h8a-accessregs`, cut from `phase11/h8a-sources`; pushed; NOT merged):**
+> * **H8c `/context` check PASSED.** At startup only the global `CLAUDE.md`, project `CLAUDE.md` and `MEMORY.md` load.
+>   `.claude/rules/retrieval.md` loaded lazily the first time a `data/processed/` file was read, which is the intended behaviour.
+> * **H8a.1 DONE (exit gate met).** `data/eval/questions_accessregs.json` was committed alone as **`af3129e`**, before any
+>   parser: **dev 8 / blind `test3` 12 / status 6**, with 5 Pidgin questions. Refs come from the gazette text.
+>   **Do not read `test3` again.**
+> * The H8a.2 findings are in playbook 17's Results: the commencement date is resolved (22 May 2023); the enacting formula is
+>   unnumbered and AR_S04 has empty `expected`; the Arrangement mislabels reg. 133 as "132"; there are two look-alike
+>   certificates (reg. 165 vs 166); the naira sign is printed as "N". The gazette text for reading lives in
+>   `runs\h8a1
+egs_compact.txt` (gitignored).
+>
+> * **H8a.2 DONE** (executor, then reviewer: "ship to H8a.3"). Commits `44f5a7b` F7 bridge, `0ef9b9e` parser, `fbfe5a2` v3
+>   wiring, `af96f0d` review fixes.
+>   * Corpus **v3** = v2 + `accessregs2023` (221 chunks, `[Regs reg. N]`), pin `f13b9678…`, `oov_bridge_v3.json`.
+>   * v2 is proven bit-identical (fingerprint, pins, 0/212, PORT CHECK).
+>   * `CORPUS_VERSION` is still `"v2"`.
+>   * Details and warnings are in playbook 17's Results.
+>
+> * **H8a.3 declined at the dev stage. The owner said "reopen", which became H8a-R.**
+>   * The fresh `accessregs-dev2` was committed alone (`a41606b`); then the gate, harness, `k_by_doc` and the fixed status
+>     note were committed (`95bc165`); then the dev stage and the one blind read.
+>   * **R-a (v3, top_n=16 + note) MET THE GATE.** Existing law is identical, dev2 0.800, test3 0.875, 0 false refusals.
+>   * It is the **same retrieval as the declined v3-16**: a fresh sample plus G5 → G5′ (a note lint) made the difference.
+>     The honest framing is in playbook 17's Results.
+>   * The reviewer's verdict is SOUND-WITH-CAVEATS. The note was reworded after review and **needs H6 sign-off**.
+>   * The blind marker is written: **test3 is spent**.
+>
+> * **H8a.4 DONE** (`fb6ad40` + review fixes; reviewer: ship to next step).
+>   * The note renders once before the first Regs card, in live and replay, and is spoken with "naira".
+>   * Budget: v3 → 16.
+>   * Regs and the note are kept out of every LLM prompt and citation check, and the AI expander says so.
+>   * v2 is byte-identical. Browser check on a temporary local v3: axe 0, keyboard unchanged.
+>
+> **Next session:**
+> 1. **H8a.5 cut-over (zero quota, branch only, NOT merged):**
+>    * flip `CORPUS_VERSION = "v3"`;
+>    * re-run every suite and harness; the harnesses pinning 12 are listed in playbook 17's H8a.4 Results, and
+>      `probe_gen_refusal` must use `llm_context_hits`;
+>    * write `scripts/baseline_v3_<date>.txt`;
+>    * re-pin anything keyed on the shipping version;
+>    * keep the LLM exclusion.
+>
+>    Read `.claude/rules/retrieval.md` first. Never read `test`; test3 is spent.
+> 2. **Owner / H6:**
+>    * the note text (commencement 22 May vs gazette 7 July 2023);
+>    * whether the 110-word note on ~86% of v3 turns is acceptable;
+>    * the H6 sheet must be regenerated on v3 or returned before merge (F10).
+> 3. Quota days for H8a.6 (`cite-strict-v4`), which lifts the LLM exclusion.
+> 4. Decide on `k_by_doc` (used only by R-b). H9a whenever approved. H7 read on/after 2026-10-28.
+>
+> **Still open (unchanged from 2026-10-22):** the H7 week-1 read is on/after **2026-10-28** (discount the 4 smoke ids).
+> **Owner:** approve H9a and decide on `via=suggestion`; is `test` still clean?; send the H6 sheet; H5b needs quota days and
+> native checkers; are the demo GIF and LinkedIn still wanted? **Agent, small:** NVDA listen-through, `heading-order`,
+> Cedar RECHECK, Streamlit 1.66 `aria-expanded`.
+>
+> The 2026-10-22 block moved to `docs/history/handoff_history.md`.
+
 <!-- moved here 2026-10-23 end of session -->
 
 > **■■ 2026-10-22 END OF SESSION: READ THIS BLOCK FIRST ■■**
