@@ -28,7 +28,7 @@ async function open({ edge = false, extra = [], vp = { width: 1280, height: 800 
     ...(edge ? { channel: 'msedge' } : args.chrome ? { channel: 'chrome' } : { executablePath: fs.existsSync(CHROMIUM) ? CHROMIUM : undefined }) });
   const ctx = await browser.newContext({ viewport: vp, permissions: perms });
   const page = await ctx.newPage();
-  await page.goto(BASE); await page.getByText('National helplines').first().waitFor({ timeout: 60000 });
+  await page.goto(BASE); await page.getByText(/National helplines?/).first().waitFor({ timeout: 60000 });
   await sleep(2000);
   return { browser, ctx, page };
 }
@@ -142,7 +142,7 @@ async function c2(edge) {
   page.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text().slice(0, 150)); });
   const cdp = await ctx.newCDPSession(page);
   await cdp.send('Browser.setPermission', { permission: { name: 'microphone' }, setting: 'denied', origin: BASE });
-  await page.reload(); await page.getByText('National helplines').first().waitFor({ timeout: 60000 }); await sleep(2000);
+  await page.reload(); await page.getByText(/National helplines?/).first().waitFor({ timeout: 60000 }); await sleep(2000);
   await page.locator('summary', { hasText: 'Voice input' }).click(); await sleep(2500);
   const mic = page.frameLocator('iframe[title*="mic_recorder"]');
   let clicked = true;

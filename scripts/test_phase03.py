@@ -7,8 +7,8 @@ RECHECK note; exits nonzero on ANY failure so CI/CI-style runs catch it.
 Asserts per playbook 03_ngo_connector.md:
   - correct org top-1 per (disability x location) cell (7 disabilities,
     incl. misspellings that must take the fuzzy path),
-  - DRAC Toll-Free 08000-3000-100 + DRAC WhatsApp 08000-3000-10 FIRST in
-    EVERY response,
+  - DRAC Toll-Free 08000-3000-100 FIRST in EVERY response, and no WhatsApp
+    row (removed by the owner 2026-10-25: not found on drac-ng.org),
   - unknown disability/location -> helplines + JONAPWD umbrella row, never empty,
   - verified-only guard rejects placeholder phones at load time,
   - difflib cutoff stays >= 0.5, pruned rows stay out of the CSV.
@@ -24,7 +24,7 @@ sys.path.insert(0, str(ROOT / "src"))
 import ngo  # noqa: E402
 from ngo import (  # noqa: E402
     DRAC_TOLLFREE,
-    DRAC_WHATSAPP,
+    N_HELPLINES,
     FUZZY_CUTOFF,
     _assert_verified_phones,
     find_ngo_with_meta,
@@ -90,12 +90,14 @@ ZONES = {
 
 def check_banner(res: pd.DataFrame):
     """Helpline banner FIRST: returns (ok, detail)."""
-    if len(res) < 2:
-        return False, "fewer than 2 rows"
-    r0, r1 = res.iloc[0], res.iloc[1]
-    ok = (r0["phone"] == DRAC_TOLLFREE and "Toll-Free" in str(r0["name"])
-          and r1["phone"] == DRAC_WHATSAPP and "WhatsApp" in str(r1["name"]))
-    return ok, "row0=%s/%s row1=%s/%s" % (r0["name"], r0["phone"], r1["name"], r1["phone"])
+    if len(res) < 1:
+        return False, "no rows"
+    r0 = res.iloc[0]
+    ok = (N_HELPLINES == 1 and r0["phone"] == DRAC_TOLLFREE
+          and "Toll-Free" in str(r0["name"])
+          and not res["name"].astype(str).str.contains("WhatsApp").any()
+          and not (res["phone"].astype(str) == "08000-3000-10").any())
+    return ok, "row0=%s/%s" % (r0["name"], r0["phone"])
 
 
 def main() -> int:
@@ -137,7 +139,7 @@ def main() -> int:
                     ("physical disability support in Benin City", "NAPVID"),
                     ("help for children with special needs in Kano", "KF Place"),
                     ("where can I get help in Maiduguri?", "Cedar")]:
-        got = [r["name"] for r in router._help_payload(q, df=df, k=3)["records"][2:]]
+        got = [r["name"] for r in router._help_payload(q, df=df, k=3)["records"][N_HELPLINES:]]
         statics.append(("question reaches %s" % want, any(want in g for g in got), "; ".join(got)))
     # Guard must fire on each placeholder style; must NOT fire on real phones.
     for label, phone in [("0803-style", "0803 000 0000"), ("zeroed", "0000-000-111"), ("empty", "")]:
@@ -161,7 +163,7 @@ def main() -> int:
         res, meta = find_ngo_with_meta(df, disability=dis, location=loc)
         banner_ok, banner_detail = check_banner(res)
         top1 = meta["top1"] or ""
-        top_ok = expected.lower() in top1.lower() and len(res) >= 3
+        top_ok = expected.lower() in top1.lower() and len(res) >= N_HELPLINES + 1
         fuzzy_ok = (exp_fuzzy is None) or (meta["fuzzy_fallback"] == exp_fuzzy)
         loc_ok = (not exp_unmatched) or ("matched nothing" in meta["location_note"])
         ok = banner_ok and top_ok and fuzzy_ok and loc_ok
@@ -179,12 +181,12 @@ def main() -> int:
 
     # --- banner evidence: every response shape, incl. the records shape ---
     recs = ngo.find_ngo_records(df, disability="depresion", location="Kano")
-    rec_ok = (recs[0]["phone"] == DRAC_TOLLFREE and recs[1]["phone"] == DRAC_WHATSAPP
-              and "Mentally Aware" in recs[2]["name"])
+    rec_ok = (recs[0]["phone"] == DRAC_TOLLFREE and "WhatsApp" not in recs[1]["name"]
+              and "Mentally Aware" in recs[N_HELPLINES]["name"])
     print("\nrecords-shape banner check (depresion/Kano): %s "
           "(row0=%s, row1=%s, row2=%s)" % (
               "PASS" if rec_ok else "FAIL",
-              recs[0]["phone"], recs[1]["phone"], recs[2]["name"]))
+              recs[0]["phone"], recs[1]["phone"], recs[N_HELPLINES]["name"]))
     if not rec_ok:
         failures.append("records-shape banner order wrong")
 

@@ -9,7 +9,7 @@ const width = +((process.argv.find(a => a.startsWith('--width=')) || '--width=12
 const exe = path.join(process.env.LOCALAPPDATA, 'ms-playwright', 'chromium-1234', 'chrome-win64', 'chrome.exe');
 const browser = await chromium.launch({ executablePath: fs.existsSync(exe) ? exe : undefined });
 const page = await (await browser.newContext({ viewport: { width, height: 800 } })).newPage();
-await page.goto('http://localhost:8501'); await page.getByText('National helplines').first().waitFor({ timeout: 60000 });
+await page.goto('http://localhost:8501'); await page.getByText(/National helplines?/).first().waitFor({ timeout: 60000 });
 const ta = page.getByTestId('stChatInputTextArea');
 await ta.fill('I need an organisation that can help me in Lagos'); await ta.press('Enter');
 await page.locator('[data-testid="stChatMessage"]').nth(1).waitFor({ timeout: 60000 });

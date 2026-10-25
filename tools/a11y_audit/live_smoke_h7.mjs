@@ -11,7 +11,7 @@ const b = await chromium.launch({ executablePath: fs.existsSync(exe) ? exe : und
 const p = await (await b.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
 const errs = []; p.on('pageerror', e => errs.push(String(e)));
 await p.goto(BASE, { timeout: 180000 });
-await p.getByText('National helplines').first().waitFor({ timeout: 180000 });
+await p.getByText(/National helplines?/).first().waitFor({ timeout: 180000 });
 await p.waitForTimeout(3000);
 const sidebar = p.getByTestId('stSidebar');
 const optIn = sidebar.getByRole('checkbox', { name: 'Also share the words of my questions' });

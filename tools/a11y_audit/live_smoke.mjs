@@ -10,7 +10,7 @@ const b = await chromium.launch({ executablePath: fs.existsSync(exe) ? exe : und
 const p = await b.newPage({ viewport: { width: 1280, height: 800 } });
 const errs = []; p.on('pageerror', e => errs.push(String(e)));
 await p.goto(BASE, { timeout: 180000 });
-await p.getByText('National helplines').first().waitFor({ timeout: 180000 });
+await p.getByText(/National helplines?/).first().waitFor({ timeout: 180000 });
 await p.waitForTimeout(3000);
 const det = p.locator('details', { has: p.locator('summary', { hasText: 'Voice input' }) });
 await det.locator('summary').click(); await p.waitForTimeout(2000);

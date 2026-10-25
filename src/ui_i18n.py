@@ -80,10 +80,10 @@ STRINGS = {
         "ha": "Kuma raba kalmomin tambayoyina",
         "ig": "Kesaakwa okwu dị n'ajụjụ m",
         "yo": "Pín ọ̀rọ̀ inú ìbéèrè mi pẹ̀lú"},
-    "National helplines:": {
-        "ha": "Layukan taimako na ƙasa:",
+    "National helpline:": {
+        "ha": "Layin taimako na ƙasa:",
         "ig": "Nọmba enyemaka mba:",
-        "yo": "Àwọn nọ́mbà ìrànlọ́wọ́ orílẹ̀-èdè:"},
+        "yo": "Nọ́mbà ìrànlọ́wọ́ orílẹ̀-èdè:"},
     "Ask your question in the box at the bottom of the page "
     "(keyboard: Tab to it, Enter to send). No answer yet.": {
         "ha": "Rubuta tambayarku a akwatin da ke ƙasan shafin (madannai: Tab don "

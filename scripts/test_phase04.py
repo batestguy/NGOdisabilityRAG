@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 import router  # noqa: E402
-from ngo import DRAC_TOLLFREE, DRAC_WHATSAPP  # noqa: E402
+from ngo import DRAC_TOLLFREE  # noqa: E402
 from router import extract_help_slots, get_ngo_df, get_retriever, is_greeting, route, route_question  # noqa: E402
 
 # query, expected primary ("legal"/"help"), kind ("pure"/"mixed")
@@ -99,7 +99,7 @@ def main() -> int:
                 hlp = payload["help"]
                 recs = hlp["records"] if hlp else []
                 wire_ok &= bool(recs) and recs[0]["phone"] == DRAC_TOLLFREE \
-                    and recs[1]["phone"] == DRAC_WHATSAPP
+                    and all("WhatsApp" not in r["name"] for r in recs)
                 # Phase 03 residual: fuzzy flag visible + confirm prompt set.
                 wire_ok &= hlp["needs_confirmation"] == hlp["meta"]["fuzzy_fallback"]
                 if hlp["meta"]["fuzzy_fallback"]:

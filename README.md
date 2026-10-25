@@ -1,165 +1,114 @@
-# DRLCA — Disability Rights Legal & Connection Assistant
+# DRLCA — Disability Rights & Help Finder (Nigeria)
 
-Nigerian disability-rights legal Q&A (Disability Act 2018 + 1999 Constitution)
-plus a verified NGO/helpline connector. Free tier only ($0.00). Accessibility is
-mandatory: screen-reader-safe linear layout, voice input/output, keyboard
-navigable, high contrast + font scaling.
+A free, accessible chatbot that helps persons with disabilities in Nigeria find **what the law says** and **who can help**.
+It answers from the text of the **Discrimination Against Persons with Disabilities (Prohibition) Act 2018**, the
+**1999 Constitution** and a **2020 factsheet** on the Act, and it points people to verified disability organisations.
 
-National helplines (always displayed first): DRAC Toll-Free **08000-3000-100**,
-DRAC WhatsApp **08000-3000-10**.
+**Live:** **https://ngodisabilityrag.onrender.com** (free hosting; the first load after a quiet spell takes about a minute)
 
-Live demo: **https://ngodisabilityrag.onrender.com** (Render free tier, live-verified
-2026-09-10: helplines banner, help query end-to-end; first load slow after idle — normal)
+**National helpline, shown first on every page and every answer:** DRAC Toll-Free **08000-3000-100**
+(verified on [drac-ng.org](https://drac-ng.org) on 2026-10-25).
 
-## Setup (local)
+> **Not legal advice.** DRLCA gives general information from the text of Nigerian law. No lawyer has reviewed it yet,
+> and the site says so on every page. For help with your own situation, call DRAC.
 
-- Env: `C:\conda-envs\drlca-rag` (Python 3.11). Rebuild: `conda create -p
-  C:\conda-envs\drlca-rag python=3.11 pip -y` + `pip install -r requirements-rag.txt`.
-  Never install into shared envs (`ds-general`, `base`, system Python).
-- Optional (AI answers only): `GOOGLE_API_KEY` in env. Everything else —
-  retrieval, excerpts, NGO lookup, router — runs fully offline.
-- Run: `python -m streamlit run app.py` → http://localhost:8501
+---
 
-## Usage
+## Demo
 
-**DRLCA is a multi-turn chatbot** (since 2026-09-16). Ask a question in the
-`st.chat_input` box at the bottom; the conversation builds up the page and prior
-turns stay on screen.
+![DRLCA demo: an employment question answered with cited excerpts, an accessibility question, a help request in Lagos, the Hausa and Yorùbá interface, and high-contrast mode](docs/media/demo.gif)
 
-1. Ask in English. Routing is automatic (legal / help / greeting / clarify); each
-   turn also offers an explicit **switch** control if it routed the wrong way.
-2. **Follow-ups work without repeating yourself.** *"Can my employer refuse to hire
-   me because I'm blind?"* → *"so can they fire me?"* resolves against the prior
-   turn — ellipsis and unbound pronouns are handled in retrieval, not just in the UI
-   (`src/chat.py`). Help slots carry too: *"I'm deaf"* … *"anywhere in Kano?"*.
-3. Legal answers show retrieved excerpts with citation tags (`[Act cl. N]`,
-   `[Constitution s. N]`, `[Factsheet Section N]`) — never stripped. 3 inline, the
-   rest in one expander.
-4. Help answers list verified organisations (helplines first, top-k, never top-1-only).
-5. **Helplines render at the top of the page *and* leading every assistant turn.**
-6. Optional extras: plain-language checkbox, **per-turn** read-aloud button, mic
-   input (Chrome/Edge), high-contrast + text-size sidebar controls, **Clear
-   conversation**. The AI expander is OFF by default (uses your Gemini quota when
-   opened); with it off, everything above runs **fully offline**.
+44 seconds, recorded on a local copy with no AI and no internet calls. [Full-quality MP4](docs/media/demo.mp4).
 
-Conversation history lives in `st.session_state` only — it is never written to disk
-and never leaves the process.
+## Screenshots
 
-## Deploy (Render free tier — live; Streamlit Cloud optional 2nd link; HF Spaces dropped)
+| | |
+|---|---|
+| ![Landing page: title, the DRAC toll-free helpline, and the not-legal-advice notice](docs/media/01_landing.jpg) | ![A legal answer: excerpts from the Act and the factsheet, each with its citation tag, such as Act cl. 29](docs/media/02_legal_answer_citations.jpg) |
+| **Helpline first**, then the honest notice | **Legal answers** quote the law word for word, with a citation tag on every excerpt |
+| ![A help answer: the helpline, then a verified organisation with phone, email and website](docs/media/03_help_organisations.jpg) | ![The interface in Hausa, with the notice in Hausa and a caveat that the translation is not native-checked](docs/media/04_hausa_interface.jpg) |
+| **Help near you**: helpline first, then verified organisations, with filters | **Hausa, Igbo, Yorùbá** interface (the law itself stays in its official English text) |
+| ![High-contrast mode: black background, white text, visible help icons](docs/media/05_high_contrast.jpg) | ![The phone layout at 390 pixels wide](docs/media/06_phone.jpg) |
+| **High contrast** and adjustable text size | **Phone-first** layout |
 
-- `requirements.txt` is the slim runtime (verified 2026-09-09 in a clean venv:
-  install + offline legal/help smoke + boot HTTP 200; re-verified live 2026-09-10).
-  OCR/ONNX/FAISS are build-time only and must never be added — the corpus ships prebuilt.
-- Live at https://ngodisabilityrag.onrender.com (Render `web_service`, Python 3.11.0,
-  auto-deploys on push to `main`). `GOOGLE_API_KEY` via Render env vars
-  (never commit keys — `git log` audited).
-- HF Spaces path dropped: Streamlit SDK deprecated 2025-04 (now Docker template =
-  PRO-only); Static can't run Python.
-- Cold starts: Render free sleeps after 15 min idle (~1 min wake) — normal, not breakage.
+## What it does
 
-## Status (2026-09-19)
+* **Ask in plain words, as a conversation.** Follow-up questions build on earlier turns, so you don't have to repeat
+  yourself.
+* **Legal answers are the law's own words.** Retrieved excerpts carry citation tags (`[Act cl. N]`,
+  `[Constitution s. N]`, `[Factsheet Section N]`) that are never stripped or renumbered. If the documents don't cover a
+  question, it says so and points to the helpline, rather than guessing.
+* **Help near you.** A directory of 20 disability organisations across Nigeria's six zones. Every phone number was checked
+  in a real browser on the organisation's own site, and placeholders fail loudly at load. Results can be filtered by
+  disability and state.
+* **Works offline by default.** Search, excerpts, the directory and routing make no network calls. An optional AI summary
+  (Google Gemini, free tier) is off unless the user opens it, and it must cite the same excerpts.
+* **Accessible by design, not as polish.** It has a screen-reader-safe linear layout, keyboard navigation with a skip
+  link, high contrast, text scaling, read-aloud on every answer and optional voice input. Automated WCAG 2.2 AA checks
+  find 0 issues across 33 screen-size × theme combinations.
+* **Interface in English, Hausa, Igbo and Yorùbá.** The menus, labels and instructions are translated. Legal text,
+  citation tags and phone numbers never are.
+* **Private.** The conversation lives only in the browser session and is never written to disk. The optional "Was this
+  helpful?" signal records counts only (no question text unless the user opts in, no IP and no session id).
 
-**Live on Render since 2026-09-10** (Phase 07). Phases **01–09 done**; **Phase 10 B
-(chat-core) and 10 C (chat UI) done 2026-09-15/16** — DRLCA is a multi-turn chatbot,
-and contextualisation was measured *before* the UI shipped: strict recall **0.464 →
-0.571** (chat_dev) and **0.435 → 0.565** (chat_test), ellipsis **0.000 → 0.333** /
-**0.200 → 0.600**, false refusals *fell*. Offline suites green (`test_phase05.py`
-at **137**).
+## Honest limits
 
-**Phase D is COMPLETE and MERGED — corpus v2 is live** (`docs/phases/12_corpus_v2.md`). D0–D6 done
-2026-09-19, merged to `main` and auto-deployed the same day (`8682869`). The Act corpus had a
-citation-integrity defect: a page lost to a duplicate scan meant **clause 38 was absent from the
-processed text**, and chunk boundaries let cl.38's tail be served under an `[Act cl. 39]` tag —
-**that shipped to users from 2026-09-10 until 2026-09-19, and the merge is what ended it**.
-Phase D re-OCRs the authoritative gazette and makes
-clause-aligned chunking structural. Zero Gemini quota throughout. Held-out **test** strict recall
-**0.338 → 0.471**, while the *fitted* frozen-10 set is the only one that got worse
-(0.701 → 0.633) — the generalisation story, not a regression.
+* **No lawyer has reviewed the answers.** Every "correct" in our records is a match against the official text or an
+  automated check. External legal and language review will come once the project is funded. Until then, self-review
+  checks stand in, and they are labelled as such
+  ([docs/phases/19_zero_cost_self_review.md](docs/phases/19_zero_cost_self_review.md)).
+* **The translations are our own** and have not been checked by native speakers.
+* **Search is keyword-based (TF-IDF), and wording matters.** For example, "Can I be denied employment because of my
+  disability?" finds the employment clause (Act cl. 29), but "Can my employer refuse to hire me because I'm blind?"
+  currently does not. Measured retrieval numbers, including the misses, are in [STATUS.md](STATUS.md).
+* **The free host sleeps when idle**, so the first visit can be slow.
 
-D6 also found the same defect **inside the eval set**: two `chat_test` turns expected `[Act cl. 8]`
-for a provision that is actually clause **7(3)**, because they were authored from a v1 chunk that
-carried clause 7's text under a cl.8 tag. Both are retired (never edited), and with them the
-apparent "ellipsis regression" on the blind set turns out to be v1's number having been unearned
-rather than v2 degrading. Baseline: `scripts/baseline_v2_2026-09-19.txt`, all five harnesses green.
-
-**Now: Phase E — retrieval quality** (`docs/phases/13_retrieval_quality.md`). $0, zero Gemini
-quota, no new runtime dependency, and the default path stays fully offline. Held-out clean-test
-`recall_strict`, the number every step is judged on:
-* **E1 (shipped 2026-09-20):** retrieval budget 3/6 → 4/12 per doc. **0.471 → 0.529.**
-* **E2 (BM25 re-rank) and E3 (corpus-derived synonym map):** measured, **declined**. Every arm
-  lost, and the code is archived on `phase10/retrieval-quality`.
-* **E4a (OOV bridge), staged 2026-09-23, not yet merged:** pretrained-vector neighbours for query
-  words the corpus never uses, shipped as a 393 KB lookup. **0.529 → 0.647**, zero questions lost,
-  refusals unchanged. The evidence is 3 questions, with recorded caveats.
-
-Then **E5** (re-baseline and the M2 decision), **G** (judge + cross-turn drift, quota-paced) and
-**F** (re-examine first: free GPU gives free *training*, not free *serving*).
-
-Numbers to read with the caveats attached: frozen-10 recall **0.925** is measured on
-the same 10 questions the synonym map was tuned on; **held-out recall is 0.420**
-(n=25). Context precision **0.333 is by design** (per-doc merging trades it for
-recall) and `reverse_rel 0.630` is a recorded **metric artifact**, arbitrated by a
-judge run — neither is a bug to fix.
-
-Details: `STATUS.md` (current snapshot), `HANDOFF.md` (session entry), per-phase
-playbooks in `docs/phases/`, research notes in `LEARNING_JOURNAL.md`.
-Spec: `RAGNGO.txt`. Env notes: `ENVIRONMENTS.md`.
-
-## Architecture
+## How it works
 
 ```
-User ── Streamlit chat UI (app.py)
-         │  run(): sidebar → banner → render_history → st.chat_input
-         │  render_turn(question, ..., history)  computes + renders a NEW turn → TurnPayload
-         │  replay_turn(payload, ...)            re-renders a STORED turn
-         │                                       (no retrieval, no router, no network)
-         │  render_history()                     replays the thread on every rerun
-         │  history lives in st.session_state only — never written to disk
-         │  colors: .streamlit/config.toml (light+dark)   photo: static/watermark.jpg
-         ▼
-Contextualise (src/chat.py: resolve ellipsis / unbound pronouns against prior turns,
-         │     carry help slots; CARRY_WINDOW=2)
-         ▼
-Intent router (src/router.py: LEGAL / HELP / greeting / clarify — stateless)
-   ├─ legal ─► PerDocRetriever (src/retrieve.py: stemmed TF-IDF, k=3/doc merged,
-   │             top_n=6, MIN_SCORE 0.10 gate) ─► excerpts + cite tags (src/rag.py)
-   │             └─ opt-in Gemini (google-genai, cite-strict-v2 / chat-cite-strict-v1,
-   │                refusal layer, answer cache). OFF by default.
-   └─ help ──► NGO lookup (src/ngo.py: data/ngo.csv + fuzzy + helplines-first top-k)
-
-Corpus (data/processed/): disability_act_2018_full.txt (Act, 800)
-  + constitution_1999_NHRC.txt (chapter-aware 400) + disability_act_factsheet_PLAC.txt
-Eval: scripts/bench_phase01.py · test_phase02.py · test_phase03/04/05.py ·
-      eval_phase06.py · eval_heldout.py · eval_chat.py · audit_corpus.py ·
-      test_phase09_ops.py · ablate_phase08.py · ablate_phase10.py
+Streamlit chat UI (app.py)          helpline banner → notice → conversation → chat box
+  ├─ src/chat.py     follow-ups: resolves "they", "so can they…" against earlier turns
+  ├─ src/router.py   legal / help / greeting / clarify (keyword scorer, stateless)
+  ├─ legal → src/retrieve.py + src/rag.py
+  │          per-document TF-IDF, 4 excerpts per document, refusal floor (MIN_SCORE 0.10),
+  │          optional cite-checked Gemini summary (off by default)
+  └─ help  → src/ngo.py  data/ngo.csv, helpline first, top-k, never top-1-only
+src/ui_render.py (shared render helpers) · src/ui_i18n.py (interface language) · src/telemetry.py (counts only)
 ```
 
-> **Caveat on the Act's chunk size.** It is described elsewhere as "section-aware
-> 800", but `chunk.SECTION_RE` matches only **4 times** in the whole Act text — all
-> of them in the Second Schedule and Forms — so for the entire operative body
-> (clauses 1–58) the Act splitter is effectively plain `recursive_split(text, 800)`.
-> This is not a bug to fix: it is part of the byte-identical v1 path every published
-> baseline is measured against. It does mean Phase D's clause-aligned chunking is a
-> **total replacement** of the Act splitter, not a refinement.
+No LangChain: the orchestration is about 5,800 lines of plain Python, so every step can be measured and tested.
 
-## Data & verification
+## Run it locally
 
-- Legal corpus: Disability Act 2018 (local RapidOCR of a scanned PDF), 1999
-  Constitution (NHRC text), PLAC factsheet. `_SAMPLE_DO_NOT_CITE.txt` is a dev
-  placeholder and is never loaded or cited.
-- **Corpus defect FIXED in Phase D, merged and deployed 2026-09-19** (`8682869`). Described in
-  the past tense below because it is fixed, but it was **live in the deployed app for nine days**
-  (2026-09-10 → 2026-09-19). The v1 source scan has one physical
-  page recorded twice, so a page is missing: **clause 38's opening is absent** from
-  `data/processed/disability_act_2018_full.txt` (the **v1** text, still reachable via
-  `--corpus=v1`), its `(j)`–`(r)` tail lands in a chunk
-  reffed `cl. 39`, and 25 of 62 Act chunks carry no citable ref at all.
-  `scripts/audit_corpus.py` reports this rather than hiding it. Phase D re-OCRs the
-  authoritative gazette (*Official Gazette No. 10, Vol. 106, 21 Jan 2019, Act No. 2,
-  pages A97–A122*), which has no duplicate page; corpus **v2 locates 58/58 clauses with
-  zero degradation flags**, and `--corpus=v1` still reproduces every published v1 number. **No clause is ever stubbed,
-  paraphrased, or reconstructed from model knowledge** — a citation tag in front of a
-  generation model is how a gap becomes a hallucinated provision.
-- NGO directory (`data/ngo.csv`, 10 rows): all contacts verified against official
-  sites 2026-09-08; NAB + NNAD re-verified 2026-09-09 (contact pages confirm
-  phones/emails byte-exact). Re-verify every ~3 months; ship verified rows only.
+```bash
+conda create -p C:\conda-envs\drlca-rag python=3.11 pip -y
+C:\conda-envs\drlca-rag\python.exe -m pip install -r requirements-rag.txt
+C:\conda-envs\drlca-rag\python.exe -m streamlit run app.py      # → http://localhost:8501
+```
+
+`GOOGLE_API_KEY` is optional and only needed for the AI summary. `requirements.txt` is the slim runtime used on Render.
+
+**Tests** (plain assert scripts, zero network, run in CI on every push):
+
+```bash
+python scripts/test_phase03.py   # NGO directory: helpline first, verified phones, fuzzy matching
+python scripts/test_phase04.py   # router
+python scripts/test_phase05.py   # UI contract, accessibility, translations
+python scripts/test_phase09_ops.py
+python scripts/audit_corpus.py
+```
+
+The README media is reproducible. Run `tools/a11y_audit/capture_readme_media.mjs` against a **local** server (never
+the live site, because the demo asks questions), then encode with ffmpeg:
+`ffmpeg -i demo.webm -c:v libx264 -crf 26 -pix_fmt yuv420p demo.mp4`.
+
+## Project records
+
+* [STATUS.md](STATUS.md): current state and numbers
+* [HANDOFF.md](HANDOFF.md): where work stands, next steps
+* [docs/phases/](docs/phases/): one playbook per phase, with results, including what was tried and declined
+* [LEARNING_JOURNAL.md](LEARNING_JOURNAL.md): what each step taught
+* [docs/accessibility.md](docs/accessibility.md): the accessibility record
+* `RAGNGO.txt`: the original specification
+
+Built on free tiers only ($0.00). Background photo: Onwuka Glory, Wikimedia Commons (CC BY 4.0).

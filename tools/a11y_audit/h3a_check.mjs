@@ -10,7 +10,7 @@ const exe = path.join(process.env.LOCALAPPDATA, 'ms-playwright', 'chromium-1234'
 const b = await chromium.launch({ executablePath: fs.existsSync(exe) ? exe : undefined });
 const p = await (await b.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
 const errs = []; p.on('pageerror', e => errs.push(String(e)));
-await p.goto(BASE); await p.getByText('National helplines').first().waitFor({ timeout: 60000 });
+await p.goto(BASE); await p.getByText(/National helplines?/).first().waitFor({ timeout: 60000 });
 const msgs = p.locator('[data-testid="stChatMessage"]');
 async function ask(q) {
   const n = await msgs.count();
@@ -19,7 +19,7 @@ async function ask(q) {
   await p.waitForTimeout(2500);
 }
 const orgNames = async turn => (await turn.locator('strong').allInnerTexts())
-  .filter(t => !/^(Showing|Filtered|National helplines)/.test(t));
+  .filter(t => !/^(Showing|Filtered|National helplines?)/.test(t));
 async function pick(turn, label, option) {
   await turn.getByLabel(label).click();                       // opens the combobox
   await p.getByRole('option', { name: option, exact: true }).click();
