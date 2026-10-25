@@ -5,7 +5,7 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
 
 ## Live
 
-- **https://ngodisabilityrag.onrender.com** (Render free, `srv-dah26opt0dsc73e9a350`), `main` = `36e5107`
+- **https://ngodisabilityrag.onrender.com** (Render free, `srv-dah26opt0dsc73e9a350`), `main` = `7e778b8`
   (PR #22, merged and deployed 2026-10-25; live check, page load only: the banner reads "National helpline:
   DRAC Toll-Free 08000-3000-100", no WhatsApp anywhere, the notice says "number above", WCAG axe `[]`).
 - **Helpline: DRAC Toll-Free only** (owner decision 2026-10-25). The WhatsApp `08000-3000-10` was removed because it
