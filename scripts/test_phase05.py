@@ -172,6 +172,13 @@ check("config-primary-light", "#1a7f37" in toml)
 check("config-primary-dark", "#3fb950" in toml)
 # Forced HC palette + slider-driven scale coverage retained under new names:
 check("css-hc-palette", "#000" in css and "#fff" in css and "#ffd700" in css)
+# Owner report 2026-10-25: tooltip, '?' icon and expander header in HC. Source
+# presence only; the colours are proven in a browser (computed styles).
+check("css-hc-tooltip-icon-expander",
+      "[data-testid='stTooltipContent']" in css and "svg.icon *" in css
+      and "summary:hover" in css
+      and "[data-testid='stCaptionContainer'] {\n  opacity: 1 !important" in css
+      and "stTooltipContent" not in css_plain)
 check("css-rem-scale", "1rem" in css_plain and "html" in css_plain)
 for label in ["Type your question here", "Ask about my rights", "Find help near me",
               "Explain in plain language", "High contrast mode", "Text size"]:
