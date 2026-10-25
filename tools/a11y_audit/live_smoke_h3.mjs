@@ -10,7 +10,7 @@ const b = await chromium.launch({ executablePath: fs.existsSync(exe) ? exe : und
 const p = await (await b.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
 const errs = []; p.on('pageerror', e => errs.push(String(e)));
 await p.goto(BASE, { timeout: 180000 });
-await p.getByText('National helplines').first().waitFor({ timeout: 180000 });
+await p.getByText(/National helplines?/).first().waitFor({ timeout: 180000 });
 await p.waitForTimeout(3000);
 const ta = p.getByTestId('stChatInputTextArea');
 await ta.fill('I need autism support for my son in Owerri'); await ta.press('Enter');

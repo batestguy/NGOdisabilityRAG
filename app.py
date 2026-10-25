@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 import chat  # noqa: E402  (contextualise / merge_help_slots / drift -- offline, free)
 from chat import TurnPayload  # noqa: E402  (the stored unit of conversation)
 import telemetry  # noqa: E402  (H7: counts-only stdout lines; no network, no file)
-from ngo import DRAC_TOLLFREE, DRAC_WHATSAPP  # noqa: E402
+from ngo import DRAC_TOLLFREE, N_HELPLINES  # noqa: E402
 # Interface-language switcher (owner 2026-10-25): chrome only, never the law.
 from ui_i18n import (  # noqa: E402
     LANG_CODES, LANG_KEY, LANG_LABEL, LANG_NAMES, UI_TRANSLATION_CAVEAT, T,
@@ -44,16 +44,14 @@ from ui_render import (  # noqa: E402,F401
 # ---------------------------------------------------------------------------
 
 HELPLINE_BANNER_TEXT = (
-    "National helplines (always first): DRAC Toll-Free %s | DRAC WhatsApp %s"
-    % (DRAC_TOLLFREE, DRAC_WHATSAPP)
+    "National helpline (always first): DRAC Toll-Free %s" % DRAC_TOLLFREE
 )
 
 
 def helpline_banner_markdown() -> str:
-    """Banner text; both DRAC numbers must appear BEFORE any answer text."""
+    """Banner text; the DRAC toll-free number must appear BEFORE any answer text."""
     return (
-        "**%s** DRAC Toll-Free `%s` | DRAC WhatsApp `%s`"
-        % (T("National helplines:"), DRAC_TOLLFREE, DRAC_WHATSAPP)
+        "**%s** DRAC Toll-Free `%s`" % (T("National helpline:"), DRAC_TOLLFREE)
     )
 
 
@@ -63,7 +61,7 @@ def helpline_banner_markdown() -> str:
 LEGAL_INFO_NOTICE = (
     "This site gives general information from the text of Nigerian law. "
     "It is not legal advice, and no lawyer has checked it yet. For help with "
-    "your own situation, call DRAC on the numbers above."
+    "your own situation, call DRAC on the number above."
 )
 
 # The same notice in Hausa, Igbo and Yoruba (owner request 2026-10-25). Written
@@ -75,15 +73,15 @@ LEGAL_INFO_NOTICE_TRANSLATIONS = (
      "Wannan shafin yana ba da bayanai na gaba ɗaya daga rubutun dokokin "
      "Najeriya. Ba shawarar shari'a ba ce, kuma har yanzu babu wani lauya da "
      "ya duba shi. Don neman taimako game da halin da kuke ciki, ku kira DRAC "
-     "a lambobin da ke sama."),
+     "a lambar da ke sama."),
     ("ig", "Igbo",
      "Weebụsaịtị a na-enye ozi n'ozuzu site n'ederede iwu Naịjirịa. Ọ bụghị "
      "ndụmọdụ iwu, ọ dịbeghịkwa onye ọka iwu nyochara ya. Maka enyemaka "
-     "gbasara ọnọdụ gị, kpọọ DRAC na nọmba ndị dị n'elu."),
+     "gbasara ọnọdụ gị, kpọọ DRAC na nọmba dị n'elu."),
     ("yo", "Yorùbá",
      "Ojú-òpó yìí ń pèsè ìmọ̀ gbogbogbò láti inú ọ̀rọ̀ òfin Nàìjíríà. Kì í ṣe "
      "ìmọ̀ràn òfin, kò sì tíì sí agbẹjọ́rò kankan tó ṣàyẹ̀wò rẹ̀. Fún "
-     "ìrànlọ́wọ́ nípa ipò tìrẹ, pe DRAC lórí àwọn nọ́mbà tó wà lókè."),
+     "ìrànlọ́wọ́ nípa ipò tìrẹ, pe DRAC lórí nọ́mbà tó wà lókè."),
 )
 TRANSLATION_CAVEAT = (
     "Translated by this project and not yet checked by a native speaker. "
@@ -298,6 +296,10 @@ def accessibility_css(high_contrast: bool = False, font_size: int = 18) -> str:
             "   forced white rendered as grey. HC means full strength. */\n"
             "body:has(.drlca-hc-on) [data-testid='stCaptionContainer'] {\n"
             "  opacity: 1 !important; }\n"
+            "/* The user's chat bubble kept a themed grey surface under forced white\n"
+            "   text (README capture, 2026-10-25); axe could not see it over the photo. */\n"
+            "body:has(.drlca-hc-on) [data-testid='stChatMessage'] {\n"
+            "  background-color: #000 !important; border: 1px solid #fff !important; }\n"
             "</style>"
             "<div class='drlca-hc-on' style='display:none;'></div>"
         )
@@ -1106,11 +1108,11 @@ def help_directory(df, slots) -> list:
     payload, so a replay re-filters stored rows and never looks anything up.
     Rows the lookup ranked come first, then every other row in CSV order.
     """
-    from ngo import SCHEMA, find_ngo_with_meta
+    from ngo import N_HELPLINES, SCHEMA, find_ngo_with_meta
     frame, _ = find_ngo_with_meta(df, disability=(slots or {}).get("disability", ""),
                                   location=(slots or {}).get("location", ""),
                                   k=len(df))
-    ranked = frame.to_dict("records")[2:]
+    ranked = frame.to_dict("records")[N_HELPLINES:]
     seen = {r["name"] for r in ranked}
     rest = [{c: r[c] for c in SCHEMA} for r in df.to_dict("records")
             if r["name"] not in seen]
@@ -1130,7 +1132,7 @@ def emit_turn_signal(payload, share_text: bool = False) -> None:
     telemetry.emit(telemetry.turn_record(
         payload.signal_id, payload.mode or "", payload.refused,
         max((e.get("score", 0.0) for e in shown), default=None),
-        len(shown), max(len(hp.get("records", [])) - 2, 0),
+        len(shown), max(len(hp.get("records", [])) - N_HELPLINES, 0),
         bool(payload.answer), payload.question, share_text))
 
 

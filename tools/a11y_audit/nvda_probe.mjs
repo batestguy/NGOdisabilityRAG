@@ -45,7 +45,7 @@ const exe = path.join(process.env.LOCALAPPDATA, 'ms-playwright', 'chromium-1234'
 const browser = await chromium.launch({ headless: false, executablePath: fs.existsSync(exe) ? exe : undefined,
   args: ['--force-renderer-accessibility', '--window-position=0,0', '--window-size=1300,900'] });
 const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
-await page.goto(BASE); await page.getByText('National helplines').first().waitFor({ timeout: 60000 });
+await page.goto(BASE); await page.getByText(/National helplines?/).first().waitFor({ timeout: 60000 });
 await sleep(3000);
 await page.bringToFront();
 // real OS click on the page body so the Chrome window is foreground for NVDA
@@ -62,7 +62,7 @@ const sayAll = async ms => {
 const ask = async q => {
   const ta = page.getByTestId('stChatInputTextArea');
   await ta.focus(); await ta.fill(q); await sleep(300); await ta.press('Enter');
-  await page.locator('[data-testid="stChatMessage"]').last().getByText('National helplines').waitFor({ timeout: 60000 });
+  await page.locator('[data-testid="stChatMessage"]').last().getByText(/National helplines?/).waitFor({ timeout: 60000 });
 };
 
 await step('a1_load_sayall', () => sayAll(+(args.a1ms || 25000)));

@@ -311,9 +311,9 @@ def render_help_records(payload, turn_index: int = 0):
     so read-aloud speaks what is on screen. The stored payload is untouched.
     """
     st = _st()
-    from ngo import filter_options, filter_records
+    from ngo import N_HELPLINES, filter_options, filter_records
     records = (payload or {}).get("records", [])
-    directory = payload.get("directory") or records[2:]
+    directory = payload.get("directory") or records[N_HELPLINES:]
     types, states = filter_options(directory)
     k_type, k_state, k_sort = ("ngo-type-%d" % turn_index, "ngo-state-%d" % turn_index,
                                "ngo-sort-%d" % turn_index)
@@ -328,19 +328,19 @@ def render_help_records(payload, turn_index: int = 0):
         st.markdown("**Filtered: %s · %s · sorted by %s. Showing %d contact(s), "
                     "helplines first:**"
                     % (dtype, state, sort, len(records)))
-        if len(records) <= 2:
+        if len(records) <= N_HELPLINES:
             st.info("No organisation in this list matches those filters. The "
-                    "national helplines above can refer you.")
+                    "national helpline above can refer you.")
     else:
         if sort == "name":  # sort alone reorders THIS answer's top-k, nothing more
-            records = filter_records(records[2:], sort="name")
+            records = filter_records(records[N_HELPLINES:], sort="name")
         st.markdown("**Showing %d contact(s) (helplines first, then top-%d "
                     "organisations -- never top-1-only):**"
-                    % (len(records), max(len(records) - 2, 0)))
+                    % (len(records), max(len(records) - N_HELPLINES, 0)))
     confirm = payload.get("needs_confirmation") and not narrowed
     if confirm:
         st.warning("🔍 " + payload.get("confirm_prompt", ""))
-    for r in records[2:]:  # org rows; banner rows live in the pinned banner
+    for r in records[N_HELPLINES:]:  # org rows; banner rows live in the pinned banner
         badge = " ⚠️ *please confirm this matches your need*" if confirm else ""
         st.markdown("**%s**%s" % (r.get("name", "?"), badge))
         contact = "📞 %s" % r.get("phone", "")

@@ -217,14 +217,15 @@ ACT_V2_SIZE = 1100
 FACT_V2_SIZE = 900
 
 # National helplines -- ALWAYS shown on refusal (spec requirement).
+# 2026-10-25: the WhatsApp line was removed by the owner (not found on
+# drac-ng.org; see src/ngo.py). REFUSAL_MESSAGE is never sent to the LLM, so no
+# prompt version changes.
 HELPLINE_TOLLFREE = "08000-3000-100"
-HELPLINE_WHATSAPP = "08000-3000-10"
 
 REFUSAL_MESSAGE = (
     "I can't answer this from the Disability Act 2018, the 1999 Constitution, "
     "or the factsheet I have. For help with your question, please contact the "
-    "DRAC Toll-Free helpline " + HELPLINE_TOLLFREE + " or DRAC WhatsApp "
-    + HELPLINE_WHATSAPP + "."
+    "DRAC Toll-Free helpline " + HELPLINE_TOLLFREE + "."
 )
 
 # Exact no-answer sentence the prompt orders when excerpts lack the answer.

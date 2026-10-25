@@ -10,7 +10,7 @@ const b = await chromium.launch({ executablePath: fs.existsSync(exe) ? exe : und
 const p = await (await b.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
 const errs = []; p.on('pageerror', e => errs.push(String(e)));
 await p.goto(BASE, { timeout: 180000 });
-await p.getByText('National helplines').first().waitFor({ timeout: 180000 });
+await p.getByText(/National helplines?/).first().waitFor({ timeout: 180000 });
 await p.waitForTimeout(4000);
 const aria = await p.locator('body').ariaSnapshot();
 await p.keyboard.press('Tab');
@@ -32,7 +32,8 @@ const focusAfter = await p.evaluate(() => document.activeElement && document.act
 const caption = (await sb.innerText()).match(/Next question: (\w+)/)?.[1];
 const text = await p.locator('body').innerText();
 console.log(JSON.stringify({
-  helplinesOnPage: text.includes('08000-3000-100') && text.includes('08000-3000-10'),
+  // 2026-10-25: toll-free only (WhatsApp removed by the owner, not found on drac-ng.org).
+  helplinesOnPage: text.includes('08000-3000-100') && !/WhatsApp/.test(text),
   sliderSingleName: /slider "Text size"/.test(aria) && !/slider "Text size Text size"/.test(aria),
   mainLandmark: /main "Helplines and answers"/.test(aria), settingsRegion: /region "Settings"/.test(aria),
   skip, h1Focused, routeBefore, routeAfter, focusAfter, caption, pageErrors: errs,

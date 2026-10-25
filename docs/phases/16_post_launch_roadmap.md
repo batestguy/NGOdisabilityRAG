@@ -513,8 +513,9 @@ is dropped; each one is checked off against the old file.
 ---
 
 ## Invariants that bind every H step (from `CLAUDE.md`, restated)
-* **Helplines first, always**: DRAC Toll-Free `08000-3000-100`, WhatsApp `08000-3000-10`, above
-  every answer and leading every NGO result, via `ngo.with_helplines()`.
+* **Helplines first, always**: DRAC Toll-Free `08000-3000-100` above every answer and leading every
+  NGO result, via `ngo.with_helplines()`. (WhatsApp `08000-3000-10` removed by the owner 2026-10-25:
+  not on drac-ng.org.)
 * **Every legal claim carries a verbatim citation tag**; OCR quirks in section numbers are never
   cleaned up except through the human-signed corrections file.
 * **Both refusal layers preserved**; `MIN_SCORE` is not raised.
