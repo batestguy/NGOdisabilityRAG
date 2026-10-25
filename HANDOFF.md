@@ -4,12 +4,12 @@
 >
 > **Live: unchanged, `main` = `94db479`.** No deploy, no quota and no telemetry since 2026-10-22.
 >
-> **H8a.5 is built but NOT closed.** The 2026-10-23 session committed it and stopped before the reviewer pass and the
-> doc close-out. The four commits on `phase11/h8a-accessregs` are **local only (branch 4 ahead of origin)**:
+> **H8a.5 is now DONE (reviewed 2026-10-25).** The 2026-10-23 session had committed it and stopped before the reviewer
+> pass and the doc close-out. The four commits on `phase11/h8a-accessregs` are **local only (branch 4 ahead of origin)**:
 > * `5595763` held-out opt-out flags (`eval_heldout --no-test`, `eval_chat --dev-only`; defaults unchanged);
 > * `09e38c1` `CORPUS_VERSION = "v3"`; harnesses take the version budget; v2-only harnesses pinned to v2;
 > * `8d56ba0` H6 review pack regenerated on v3 (F10); the v2 sheet kept as `docs/review/h6_review_sheet_v2_2026-10-21.*`;
-> * `aeb317f` `scripts/baseline_v3_2026-10-23.txt`.
+> * `aeb317f` `scripts/baseline_v3_2026-10-23.txt` (now with an ERRATA block from the review).
 >
 > **Baseline headline (as the file states it; unreviewed):** existing law identical on v3 (frozen-10 0.734, dev 0.613);
 > accessregs-dev2 0.800; test2/test3 *cited* from `h8aR_blind`, not re-run; `test` not scored; 0 false refusals
@@ -22,12 +22,10 @@
 > text and the new order: `docs/phases/19_zero_cost_self_review.md`. It is also an invariant in `CLAUDE.md`.
 >
 > **Next, in this order (all $0):**
-> 1. **Reviewer pass on H8a.5.** Check that `test` was never scored, test2/test3 were not re-opened, the "v2
->    byte-identical" claim, the v2-pinned harness list, `legal-refusal` pinned to v2 plus `legal-refusal-v3`, the CI
->    change, and the regenerated H6 sheet. Then write H8a.5 Results in playbook 17, update `STATUS.md`, and push the
->    branch (pushing does not deploy).
-> 2. **H6-S.1 disclosure** (branch `phase11/h6s-disclosure` from `main`): the live site has no "not legal advice / no
->    lawyer has checked this" line. It can ship alone, on the owner's word.
+> 1. ~~Reviewer pass on H8a.5~~ **DONE 2026-10-25**: ship to next step; review fixes committed; branch pushed. Open:
+>    OFF12 is answered on v3 (pinned by `off12-v3-characterised-answered`), so diagnose the v3 bridge terms (zero quota).
+> 2. **H6-S.1 BUILT** on `phase11/h6s-disclosure` (`b2bac54`, pushed, not merged): the "not legal advice / no lawyer has
+>    checked it" line. **Owner: reword it if you like, then say whether to merge. Merging deploys.**
 > 3. **H6-S.2** `scripts/audit_fixed_text.py`: every claim in the Regs status note is traced verbatim to its source chunk.
 > 4. **On/after 2026-10-28: H7 week-1 read** (discount the 4 smoke ids below).
 > 5. **H6-S.3** agent self-review of the H6 sheet, harmful-first, with a quote for each verdict.

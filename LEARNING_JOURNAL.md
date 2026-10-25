@@ -3699,3 +3699,7 @@ every press.** My check verified the *state*. It never verified the *focus*. Les
   evidence of care, not of legal correctness, and the site and any grant application must say so.
 - Languages are treated differently: a mechanical check cannot catch a wrong meaning about rights, so H5b waits for
   funding rather than shipping half-checked.
+- Same day: the H8a.5 review found no blocking defect, but six places where the write-up said more than the code did.
+  "Not loaded" meant "parsed and dropped". "Identical" meant "identical at one budget". A nonsense question that v3 now
+  answers was disclosed, but nothing in the suite would notice if it changed. A characterisation assert fixes that last
+  one: it pins a known defect so it cannot drift silently, without pretending the defect is fine.

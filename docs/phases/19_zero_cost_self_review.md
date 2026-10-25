@@ -107,3 +107,13 @@ language ships as "supported" before F2. Do not spend quota on it now. The owner
 
 > **2026-10-25 — rule recorded; H6-S not started.** The policy is written into `CLAUDE.md`, playbooks 16, 17 and 18,
 > the source dossier, `HANDOFF.md`, `STATUS.md` and the learning journal. No code changed.
+>
+> **H6-S.1 — 2026-10-25, BUILT on `phase11/h6s-disclosure` (from `main`; `b2bac54`; not merged).**
+> `app.LEGAL_INFO_NOTICE` renders as a caption directly after the helpline banner in `run()` and inside the AI expander.
+> The text is the draft above, so the owner may reword it.
+> * `test_phase05` 183/183 (+4 asserts: wording, never claims review, after the banner, in the expander). Break-tested:
+>   removing the caption FAILs `h6s-notice-after-banner-in-run`. 03/04/09_ops ALL PASS. `import app` OK.
+> * Browser (local :8503 only): axe matrix 33 cells 0/0/0/0. `minor_check`: WCAG axe `[]` (the known `heading-order`
+>   only), skip link topmost at 390 px and in HC, no page errors. DOM text order: title → banner → notice.
+> * Not done: a spoken read-aloud copy (screen readers read the caption as page text; the per-turn read-aloud button
+>   is for answers). Merging deploys, so it waits for the owner's word.

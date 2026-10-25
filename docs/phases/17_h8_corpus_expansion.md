@@ -250,12 +250,25 @@ question shows the same tags as the local measurement.
 
 ## Results
 
-> **H8a.5 — 2026-10-23, BUILT; reviewer pass and close-out PENDING (zero quota).** `5595763`, `09e38c1`, `8d56ba0`,
-> `aeb317f`, local only at 2026-10-25. `CORPUS_VERSION = "v3"`; v3 baseline in `scripts/baseline_v3_2026-10-23.txt`; H6 pack
-> regenerated on v3 (F10), v2 copy kept. The baseline's own headline: existing law identical, accessregs-dev2 0.800,
-> 0 false refusals, calibrate 0/212, suites green (05 193/193). Reported, not gated: OFF12 newly answered (13 → 14/17),
-> dev strict@3 0.373 → 0.353, reverse_rel 0.667 → 0.630. **Do not treat as DONE until a reviewer has checked it**;
-> the checklist is in `HANDOFF.md` (2026-10-25).
+> **H8a.5 — 2026-10-23, DONE (zero quota; executor, then reviewer 2026-10-25: "ship to next step", nothing blocking).**
+> `5595763`, `09e38c1`, `8d56ba0`, `aeb317f` + a review-fix commit. `CORPUS_VERSION = "v3"`, budget 16; v3 baseline
+> `scripts/baseline_v3_2026-10-23.txt` (now with an ERRATA block); H6 pack regenerated on v3, v2 copy byte-identical.
+> * **The reviewer re-ran everything** (zero network): 03/04/09_ops ALL PASS, 05 193/193, audit v3/v2/v1 PASS, calibrate
+>   0/212, bench PASS, `eval_heldout --no-test` = baseline, v2 outputs identical to a `git archive` of `5595763`,
+>   `eval_phase06` digests reproduce, PORT CHECK 72/72.
+> * **Review fixes:**
+>   * "not loaded" was too strong: `test`/`chat_test` rows are parsed (schema only), then dropped before any scoring.
+>     The scripts and the baseline errata now say so.
+>   * "Existing law identical" holds **at the shipping budget**. The recall_strict@k curve falls on v3 (frozen-10
+>     k=10 0.684 → 0.636).
+>   * The H6 sheet said "three documents"; it now says four (one line).
+>   * CI now runs `audit_corpus --corpus=v1`, so the v1 tripwire actually runs.
+>   * The stale note comment in `src/rag.py` now points to H6-S.
+> * **Open, user-visible, undiagnosed:** on v3 the nonsense probe OFF12 is *answered* (Constitution s. 44, Regs reg. 4),
+>   and junk like "sourdough bread" now ranks Regs regs. 118/57 at 0.34. `test_phase05`
+>   `off12-v3-characterised-answered` pins the current state so it cannot change silently. **Next diagnostic (zero
+>   quota):** which v3 OOV-bridge terms fire. Never raise `MIN_SCORE` for it.
+> * After the fixes: 05 **194/194**, 03/04/09_ops ALL PASS, audit v3/v1 PASS, `eval_heldout --no-test` frozen-10 0.734 PASS.
 
 > **H8a.4 — 2026-10-23, DONE (zero quota; executor, then reviewer: "ship to next step"). `fb6ad40` + a review-fix commit.**
 > Under v2 everything is byte-identical: fingerprint, `eval_h8aR` dev stage, calibrate 0/212, all suites. `test_phase05`
@@ -337,7 +350,7 @@ question shows the same tags as the local measurement.
 > * **Read-aloud:** say "naira", and note the 16-card speech length.
 > * **LLM context:** exclude Regs chunks and the note from the prompt and from `verify_citations` until H8a.6 (quota).
 > * **Code cleanup:** decide whether `k_by_doc` (R-b only) is removed or kept as documented measurement-only code.
-> * **Legal review (F10):** merge waits for H6, which must also read the note. Then `CORPUS_VERSION = "v3"` (H8a.5).
+> * **Legal review (F10):** merge waits for H6, which must also read the note. *(2026-10-25: now H6-S, playbook 19.)* Then `CORPUS_VERSION = "v3"` (H8a.5).
 
 > **H8a.3 — 2026-10-23, DECLINED at the dev stage (zero quota).** The harness `scripts/eval_h8a3.py` (gates G1–G6
 > copied from this playbook) was committed as `9345a86` **before** any v3 number existed. Its `--self-test` proves G3/G5

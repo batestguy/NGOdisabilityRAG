@@ -305,7 +305,7 @@ def main() -> int:
         "about the Regulations just below.*")
     add("")
     add("**What every user sees.** For each question the site shows short passages (\"excerpts\") "
-        "taken word for word from the three documents. Each excerpt starts with a citation tag that "
+        "taken word for word from the four documents. Each excerpt starts with a citation tag that "
         "says where it came from:")
     add("")
     add("* `[Act cl. N]` \u2014 clause N of the Disability Act 2018")

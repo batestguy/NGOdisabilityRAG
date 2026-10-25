@@ -117,6 +117,15 @@ ref3 = app.offline_legal_hits("quantum computing entanglement", retr)
 check("legal-refusal-v3", _rag.CORPUS_VERSION == "v3"
       and "accessregs2023" in retr.docs
       and ref3["refused"] and "08000-3000-100" in ref3["answer"])
+# CHARACTERISATION, not endorsement (H8a.5 review, 2026-10-25): on v3 OFF12 is
+# ANSWERED with weak excerpts. A known user-visible defect (open in playbook 17;
+# cause undiagnosed, v3 bridge suspected). Pinned so it cannot change silently in
+# EITHER direction; a fix updates this assert on purpose. Never 'fix' it by
+# raising MIN_SCORE.
+off12_v3 = app.offline_legal_hits("quantum teleportation zebra unleaded gasoline", retr)
+check("off12-v3-characterised-answered", not off12_v3["refused"]
+      and off12_v3["excerpts"][0]["tag"] == "[Constitution s. 44]",
+      str([e["tag"] for e in off12_v3["excerpts"]][:3]) if not off12_v3["refused"] else "refused")
 
 # 3. Clarify rendering ------------------------------------------------------
 r = app.resolve_mode("where", explicit="auto")

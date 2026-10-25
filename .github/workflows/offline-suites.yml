@@ -62,12 +62,16 @@ jobs:
       - name: test_phase09_ops (ops/chat invariants, zero network)
         run: python scripts/test_phase09_ops.py
 
-      - name: audit_corpus (corpus shape gate + v1 tripwire; default corpus, v3 since H8a.5)
+      - name: audit_corpus (corpus shape gate; default corpus, v3 since H8a.5)
         run: python scripts/audit_corpus.py
 
       # H8a.5: the default audits v3 now, so the v2 pin keeps its own step.
       - name: audit_corpus --corpus=v2 (v2 pin)
         run: python scripts/audit_corpus.py --corpus=v2
+
+      # The V1 sha/shape tripwire only runs on the v1 branch of audit_corpus (H8a.5 review).
+      - name: audit_corpus --corpus=v1 (v1 tripwire)
+        run: python scripts/audit_corpus.py --corpus=v1
 
       - name: bench_phase01 (retrieval bench)
         run: python scripts/bench_phase01.py

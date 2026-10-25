@@ -6,7 +6,7 @@ Thank you for agreeing to read this. **DRLCA** is a free website that answers qu
 
 *This sheet replaces the earlier three-document version you may have received (`h6_review_sheet_v2_2026-10-21`, kept unchanged). The questions and AI answers are the same; the excerpts now come from the four documents, and there are four new questions about the Regulations just below.*
 
-**What every user sees.** For each question the site shows short passages ("excerpts") taken word for word from the three documents. Each excerpt starts with a citation tag that says where it came from:
+**What every user sees.** For each question the site shows short passages ("excerpts") taken word for word from the four documents. Each excerpt starts with a citation tag that says where it came from:
 
 * `[Act cl. N]` — clause N of the Disability Act 2018
 * `[Constitution s. N]` — section N of the 1999 Constitution

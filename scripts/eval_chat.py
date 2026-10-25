@@ -2,8 +2,8 @@
 
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\eval_chat.py   (from D:\\NGORAG)
      ... --reveal-test        (see TEST-SET PROTECTION)
-     ... --dev-only           score chat_dev ONLY: chat_test is not loaded, not
-                              verified, not scored (H8a.5, 2026-10-23: the v3
+     ... --dev-only           score chat_dev ONLY: chat_test is parsed with the
+                              file (schema check only), never verified or scored (H8a.5, 2026-10-23: the v3
                               baseline reads no held-out set). Without the flag
                               the output is byte-identical to before.
 
@@ -415,7 +415,7 @@ def main(argv=None) -> int:
               % (s, stat["conversations"], stat["turns"],
                  " ".join("%s=%d" % kv for kv in sorted(stat["by_class"].items()))))
     if dev_only:
-        print("  held-out EXCLUDED (--dev-only): chat_test not loaded, not scored")
+        print("  held-out EXCLUDED (--dev-only): chat_test parsed for schema only, never scored")
     print("\n  contextualisation thresholds (chat.py, chosen on chat_dev ONLY):")
     print("    CARRY_WINDOW=%d  THIN_MAX=%d  MARKER_MAX=%d  QUESTION_WEIGHT=%d"
           % (chat.CARRY_WINDOW, chat.THIN_MAX, chat.MARKER_MAX,

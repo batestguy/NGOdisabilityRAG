@@ -5,6 +5,21 @@ appended last. Shipping budget k=4/doc, top_n=16 (rag.TOP_N_BY_VERSION; v1/v2 ke
 Expander = hand map + OOV bridge (v3 bridge artifact). Regs chunks never reach the LLM (rag.LLM_EXCLUDED_DOCS) until H8a.6.
 Zero Gemini calls. Retrieval only.
 
+ERRATA (H8a.5 review, 2026-10-25; numbers below unchanged, wording corrected)
+  * "not loaded" is too strong. test2's file is never opened. `test` rows ARE parsed with
+    questions.json (schema check only) and dropped before any ground-truth check, scoring or
+    printing; chat_test likewise with conversations.json. audit_corpus parses the whole
+    questions_accessregs.json (test3 rows included, schema only) and audits accessregs-dev/status.
+    The scripts now print the accurate wording.
+  * "test was NOT scored on any corpus": true for every harness below except calibrate_refusal,
+    which retrieves on `test` rows for refusal checks, as it always has.
+  * "identical" (existing law) means AT THE SHIPPING BUDGET: recall_strict and per-question
+    recall/strict columns. The recall_strict@k curve falls on v3 (frozen-10 k=6 0.622->0.589,
+    k=10 0.684->0.636, k=60 0.904->0.854; dev k=6 0.460->0.427, k=60 0.780->0.760), and the
+    prec/kept columns differ.
+  * "byte-identical" (v2) = identical modulo whitespace and Streamlit warnings (reviewer
+    reproduced it from a git-archive of 5595763).
+
 HELD-OUT DISCIPLINE
   `test` was NOT scored on any corpus: eval_heldout ran with --no-test (test and test2 rows
   dropped before ground-truth verification; test2's file never opened). Its cleanliness is an

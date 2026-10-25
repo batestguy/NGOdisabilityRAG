@@ -2,8 +2,10 @@
 
 Run: C:\\conda-envs\\drlca-rag\\python.exe scripts\\eval_heldout.py   (from D:\\NGORAG)
      ... --reveal-test        (see the TEST-SET PROTECTION note below)
-     ... --no-test            keep `test` AND `test2` out of EVERYTHING: not loaded,
-                              not verified, not scored, not in any table. H8a.5
+     ... --no-test            keep `test` AND `test2` out of every number: test2's
+                              file is never opened; `test` rows are parsed with
+                              questions.json (schema check only) and dropped before
+                              any ground-truth check, scoring or printing. H8a.5
                               (2026-10-23): `test` cleanliness is an open owner
                               decision and test2's v3 number is already recorded,
                               so every H8a.5 run uses this. Without the flag the
@@ -514,7 +516,7 @@ def main(argv: list[str] | None = None) -> int:
           % (len(rows), n_refs))
     print("sets: %s" % "  ".join("%s=%d" % (s, len(by_set[s])) for s in LABELS))
     if no_test:
-        print("held-out EXCLUDED (--no-test): test and test2 not loaded, not scored")
+        print("held-out EXCLUDED (--no-test): test2 not opened; test parsed for schema only, never scored")
 
     ret = PerDocRetriever(docs)
     global TOP_N

@@ -86,8 +86,9 @@ CORPUS_VERSION = "v3"
 # for in the excerpts. Every fact was read from the gazette (S.I. 51 of 2023,
 # p.9 enacting formula and commencement date; regs. 168-169) or the Act v2
 # text (cl. 8, cl. 56) on 2026-10-23. Tags are verbatim cite_tag() shapes so
-# verify_citations can check them. NOT shipped until H8a.4 renders it and the
-# H6 legal reviewer has read it. Owner-signed text only: do not reword freely.
+# verify_citations can check them. Renders on v3 since H8a.4/H8a.5; NOT merged
+# until H6-S passes (docs/phases/19_zero_cost_self_review.md; no lawyer has read
+# it, H6 is funded-phase). Owner-signed text only: do not reword freely.
 # Reworded 2026-10-23 after review (no imposer named in reg. 168; reg. 169 needs
 # the relevant authority; 'notwithstanding' kept as 'regardless of'). Open for H6:
 # commencement (22 May) precedes gazette publication (7 July 2023). Read-aloud
