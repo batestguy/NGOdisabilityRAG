@@ -4,7 +4,8 @@
 >
 > **Live: `main` = `36e5107` (PR #22, merged on the owner's word and deployed 2026-10-25).** PR #21 (`6ee7978`) went
 > live earlier the same day. Both live checks were page loads only, so no question was asked and no telemetry was
-> written. No quota was spent.
+> written. **Quota 2026-10-25: 1 call** (`gemini-2.5-flash`, the README demo's AI answer;
+> PR #23). Its answer cache lives in the worktree, which is gitignored.
 >
 > **H8a.5 is now DONE (reviewed 2026-10-25).** The 2026-10-23 session had committed it and stopped before the reviewer
 > pass and the doc close-out. The four commits on `phase11/h8a-accessregs` are **local only (branch 4 ahead of origin)**:
