@@ -667,5 +667,19 @@ check("h6s-notice-after-banner-in-run",
       < run_body.index("st.chat_input("))
 _ai_body = src.split("def render_ai_expander")[1].split("\ndef ")[0]
 check("h6s-notice-in-ai-expander", "st.caption(LEGAL_INFO_NOTICE)" in _ai_body)
+# Translations (owner 2026-10-25): ha/ig/yo, each with its own lang, each names
+# DRAC verbatim, labelled as not native-checked, rendered after the English notice.
+_tr = app.LEGAL_INFO_NOTICE_TRANSLATIONS
+_tr_html = app.legal_info_translations_html()
+check("h6s-translations-ha-ig-yo", [c for c, _, _ in _tr] == ["ha", "ig", "yo"]
+      and all("DRAC" in t for _, _, t in _tr))
+check("h6s-translations-own-lang",
+      all('<p lang="%s">' % c in _tr_html for c, _, _ in _tr))
+check("h6s-translations-caveat",
+      "not yet checked by a native speaker" in app.TRANSLATION_CAVEAT
+      and "st.caption(TRANSLATION_CAVEAT)" in run_body)
+check("h6s-translations-after-notice",
+      run_body.find("LEGAL_INFO_NOTICE)") < run_body.find("legal_info_translations_html()")
+      < run_body.index("st.chat_input("))
 
 print("\nALL %d ASSERTS PASSED" % len(passed))

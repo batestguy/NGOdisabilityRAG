@@ -62,6 +62,39 @@ LEGAL_INFO_NOTICE = (
     "your own situation, call DRAC on the numbers above."
 )
 
+# The same notice in Hausa, Igbo and Yoruba (owner request 2026-10-25). Written
+# by the project, NOT checked by a native speaker (that is funded phase F2), and
+# labelled so on the page. Each renders with its own `lang` so screen readers
+# switch voice. Fixed text only: no answer is ever translated (H5b stays deferred).
+LEGAL_INFO_NOTICE_TRANSLATIONS = (
+    ("ha", "Hausa",
+     "Wannan shafin yana ba da bayanai na gaba ɗaya daga rubutun dokokin "
+     "Najeriya. Ba shawarar shari'a ba ce, kuma har yanzu babu wani lauya da "
+     "ya duba shi. Don neman taimako game da halin da kuke ciki, ku kira DRAC "
+     "a lambobin da ke sama."),
+    ("ig", "Igbo",
+     "Weebụsaịtị a na-enye ozi n'ozuzu site n'ederede iwu Naịjirịa. Ọ bụghị "
+     "ndụmọdụ iwu, ọ dịbeghịkwa onye ọka iwu nyochara ya. Maka enyemaka "
+     "gbasara ọnọdụ gị, kpọọ DRAC na nọmba ndị dị n'elu."),
+    ("yo", "Yorùbá",
+     "Ojú-òpó yìí ń pèsè ìmọ̀ gbogbogbò láti inú ọ̀rọ̀ òfin Nàìjíríà. Kì í ṣe "
+     "ìmọ̀ràn òfin, kò sì tíì sí agbẹjọ́rò kankan tó ṣàyẹ̀wò rẹ̀. Fún "
+     "ìrànlọ́wọ́ nípa ipò tìrẹ, pe DRAC lórí àwọn nọ́mbà tó wà lókè."),
+)
+TRANSLATION_CAVEAT = (
+    "Translated by this project and not yet checked by a native speaker. "
+    "If a translation and the English differ, follow the English."
+)
+
+
+def legal_info_translations_html() -> str:
+    """The translated notices as one HTML block, each paragraph in its own lang."""
+    import html as _html
+    return "".join(
+        '<p lang="%s"><strong>%s:</strong> %s</p>'
+        % (code, _html.escape(name), _html.escape(text))
+        for code, name, text in LEGAL_INFO_NOTICE_TRANSLATIONS)
+
 
 WATERMARK_IMAGE_URL = "app/static/watermark.jpg"
 # NOTE: this MUST stay a # comment -- a bare string literal here would be
@@ -1323,6 +1356,9 @@ def run():
     st.title("DRLCA — Disability Rights & Help Finder")
     render_helpline_banner()  # compact single-column banner, no wide columns
     st.caption("ℹ️ " + LEGAL_INFO_NOTICE)  # H6-S.1: after the banner, never before
+    with st.expander("This notice in Hausa, Igbo and Yorùbá", expanded=False):
+        st.caption(TRANSLATION_CAVEAT)
+        st.markdown(legal_info_translations_html(), unsafe_allow_html=True)
 
     # --- The conversation ---------------------------------------------------
     pending = (st.session_state.pop("pending", "") or "").strip()
