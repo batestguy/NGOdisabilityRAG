@@ -37,6 +37,7 @@ Current state only. Replace lines; do not append history. Dated history to 2026-
   note): existing law identical (frozen-10/dev/test2), fresh dev2 0.800, blind test3 0.875, 0 false refusals; off-corpus
   answered 13 → 14/17. H8a.4 DONE (note renders once before the first Regs card;
   v3 budget 16; Regs excluded from the LLM; v2 byte-identical). **H8a.5 DONE** (reviewed 2026-10-25; `CORPUS_VERSION = "v3"`; `scripts/baseline_v3_2026-10-23.txt` + errata; OFF12 answered on v3 is open and pinned). **Next:** H6-S.2 → H6-S.3, H8a.6 on booked free quota days, H8a.7.
+- **⚠ Helpline check (2026-10-25):** DRAC Toll-Free verified on drac-ng.org; **WhatsApp `08000-3000-10` not found there** (only office `08115326607`). Owner decision pending (`HANDOFF.md`).
 - **Owner rule (2026-10-25): zero cost, self-review first** (`docs/phases/19_zero_cost_self_review.md`). External legal
   and language review deferred to a grant-funded phase F. **H6-S** (disclosure line, fixed-text traceability, agent
   self-review of the H6 sheet) replaces H6 as the gate. H6-S.1 (the "not legal advice" line, + Hausa/Igbo/Yorùbá versions, not native-checked) is built on `phase11/h6s-disclosure`, awaiting the owner's merge word.

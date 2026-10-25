@@ -17,6 +17,14 @@
 > 13 → 14/17 (OFF12, v3 bridge suspected, undiagnosed); dev strict@3 0.373 → 0.353 and MRR(shown) 0.428 → 0.399;
 > chat_dev r@3 drops as Regs chunks enter the pool top; eval_phase06 reverse_rel 0.667 → 0.630.
 >
+> **⚠ HELPLINE PROVENANCE (checked 2026-10-25, real browser, drac-ng.org home + /contact):** both banner numbers come from
+> the owner's spec `RAGNGO.txt` lines 102–103. No earlier record verified them against DRAC.
+> * **Toll-Free `08000-3000-100`: VERIFIED.** The site links `tel:080003000100` labelled "Call Now - Toll Free".
+> * **WhatsApp `08000-3000-10`: NOT FOUND on DRAC's site.** There is no WhatsApp text or link anywhere. The only other number
+>   is `08115326607` (office: Plot 690 Akon House, Wuye, Abuja). A 0800 toll-free number is also an unlikely WhatsApp
+>   account. The banner is an invariant and the spec is the owner's, so **the owner decides**: test it on WhatsApp, or
+>   replace or remove it. Screenshot: `runs\drac_contact_2026-10-25.png`.
+>
 > **OWNER RULE 2026-10-25: zero cost, self-review first.** Paid or recruited reviewers (legal H6, language H5b, AT users)
 > wait for grant funding (phase F). Self-review gates replace them, honestly labelled "not reviewed by a lawyer". Full
 > text and the new order: `docs/phases/19_zero_cost_self_review.md`. It is also an invariant in `CLAUDE.md`.
